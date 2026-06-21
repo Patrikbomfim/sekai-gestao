@@ -540,8 +540,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <button class="nav-btn on" onclick="goTo('hoje',this)"><span class="nav-ic">▣</span>Meu dia<span class="nav-badge" id="bdg-hoje" style="display:none">0</span></button>
   <button class="nav-btn" onclick="goTo('proximos',this)">Próximos 7 dias</button>
   <div class="slb-label">Pacientes</div>
-  <button class="nav-btn" onclick="goTo('agenda',this)">Agenda</button>
-  <button class="nav-btn" onclick="goTo('pacientes',this)">Pacientes</button>
+  <button class="nav-btn" id="navbtn-agenda" onclick="goTo('agenda',this)">Agenda</button>
+  <button class="nav-btn" id="navbtn-pacientes" onclick="goTo('pacientes',this)">Pacientes</button>
   <button class="nav-btn" onclick="goTo('fluxos',this)">Fluxo de ação</button>
   <div class="slb-label">Gestão</div>
   <button class="nav-btn" onclick="goTo('dashboard',this)">Dashboard</button>
@@ -1725,8 +1725,17 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="fg">
         <div class="fl fg-full">
           <label>Paciente *</label>
-          <input type="text" id="agm-paciente-busca" placeholder="Buscar paciente cadastrado por nome..." oninput="agmBuscarPaciente(this.value)" autocomplete="off">
-          <div id="agm-paciente-resultados" style="position:relative"></div>
+          <div id="agm-paciente-link-wrap" style="display:none;align-items:center;gap:8px">
+            <button type="button" id="agm-paciente-link" onclick="abrirPacienteDoAgendamento()" style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r8);background:var(--s2);cursor:pointer;font:inherit;color:var(--tx1)">
+              <span id="agm-paciente-link-nome" style="font-weight:500;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+              <span style="font-size:11.5px;color:var(--ac);white-space:nowrap;flex-shrink:0">Ver ficha →</span>
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="agmTrocarPaciente()" title="Trocar paciente">Trocar</button>
+          </div>
+          <div id="agm-paciente-busca-wrap">
+            <input type="text" id="agm-paciente-busca" placeholder="Buscar paciente cadastrado por nome..." oninput="agmBuscarPaciente(this.value)" autocomplete="off">
+            <div id="agm-paciente-resultados" style="position:relative"></div>
+          </div>
           <input type="hidden" id="agm-paciente-id">
         </div>
         <div class="fl fg-full" id="agm-paciente-novo-wrap" style="display:none">
@@ -2845,6 +2854,10 @@ let colunasPaciente = carregarLS('sk3-colunaspaciente', COLUNAS_PACIENTE_PADRAO)
   salvarLS('sk3-colunaspaciente', colunasPaciente);
 })();
 
+// ── ORDENAÇÃO DA LISTA DE PACIENTES — padrão: nome, A→Z ────────────────
+let ptSortColId = 'nome';
+let ptSortDir = 'asc'; // 'asc' | 'desc'
+
 function getStatusInfo(id){ return statusList.find(s=>s.id===id)||{label:id}; }
 function statusLabelFmt(icone,label){ return label; }
 function getStatusLabel(id){ const s=statusList.find(x=>x.id===id); return s?s.label:id; }
@@ -2920,7 +2933,7 @@ function goTo(id, btn){
   if(id==='hoje') renderHoje();
   if(id==='proximos') renderProximos();
   if(id==='agenda') renderAgenda();
-  if(id==='pacientes'){renderFiltros();renderPacientes('');renderKanban();renderAcoesTab();}
+  if(id==='pacientes'){ptSortColId='nome';ptSortDir='asc';filtroAtual='';pacientesPaginaAtual=1;const buscaEl=document.getElementById('pt-busca-nome');if(buscaEl)buscaEl.value='';renderFiltros();renderPacientes('');renderKanban();renderAcoesTab();}
   if(id==='fluxos') renderFluxos();
   if(id==='rituais') renderRituais();
   if(id==='reuniao') renderReunioes();
@@ -3336,6 +3349,7 @@ function salvarPaciente(){
       fecharModal('modal-novo');
       goTo('pacientes');
       document.querySelectorAll('.nav-btn').forEach(n=>{ if(n.textContent.includes('Pacientes')) n.classList.add('on'); });
+      pacienteOrigemTab='pacientes';
       abrirModalPt(existente.id);
       return;
     }
@@ -3420,10 +3434,62 @@ function irParaPaginaPacientes(delta){
   renderPacientes(filtroAtual);
 }
 
+// ── ORDENAÇÃO DA LISTA DE PACIENTES ─────────────────────────────────────
+function ptOrdenarPor(colId){
+  if(ptSortColId===colId){
+    ptSortDir = ptSortDir==='asc' ? 'desc' : 'asc';
+  } else {
+    ptSortColId = colId;
+    ptSortDir = 'asc';
+  }
+  pacientesPaginaAtual = 1;
+  renderPacientes(filtroAtual);
+}
+
+function valorOrdenacaoColunaPaciente(p,col){
+  if(col.fonte==='status'){
+    return (getStatusInfo(p.status).label||p.status||'').toLowerCase();
+  }
+  if(col.fonte==='idade'){
+    const idade=calcularIdade(p.nascimento);
+    return idade===null ? -1 : idade;
+  }
+  if(col.fonte==='proximaAcao'){
+    const prox=proximaAcaoPaciente(p);
+    return prox.data ? prox.data.getTime() : Infinity;
+  }
+  // fonte === 'campo'
+  const campo=camposCadastro.find(c=>c.id===col.campoId);
+  let raw='';
+  if(campo&&campo.locked){ raw=p[col.campoId]||''; }
+  else { raw=(p.customFields&&p.customFields[col.campoId])||''; }
+  return (raw||'').toString().toLowerCase();
+}
+
+const PT_SORT_COLLATOR = new Intl.Collator('pt-BR',{sensitivity:'base',numeric:true});
+
+function ordenarListaPacientes(lista){
+  const col = colunasPaciente.find(c=>c.id===ptSortColId) || colunasPaciente.find(c=>c.id==='nome');
+  if(!col) return lista.slice();
+  const dir = ptSortDir==='asc' ? 1 : -1;
+  const ehVazio = v => v===''||v===null||v===undefined||v===-1||v===Infinity;
+  return lista.slice().sort((a,b)=>{
+    const va=valorOrdenacaoColunaPaciente(a,col);
+    const vb=valorOrdenacaoColunaPaciente(b,col);
+    const vaVazio=ehVazio(va), vbVazio=ehVazio(vb);
+    if(vaVazio && vbVazio) return 0;
+    if(vaVazio) return 1;  // valores vazios/desconhecidos sempre por último, em qualquer direção
+    if(vbVazio) return -1;
+    if(typeof va==='number' && typeof vb==='number') return (va-vb)*dir;
+    return PT_SORT_COLLATOR.compare(String(va),String(vb))*dir;
+  });
+}
+
 function renderPacientes(filtro){
   const wrap=document.getElementById('pt-lista-wrap');
   const termo=(filtro||'').trim().toLowerCase();
-  const lista=termo?pacientes.filter(p=>(p.nome||'').toLowerCase().includes(termo)):pacientes;
+  const filtrada=termo?pacientes.filter(p=>(p.nome||'').toLowerCase().includes(termo)):pacientes;
+  const lista=ordenarListaPacientes(filtrada);
   if(!lista.length){
     wrap.innerHTML=termo
       ? '<div class="empty"><div class="empty-ic">👥</div>Nenhum paciente encontrado para esta busca.</div>'
@@ -3439,11 +3505,15 @@ function renderPacientes(filtro){
   const cols=colunasPaciente.filter(c=>c.ativo);
   const gridCols=cols.map(larguraColunaPaciente).join(' ');
   const header=`<div style="display:grid;grid-template-columns:${gridCols};gap:12px;padding:0 0 7px;border-bottom:1px solid var(--border);margin-bottom:2px">
-    ${cols.map(c=>`<div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">${c.label}</div>`).join('')}
+    ${cols.map(c=>{
+      const ativo=c.id===ptSortColId;
+      const seta=ativo?(ptSortDir==='asc'?'▲':'▼'):'⇅';
+      return `<button type="button" onclick="ptOrdenarPor('${c.id}')" title="Ordenar por ${c.label}" style="display:flex;align-items:center;gap:4px;background:none;border:none;padding:0;margin:0;cursor:pointer;font:inherit;font-size:11px;font-weight:600;color:${ativo?'var(--ac)':'var(--tx3)'};text-transform:uppercase;letter-spacing:.06em">${c.label}<span style="font-size:9px;opacity:${ativo?'1':'.5'}">${seta}</span></button>`;
+    }).join('')}
   </div>`;
   const rows=paginaLista.map(p=>{
     const cells=cols.map(c=>`<div>${valorColunaPaciente(p,c)}</div>`).join('');
-    return `<div onclick="abrirModalPt(${p.id})" style="display:grid;grid-template-columns:${gridCols};gap:12px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer;align-items:center;border-radius:var(--r8);transition:background .12s" onmouseenter="this.style.background='var(--s2)';this.style.padding='7px 10px';this.style.margin='0 -10px'" onmouseleave="this.style.background='';this.style.padding='7px 0';this.style.margin=''">
+    return `<div onclick="pacienteOrigemTab='pacientes';abrirModalPt(${p.id})" style="display:grid;grid-template-columns:${gridCols};gap:12px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer;align-items:center;border-radius:var(--r8);transition:background .12s" onmouseenter="this.style.background='var(--s2)';this.style.padding='7px 10px';this.style.margin='0 -10px'" onmouseleave="this.style.background='';this.style.padding='7px 0';this.style.margin=''">
       ${cells}
     </div>`;
   }).join('');
@@ -3488,7 +3558,7 @@ function renderKanban(){
     const cards=lista.length
       ? lista.map(p=>`<div class="kb-card" draggable="true" data-id="${p.id}"
           ondragstart="kbDragStart(event,${p.id})" ondragend="kbDragEnd(event)"
-          onclick="abrirModalPt(${p.id})">${nomeComCodigo(p)}${p.fone?`<div class="kb-card-meta">${p.fone}</div>`:''}</div>`).join('')
+          onclick="pacienteOrigemTab='pacientes';abrirModalPt(${p.id})">${nomeComCodigo(p)}${p.fone?`<div class="kb-card-meta">${p.fone}</div>`:''}</div>`).join('')
       : `<div class="kb-empty">Nenhum paciente</div>`;
     return `<div class="kb-col" data-status="${s.id}"
         ondragover="kbDragOver(event,this)" ondragleave="kbDragLeave(event,this)" ondrop="kbDrop(event,'${s.id}')">
@@ -3639,7 +3709,19 @@ function abrirModalPt(id){
 
 function voltarParaPacientes(){
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
-  document.getElementById('sec-pacientes').classList.add('on');
+  if(pacienteOrigemTab==='agenda'){
+    document.getElementById('sec-agenda').classList.add('on');
+    document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('on'));
+    const navAg=document.getElementById('navbtn-agenda');
+    if(navAg) navAg.classList.add('on');
+    renderAgenda();
+  } else {
+    document.getElementById('sec-pacientes').classList.add('on');
+    document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('on'));
+    const navPac=document.getElementById('navbtn-pacientes');
+    if(navPac) navPac.classList.add('on');
+  }
+  pacienteOrigemTab='pacientes';
 }
 
 function switchPpArea(area){
@@ -8628,6 +8710,7 @@ function abrirModalAgendamento(agendamentoId, dataPre, horaPre, salaPre, usuario
   const novoWrap=document.getElementById('agm-paciente-novo-wrap');
   if(a && !a.pacienteId){ novoWrap.style.display=''; document.getElementById('agm-paciente-fone').value=a.pacienteFone||''; }
   else { novoWrap.style.display='none'; document.getElementById('agm-paciente-fone').value=''; }
+  agmAtualizarPacienteView();
 
   document.getElementById('agm-data').value = a ? a.data : (dataPre||agendaData);
   document.getElementById('agm-hora-ini').value = a ? a.horaInicio : (horaPre||'09:00');
@@ -8669,6 +8752,12 @@ function abrirModalAgendamento(agendamentoId, dataPre, horaPre, salaPre, usuario
     el.disabled = !podeGerenciarAgenda;
     if(!podeGerenciarAgenda) el.style.opacity='.65';
   });
+  // o botão "Trocar paciente" altera o vínculo do agendamento — exige a mesma permissão.
+  // "Ver ficha" apenas navega até o cadastro do paciente, então fica sempre disponível.
+  const trocarBtn = document.querySelector('#agm-paciente-link-wrap .btn-ghost');
+  if(trocarBtn){
+    trocarBtn.style.display = podeGerenciarAgenda ? '' : 'none';
+  }
 }
 
 function somarMinutosHora(hora,min){
@@ -8723,6 +8812,7 @@ function agmSelecionarPaciente(id,nome){
   const selSituacao=document.getElementById('agm-situacao');
   if(p && selSituacao) selSituacao.value=p.status;
   agmToggleSituacao();
+  agmAtualizarPacienteView();
 }
 function agmUsarSemCadastro(nome){
   document.getElementById('agm-paciente-id').value='';
@@ -8730,6 +8820,43 @@ function agmUsarSemCadastro(nome){
   document.getElementById('agm-paciente-resultados').innerHTML='';
   document.getElementById('agm-paciente-novo-wrap').style.display='';
   agmToggleSituacao();
+}
+
+// ── PACIENTE NO MODAL DE AGENDAMENTO — alterna entre botão (paciente vinculado) e busca ──
+function agmAtualizarPacienteView(){
+  const id=document.getElementById('agm-paciente-id').value;
+  const linkWrap=document.getElementById('agm-paciente-link-wrap');
+  const buscaWrap=document.getElementById('agm-paciente-busca-wrap');
+  const p=id?pacientes.find(x=>x.id===id):null;
+  if(p){
+    document.getElementById('agm-paciente-link-nome').innerHTML=nomeComCodigo(p);
+    linkWrap.style.display='flex';
+    buscaWrap.style.display='none';
+  } else {
+    linkWrap.style.display='none';
+    buscaWrap.style.display='';
+  }
+}
+
+function agmTrocarPaciente(){
+  document.getElementById('agm-paciente-link-wrap').style.display='none';
+  document.getElementById('agm-paciente-busca-wrap').style.display='';
+  const input=document.getElementById('agm-paciente-busca');
+  setTimeout(()=>{ input.focus(); input.select(); },10);
+}
+
+// Abre a ficha completa do paciente a partir do modal de agendamento
+function abrirPacienteDoAgendamento(){
+  const id=document.getElementById('agm-paciente-id').value;
+  if(!id) return;
+  fecharModal('modal-agendamento');
+  document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('on'));
+  const navPac=document.getElementById('navbtn-pacientes');
+  if(navPac) navPac.classList.add('on');
+  const layout=document.querySelector('.layout');
+  if(layout) layout.classList.remove('has-subnav');
+  pacienteOrigemTab='agenda';
+  abrirModalPt(id);
 }
 
 function salvarAgendamento(){
