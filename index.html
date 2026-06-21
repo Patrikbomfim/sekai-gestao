@@ -1460,6 +1460,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="modal-title" id="mu-titulo">Novo usuário</div>
     </div>
     <div class="modal-body">
+      <div id="mu-erro" style="display:none;background:#FEF2F2;border:1px solid #FCA5A5;color:#991B1B;font-size:12.5px;line-height:1.5;padding:10px 12px;border-radius:var(--r8);margin-bottom:14px"></div>
       <div class="fg">
         <div class="fl fg-full"><label>Nome completo *</label><input type="text" id="mu-nome" placeholder="Ex: Fernanda Souza"></div>
         <div class="fl">
@@ -1493,7 +1494,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="fl"><label>Número</label><input type="text" id="mu-numero" placeholder="Ex: 123"></div>
         <div class="fl"><label>Complemento</label><input type="text" id="mu-complemento" placeholder="Apto, sala, bloco..."></div>
         <div class="fl fg-full"><label>Observação</label><textarea id="mu-obs" rows="2" placeholder="Qualquer informação relevante sobre este usuário..."></textarea></div>
-        <div class="fl fg-full" id="mu-erro" style="color:#991B1B;font-size:12px;display:none"></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -3643,6 +3643,7 @@ function toggleAcaoTab(k, a, el){
 // ── PÁGINA DE DETALHE DO PACIENTE ───────────────────────────────────────
 let modalPtId=null;
 let pacienteOrigemTab='pacientes'; // para saber pra onde voltar
+let pacienteOrigemAgendamentoId=null; // se veio do modal de um agendamento específico, reabre ele ao voltar
 
 function abrirModalPt(id){
   const p=pacientes.find(x=>x.id===id || String(x.id)===String(id));
@@ -3710,20 +3711,14 @@ function abrirModalPt(id){
 }
 
 function voltarParaPacientes(){
-  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
   if(pacienteOrigemTab==='agenda'){
-    document.getElementById('sec-agenda').classList.add('on');
-    document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('on'));
-    const navAg=document.getElementById('navbtn-agenda');
-    if(navAg) navAg.classList.add('on');
-    renderAgenda();
+    goTo('agenda', document.getElementById('navbtn-agenda'));
+    if(pacienteOrigemAgendamentoId) abrirModalAgendamento(pacienteOrigemAgendamentoId);
   } else {
-    document.getElementById('sec-pacientes').classList.add('on');
-    document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('on'));
-    const navPac=document.getElementById('navbtn-pacientes');
-    if(navPac) navPac.classList.add('on');
+    goTo('pacientes', document.getElementById('navbtn-pacientes'));
   }
   pacienteOrigemTab='pacientes';
+  pacienteOrigemAgendamentoId=null;
 }
 
 function switchPpArea(area){
@@ -4853,7 +4848,16 @@ async function salvarUsuario(){
   const senha=document.getElementById('mu-senha').value;
   const cargoId=document.getElementById('mu-cargo').value;
   const erroEl=document.getElementById('mu-erro');
+  const btn=document.getElementById('mu-salvar-btn');
   erroEl.style.display='none';
+
+  function mostrarErroUsuario(msg){
+    erroEl.textContent=msg;
+    erroEl.style.display='block';
+    erroEl.scrollIntoView({behavior:'smooth',block:'start'});
+    btn.disabled=false; btn.textContent='Salvar →';
+  }
+
   if(!nome){alert('Informe o nome do usuário.');return;}
   if(!email){alert('Informe o e-mail de acesso.');return;}
   if(!modalUsuarioId && !senha){alert('Defina uma senha de acesso.');return;}
@@ -4861,7 +4865,6 @@ async function salvarUsuario(){
   const cpfEl=document.getElementById('mu-cpf');
   if(cpfEl.value.trim()&&!validarCPF(cpfEl)){alert('O CPF informado é inválido.');return;}
 
-  const btn=document.getElementById('mu-salvar-btn');
   btn.disabled=true; btn.textContent='Salvando…';
 
   const dadosLocais={
@@ -4880,7 +4883,7 @@ async function salvarUsuario(){
     if(!modalUsuarioId){
       // ── NOVO USUÁRIO: cria login real + perfil + cargo, tudo de uma vez ──
       const r = await chamarAdminUsuarios({ action:'criar', email, senha, nome, cargo_id:cargoId });
-      if(r.error){ erroEl.textContent=r.error; erroEl.style.display='block'; btn.disabled=false; btn.textContent='Salvar →'; return; }
+      if(r.error){ mostrarErroUsuario(r.error); return; }
       usuarios.push({id:r.id, ...dadosLocais});
       equipe.push({nome, usuarioId:r.id, cargoId, principal:false});
       salvarLS('sk3-usuarios',usuarios);
@@ -4888,19 +4891,20 @@ async function salvarUsuario(){
     } else {
       // ── EDITAR USUÁRIO EXISTENTE ──
       const u=usuarios.find(x=>x.id===modalUsuarioId);
+      if(!u){ mostrarErroUsuario('Não foi possível localizar este usuário. Feche e abra o cadastro novamente.'); return; }
       const emailMudou = email !== u.email;
       if(emailMudou){
         const r = await chamarAdminUsuarios({ action:'trocar_email', user_id:modalUsuarioId, novo_email:email });
-        if(r.error){ erroEl.textContent=r.error; erroEl.style.display='block'; btn.disabled=false; btn.textContent='Salvar →'; return; }
+        if(r.error){ mostrarErroUsuario(r.error); return; }
       }
       if(senha){
         const r = await chamarAdminUsuarios({ action:'trocar_senha', user_id:modalUsuarioId, nova_senha:senha });
-        if(r.error){ erroEl.textContent=r.error; erroEl.style.display='block'; btn.disabled=false; btn.textContent='Salvar →'; return; }
+        if(r.error){ mostrarErroUsuario(r.error); return; }
       }
       const membroEquipe=equipe.find(e=>typeof e!=='string'&&e.usuarioId===modalUsuarioId);
       if(!membroEquipe || membroEquipe.cargoId!==cargoId || u.nome!==nome){
         const r = await chamarAdminUsuarios({ action:'editar_cargo', user_id:modalUsuarioId, cargo_id:cargoId, nome });
-        if(r.error){ erroEl.textContent=r.error; erroEl.style.display='block'; btn.disabled=false; btn.textContent='Salvar →'; return; }
+        if(r.error){ mostrarErroUsuario(r.error); return; }
       }
       Object.assign(u,dadosLocais);
       if(membroEquipe){ membroEquipe.cargoId=cargoId; membroEquipe.nome=nome; }
@@ -4910,9 +4914,7 @@ async function salvarUsuario(){
     }
   }catch(e){
     console.error('salvarUsuario: erro inesperado', e);
-    erroEl.textContent='Erro de conexão. Tente novamente.';
-    erroEl.style.display='block';
-    btn.disabled=false; btn.textContent='Salvar →';
+    mostrarErroUsuario('Erro de conexão ao salvar. Verifique sua internet e tente novamente. (' + (e?.message||'erro desconhecido') + ')');
     return;
   }
 
@@ -8870,6 +8872,7 @@ function agmTrocarPaciente(){
 function abrirPacienteDoAgendamento(){
   const id=document.getElementById('agm-paciente-id').value;
   if(!id) return;
+  const editId=document.getElementById('modal-agendamento').dataset.editId;
   fecharModal('modal-agendamento');
   document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('on'));
   const navPac=document.getElementById('navbtn-pacientes');
@@ -8877,6 +8880,7 @@ function abrirPacienteDoAgendamento(){
   const layout=document.querySelector('.layout');
   if(layout) layout.classList.remove('has-subnav');
   pacienteOrigemTab='agenda';
+  pacienteOrigemAgendamentoId=editId||null;
   abrirModalPt(id);
 }
 
