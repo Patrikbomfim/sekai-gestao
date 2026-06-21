@@ -549,6 +549,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <button class="nav-btn" onclick="goTo('rituais',this)">Rituais</button>
   <button class="nav-btn" onclick="goTo('reuniao',this)">Reuniões</button>
   <button class="nav-btn" onclick="goTo('pendencias',this)">Pendências<span class="nav-badge" id="bdg-pend" style="display:none">0</span></button>
+  <div class="slb-label">Sistema</div>
+  <button class="nav-btn" onclick="goTo('melhorias',this)"><span class="nav-ic">🛠</span>Melhorias para o sistema</button>
 </nav>
 
 <nav class="subnav" id="config-subnav">
@@ -864,6 +866,26 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="pend-filtros"></div>
   <div class="card" id="pend-lista-wrap"></div>
 </div>
+
+<!-- MELHORIAS PARA O SISTEMA -->
+<div id="sec-melhorias" class="sec">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+    <div class="pg-title">Melhorias para o sistema</div>
+    <button class="btn btn-primary btn-sm" onclick="abrirFormMelhoria()">+ Adicionar</button>
+  </div>
+  <div class="pg-desc">Erros encontrados e ideias de melhoria — registre aqui como lembrete</div>
+
+  <div class="card" id="melhoria-form-card" style="display:none">
+    <textarea id="melhoria-texto-input" rows="3" placeholder="Descreva o erro ou a melhoria…"></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end">
+      <button class="btn btn-ghost btn-sm" onclick="cancelarFormMelhoria()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarMelhoria()">Salvar</button>
+    </div>
+  </div>
+
+  <div id="melhorias-lista"></div>
+</div>
+
 
 <!-- CONFIGURAÇÕES -->
 <div id="sec-config" class="sec">
@@ -2665,6 +2687,8 @@ const USUARIOS_PADRAO = [
 let usuarios = carregarLS('sk3-usuarios', USUARIOS_PADRAO);
 let cargos = carregarLS('sk3-cargos', CARGOS_PADRAO);
 let pendenciasAvulsas = carregarLS('sk3-pendencias-avulsas', []);
+// melhorias: [{id, texto, data(ISO), criadoPor(usuarioId), resolvido(bool)}] — lembretes de erros/melhorias do sistema
+let melhorias = carregarLS('sk3-melhorias', []);
 
 // ── CHECK-IN DIÁRIO — estado ────────────────────────────────────────────
 // checkinTemplates: { [cargoId]: [itens...] }
@@ -2901,6 +2925,7 @@ function goTo(id, btn){
   if(id==='rituais') renderRituais();
   if(id==='reuniao') renderReunioes();
   if(id==='pendencias') renderPendencias();
+  if(id==='melhorias') renderMelhorias();
   if(id==='dashboard') renderDashboard();
   if(id==='relatorios') renderRelatorios();
   if(id==='empresa') renderEmpresaModulo();
@@ -5608,6 +5633,65 @@ function excluirPendenciaCentral(ocorrenciaId,pendId,avulsa){
   });
   salvarLS('sk3-reunioes-ocorrencias',reunioesOcorrencias);
   renderPendencias();
+}
+
+// ── MELHORIAS PARA O SISTEMA — lembretes simples de erros e ideias ──────
+function abrirFormMelhoria(){
+  const card=document.getElementById('melhoria-form-card');
+  card.style.display='block';
+  const input=document.getElementById('melhoria-texto-input');
+  input.value='';
+  setTimeout(()=>input.focus(),30);
+}
+function cancelarFormMelhoria(){
+  document.getElementById('melhoria-form-card').style.display='none';
+  document.getElementById('melhoria-texto-input').value='';
+}
+function salvarMelhoria(){
+  const input=document.getElementById('melhoria-texto-input');
+  const texto=input.value.trim();
+  if(!texto) return;
+  melhorias.push({id:uid('melhoria'),texto,data:new Date().toISOString(),criadoPor:usuarioAtualId,resolvido:false});
+  salvarLS('sk3-melhorias',melhorias);
+  cancelarFormMelhoria();
+  renderMelhorias();
+}
+function toggleMelhoria(id){
+  const m=melhorias.find(x=>x.id===id);
+  if(!m)return;
+  m.resolvido=!m.resolvido;
+  salvarLS('sk3-melhorias',melhorias);
+  renderMelhorias();
+}
+function excluirMelhoria(id){
+  if(!confirm('Excluir este item?'))return;
+  melhorias=melhorias.filter(m=>m.id!==id);
+  salvarLS('sk3-melhorias',melhorias);
+  renderMelhorias();
+}
+function renderMelhorias(){
+  const wrap=document.getElementById('melhorias-lista');
+  if(!melhorias.length){
+    wrap.innerHTML=`<div class="empty"><div class="empty-ic">🛠</div>Nenhum item registrado ainda.</div>`;
+    return;
+  }
+  const lista=[...melhorias].sort((a,b)=>{
+    if(a.resolvido!==b.resolvido) return a.resolvido?1:-1;
+    return new Date(b.data)-new Date(a.data);
+  });
+  wrap.innerHTML=lista.map(m=>{
+    const autor=usuarios.find(u=>u.id===m.criadoPor)?.nome||'—';
+    const dt=new Date(m.data);
+    const dataFmt=`${dt.toLocaleDateString('pt-BR')} ${dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;
+    return `<div class="ac-card" style="${m.resolvido?'opacity:.45':''}">
+      <div class="ac-icon ${m.resolvido?'ic-green':'ic-warn'}" style="cursor:pointer" onclick="toggleMelhoria('${m.id}')" title="${m.resolvido?'Reabrir':'Marcar como resolvido'}">${m.resolvido?'✓':'!'}</div>
+      <div class="ac-body">
+        <div class="ac-title" style="${m.resolvido?'text-decoration:line-through':''}">${esc(m.texto).replace(/\n/g,'<br>')}</div>
+        <div class="ac-patient">${esc(autor)} · ${dataFmt}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="padding:4px 8px;flex-shrink:0" title="Excluir" onclick="excluirMelhoria('${m.id}')">✕</button>
+    </div>`;
+  }).join('');
 }
 
 // ── MODAL NOVA/EDITAR PENDÊNCIA ─────────────────────────────────────────
