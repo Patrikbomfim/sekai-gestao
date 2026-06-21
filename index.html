@@ -536,8 +536,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <button id="floating-save-btn" onclick="commitPendingSaves()">Salvar</button>
 <div class="layout">
 <nav class="sidebar">
-  <div class="slb-label">Empresa</div>
-  <button class="nav-btn" onclick="goTo('empresa',this)"><span class="nav-ic">🏢</span>Empresa</button>
   <div class="slb-label">Hoje</div>
   <button class="nav-btn on" onclick="goTo('hoje',this)"><span class="nav-ic">▣</span>Meu dia<span class="nav-badge" id="bdg-hoje" style="display:none">0</span></button>
   <button class="nav-btn" onclick="goTo('proximos',this)">Próximos 7 dias</button>
@@ -551,6 +549,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <button class="nav-btn" onclick="goTo('rituais',this)">Rituais</button>
   <button class="nav-btn" onclick="goTo('reuniao',this)">Reuniões</button>
   <button class="nav-btn" onclick="goTo('pendencias',this)">Pendências<span class="nav-badge" id="bdg-pend" style="display:none">0</span></button>
+  <button class="nav-btn" onclick="goTo('empresa',this)"><span class="nav-ic">🏢</span>Empresa</button>
   <div class="slb-label">Sistema</div>
   <button class="nav-btn" onclick="goTo('melhorias',this)"><span class="nav-ic">🛠</span>Melhorias para o sistema</button>
 </nav>
@@ -1132,6 +1131,15 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div style="margin-top:10px">
         <button class="btn btn-ghost btn-sm" onclick="addCampoEvento()">+ Novo campo</button>
       </div>
+    </div>
+
+    <!-- CONFIRMAÇÃO DE AGENDAMENTOS -->
+    <div class="card" style="max-width:760px;margin-top:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div><div class="card-title">Confirmação de agendamentos</div><div class="card-sub">Gera ações automáticas para todo agendamento com status "Agendado" — ex: lembrar a secretária de confirmar a véspera. A ação some sozinha assim que o status do agendamento mudar; não é preciso marcar como concluída.</div></div>
+        <button class="btn btn-primary btn-sm" onclick="addRegraConfirmacao()">+ Nova regra</button>
+      </div>
+      <div id="cfg-regras-confirmacao-lista" style="margin-top:12px"></div>
     </div>
 
   </div>
@@ -2450,6 +2458,16 @@ const STATUS_AGENDAMENTO = [
   {id:'cancelado',label:'Cancelado',cor:'#9CA3AF'},
 ];
 
+// regrasConfirmacaoAgendamento: {id, titulo, offset(dias em relação à data do agendamento;
+// negativo = antes, 0 = no dia), responsavel, script, ativo}
+// Cada regra ativa gera uma ação para TODO agendamento com status 'agendado'. A ação some
+// sozinha quando o status do agendamento deixa de ser 'agendado' — não existe "concluir"
+// manual, de propósito, para forçar a confirmação real na Agenda.
+// Configurável em Configurações → Agenda → "Confirmação de agendamentos".
+let regrasConfirmacaoAgendamento = carregarLS('sk3-regras-confirmacao', [
+  {id:'rc_padrao_d1', titulo:'Confirmar agendamento (véspera)', offset:-1, responsavel:'', script:'Entrar em contato com [Nome] para confirmar presença no agendamento de amanhã.', ativo:true},
+]);
+
 // ── USUÁRIOS / CARGOS / EQUIPE / PENDÊNCIAS AVULSAS ─────────────────────
 // Estrutura de permissões: módulos/submódulos reais do sistema, cada um com
 // as ações aplicáveis (visualizar, criar, editar, excluir, gerenciar/participar).
@@ -2895,7 +2913,38 @@ function gerarAcoes(paciente){
   return lista;
 }
 
-function todasAcoes(){ return pacientes.flatMap(p=>gerarAcoes(p)); }
+function todasAcoes(){ return pacientes.flatMap(p=>gerarAcoes(p)).concat(gerarAcoesConfirmacaoAgendamento()); }
+
+// ── AÇÕES DE CONFIRMAÇÃO DE AGENDAMENTO ─────────────────────────────────
+// Gera, para cada agendamento com status 'agendado', uma ação por regra ativa em
+// regrasConfirmacaoAgendamento. Diferente das ações de fluxo do paciente: não tem
+// "concluir" manual — a ação só desaparece quando o status do agendamento muda
+// (ver botão "Abrir agendamento →" em renderAcaoCard).
+function gerarAcoesConfirmacaoAgendamento(){
+  const lista = [];
+  agendamentos.filter(ag=>ag.status==='agendado').forEach(ag=>{
+    (regrasConfirmacaoAgendamento||[]).filter(r=>r.ativo).forEach(r=>{
+      const base = parseIso(ag.data);
+      if(!base) return;
+      const data = addDays(base, r.offset||0);
+      lista.push({
+        id: r.id+'_'+ag.id,
+        titulo: r.titulo || 'Confirmar agendamento',
+        tipo: 'lembrete',
+        icone: '📅',
+        responsavel: r.responsavel || '',
+        script: (r.script||'').replace(/\[Nome\]/g, ag.pacienteNome || 'paciente'),
+        data,
+        pacienteId: ag.pacienteId || null,
+        pacienteNome: ag.pacienteNome || '(sem nome)',
+        agendamentoId: ag.id,
+        origemConfirmacao: true,
+      });
+    });
+  });
+  return lista;
+}
+
 function acaoKey(a){ return `${a.pacienteId}_${iso(a.data)}_${a.id||a.titulo}`; }
 function isConcluida(a){ return concluidasIds.includes(acaoKey(a)); }
 function concluirAcao(a){ const k=acaoKey(a); if(!concluidasIds.includes(k)) concluidasIds.push(k); salvarLS('sk3-concluidas',concluidasIds); }
@@ -3003,6 +3052,11 @@ function renderAcaoCard(a, tipo){
   const pillCls = tipo==='atrasada' ? 'p-danger' : 'p-green';
   const scriptHtml = a.script ? `<div class="ac-script">"${a.script}"</div>` : '';
   const aStr = JSON.stringify(a).replace(/"/g,'&quot;');
+  // Ações de confirmação de agendamento não têm "concluir" manual: só somem quando o
+  // status do agendamento muda, então o botão leva direto para o agendamento.
+  const botaoHtml = a.origemConfirmacao
+    ? `<button class="btn-done" onclick="abrirModalAgendamento('${a.agendamentoId}')">Abrir agendamento →</button>`
+    : `<button class="btn-done" onclick="marcarFeito('${k}',${aStr})">✓ Feito</button>`;
   return `<div class="ac-card ${tipo}" id="card-${k}">
     <div class="ac-icon ${icClass(a.icone)}">${a.icone||"💬"}</div>
     <div class="ac-body">
@@ -3015,9 +3069,10 @@ function renderAcaoCard(a, tipo){
         <span class="pill p-neutral">${a.tipo}</span>
       </div>
     </div>
-    <button class="btn-done" onclick="marcarFeito('${k}',${aStr})">✓ Feito</button>
+    ${botaoHtml}
   </div>`;
 }
+
 
 function marcarFeito(k, a){
   concluirAcao(a);
@@ -7152,6 +7207,104 @@ function renderCfgAgenda(){
   renderCfgAgendaProfissionais();
   renderCfgCamposAgendamento();
   renderCfgCamposEvento();
+  renderCfgRegrasConfirmacao();
+}
+
+// ── REGRAS DE CONFIRMAÇÃO DE AGENDAMENTO ────────────────────────────────
+let regrasConfExpandidas = new Set();
+function toggleRegraConfirmacaoExpand(id){
+  if(regrasConfExpandidas.has(id)) regrasConfExpandidas.delete(id); else regrasConfExpandidas.add(id);
+  renderCfgRegrasConfirmacao();
+}
+function renderCfgRegrasConfirmacao(){
+  const c = document.getElementById('cfg-regras-confirmacao-lista');
+  if(!c) return;
+  const podeEditar = temPerm('agenda_gerenciar');
+  if(!regrasConfirmacaoAgendamento.length){
+    c.innerHTML = `<div class="empty"><div class="empty-ic">🔔</div>Nenhuma regra cadastrada ainda. Clique em "+ Nova regra" para criar a primeira.</div>`;
+    return;
+  }
+  c.innerHTML = regrasConfirmacaoAgendamento.map(r=>{
+    const expandido = regrasConfExpandidas.has(r.id);
+    const off = r.offset||0;
+    const offsetTxt = off===0 ? 'No dia do agendamento' : off<0 ? `${Math.abs(off)} dia(s) antes` : `${off} dia(s) depois`;
+    if(!podeEditar){
+      return `<div class="flow-action-row" id="rcr-${r.id}">
+        <span class="fa-handle" style="opacity:.3;cursor:default">⠿</span>
+        <div class="fa-row-inner">
+          <div class="fa-header" onclick="toggleRegraConfirmacaoExpand('${r.id}')">
+            <span class="fa-header-caret">▶</span>
+            <span class="fa-header-title">${r.titulo||'Nova regra'}</span>
+            <span class="pill p-neutral" style="margin-left:8px;font-size:10px">${offsetTxt}</span>
+          </div>
+          <div class="fa-body" style="${expandido?'':'display:none'}">
+            <div class="fl"><label>Responsável</label><div style="font-size:13px;padding:6px 0">${r.responsavel||'—'}</div></div>
+            ${r.script?`<div class="fl fa-body-full"><label>Script / orientação</label><div style="font-size:13px;padding:8px 10px;background:var(--s2);border-radius:var(--r6);line-height:1.5">${r.script}</div></div>`:''}
+          </div>
+        </div>
+      </div>`;
+    }
+    return `<div class="flow-action-row ${expandido?'':'collapsed'}" id="rcr-${r.id}">
+      <span class="fa-handle" style="opacity:.3;cursor:default">⠿</span>
+      <div class="fa-row-inner">
+        <div class="fa-header" onclick="toggleRegraConfirmacaoExpand('${r.id}')">
+          <span class="fa-header-caret">▶</span>
+          <span class="fa-header-title">${r.titulo||'Nova regra'}</span>
+          <span class="pill p-neutral" style="margin-left:8px;font-size:10px">${offsetTxt}</span>
+        </div>
+        <div class="fa-body" style="${expandido?'':'display:none'}">
+        <div class="fl"><label>Título da ação</label><input type="text" value="${r.titulo}" onfocus="_mostrarBotaoSalvar()" onchange="updateRegraConfirmacaoField('${r.id}','titulo',this.value)"></div>
+        <div class="fl fa-body-full" style="display:flex;flex-direction:row;gap:8px;align-items:flex-end">
+          <div class="fl" style="flex:1"><label>Dias em relação ao agendamento</label><input type="number" value="${off}" onfocus="_mostrarBotaoSalvar()" onchange="updateRegraConfirmacaoField('${r.id}','offset',parseInt(this.value)||0)"></div>
+          <div class="fl" style="flex:1 1 auto;padding-bottom:1px"><label style="visibility:hidden">_</label><span style="font-size:12px;color:var(--tx2);padding:6px 10px;background:var(--s2);border-radius:var(--r6);display:block;white-space:nowrap">negativo = antes · 0 = no dia · positivo = depois</span></div>
+        </div>
+        <div class="fl fa-body-full"><label>Responsável</label>
+          <select onchange="updateRegraConfirmacaoField('${r.id}','responsavel',this.value)">
+            <option value="" ${!r.responsavel?'selected':''}>— selecionar —</option>
+            ${equipe.map(nomeEquipeItem).map(e=>`<option value="${e}" ${r.responsavel===e?'selected':''}>${e}</option>`).join('')}
+          </select>
+        </div>
+        <div class="fl fa-body-full"><label>Script / orientação (opcional — use [Nome] para o nome do paciente)</label><textarea rows="3" onfocus="_mostrarBotaoSalvar()" onchange="updateRegraConfirmacaoField('${r.id}','script',this.value)" style="resize:vertical;min-height:60px">${r.script||''}</textarea></div>
+        <div class="fl fa-body-full" style="flex-direction:row;align-items:center;gap:8px">
+          <input type="checkbox" id="rcr-atv-${r.id}" ${r.ativo?'checked':''} onchange="updateRegraConfirmacaoField('${r.id}','ativo',this.checked)" style="width:auto">
+          <label for="rcr-atv-${r.id}" style="font-size:13px;color:var(--tx)">Regra ativa</label>
+        </div>
+        </div>
+      </div>
+      <button class="fa-delete" onclick="deleteRegraConfirmacao('${r.id}')">Excluir</button>
+    </div>`;
+  }).join('');
+}
+function updateRegraConfirmacaoField(id, field, value){
+  const idx = regrasConfirmacaoAgendamento.findIndex(r=>r.id===id);
+  if(idx<0) return;
+  regrasConfirmacaoAgendamento[idx][field] = value;
+  salvarLS('sk3-regras-confirmacao', regrasConfirmacaoAgendamento);
+  if(field==='titulo'){
+    const row=document.getElementById('rcr-'+id);
+    if(row){ const t=row.querySelector('.fa-header-title'); if(t) t.textContent=value||'Nova regra'; }
+  }
+  if(field==='offset'){
+    const row=document.getElementById('rcr-'+id);
+    if(row){
+      const pill=row.querySelector('.fa-header .pill');
+      if(pill){ const off=value||0; pill.textContent = off===0?'No dia do agendamento':off<0?`${Math.abs(off)} dia(s) antes`:`${off} dia(s) depois`; }
+    }
+  }
+}
+function addRegraConfirmacao(){
+  const nova = {id:'rc_'+Date.now(), titulo:'Confirmar agendamento', offset:-1, responsavel:'', script:'Entrar em contato com [Nome] para confirmar presença.', ativo:true};
+  regrasConfirmacaoAgendamento.push(nova);
+  regrasConfExpandidas.add(nova.id);
+  salvarLS('sk3-regras-confirmacao', regrasConfirmacaoAgendamento);
+  renderCfgRegrasConfirmacao();
+  setTimeout(()=>{ const els=document.querySelectorAll('#cfg-regras-confirmacao-lista .flow-action-row'); if(els.length) els[els.length-1].scrollIntoView({behavior:'smooth'}); },100);
+}
+function deleteRegraConfirmacao(id){
+  if(!confirm('Excluir esta regra de confirmação?')) return;
+  regrasConfirmacaoAgendamento = regrasConfirmacaoAgendamento.filter(r=>r.id!==id);
+  salvarLS('sk3-regras-confirmacao', regrasConfirmacaoAgendamento);
+  renderCfgRegrasConfirmacao();
 }
 
 function renderCfgSemanaAgenda(){
@@ -8978,6 +9131,7 @@ function excluirAgendamento(){
     // Structural actions that immediately change data (add/remove items)
     'addStatus','removeStatus','addRitualLinha','removeRitualLinha',
     'addFlowAction','deleteFlowAction',
+    'addRegraConfirmacao','deleteRegraConfirmacao',
     'salvarCampo','removeCampoCadastro','addCampoCadastro','toggleCampoObrigatorio',
     'addOpcaoCampo','removeOpcaoCampo',
     'addColuna','removeColuna',
