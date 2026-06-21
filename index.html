@@ -9445,10 +9445,22 @@ async function _carregarDadosEAtivar(){
   const { data: sessao } = await supa.auth.getSession();
   const meuId = sessao?.session?.user?.id;
 
-  const usuariosMap = (perfis || []).filter(p => p.ativo !== false).map(p => ({
-    id: p.id, nome: p.nome || '', cpf: p.cpf || '', nascimento: p.nascimento || '', email: p.email || '',
-    cep:'', cidade:'', rua:'', numero:'', complemento:'', obs:''
-  }));
+  // Preserva CPF, nascimento, CEP, cidade, rua, número, complemento e observação
+  // já salvos no banco (tabela dados_sistema) — a tabela "profiles" não tem essas colunas,
+  // então sem isso esses campos eram sempre zerados a cada recarregamento.
+  let usuariosSalvos = [];
+  try{ usuariosSalvos = JSON.parse(localStorage.getItem('sk3-usuarios') || '[]'); }catch(e){}
+
+  const usuariosMap = (perfis || []).filter(p => p.ativo !== false).map(p => {
+    const existente = usuariosSalvos.find(u => u.id === p.id) || {};
+    return {
+      id: p.id, nome: p.nome || '', email: p.email || '',
+      cpf: p.cpf || existente.cpf || '',
+      nascimento: p.nascimento || existente.nascimento || '',
+      cep: existente.cep || '', cidade: existente.cidade || '', rua: existente.rua || '',
+      numero: existente.numero || '', complemento: existente.complemento || '', obs: existente.obs || ''
+    };
+  });
   const equipeMap = (perfis || []).filter(p => p.ativo !== false).map(p => ({
     nome: p.nome || '', usuarioId: p.id, cargoId: p.cargo_id || null, principal: p.id === meuId
   }));
