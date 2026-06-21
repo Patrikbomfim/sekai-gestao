@@ -2632,7 +2632,9 @@ const PERMISSOES_GRUPOS = [
     itens:[
       {id:'pendencias_ver',label:'Visualizar'},
       {id:'pendencias_criar',label:'Criar'},
-      {id:'pendencias_editar',label:'Editar / Concluir / Reabrir'},
+      {id:'pendencias_editar',label:'Editar (campos da pendência)'},
+      {id:'pendencias_concluir',label:'Concluir'},
+      {id:'pendencias_reabrir',label:'Reabrir'},
       {id:'pendencias_excluir',label:'Excluir (apaga definitivamente)'},
     ]
   },
@@ -2750,7 +2752,7 @@ const CARGOS_PADRAO = [
       'agenda_ver','agenda_gerenciar',
       'financeiro_ver','financeiro_editar','financeiro_excluir',
       'reunioes_ver','reunioes_participar','reunioes_criar','reunioes_editar','reunioes_excluir',
-      'pendencias_ver','pendencias_criar','pendencias_editar','pendencias_excluir',
+      'pendencias_ver','pendencias_criar','pendencias_editar','pendencias_concluir','pendencias_reabrir','pendencias_excluir',
       'rituais_ver','rituais_criar','rituais_editar','rituais_excluir',
       'fluxos_ver','fluxos_criar','fluxos_editar','fluxos_excluir',
       'relatorios_ver',
@@ -2771,7 +2773,7 @@ const CARGOS_PADRAO = [
       'pacientes_ver','pacientes_criar','pacientes_editar',
       'agenda_ver','agenda_gerenciar',
       'reunioes_ver','reunioes_participar',
-      'pendencias_ver','pendencias_criar','pendencias_editar',
+      'pendencias_ver','pendencias_criar','pendencias_editar','pendencias_concluir','pendencias_reabrir',
       'rituais_ver',
       'fluxos_ver',
     ]
@@ -2782,7 +2784,7 @@ const CARGOS_PADRAO = [
     permissoes:[
       'pacientes_ver','pacientes_criar','pacientes_editar',
       'agenda_ver','agenda_gerenciar',
-      'pendencias_ver','pendencias_criar',
+      'pendencias_ver','pendencias_criar','pendencias_concluir',
       'reunioes_ver',
     ]
   },
@@ -5874,9 +5876,13 @@ function renderPendencias(){
   </div>`;
 
   const rows=lista.map(p=>{
-    const podeConcluir=temPerm('pendencias_editar');
+    const podeEditarCampos=temPerm('pendencias_editar');
+    // "Editar" continua liberando concluir/reabrir (compatibilidade), além das permissões específicas
+    const podeConcluirPend=podeEditarCampos||temPerm('pendencias_concluir');
+    const podeReabrirPend=podeEditarCampos||temPerm('pendencias_reabrir');
     const podeExcluirPend=temPerm('pendencias_excluir');
-    const podeEditar=temPerm('pendencias_editar');
+    const podeTogglarStatus=p.status==='concluida'?podeReabrirPend:podeConcluirPend;
+    const podeEditar=podeEditarCampos;
     const urg=p.urgencia||'media';
     const urgPill=urg==='alta'?'p-danger':urg==='media'?'p-warn':'p-green';
     return `<div class="pend-row" style="display:grid;grid-template-columns:${gridCols};gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:center;${podeEditar?'cursor:pointer':''};${p.status==='concluida'?'opacity:.5':''}" ${podeEditar?`onclick="abrirModalEditarPendencia('${p.ocorrenciaId}','${p.id}',${p.avulsa})"`:''}">
@@ -5887,9 +5893,9 @@ function renderPendencias(){
     <div style="font-size:12px;color:var(--tx2)">${p.criadoPorNome||'—'}</div>
     <div style="font-size:13px;font-weight:500">${p.responsavel||'—'}</div>
     <div style="font-size:12px;color:var(--tx2)">${p.prazo?fmtDate(parseIso(p.prazo)):'—'}</div>
-    <div><span class="pill ${p.status==='concluida'?'p-green':'p-warn'}" ${podeConcluir?`style="cursor:pointer" onclick="event.stopPropagation();togglePendenciaCentral('${p.ocorrenciaId}','${p.id}')"`:''} ${p.status==='concluida'&&p.concluidoPorNome?`title="Concluída por ${esc(p.concluidoPorNome)}${p.concluidoEm?' em '+fmtDate(parseIso(p.concluidoEm)):''}"`:''}>${p.status==='concluida'?'✓ Concluída':'Pendente'}</span>${p.status==='concluida'&&p.concluidoPorNome?`<div style="font-size:10px;color:var(--tx3);margin-top:2px">por ${esc(p.concluidoPorNome)}</div>`:''}</div>
+    <div><span class="pill ${p.status==='concluida'?'p-green':'p-warn'}" ${podeTogglarStatus?`style="cursor:pointer" onclick="event.stopPropagation();togglePendenciaCentral('${p.ocorrenciaId}','${p.id}')"`:''} ${p.status==='concluida'&&p.concluidoPorNome?`title="Concluída por ${esc(p.concluidoPorNome)}${p.concluidoEm?' em '+fmtDate(parseIso(p.concluidoEm)):''}"`:''}>${p.status==='concluida'?'✓ Concluída':'Pendente'}</span>${p.status==='concluida'&&p.concluidoPorNome?`<div style="font-size:10px;color:var(--tx3);margin-top:2px">por ${esc(p.concluidoPorNome)}</div>`:''}</div>
     <div style="display:flex;gap:6px;justify-content:flex-end" onclick="event.stopPropagation()">
-      ${podeConcluir?`<button class="btn btn-ghost btn-sm" style="padding:4px 8px" title="${p.status==='concluida'?'Reabrir':'Concluir'}" onclick="togglePendenciaCentral('${p.ocorrenciaId}','${p.id}')">${p.status==='concluida'?'↺':'✓'}</button>`:''}
+      ${podeTogglarStatus?`<button class="btn btn-ghost btn-sm" style="padding:4px 8px" title="${p.status==='concluida'?'Reabrir':'Concluir'}" onclick="togglePendenciaCentral('${p.ocorrenciaId}','${p.id}')">${p.status==='concluida'?'↺':'✓'}</button>`:''}
       ${podeExcluirPend?`<button class="btn btn-danger btn-sm" style="padding:4px 8px" title="Excluir" onclick="excluirPendenciaCentral('${p.ocorrenciaId}','${p.id}',${p.avulsa})">✕</button>`:''}
     </div>
   </div>`;}).join('');
