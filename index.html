@@ -2071,7 +2071,6 @@ function atualizarIdadeCampo(sourceId,targetId){
 }
 
 document.getElementById('hdr-date').textContent = `${DIAS[hoje.getDay()]}, ${hoje.getDate()} de ${MESES[hoje.getMonth()]}`;
-document.getElementById('hoje-title').textContent = getGreeting() + ', Dra. Leticia';
 document.getElementById('hoje-desc').textContent = `${DIAS[hoje.getDay()]}, ${hoje.getDate()} de ${MESES[hoje.getMonth()]} — suas ações do dia`;
 
 // ── USUÁRIO ATUAL (simula login) ────────────────────────────────────────
@@ -4701,12 +4700,27 @@ function abrirModalUsuario(id){
 async function chamarAdminUsuarios(payload){
   const { data: sessao } = await supa.auth.getSession();
   const token = sessao?.session?.access_token;
-  const resp = await fetch(SUPABASE_URL + '/functions/v1/admin-usuarios', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-    body: JSON.stringify(payload),
-  });
-  return await resp.json();
+  let resp;
+  try{
+    resp = await fetch(SUPABASE_URL + '/functions/v1/admin-usuarios', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(payload),
+    });
+  }catch(e){
+    console.error('admin-usuarios: falha de rede', e);
+    return { error: 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.' };
+  }
+  let corpo;
+  try{ corpo = await resp.json(); }
+  catch(e){
+    console.error('admin-usuarios: resposta inesperada (status '+resp.status+')', e);
+    return { error: `O servidor respondeu de forma inesperada (status ${resp.status}). Tente novamente.` };
+  }
+  if(!resp.ok && !corpo.error){
+    return { error: `Erro no servidor (status ${resp.status}).` };
+  }
+  return corpo;
 }
 
 async function buscarCEPUsuario(){
@@ -4786,6 +4800,7 @@ async function salvarUsuario(){
       salvarLS('sk3-usuarios',usuarios);
     }
   }catch(e){
+    console.error('salvarUsuario: erro inesperado', e);
     erroEl.textContent='Erro de conexão. Tente novamente.';
     erroEl.style.display='block';
     btn.disabled=false; btn.textContent='Salvar →';
@@ -9391,9 +9406,14 @@ function _conectarSalvamentoComBanco(){
 
 function _exibirUsuarioLogadoNoHeader(){
   const span = document.getElementById('hdr-usuario-logado');
-  if(!span) return;
   const u = (typeof usuarios !== 'undefined') ? usuarios.find(x => x.id === usuarioAtualId) : null;
-  span.textContent = u ? `Logado como ${u.nome}` : '';
+  if(span) span.textContent = u ? `Logado como ${u.nome}` : '';
+
+  const tituloEl = document.getElementById('hoje-title');
+  if(tituloEl && typeof getGreeting === 'function'){
+    const primeiroNome = u?.nome ? u.nome.trim().split(' ')[0] : '';
+    tituloEl.textContent = getGreeting() + (primeiroNome ? `, ${primeiroNome}` : '');
+  }
 }
 
 async function fazerLogout(){
