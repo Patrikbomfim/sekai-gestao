@@ -8823,11 +8823,29 @@ function agmUsarSemCadastro(nome){
 }
 
 // ── PACIENTE NO MODAL DE AGENDAMENTO — alterna entre botão (paciente vinculado) e busca ──
+function _normalizarNome(s){
+  return (s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+
 function agmAtualizarPacienteView(){
-  const id=document.getElementById('agm-paciente-id').value;
+  const idCampo=document.getElementById('agm-paciente-id');
+  let id=idCampo.value;
+  let p=id?pacientes.find(x=>x.id===id):null;
+  if(!p){
+    // Agendamentos antigos podem ter só o nome salvo, sem pacienteId vinculado.
+    // Tenta recuperar o vínculo comparando o nome (sem acento/maiúscula) — só quando
+    // há exatamente um paciente cadastrado com esse nome, para evitar ambiguidade.
+    const nomeBusca=_normalizarNome(document.getElementById('agm-paciente-busca').value);
+    if(nomeBusca){
+      const achados=pacientes.filter(x=>_normalizarNome(x.nome)===nomeBusca);
+      if(achados.length===1){
+        p=achados[0];
+        idCampo.value=p.id; // recupera o vínculo para esta sessão (e para o próximo salvar)
+      }
+    }
+  }
   const linkWrap=document.getElementById('agm-paciente-link-wrap');
   const buscaWrap=document.getElementById('agm-paciente-busca-wrap');
-  const p=id?pacientes.find(x=>x.id===id):null;
   if(p){
     document.getElementById('agm-paciente-link-nome').innerHTML=nomeComCodigo(p);
     linkWrap.style.display='flex';
