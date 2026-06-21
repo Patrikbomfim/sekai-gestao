@@ -3645,8 +3645,9 @@ let modalPtId=null;
 let pacienteOrigemTab='pacientes'; // para saber pra onde voltar
 
 function abrirModalPt(id){
-  const p=pacientes.find(x=>x.id===id);
+  const p=pacientes.find(x=>x.id===id || String(x.id)===String(id));
   if(!p)return;
+  id=p.id; // normaliza para o tipo real do paciente encontrado
   modalPtId=id;
 
   // esconde a listagem de pacientes e mostra a página de detalhe
@@ -8734,7 +8735,7 @@ function abrirModalAgendamento(agendamentoId, dataPre, horaPre, salaPre, usuario
   const selSituacao=document.getElementById('agm-situacao');
   selSituacao.innerHTML = statusList.map(s=>`<option value="${s.id}">${s.label}</option>`).join('');
   const pacIdAtual = document.getElementById('agm-paciente-id').value;
-  const pacAtual = pacIdAtual ? pacientes.find(p=>p.id===pacIdAtual) : null;
+  const pacAtual = pacIdAtual ? pacientes.find(p=>p.id===pacIdAtual || String(p.id)===String(pacIdAtual)) : null;
   selSituacao.value = a && a.situacaoRegistrada ? a.situacaoRegistrada : (pacAtual ? pacAtual.status : (statusList[0] && statusList[0].id));
   agmToggleSituacao();
 
@@ -8831,7 +8832,8 @@ function _normalizarNome(s){
 function agmAtualizarPacienteView(){
   const idCampo=document.getElementById('agm-paciente-id');
   let id=idCampo.value;
-  let p=id?pacientes.find(x=>x.id===id):null;
+  let p=id?pacientes.find(x=>x.id===id || String(x.id)===String(id)):null;
+  if(p) idCampo.value=p.id; // normaliza o campo escondido para o tipo real do id (evita falhas de comparação ===  mais adiante)
   if(!p){
     // Agendamentos antigos podem ter só o nome salvo, sem pacienteId vinculado.
     // Tenta recuperar o vínculo comparando o nome (sem acento/maiúscula) — só quando
