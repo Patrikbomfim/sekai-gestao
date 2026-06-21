@@ -577,12 +577,14 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <div id="sec-hoje" class="sec on">
   <div class="pg-title" id="hoje-title">Bom dia, Dra. Leticia</div>
   <div class="pg-desc" id="hoje-desc"></div>
+  <div id="hoje-modo-visao"></div>
   <div class="g4" style="margin-bottom:18px">
     <div class="metric"><div class="metric-lbl">Para hoje</div><div class="metric-val" id="m-hoje" style="color:var(--ac)">0</div><div class="metric-note">ações pendentes</div></div>
     <div class="metric"><div class="metric-lbl">Atrasadas</div><div class="metric-val" id="m-atras" style="color:var(--da)">0</div><div class="metric-note">precisam atenção</div></div>
     <div class="metric"><div class="metric-lbl">Pacientes ativos</div><div class="metric-val" id="m-ativos">0</div><div class="metric-note">no fluxo</div></div>
     <div class="metric"><div class="metric-lbl">Indicações (mês)</div><div class="metric-val" id="m-indic" style="color:var(--pu)">0</div><div class="metric-note">recebidas</div></div>
   </div>
+  <div id="hoje-resumo-equipe"></div>
   <div id="hoje-container"></div>
 
   <!-- CHECK-IN DIÁRIO -->
@@ -593,8 +595,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <div id="sec-proximos" class="sec">
   <div class="pg-title">Próximos 7 dias</div>
   <div class="pg-desc">Planeje com antecedência — ações futuras organizadas por data</div>
+  <div id="proximos-modo-visao"></div>
   <div id="proximos-container"></div>
 </div>
+
 
 <!-- AGENDA -->
 <div id="sec-agenda" class="sec">
@@ -866,6 +870,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
   </div>
   <div class="pg-desc">Itens definidos em "até a próxima reunião" — centralizados por responsável</div>
+  <div id="pend-modo-visao"></div>
+  <div id="pend-resumo-equipe"></div>
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="pend-filtros"></div>
   <div class="card" id="pend-lista-wrap"></div>
 </div>
@@ -2222,8 +2228,14 @@ function popularUsuarioAtual(){
 function onChangeUsuarioAtual(id){
   usuarioAtualId=id;
   salvarLS('sk3-usuario-atual',usuarioAtualId);
+  // ao trocar de pessoa logada, volta para "minha visão" — evita carregar o modo gestor
+  // de uma pessoa para a sessão de outra que talvez nem tenha essa permissão
+  acoesModoEquipe=false; acoesFiltroPessoa='';
+  pendModoEquipe=false; pendFiltroResp='';
   aplicarPermissoesNav();
   renderHoje();
+  renderProximos();
+  renderPendencias();
 }
 
 // ── CONTROLE DE PERMISSÕES ────────────────────────────────────────────
@@ -2657,6 +2669,12 @@ const PERMISSOES_GRUPOS = [
     ]
   },
   {
+    grupo:'Monitoramento de equipe',
+    itens:[
+      {id:'monitoramento_equipe',label:'Visualizar fluxos e pendências de qualquer pessoa (modo gestor)'},
+    ]
+  },
+  {
     grupo:'Relatórios',
     itens:[
       {id:'relatorios_ver',label:'Visualizar'},
@@ -2755,6 +2773,7 @@ const CARGOS_PADRAO = [
       'pendencias_ver','pendencias_criar','pendencias_editar','pendencias_concluir','pendencias_reabrir','pendencias_excluir',
       'rituais_ver','rituais_criar','rituais_editar','rituais_excluir',
       'fluxos_ver','fluxos_criar','fluxos_editar','fluxos_excluir',
+      'monitoramento_equipe',
       'relatorios_ver',
       'dashboard_ver','dashboard_cfg',
       'cfg_usuarios_ver','cfg_usuarios_criar','cfg_usuarios_editar',
@@ -3036,6 +3055,92 @@ function gerarAcoes(paciente){
 
 function todasAcoes(){ return pacientes.flatMap(p=>gerarAcoes(p)).concat(gerarAcoesConfirmacaoAgendamento()).concat(gerarAcoesRecontatoCancelamento()); }
 
+// ── VISIBILIDADE DE AÇÕES POR USUÁRIO ───────────────────────────────────
+// Por padrão cada pessoa só vê as ações cujo campo "responsavel" é ela mesma.
+// Quem tem a permissão 'monitoramento_equipe' (cargo Administrador ou Gestor)
+// pode ligar o "modo gestor" para enxergar a equipe inteira, ou uma pessoa
+// específica — usado para identificar atrasos sem misturar a operação de todo
+// mundo na tela de cada pessoa.
+function nomeUsuarioAtual(){
+  const u = usuarios.find(x=>x.id===usuarioAtualId);
+  return u ? u.nome : null;
+}
+function acaoEhDe(a, nome){
+  if(!nome) return false;
+  return (a.responsavel||'').toLowerCase().trim() === nome.toLowerCase().trim();
+}
+let acoesModoEquipe = false;   // false = só minhas ações; true = modo gestor (equipe)
+let acoesFiltroPessoa = '';    // '' = todos da equipe; ou o nome de uma pessoa específica
+function acoesMinhas(){
+  const nomeAtual = nomeUsuarioAtual();
+  return todasAcoes().filter(a=>acaoEhDe(a,nomeAtual));
+}
+function acoesVisiveis(){
+  if(temPerm('monitoramento_equipe') && acoesModoEquipe){
+    if(acoesFiltroPessoa) return todasAcoes().filter(a=>acaoEhDe(a,acoesFiltroPessoa));
+    return todasAcoes();
+  }
+  return acoesMinhas();
+}
+function acoesToggleModoEquipe(v){
+  acoesModoEquipe = v;
+  acoesFiltroPessoa = '';
+  renderHoje();
+  renderProximos();
+}
+function acoesSetFiltroPessoa(nome){
+  acoesFiltroPessoa = nome;
+  renderHoje();
+  renderProximos();
+}
+// Renderiza a barra "Minha visão / Visão da equipe" — só aparece para quem tem a permissão.
+function renderModoVisaoControl(containerId, ativo, pessoa, equipeNomes, toggleFn, pessoaFn){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  if(!temPerm('monitoramento_equipe')){ el.innerHTML=''; return; }
+  el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 14px;background:var(--s2);border:1px solid var(--border);border-radius:var(--r8);margin-bottom:14px">
+    <span style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Modo gestor</span>
+    <button class="btn btn-ghost btn-sm" onclick="${toggleFn}(false)" style="${!ativo?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Minha visão</button>
+    <button class="btn btn-ghost btn-sm" onclick="${toggleFn}(true)" style="${ativo?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Visão da equipe</button>
+    ${ativo && pessoaFn ? `<select onchange="${pessoaFn}(this.value)" style="margin-left:4px;padding:5px 8px;font-size:12.5px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface)">
+      <option value="">Todos da equipe</option>
+      ${equipeNomes.map(n=>`<option value="${esc(n)}" ${pessoa===n?'selected':''}>${esc(n)}</option>`).join('')}
+    </select>` : ''}
+  </div>`;
+}
+function nomesEquipe(){ return [...new Set(equipe.map(nomeEquipeItem))]; }
+// Resumo por pessoa (quem tem mais atraso) — só aparece em "Visão da equipe" sem pessoa
+// específica selecionada, para o gestor identificar rapidamente onde focar.
+function renderResumoEquipeAcoes(){
+  const el = document.getElementById('hoje-resumo-equipe');
+  if(!el) return;
+  if(!(temPerm('monitoramento_equipe') && acoesModoEquipe && !acoesFiltroPessoa)){ el.innerHTML=''; return; }
+  const hojeStr = iso(hoje);
+  const porPessoa = {};
+  todasAcoes().forEach(a=>{
+    if(isConcluida(a)) return;
+    const nome = a.responsavel || '(sem responsável)';
+    porPessoa[nome] = porPessoa[nome] || {atrasadas:0, hoje:0};
+    if(iso(a.data) < hojeStr) porPessoa[nome].atrasadas++;
+    else if(iso(a.data) === hojeStr) porPessoa[nome].hoje++;
+  });
+  const nomes = Object.keys(porPessoa).filter(n=>porPessoa[n].atrasadas||porPessoa[n].hoje).sort((a,b)=>porPessoa[b].atrasadas-porPessoa[a].atrasadas);
+  if(!nomes.length){ el.innerHTML=''; return; }
+  el.innerHTML = `<div style="margin-bottom:14px">
+    <div class="sl">Resumo por pessoa</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${nomes.map(n=>{
+        const d=porPessoa[n];
+        return `<button class="btn btn-ghost btn-sm" onclick="acoesSetFiltroPessoa('${n.replace(/'/g,"\\'")}')" style="display:flex;gap:6px;align-items:center;${d.atrasadas>0?'border-color:var(--da);color:var(--da)':''}">
+          <span style="font-weight:600">${esc(n)}</span>
+          ${d.atrasadas>0?`<span class="pill p-danger" style="font-size:10px">${d.atrasadas} atrasada${d.atrasadas>1?'s':''}</span>`:''}
+          ${d.hoje?`<span class="pill p-neutral" style="font-size:10px">${d.hoje} hoje</span>`:''}
+        </button>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
 // ── AÇÕES DE CONFIRMAÇÃO DE AGENDAMENTO ─────────────────────────────────
 // Gera, para cada agendamento com status 'agendado', uma ação por regra ativa em
 // regrasConfirmacaoAgendamento. Diferente das ações de fluxo do paciente: não tem
@@ -3179,7 +3284,21 @@ function goTo(id, btn){
 // ── RENDER HOJE ───────────────────────────────────────────────────────
 function renderHoje(){
   const hojeStr = iso(hoje);
-  const todas = todasAcoes();
+
+  // badges globais (cabeçalho/sidebar) — sempre pessoais, independente do modo gestor
+  const nomeAtual = nomeUsuarioAtual();
+  const minhas = todasAcoes().filter(a=>acaoEhDe(a,nomeAtual));
+  const minhasTotal = minhas.filter(a=>(iso(a.data)<=hojeStr) && !isConcluida(a)).length;
+  const alerta = document.getElementById('hdr-alert');
+  const badge = document.getElementById('bdg-hoje');
+  if(minhasTotal>0){ alerta.style.display='block'; alerta.textContent=`${minhasTotal} ação${minhasTotal>1?'ões':''} para hoje`; badge.textContent=minhasTotal; badge.style.display=''; }
+  else{ alerta.style.display='none'; badge.style.display='none'; }
+
+  // lista exibida na página — respeita "Minha visão" / "Visão da equipe"
+  renderModoVisaoControl('hoje-modo-visao', acoesModoEquipe, acoesFiltroPessoa, nomesEquipe(), 'acoesToggleModoEquipe', 'acoesSetFiltroPessoa');
+  renderResumoEquipeAcoes();
+
+  const todas = acoesVisiveis();
   const atrasadas = todas.filter(a=>iso(a.data)<hojeStr && !isConcluida(a));
   const deHoje = todas.filter(a=>iso(a.data)===hojeStr && !isConcluida(a));
   const total = atrasadas.length + deHoje.length;
@@ -3188,11 +3307,6 @@ function renderHoje(){
   document.getElementById('m-atras').textContent = atrasadas.length;
   document.getElementById('m-ativos').textContent = pacientes.length;
   document.getElementById('m-indic').textContent = indicacoesMes;
-
-  const alerta = document.getElementById('hdr-alert');
-  const badge = document.getElementById('bdg-hoje');
-  if(total>0){ alerta.style.display='block'; alerta.textContent=`${total} ação${total>1?'ões':''} para hoje`; badge.textContent=total; badge.style.display=''; }
-  else{ alerta.style.display='none'; badge.style.display='none'; }
 
   const c = document.getElementById('hoje-container');
   if(!total){ c.innerHTML=`<div class="card"><div class="empty"><div class="empty-ic">✅</div>Tudo em dia! Nenhuma ação pendente para hoje.</div></div>`; }
@@ -3258,7 +3372,8 @@ function marcarFeito(k, a){
 function renderProximos(){
   const hojeStr=iso(hoje);
   const limite=addDays(hoje,7);
-  const todas=todasAcoes();
+  renderModoVisaoControl('proximos-modo-visao', acoesModoEquipe, acoesFiltroPessoa, nomesEquipe(), 'acoesToggleModoEquipe', 'acoesSetFiltroPessoa');
+  const todas=acoesVisiveis();
   const futuras=todas.filter(a=>iso(a.data)>hojeStr&&a.data<=limite&&!isConcluida(a)).sort((a,b)=>a.data-b.data);
   const c=document.getElementById('proximos-container');
   if(!futuras.length){c.innerHTML=`<div class="card"><div class="empty"><div class="empty-ic">📅</div>Nenhuma ação nos próximos 7 dias.</div></div>`;return;}
@@ -5754,23 +5869,58 @@ function todasPendencias(){
   return lista;
 }
 
-// Retorna pendências filtradas pelo usuário atual (criou ou é responsável)
+// Retorna SEMPRE as pendências da pessoa logada (criou ou é responsável) — uso pessoal,
+// inclusive para o contador do sino (badge). Quem quiser ver a equipe inteira usa o
+// "modo gestor" (pendenciasVisiveis), que é uma escolha explícita, não automática por cargo.
 function pendenciasDoUsuarioAtual(){
-  const u = usuarios.find(x=>x.id===usuarioAtualId);
-  const nomeAtual = u ? u.nome : null;
-  // Sem cargo na equipe = dono do sistema = vê tudo
-  const membroEquipe = equipe.find(e=>typeof e!=='string' && e.usuarioId===usuarioAtualId);
-  if(!membroEquipe) return todasPendencias();
-  // Cargo Administrador vê tudo
-  const cargo = cargos.find(c=>c.id===membroEquipe.cargoId);
-  const isAdmin = !cargo || cargo.id==='cg_administrador' || cargo.nome==='Administrador';
-  if(isAdmin) return todasPendencias();
-
+  const nomeAtual = nomeUsuarioAtual();
   return todasPendencias().filter(p=>{
     const criadoPorMim = p.criadoPor === usuarioAtualId;
     const responsavelSouEu = nomeAtual && p.responsavel && p.responsavel.toLowerCase().trim() === nomeAtual.toLowerCase().trim();
     return criadoPorMim || responsavelSouEu;
   });
+}
+
+let pendModoEquipe = false; // false = só minhas pendências; true = modo gestor (equipe inteira)
+// Lista efetivamente exibida na tela de Pendências, considerando o modo de visão atual.
+function pendenciasVisiveis(){
+  if(temPerm('monitoramento_equipe') && pendModoEquipe) return todasPendencias();
+  return pendenciasDoUsuarioAtual();
+}
+function pendToggleModoEquipe(v){
+  pendModoEquipe = v;
+  pendFiltroResp = '';
+  renderPendencias();
+}
+// Resumo por pessoa (quem tem mais pendência atrasada) — só em "Visão da equipe" sem
+// filtro de responsável específico, para o gestor identificar onde focar.
+function renderResumoEquipePend(){
+  const el = document.getElementById('pend-resumo-equipe');
+  if(!el) return;
+  if(!(temPerm('monitoramento_equipe') && pendModoEquipe && !pendFiltroResp)){ el.innerHTML=''; return; }
+  const hojeStr = iso(hoje);
+  const porPessoa = {};
+  todasPendencias().filter(p=>p.status!=='concluida').forEach(p=>{
+    const nome = p.responsavel || '(sem responsável)';
+    porPessoa[nome] = porPessoa[nome] || {abertas:0, atrasadas:0};
+    porPessoa[nome].abertas++;
+    if(p.prazo && p.prazo<hojeStr) porPessoa[nome].atrasadas++;
+  });
+  const nomes = Object.keys(porPessoa).sort((a,b)=>porPessoa[b].atrasadas-porPessoa[a].atrasadas);
+  if(!nomes.length){ el.innerHTML=''; return; }
+  el.innerHTML = `<div style="margin-bottom:14px">
+    <div class="sl">Resumo por pessoa</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${nomes.map(n=>{
+        const d=porPessoa[n];
+        return `<button class="btn btn-ghost btn-sm" onclick="setPendFiltroResp('${n.replace(/'/g,"\\'")}')" style="display:flex;gap:6px;align-items:center;${d.atrasadas>0?'border-color:var(--da);color:var(--da)':''}">
+          <span style="font-weight:600">${esc(n)}</span>
+          ${d.atrasadas>0?`<span class="pill p-danger" style="font-size:10px">${d.atrasadas} atrasada${d.atrasadas>1?'s':''}</span>`:''}
+          <span class="pill p-neutral" style="font-size:10px">${d.abertas} aberta${d.abertas>1?'s':''}</span>
+        </button>`;
+      }).join('')}
+    </div>
+  </div>`;
 }
 
 let pendFiltroResp='';
@@ -5832,8 +5982,12 @@ function ordenarPendencias(lista){
 }
 
 function renderPendencias(){
+  renderModoVisaoControl('pend-modo-visao', pendModoEquipe, '', [], 'pendToggleModoEquipe', '');
+  renderResumoEquipePend();
+
+  const base = pendenciasVisiveis();
   const filtrosEl=document.getElementById('pend-filtros');
-  const respostas=[...new Set(todasPendencias().map(p=>p.responsavel).filter(Boolean))];
+  const respostas=[...new Set(base.map(p=>p.responsavel).filter(Boolean))];
   filtrosEl.innerHTML=`
     <button class="btn btn-ghost btn-sm ${pendFiltroStatus===''?'':''}" onclick="setPendFiltroStatus('')" style="${pendFiltroStatus===''?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Todas</button>
     <button class="btn btn-ghost btn-sm" onclick="setPendFiltroStatus('pendente')" style="${pendFiltroStatus==='pendente'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Pendentes</button>
@@ -5843,7 +5997,7 @@ function renderPendencias(){
     ${respostas.map(r=>`<button class="btn btn-ghost btn-sm" onclick="setPendFiltroResp('${r}')" style="${pendFiltroResp===r?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">${r}</button>`).join('')}
   `;
 
-  let lista=pendenciasDoUsuarioAtual();
+  let lista=base;
   if(pendFiltroResp) lista=lista.filter(p=>p.responsavel===pendFiltroResp);
   if(pendFiltroStatus) lista=lista.filter(p=>p.status===pendFiltroStatus);
 
@@ -6238,7 +6392,7 @@ function salvarRecontato(){
 }
 
 function exportarPendenciasPDF(){
-  let lista=todasPendencias().filter(p=>p.status!=='concluida');
+  let lista=pendenciasVisiveis().filter(p=>p.status!=='concluida');
   if(pendFiltroResp) lista=lista.filter(p=>p.responsavel===pendFiltroResp);
   if(!lista.length){alert('Não há pendências abertas para exportar.');return;}
   const porResponsavel={};
