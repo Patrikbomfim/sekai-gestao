@@ -2159,7 +2159,7 @@ function aplicarPermissoesNav(){
     const m = btn.getAttribute('onclick').match(/goTo\('([^']+)'/);
     if(!m) return;
     const sec = m[1];
-    if(sec==='hoje'||sec==='proximos') return; // sempre visível
+    if(sec==='hoje'||sec==='proximos'||sec==='melhorias') return; // sempre visível
 
     let temAcesso;
     if(sec==='config'){
