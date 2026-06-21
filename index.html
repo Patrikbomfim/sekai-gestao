@@ -304,6 +304,7 @@ input.invalid{border-color:var(--da);background:var(--dal)}
 .modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center}
 .modal-ov.open{display:flex}
 #modal-nova-pendencia{z-index:260}
+#modal-recontato{z-index:270}
 .modal{background:var(--surface);border-radius:var(--r16);padding:0;width:560px;max-width:95vw;height:88vh;max-height:88vh;display:flex;flex-direction:column}
 .modal-header{padding:20px 24px 0;flex-shrink:0}
 .modal-title{font-size:16px;font-weight:600;margin-bottom:14px}
@@ -549,6 +550,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <button class="nav-btn" onclick="goTo('rituais',this)">Rituais</button>
   <button class="nav-btn" onclick="goTo('reuniao',this)">Reuniões</button>
   <button class="nav-btn" onclick="goTo('pendencias',this)">Pendências<span class="nav-badge" id="bdg-pend" style="display:none">0</span></button>
+  <button class="nav-btn" id="navbtn-desmarcados" onclick="goTo('desmarcados',this)">Pacientes desmarcados<span class="nav-badge" id="bdg-desmarcados" style="display:none">0</span></button>
   <button class="nav-btn" onclick="goTo('empresa',this)"><span class="nav-ic">🏢</span>Empresa</button>
   <div class="slb-label">Sistema</div>
   <button class="nav-btn" onclick="goTo('melhorias',this)"><span class="nav-ic">🛠</span>Melhorias para o sistema</button>
@@ -868,6 +870,16 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="card" id="pend-lista-wrap"></div>
 </div>
 
+<!-- PACIENTES DESMARCADOS -->
+<div id="sec-desmarcados" class="sec">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+    <div class="pg-title">Pacientes desmarcados</div>
+  </div>
+  <div class="pg-desc">Pacientes que desmarcaram e ainda não tiveram um desfecho de recontato registrado — vale para todos os profissionais da agenda, sem exceção</div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="desm-filtros"></div>
+  <div class="card" id="desm-lista-wrap"></div>
+</div>
+
 <!-- MELHORIAS PARA O SISTEMA -->
 <div id="sec-melhorias" class="sec">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
@@ -1140,6 +1152,29 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <button class="btn btn-primary btn-sm" onclick="addRegraConfirmacao()">+ Nova regra</button>
       </div>
       <div id="cfg-regras-confirmacao-lista" style="margin-top:12px"></div>
+    </div>
+
+    <!-- RECONTATO DE CANCELAMENTOS -->
+    <div class="card" style="max-width:760px;margin-top:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div><div class="card-title">Recontato de cancelamentos</div><div class="card-sub">Quando um paciente desmarca (motivo "Paciente desmarcou") e ainda não há novo agendamento, o sistema abre automaticamente uma tarefa de recontato em "Pacientes desmarcados" — vale para qualquer profissional da agenda. A tarefa só some quando o desfecho é registrado.</div></div>
+        <button class="btn btn-primary btn-sm" onclick="addRegraRecontato()">+ Nova regra</button>
+      </div>
+      <div id="cfg-regras-recontato-lista" style="margin-top:12px"></div>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+        <div class="card-title" style="font-size:13px">Escalonamento</div>
+        <div class="card-sub" style="margin-bottom:10px">Se o recontato continuar em aberto além do prazo abaixo, gera um alerta extra para o responsável definido — além das regras de cima.</div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap">
+          <div class="fl" style="max-width:240px">
+            <label>Dias em aberto até escalonar</label>
+            <input type="number" min="0" id="cfg-recontato-dias-esc" onfocus="_mostrarBotaoSalvar()" onchange="updateConfigRecontato('diasEscalonamento',parseInt(this.value)||0)">
+          </div>
+          <div class="fl" style="max-width:260px">
+            <label>Responsável pela escalada</label>
+            <select id="cfg-recontato-resp-esc" onfocus="_mostrarBotaoSalvar()" onchange="updateConfigRecontato('responsavelEscalonamento',this.value)"></select>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -1568,6 +1603,45 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
+<!-- MODAL REGISTRAR RECONTATO (pacientes desmarcados) -->
+<div class="modal-ov" id="modal-recontato">
+  <div class="modal" style="width:460px;height:auto;max-height:none">
+    <div class="modal-header">
+      <div class="modal-title">Registrar recontato</div>
+    </div>
+    <div class="modal-body" style="overflow:visible">
+      <div class="fg">
+        <div class="fl fg-full">
+          <label>Paciente</label>
+          <div id="rec-paciente-nome" style="font-size:13px;font-weight:500;padding:6px 0"></div>
+        </div>
+        <div class="fl fg-full">
+          <label>Desfecho</label>
+          <select id="rec-status">
+            <option value="aberto">Em aberto — ainda tentando</option>
+            <option value="remarcado">Remarcado</option>
+            <option value="sem_retorno">Sem retorno do paciente</option>
+            <option value="desistiu">Desistiu</option>
+          </select>
+        </div>
+        <div class="fl fg-full">
+          <label>Responsável pelo recontato</label>
+          <select id="rec-responsavel"></select>
+        </div>
+        <div class="fl fg-full">
+          <label>Observação</label>
+          <textarea id="rec-obs" rows="2" placeholder="Ex: Falou que vai remarcar semana que vem..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-recontato')">Cancelar</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirAgendamentoDoRecontato()">Abrir agendamento</button>
+      <button class="btn btn-primary" onclick="salvarRecontato()">Salvar →</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL NOVA REUNIÃO (seleção de tipo + data) -->
 <div class="modal-ov" id="modal-nova-reuniao">
   <div class="modal" style="width:480px;height:auto;max-height:none">
@@ -1773,13 +1847,38 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
         <div class="fl">
           <label>Status</label>
-          <select id="agm-status" onchange="agmToggleSituacao()"></select>
+          <select id="agm-status" onchange="agmToggleSituacao();agmToggleCancelamento()"></select>
         </div>
         <div class="fl fg-full" id="agm-situacao-wrap" style="display:none">
           <label>Situação do paciente</label>
           <select id="agm-situacao"></select>
           <div style="font-size:11px;color:var(--tx3);margin-top:4px">Atendimento marcado como Realizado — atualize a situação do paciente (alta, continuação do tratamento, aguardando retorno etc).</div>
           <button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px" data-perm="pendencias_criar" onclick="agmAbrirLembretePaciente()">+ Agendar lembrete</button>
+        </div>
+        <div class="fl fg-full" id="agm-cancelamento-wrap" style="display:none">
+          <label>Motivo do cancelamento</label>
+          <select id="agm-motivo-cancelamento" onchange="agmToggleRecontatoInfo()">
+            <option value="">Selecionar...</option>
+            <option value="paciente_desmarcou">Paciente desmarcou</option>
+            <option value="clinica_remarcou">Clínica remarcou</option>
+            <option value="profissional_indisponivel">Profissional indisponível</option>
+            <option value="outro">Outro</option>
+          </select>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+            <input type="checkbox" id="agm-ja-reagendado" onchange="agmToggleRecontatoInfo()" style="width:auto">
+            <label for="agm-ja-reagendado" style="font-size:13px;color:var(--tx);font-weight:400">Já existe novo agendamento marcado para este paciente</label>
+          </div>
+          <div id="agm-recontato-info" style="display:none;margin-top:10px;font-size:11px;color:var(--tx3)">Ao salvar, o sistema cria automaticamente uma tarefa de recontato em "Pacientes desmarcados" — ela só some quando o desfecho for registrado.</div>
+          <div id="agm-recontato-desfecho-wrap" style="display:none;margin-top:10px">
+            <label>Desfecho do recontato</label>
+            <select id="agm-recontato-status">
+              <option value="aberto">Em aberto — ainda tentando</option>
+              <option value="remarcado">Remarcado</option>
+              <option value="sem_retorno">Sem retorno do paciente</option>
+              <option value="desistiu">Desistiu</option>
+            </select>
+            <textarea id="agm-recontato-obs" rows="2" placeholder="Observação sobre o contato (opcional)" style="margin-top:6px"></textarea>
+          </div>
         </div>
         <div class="fl fg-full">
           <label>Procedimento</label>
@@ -2149,6 +2248,7 @@ const PERM_SECAO = {
   reuniao:   'reunioes_ver',
   rituais:   'rituais_ver',
   pendencias:'pendencias_ver',
+  desmarcados:'agenda_ver',
   dashboard: 'dashboard_ver',
   relatorios:'relatorios_ver',
   empresa:   'empresa_ver',
@@ -2166,6 +2266,7 @@ function aplicarPermissoesNav(){
     reuniao:   'reunioes_ver',
     rituais:   'rituais_ver',
     pendencias:'pendencias_ver',
+    desmarcados:'agenda_ver',
     dashboard: 'dashboard_ver',
     relatorios:'relatorios_ver',
     empresa:   'empresa_ver',
@@ -2467,6 +2568,24 @@ const STATUS_AGENDAMENTO = [
 let regrasConfirmacaoAgendamento = carregarLS('sk3-regras-confirmacao', [
   {id:'rc_padrao_d1', titulo:'Confirmar agendamento (véspera)', offset:-1, responsavel:'', script:'Entrar em contato com [Nome] para confirmar presença no agendamento de amanhã.', ativo:true},
 ]);
+
+// regrasRecontatoCancelamento: {id, titulo, offset(dias a partir da data do cancelamento),
+// responsavel, script, ativo}
+// Quando um agendamento é marcado como 'cancelado' com motivo "Paciente desmarcou" e sem
+// novo agendamento já marcado, o sistema abre automaticamente um recontato (recontatoStatus
+// 'aberto') para aquele paciente — vale para qualquer profissional da agenda, sem exceção.
+// Cada regra ativa gera uma ação em "Meu dia"/"Pacientes desmarcados" enquanto o recontato
+// estiver em aberto. Assim como a confirmação de agendamento, não existe "concluir" manual:
+// a ação só some quando o desfecho é registrado (Remarcado / Sem retorno / Desistiu).
+// Configurável em Configurações → Agenda → "Recontato de cancelamentos".
+let regrasRecontatoCancelamento = carregarLS('sk3-regras-recontato', [
+  {id:'rr_padrao_d1', titulo:'Tentar recontato — paciente desmarcou', offset:1, responsavel:'', script:'Entrar em contato com [Nome] para entender o motivo do desmarque e tentar remarcar.', ativo:true},
+]);
+// configRecontato: {diasEscalonamento, responsavelEscalonamento} — se o recontato ficar
+// em aberto por mais dias que diasEscalonamento, gera um alerta extra para o responsável
+// de escalonamento, além das regras normais acima.
+let configRecontato = carregarLS('sk3-config-recontato', {diasEscalonamento:3, responsavelEscalonamento:''});
+
 
 // ── USUÁRIOS / CARGOS / EQUIPE / PENDÊNCIAS AVULSAS ─────────────────────
 // Estrutura de permissões: módulos/submódulos reais do sistema, cada um com
@@ -2913,7 +3032,7 @@ function gerarAcoes(paciente){
   return lista;
 }
 
-function todasAcoes(){ return pacientes.flatMap(p=>gerarAcoes(p)).concat(gerarAcoesConfirmacaoAgendamento()); }
+function todasAcoes(){ return pacientes.flatMap(p=>gerarAcoes(p)).concat(gerarAcoesConfirmacaoAgendamento()).concat(gerarAcoesRecontatoCancelamento()); }
 
 // ── AÇÕES DE CONFIRMAÇÃO DE AGENDAMENTO ─────────────────────────────────
 // Gera, para cada agendamento com status 'agendado', uma ação por regra ativa em
@@ -2941,6 +3060,55 @@ function gerarAcoesConfirmacaoAgendamento(){
         origemConfirmacao: true,
       });
     });
+  });
+  return lista;
+}
+
+// ── AÇÕES DE RECONTATO DE CANCELAMENTO ──────────────────────────────────
+// Gera, para cada agendamento cancelado com recontato em aberto (paciente desmarcou e
+// ainda não há novo agendamento), uma ação por regra ativa em regrasRecontatoCancelamento
+// — vale para qualquer profissional na agenda. Igual à confirmação de agendamento, não
+// existe "concluir" manual: a ação só some quando o desfecho é registrado (em "Pacientes
+// desmarcados" ou no próprio agendamento). Se o recontato passar do prazo configurado em
+// configRecontato.diasEscalonamento, soma-se uma ação extra de escalonamento.
+function gerarAcoesRecontatoCancelamento(){
+  const lista = [];
+  agendamentos.filter(ag=>ag.status==='cancelado' && ag.recontatoStatus==='aberto').forEach(ag=>{
+    const baseCancelamento = parseIso(ag.recontatoCriadoEm) || parseIso(ag.data);
+    if(!baseCancelamento) return;
+    (regrasRecontatoCancelamento||[]).filter(r=>r.ativo).forEach(r=>{
+      const data = addDays(baseCancelamento, r.offset||0);
+      lista.push({
+        id: r.id+'_'+ag.id,
+        titulo: r.titulo || 'Recontato — paciente desmarcou',
+        tipo: 'lembrete',
+        icone: '🔁',
+        responsavel: ag.recontatoResponsavel || r.responsavel || '',
+        script: (r.script||'').replace(/\[Nome\]/g, ag.pacienteNome || 'paciente'),
+        data,
+        pacienteId: ag.pacienteId || null,
+        pacienteNome: ag.pacienteNome || '(sem nome)',
+        agendamentoId: ag.id,
+        origemRecontato: true,
+      });
+    });
+    const diasAberto = diffDays(baseCancelamento, hoje);
+    const diasEsc = (configRecontato && configRecontato.diasEscalonamento) || 0;
+    if(diasEsc>0 && diasAberto>=diasEsc){
+      lista.push({
+        id: 'esc_'+ag.id,
+        titulo: `⚠ Escalonamento — recontato em aberto há ${diasAberto} dia(s)`,
+        tipo: 'lembrete',
+        icone: '⏰',
+        responsavel: (configRecontato && configRecontato.responsavelEscalonamento) || '',
+        script: `${ag.pacienteNome||'Paciente'} desmarcou e ainda não teve um desfecho de recontato registrado.`,
+        data: new Date(hoje),
+        pacienteId: ag.pacienteId || null,
+        pacienteNome: ag.pacienteNome || '(sem nome)',
+        agendamentoId: ag.id,
+        origemRecontato: true,
+      });
+    }
   });
   return lista;
 }
@@ -2988,6 +3156,7 @@ function goTo(id, btn){
   if(id==='rituais') renderRituais();
   if(id==='reuniao') renderReunioes();
   if(id==='pendencias') renderPendencias();
+  if(id==='desmarcados') renderDesmarcados();
   if(id==='melhorias') renderMelhorias();
   if(id==='dashboard') renderDashboard();
   if(id==='relatorios') renderRelatorios();
@@ -3042,7 +3211,7 @@ function renderHoje(){
 }
 
 function icClass(icone){
-  const m={'💬':'ic-info','⭐':'ic-green','📋':'ic-green','💡':'ic-warn','⏰':'ic-warn','🔓':'ic-warn','🔄':'ic-warn','📅':'ic-info','❤️':'ic-green','🔍':'ic-purple','🎂':'ic-purple','💰':'ic-warn'};
+  const m={'💬':'ic-info','⭐':'ic-green','📋':'ic-green','💡':'ic-warn','⏰':'ic-warn','🔓':'ic-warn','🔄':'ic-warn','📅':'ic-info','❤️':'ic-green','🔍':'ic-purple','🎂':'ic-purple','💰':'ic-warn','🔁':'ic-warn'};
   return m[icone]||'ic-info';
 }
 
@@ -3052,10 +3221,12 @@ function renderAcaoCard(a, tipo){
   const pillCls = tipo==='atrasada' ? 'p-danger' : 'p-green';
   const scriptHtml = a.script ? `<div class="ac-script">"${a.script}"</div>` : '';
   const aStr = JSON.stringify(a).replace(/"/g,'&quot;');
-  // Ações de confirmação de agendamento não têm "concluir" manual: só somem quando o
-  // status do agendamento muda, então o botão leva direto para o agendamento.
+  // Ações de confirmação de agendamento e de recontato de cancelamento não têm "concluir"
+  // manual: só somem quando o status/desfecho muda, então o botão leva direto à ação certa.
   const botaoHtml = a.origemConfirmacao
     ? `<button class="btn-done" onclick="abrirModalAgendamento('${a.agendamentoId}')">Abrir agendamento →</button>`
+    : a.origemRecontato
+    ? `<button class="btn-done" onclick="abrirModalRecontato('${a.agendamentoId}')">Registrar contato →</button>`
     : `<button class="btn-done" onclick="marcarFeito('${k}',${aStr})">✓ Feito</button>`;
   return `<div class="ac-card ${tipo}" id="card-${k}">
     <div class="ac-icon ${icClass(a.icone)}">${a.icone||"💬"}</div>
@@ -3960,6 +4131,7 @@ function vincularFechamentoPorClickFora(id){
 }
 vincularFechamentoPorClickFora('modal-ritual-linha');
 vincularFechamentoPorClickFora('modal-nova-pendencia');
+vincularFechamentoPorClickFora('modal-recontato');
 vincularFechamentoPorClickFora('modal-usuario');
 vincularFechamentoPorClickFora('modal-cargo');
 vincularFechamentoPorClickFora('modal-checkin-item');
@@ -5939,6 +6111,121 @@ function atualizarBadgePendencias(){
   else badge.style.display='none';
 }
 
+// ── PACIENTES DESMARCADOS ────────────────────────────────────────────────
+// Lista todo agendamento cancelado que já teve um recontato aberto (independente de
+// profissional/sala) — ou seja, que precisou de uma tentativa de contato. Cancelamentos
+// que não precisaram (já remarcado na hora, motivo "clínica remarcou" etc.) não aparecem
+// aqui, pois nunca abrem recontato.
+const DESM_MOTIVO_LABEL={paciente_desmarcou:'Paciente desmarcou',clinica_remarcou:'Clínica remarcou',profissional_indisponivel:'Profissional indisponível',outro:'Outro'};
+const DESM_STATUS_LABEL={aberto:'Em aberto',remarcado:'Remarcado',sem_retorno:'Sem retorno',desistiu:'Desistiu'};
+let desmFiltroStatus='aberto'; // 'aberto' | 'todos'
+
+function listaRecontatos(){
+  return agendamentos.filter(a=>a.status==='cancelado' && a.recontatoStatus).map(a=>{
+    const prof=usuarios.find(u=>u.id===a.usuarioId);
+    const base=parseIso(a.recontatoCriadoEm)||parseIso(a.data);
+    const dias=base?diffDays(base,hoje):0;
+    return {...a, profissionalNome: prof?prof.nome:'—', diasEmAberto:dias};
+  });
+}
+
+function setDesmFiltro(v){ desmFiltroStatus=v; renderDesmarcados(); }
+
+function renderDesmarcados(){
+  const filtrosEl=document.getElementById('desm-filtros');
+  if(!filtrosEl) return;
+  filtrosEl.innerHTML=`
+    <button class="btn btn-ghost btn-sm" onclick="setDesmFiltro('aberto')" style="${desmFiltroStatus==='aberto'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Em aberto</button>
+    <button class="btn btn-ghost btn-sm" onclick="setDesmFiltro('todos')" style="${desmFiltroStatus==='todos'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Todos</button>
+  `;
+
+  let lista=listaRecontatos();
+  if(desmFiltroStatus==='aberto') lista=lista.filter(a=>a.recontatoStatus==='aberto');
+  lista.sort((a,b)=>b.diasEmAberto-a.diasEmAberto);
+
+  const wrap=document.getElementById('desm-lista-wrap');
+  if(!wrap) return;
+  if(!lista.length){
+    wrap.innerHTML=`<div class="empty"><div class="empty-ic">✅</div>Nenhum paciente desmarcado em aberto. Tudo recontatado.</div>`;
+    atualizarBadgeDesmarcados();
+    return;
+  }
+
+  const diasEsc=(configRecontato&&configRecontato.diasEscalonamento)||0;
+  const gridCols='1fr 130px 150px 110px 130px 100px 100px';
+  const header=`<div style="display:grid;grid-template-columns:${gridCols};gap:10px;padding:0 0 8px;border-bottom:1px solid var(--border);margin-bottom:4px">
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Paciente</div>
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Profissional</div>
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Motivo</div>
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Cancelado em</div>
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Responsável</div>
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Situação</div>
+    <div></div>
+  </div>`;
+
+  const rows=lista.map(a=>{
+    const aberto = a.recontatoStatus==='aberto';
+    const urgCls = !aberto ? 'p-green' : (diasEsc>0 && a.diasEmAberto>=diasEsc) ? 'p-danger' : a.diasEmAberto>=1 ? 'p-warn' : 'p-neutral';
+    const situacaoTxt = aberto ? `${a.diasEmAberto}d em aberto` : DESM_STATUS_LABEL[a.recontatoStatus];
+    return `<div style="display:grid;grid-template-columns:${gridCols};gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:center;cursor:pointer;${aberto?'':'opacity:.6'}" onclick="abrirModalRecontato('${a.id}')">
+      <div style="font-size:13px;font-weight:500">${esc(a.pacienteNome||'—')}</div>
+      <div style="font-size:12px;color:var(--tx2)">${esc(a.profissionalNome)}</div>
+      <div style="font-size:12px;color:var(--tx2)">${DESM_MOTIVO_LABEL[a.motivoCancelamento]||'—'}</div>
+      <div style="font-size:12px;color:var(--tx2)">${a.recontatoCriadoEm?fmtDate(parseIso(a.recontatoCriadoEm)):'—'}</div>
+      <div style="font-size:12px;color:var(--tx2)">${esc(a.recontatoResponsavel)||'—'}</div>
+      <div><span class="pill ${urgCls}">${situacaoTxt}</span></div>
+      <div style="display:flex;justify-content:flex-end" onclick="event.stopPropagation()">
+        <button class="btn btn-ghost btn-sm" style="padding:4px 8px" onclick="abrirModalRecontato('${a.id}')">Registrar →</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  wrap.innerHTML=header+rows;
+  atualizarBadgeDesmarcados();
+}
+
+function atualizarBadgeDesmarcados(){
+  const abertos=listaRecontatos().filter(a=>a.recontatoStatus==='aberto').length;
+  const badge=document.getElementById('bdg-desmarcados');
+  if(!badge)return;
+  if(abertos>0){badge.textContent=abertos;badge.style.display='';}
+  else badge.style.display='none';
+}
+
+// ── MODAL REGISTRAR RECONTATO ────────────────────────────────────────────
+let recontatoModalAgendamentoId=null;
+function abrirModalRecontato(agendamentoId){
+  const ag=agendamentos.find(a=>a.id===agendamentoId);
+  if(!ag) return;
+  recontatoModalAgendamentoId=agendamentoId;
+  document.getElementById('rec-paciente-nome').textContent=ag.pacienteNome||'—';
+  document.getElementById('rec-status').value=ag.recontatoStatus||'aberto';
+  document.getElementById('rec-obs').value=ag.recontatoObs||'';
+  const sel=document.getElementById('rec-responsavel');
+  sel.innerHTML='<option value="">—</option>'+equipe.map(nomeEquipeItem).map(e=>`<option value="${e}">${e}</option>`).join('');
+  sel.value=ag.recontatoResponsavel||'';
+  document.getElementById('modal-recontato').classList.add('open');
+}
+function abrirAgendamentoDoRecontato(){
+  const id=recontatoModalAgendamentoId;
+  fecharModal('modal-recontato');
+  if(id) abrirModalAgendamento(id);
+}
+function salvarRecontato(){
+  const ag=agendamentos.find(a=>a.id===recontatoModalAgendamentoId);
+  if(!ag) return;
+  const novoStatus=document.getElementById('rec-status').value;
+  ag.recontatoStatus=novoStatus;
+  ag.recontatoResponsavel=document.getElementById('rec-responsavel').value||'';
+  ag.recontatoObs=document.getElementById('rec-obs').value.trim();
+  ag.recontatoResolvidoEm = novoStatus!=='aberto' ? iso(hoje) : null;
+  salvarLS('sk3-agendamentos',agendamentos);
+  fecharModal('modal-recontato');
+  renderDesmarcados();
+  renderHoje();
+  showSaveToast('Recontato atualizado');
+}
+
 function exportarPendenciasPDF(){
   let lista=todasPendencias().filter(p=>p.status!=='concluida');
   if(pendFiltroResp) lista=lista.filter(p=>p.responsavel===pendFiltroResp);
@@ -7169,6 +7456,7 @@ popularUsuarioAtual();
 aplicarPermissoesNav();
 renderHoje();
 atualizarBadgePendencias();
+atualizarBadgeDesmarcados();
 renderUsuarios();
 bindFoneMask('nn-fone');
 
@@ -7208,6 +7496,7 @@ function renderCfgAgenda(){
   renderCfgCamposAgendamento();
   renderCfgCamposEvento();
   renderCfgRegrasConfirmacao();
+  renderCfgRegrasRecontato();
 }
 
 // ── REGRAS DE CONFIRMAÇÃO DE AGENDAMENTO ────────────────────────────────
@@ -7305,6 +7594,118 @@ function deleteRegraConfirmacao(id){
   regrasConfirmacaoAgendamento = regrasConfirmacaoAgendamento.filter(r=>r.id!==id);
   salvarLS('sk3-regras-confirmacao', regrasConfirmacaoAgendamento);
   renderCfgRegrasConfirmacao();
+}
+
+// ── REGRAS DE RECONTATO DE CANCELAMENTO ─────────────────────────────────
+let regrasRecontatoExpandidas = new Set();
+function toggleRegraRecontatoExpand(id){
+  if(regrasRecontatoExpandidas.has(id)) regrasRecontatoExpandidas.delete(id); else regrasRecontatoExpandidas.add(id);
+  renderCfgRegrasRecontato();
+}
+function renderCfgRegrasRecontato(){
+  renderListaRegrasRecontato();
+  const diasEl=document.getElementById('cfg-recontato-dias-esc');
+  const respEl=document.getElementById('cfg-recontato-resp-esc');
+  if(diasEl) diasEl.value = (configRecontato&&configRecontato.diasEscalonamento) || 0;
+  if(respEl){
+    respEl.innerHTML='<option value="">— selecionar —</option>'+equipe.map(nomeEquipeItem).map(e=>`<option value="${e}">${e}</option>`).join('');
+    respEl.value = (configRecontato&&configRecontato.responsavelEscalonamento) || '';
+  }
+}
+function renderListaRegrasRecontato(){
+  const c = document.getElementById('cfg-regras-recontato-lista');
+  if(!c) return;
+  const podeEditar = temPerm('agenda_gerenciar');
+  if(!regrasRecontatoCancelamento.length){
+    c.innerHTML = `<div class="empty"><div class="empty-ic">🔁</div>Nenhuma regra cadastrada ainda. Clique em "+ Nova regra" para criar a primeira.</div>`;
+    return;
+  }
+  c.innerHTML = regrasRecontatoCancelamento.map(r=>{
+    const expandido = regrasRecontatoExpandidas.has(r.id);
+    const off = r.offset||0;
+    const offsetTxt = off===0 ? 'No dia do cancelamento' : off<0 ? `${Math.abs(off)} dia(s) antes` : `${off} dia(s) depois`;
+    if(!podeEditar){
+      return `<div class="flow-action-row" id="rrr-${r.id}">
+        <span class="fa-handle" style="opacity:.3;cursor:default">⠿</span>
+        <div class="fa-row-inner">
+          <div class="fa-header" onclick="toggleRegraRecontatoExpand('${r.id}')">
+            <span class="fa-header-caret">▶</span>
+            <span class="fa-header-title">${r.titulo||'Nova regra'}</span>
+            <span class="pill p-neutral" style="margin-left:8px;font-size:10px">${offsetTxt}</span>
+          </div>
+          <div class="fa-body" style="${expandido?'':'display:none'}">
+            <div class="fl"><label>Responsável</label><div style="font-size:13px;padding:6px 0">${r.responsavel||'—'}</div></div>
+            ${r.script?`<div class="fl fa-body-full"><label>Script / orientação</label><div style="font-size:13px;padding:8px 10px;background:var(--s2);border-radius:var(--r6);line-height:1.5">${r.script}</div></div>`:''}
+          </div>
+        </div>
+      </div>`;
+    }
+    return `<div class="flow-action-row ${expandido?'':'collapsed'}" id="rrr-${r.id}">
+      <span class="fa-handle" style="opacity:.3;cursor:default">⠿</span>
+      <div class="fa-row-inner">
+        <div class="fa-header" onclick="toggleRegraRecontatoExpand('${r.id}')">
+          <span class="fa-header-caret">▶</span>
+          <span class="fa-header-title">${r.titulo||'Nova regra'}</span>
+          <span class="pill p-neutral" style="margin-left:8px;font-size:10px">${offsetTxt}</span>
+        </div>
+        <div class="fa-body" style="${expandido?'':'display:none'}">
+        <div class="fl"><label>Título da ação</label><input type="text" value="${r.titulo}" onfocus="_mostrarBotaoSalvar()" onchange="updateRegraRecontatoField('${r.id}','titulo',this.value)"></div>
+        <div class="fl fa-body-full" style="display:flex;flex-direction:row;gap:8px;align-items:flex-end">
+          <div class="fl" style="flex:1"><label>Dias em relação ao cancelamento</label><input type="number" value="${off}" onfocus="_mostrarBotaoSalvar()" onchange="updateRegraRecontatoField('${r.id}','offset',parseInt(this.value)||0)"></div>
+          <div class="fl" style="flex:1 1 auto;padding-bottom:1px"><label style="visibility:hidden">_</label><span style="font-size:12px;color:var(--tx2);padding:6px 10px;background:var(--s2);border-radius:var(--r6);display:block;white-space:nowrap">negativo = antes · 0 = no dia · positivo = depois</span></div>
+        </div>
+        <div class="fl fa-body-full"><label>Responsável</label>
+          <select onchange="updateRegraRecontatoField('${r.id}','responsavel',this.value)">
+            <option value="" ${!r.responsavel?'selected':''}>— selecionar —</option>
+            ${equipe.map(nomeEquipeItem).map(e=>`<option value="${e}" ${r.responsavel===e?'selected':''}>${e}</option>`).join('')}
+          </select>
+        </div>
+        <div class="fl fa-body-full"><label>Script / orientação (opcional — use [Nome] para o nome do paciente)</label><textarea rows="3" onfocus="_mostrarBotaoSalvar()" onchange="updateRegraRecontatoField('${r.id}','script',this.value)" style="resize:vertical;min-height:60px">${r.script||''}</textarea></div>
+        <div class="fl fa-body-full" style="flex-direction:row;align-items:center;gap:8px">
+          <input type="checkbox" id="rrr-atv-${r.id}" ${r.ativo?'checked':''} onchange="updateRegraRecontatoField('${r.id}','ativo',this.checked)" style="width:auto">
+          <label for="rrr-atv-${r.id}" style="font-size:13px;color:var(--tx)">Regra ativa</label>
+        </div>
+        </div>
+      </div>
+      <button class="fa-delete" onclick="deleteRegraRecontato('${r.id}')">Excluir</button>
+    </div>`;
+  }).join('');
+}
+function updateRegraRecontatoField(id, field, value){
+  const idx = regrasRecontatoCancelamento.findIndex(r=>r.id===id);
+  if(idx<0) return;
+  regrasRecontatoCancelamento[idx][field] = value;
+  salvarLS('sk3-regras-recontato', regrasRecontatoCancelamento);
+  if(field==='titulo'){
+    const row=document.getElementById('rrr-'+id);
+    if(row){ const t=row.querySelector('.fa-header-title'); if(t) t.textContent=value||'Nova regra'; }
+  }
+  if(field==='offset'){
+    const row=document.getElementById('rrr-'+id);
+    if(row){
+      const pill=row.querySelector('.fa-header .pill');
+      if(pill){ const off=value||0; pill.textContent = off===0?'No dia do cancelamento':off<0?`${Math.abs(off)} dia(s) antes`:`${off} dia(s) depois`; }
+    }
+  }
+}
+function addRegraRecontato(){
+  const nova = {id:'rr_'+Date.now(), titulo:'Tentar recontato — paciente desmarcou', offset:1, responsavel:'', script:'Entrar em contato com [Nome] para entender o motivo do desmarque e tentar remarcar.', ativo:true};
+  regrasRecontatoCancelamento.push(nova);
+  regrasRecontatoExpandidas.add(nova.id);
+  salvarLS('sk3-regras-recontato', regrasRecontatoCancelamento);
+  renderListaRegrasRecontato();
+  setTimeout(()=>{ const els=document.querySelectorAll('#cfg-regras-recontato-lista .flow-action-row'); if(els.length) els[els.length-1].scrollIntoView({behavior:'smooth'}); },100);
+}
+function deleteRegraRecontato(id){
+  if(!confirm('Excluir esta regra de recontato?')) return;
+  regrasRecontatoCancelamento = regrasRecontatoCancelamento.filter(r=>r.id!==id);
+  salvarLS('sk3-regras-recontato', regrasRecontatoCancelamento);
+  renderListaRegrasRecontato();
+}
+function updateConfigRecontato(field, value){
+  configRecontato = configRecontato || {};
+  configRecontato[field] = value;
+  salvarLS('sk3-config-recontato', configRecontato);
 }
 
 function renderCfgSemanaAgenda(){
@@ -8894,6 +9295,13 @@ function abrirModalAgendamento(agendamentoId, dataPre, horaPre, salaPre, usuario
   selSituacao.value = a && a.situacaoRegistrada ? a.situacaoRegistrada : (pacAtual ? pacAtual.status : (statusList[0] && statusList[0].id));
   agmToggleSituacao();
 
+  // cancelamento / recontato
+  document.getElementById('agm-motivo-cancelamento').value = a ? (a.motivoCancelamento||'') : '';
+  document.getElementById('agm-ja-reagendado').checked = a ? !!a.jaReagendado : false;
+  document.getElementById('agm-recontato-status').value = a && a.recontatoStatus ? a.recontatoStatus : 'aberto';
+  document.getElementById('agm-recontato-obs').value = a ? (a.recontatoObs||'') : '';
+  agmToggleCancelamento();
+
   document.getElementById('agm-procedimento').value = a ? (a.procedimento||'') : '';
   document.getElementById('agm-obs').value = a ? (a.obs||'') : '';
 
@@ -8926,6 +9334,36 @@ function agmToggleSituacao(){
   const wrap=document.getElementById('agm-situacao-wrap');
   const pacienteId=document.getElementById('agm-paciente-id').value;
   wrap.style.display = (status==='realizado' && pacienteId) ? '' : 'none';
+}
+
+// Mostra o bloco de cancelamento (motivo + recontato) quando o status vira 'Cancelado'.
+// Aplica-se a qualquer paciente/profissional na agenda — sem exceção por profissional.
+function agmToggleCancelamento(){
+  const status=document.getElementById('agm-status').value;
+  const wrap=document.getElementById('agm-cancelamento-wrap');
+  const pacienteId=document.getElementById('agm-paciente-id').value;
+  wrap.style.display = (status==='cancelado' && pacienteId) ? '' : 'none';
+  agmToggleRecontatoInfo();
+}
+
+// Decide se mostra o aviso informativo ("será criada uma tarefa automática") ou o seletor
+// de desfecho (quando este agendamento já tem um recontato aberto em edição).
+function agmToggleRecontatoInfo(){
+  const motivo=document.getElementById('agm-motivo-cancelamento').value;
+  const jaReagendado=document.getElementById('agm-ja-reagendado').checked;
+  const infoEl=document.getElementById('agm-recontato-info');
+  const desfechoWrap=document.getElementById('agm-recontato-desfecho-wrap');
+  const editId=document.getElementById('modal-agendamento').dataset.editId;
+  const ag=editId?agendamentos.find(a=>a.id===editId):null;
+  const recontatoJaExiste=!!(ag && ag.recontatoStatus);
+  const precisaRecontato = motivo==='paciente_desmarcou' && !jaReagendado;
+  if(recontatoJaExiste){
+    desfechoWrap.style.display='';
+    infoEl.style.display='none';
+  } else {
+    desfechoWrap.style.display='none';
+    infoEl.style.display = precisaRecontato ? '' : 'none';
+  }
 }
 
 function agmAtualizarSalasDisponiveis(salaPreSelecionada){
@@ -9064,6 +9502,36 @@ function salvarAgendamento(){
     alert('Selecione a situação do paciente após o atendimento.'); return;
   }
 
+  // ── Cancelamento / recontato ──────────────────────────────────────────
+  // Vale para qualquer paciente/profissional na agenda. Só abre recontato automático
+  // quando o motivo é "paciente desmarcou" e ainda não há novo agendamento marcado.
+  if(status==='cancelado' && pacienteId && !document.getElementById('agm-motivo-cancelamento').value){
+    alert('Selecione o motivo do cancelamento.'); return;
+  }
+  let motivoCancelamento=null, jaReagendado=false, recontatoStatus=null,
+      recontatoResponsavel=null, recontatoObs=null, recontatoCriadoEm=null, recontatoResolvidoEm=null;
+  if(status==='cancelado' && pacienteId){
+    motivoCancelamento = document.getElementById('agm-motivo-cancelamento').value || null;
+    jaReagendado = document.getElementById('agm-ja-reagendado').checked;
+    const precisaRecontato = motivoCancelamento==='paciente_desmarcou' && !jaReagendado;
+    const existente = editId ? agendamentos.find(a=>a.id===editId) : null;
+    if(existente && existente.recontatoStatus){
+      // recontato já estava aberto neste agendamento — usa o desfecho informado no modal
+      recontatoStatus = document.getElementById('agm-recontato-status').value || existente.recontatoStatus;
+      recontatoObs = document.getElementById('agm-recontato-obs').value.trim() || existente.recontatoObs || null;
+      recontatoResponsavel = existente.recontatoResponsavel || '';
+      recontatoCriadoEm = existente.recontatoCriadoEm || iso(hoje);
+      recontatoResolvidoEm = recontatoStatus!=='aberto' ? iso(hoje) : null;
+    } else if(precisaRecontato){
+      // nova tarefa de recontato — criada automaticamente, sem depender de clique manual
+      recontatoStatus = 'aberto';
+      recontatoCriadoEm = iso(hoje);
+      recontatoResponsavel = (regrasRecontatoCancelamento.find(r=>r.ativo)||{}).responsavel || '';
+      recontatoObs = null;
+      recontatoResolvidoEm = null;
+    }
+  }
+
   // checagem simples de conflito (mesma sala ou mesma profissional, mesmo horário)
   const conflito = agendamentos.find(a=>{
     if(editId && a.id===editId) return false;
@@ -9078,7 +9546,8 @@ function salvarAgendamento(){
   }
 
   const fluxo = null; // definido apenas em agendamentos via encaminhamento
-  const item={pacienteId,pacienteNome,pacienteFone:pacienteId?'':pacienteFone,usuarioId,salaId,data,horaInicio,horaFim,status,origem:'interno',procedimento,fluxo,obs,situacaoRegistrada:situacaoPaciente};
+  const item={pacienteId,pacienteNome,pacienteFone:pacienteId?'':pacienteFone,usuarioId,salaId,data,horaInicio,horaFim,status,origem:'interno',procedimento,fluxo,obs,situacaoRegistrada:situacaoPaciente,
+    motivoCancelamento,jaReagendado,recontatoStatus,recontatoResponsavel,recontatoObs,recontatoCriadoEm,recontatoResolvidoEm};
 
   if(editId){
     const idx=agendamentos.findIndex(a=>a.id===editId);
@@ -9087,6 +9556,18 @@ function salvarAgendamento(){
     agendamentos.push({id:uid('ag'),...item});
   }
   salvarLS('sk3-agendamentos',agendamentos);
+
+  // Auto-detecção: se este paciente tinha um recontato de cancelamento em aberto em OUTRO
+  // agendamento e agora está recebendo um novo horário, oferece fechar automaticamente —
+  // evita que o paciente fique "esquecido" em aberto mesmo depois de já ter remarcado.
+  if(pacienteId && status!=='cancelado'){
+    const abertoAnterior = agendamentos.find(a=>a.pacienteId===pacienteId && a.recontatoStatus==='aberto' && a.id!==editId);
+    if(abertoAnterior && confirm(`${pacienteNome} tinha um recontato de cancelamento em aberto. Marcar como "Remarcado" agora?`)){
+      abertoAnterior.recontatoStatus='remarcado';
+      abertoAnterior.recontatoResolvidoEm=iso(hoje);
+      salvarLS('sk3-agendamentos',agendamentos);
+    }
+  }
 
   // ao marcar como Realizado, atualiza a situação do paciente no cadastro
   if(situacaoPaciente){
@@ -9106,6 +9587,8 @@ function salvarAgendamento(){
 
   fecharModal('modal-agendamento');
   renderAgenda();
+  if(typeof renderDesmarcados==='function') renderDesmarcados();
+  if(typeof atualizarBadgeDesmarcados==='function') atualizarBadgeDesmarcados();
   showSaveToast('Agendamento salvo');
 }
 
@@ -9128,6 +9611,7 @@ function excluirAgendamento(){
     'salvarPendenciaModal','salvarCheckinValor','salvarCheckinItem','salvarFeriado',
     'salvarAgendaProfissional','salvarDisponibilidade','salvarBloqueio','salvarLinkAgenda',
     'salvarAgendamento','excluirAgendamento',
+    'salvarRecontato','addRegraRecontato','deleteRegraRecontato',
     // Structural actions that immediately change data (add/remove items)
     'addStatus','removeStatus','addRitualLinha','removeRitualLinha',
     'addFlowAction','deleteFlowAction',
