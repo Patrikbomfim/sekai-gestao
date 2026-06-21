@@ -2632,8 +2632,8 @@ const PERMISSOES_GRUPOS = [
     itens:[
       {id:'pendencias_ver',label:'Visualizar'},
       {id:'pendencias_criar',label:'Criar'},
-      {id:'pendencias_editar',label:'Editar'},
-      {id:'pendencias_excluir',label:'Excluir/concluir'},
+      {id:'pendencias_editar',label:'Editar / Concluir / Reabrir'},
+      {id:'pendencias_excluir',label:'Excluir (apaga definitivamente)'},
     ]
   },
   {
@@ -5845,10 +5845,11 @@ function renderPendencias(){
   if(pendFiltroResp) lista=lista.filter(p=>p.responsavel===pendFiltroResp);
   if(pendFiltroStatus) lista=lista.filter(p=>p.status===pendFiltroStatus);
 
-  // Enriquecer com nome do criador
+  // Enriquecer com nome do criador e de quem concluiu
   lista=lista.map(p=>{
     const criador = usuarios.find(u=>u.id===p.criadoPor);
-    return {...p, criadoPorNome: criador ? criador.nome : (p.criadoPor ? p.criadoPor : '—')};
+    const concluidor = usuarios.find(u=>u.id===p.concluidoPor);
+    return {...p, criadoPorNome: criador ? criador.nome : (p.criadoPor ? p.criadoPor : '—'), concluidoPorNome: concluidor ? concluidor.nome : (p.concluidoPor || null)};
   });
 
   lista=ordenarPendencias(lista);
@@ -5886,7 +5887,7 @@ function renderPendencias(){
     <div style="font-size:12px;color:var(--tx2)">${p.criadoPorNome||'—'}</div>
     <div style="font-size:13px;font-weight:500">${p.responsavel||'—'}</div>
     <div style="font-size:12px;color:var(--tx2)">${p.prazo?fmtDate(parseIso(p.prazo)):'—'}</div>
-    <div><span class="pill ${p.status==='concluida'?'p-green':'p-warn'}" ${podeConcluir?`style="cursor:pointer" onclick="event.stopPropagation();togglePendenciaCentral('${p.ocorrenciaId}','${p.id}')"`:''}>${p.status==='concluida'?'✓ Concluída':'Pendente'}</span></div>
+    <div><span class="pill ${p.status==='concluida'?'p-green':'p-warn'}" ${podeConcluir?`style="cursor:pointer" onclick="event.stopPropagation();togglePendenciaCentral('${p.ocorrenciaId}','${p.id}')"`:''} ${p.status==='concluida'&&p.concluidoPorNome?`title="Concluída por ${esc(p.concluidoPorNome)}${p.concluidoEm?' em '+fmtDate(parseIso(p.concluidoEm)):''}"`:''}>${p.status==='concluida'?'✓ Concluída':'Pendente'}</span>${p.status==='concluida'&&p.concluidoPorNome?`<div style="font-size:10px;color:var(--tx3);margin-top:2px">por ${esc(p.concluidoPorNome)}</div>`:''}</div>
     <div style="display:flex;gap:6px;justify-content:flex-end" onclick="event.stopPropagation()">
       ${podeConcluir?`<button class="btn btn-ghost btn-sm" style="padding:4px 8px" title="${p.status==='concluida'?'Reabrir':'Concluir'}" onclick="togglePendenciaCentral('${p.ocorrenciaId}','${p.id}')">${p.status==='concluida'?'↺':'✓'}</button>`:''}
       ${podeExcluirPend?`<button class="btn btn-danger btn-sm" style="padding:4px 8px" title="Excluir" onclick="excluirPendenciaCentral('${p.ocorrenciaId}','${p.id}',${p.avulsa})">✕</button>`:''}
@@ -5905,6 +5906,8 @@ function togglePendenciaCentral(ocorrenciaId,pendId){
     const p=pendenciasAvulsas.find(x=>x.id===pendId);
     if(!p)return;
     p.status=p.status==='concluida'?'pendente':'concluida';
+    if(p.status==='concluida'){ p.concluidoPor=usuarioAtualId; p.concluidoEm=iso(hoje); }
+    else { p.concluidoPor=null; p.concluidoEm=null; }
     salvarLS('sk3-pendencias-avulsas',pendenciasAvulsas);
     renderPendencias();
     return;
@@ -5914,9 +5917,11 @@ function togglePendenciaCentral(ocorrenciaId,pendId){
   const p=o.pendencias.find(x=>x.id===pendId);
   if(!p)return;
   p.status=p.status==='concluida'?'pendente':'concluida';
+  if(p.status==='concluida'){ p.concluidoPor=usuarioAtualId; p.concluidoEm=iso(hoje); }
+  else { p.concluidoPor=null; p.concluidoEm=null; }
   // sincroniza com revisaoPendencias de outras ocorrências
   reunioesOcorrencias.forEach(occ=>{
-    (occ.revisaoPendencias||[]).forEach(item=>{ if(item.id===pendId) item.status=p.status; });
+    (occ.revisaoPendencias||[]).forEach(item=>{ if(item.id===pendId){ item.status=p.status; item.concluidoPor=p.concluidoPor; item.concluidoEm=p.concluidoEm; } });
   });
   salvarLS('sk3-reunioes-ocorrencias',reunioesOcorrencias);
   renderPendencias();
