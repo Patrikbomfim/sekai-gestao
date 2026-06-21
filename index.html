@@ -1439,6 +1439,18 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="fg">
         <div class="fl fg-full"><label>Nome completo *</label><input type="text" id="mu-nome" placeholder="Ex: Fernanda Souza"></div>
         <div class="fl">
+          <label>E-mail de acesso *</label>
+          <input type="email" id="mu-email" placeholder="nome@clinicasekai.com.br">
+        </div>
+        <div class="fl">
+          <label id="mu-senha-label">Senha de acesso *</label>
+          <input type="text" id="mu-senha" placeholder="Defina uma senha">
+        </div>
+        <div class="fl fg-full">
+          <label>Cargo *</label>
+          <select id="mu-cargo"></select>
+        </div>
+        <div class="fl">
           <label>CPF</label>
           <input type="text" id="mu-cpf" placeholder="000.000.000-00" oninput="fmtCPF(this)" onblur="validarCPF(this)">
         </div>
@@ -1457,12 +1469,13 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="fl"><label>Número</label><input type="text" id="mu-numero" placeholder="Ex: 123"></div>
         <div class="fl"><label>Complemento</label><input type="text" id="mu-complemento" placeholder="Apto, sala, bloco..."></div>
         <div class="fl fg-full"><label>Observação</label><textarea id="mu-obs" rows="2" placeholder="Qualquer informação relevante sobre este usuário..."></textarea></div>
+        <div class="fl fg-full" id="mu-erro" style="color:#991B1B;font-size:12px;display:none"></div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-danger btn-sm" id="mu-excluir" style="display:none" onclick="excluirUsuario()">Excluir</button>
       <button class="btn btn-ghost" onclick="fecharModal('modal-usuario')">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarUsuario()">Salvar →</button>
+      <button class="btn btn-primary" id="mu-salvar-btn" onclick="salvarUsuario()">Salvar →</button>
     </div>
   </div>
 </div>
@@ -4659,8 +4672,14 @@ function renderUsuarios(){
 function abrirModalUsuario(id){
   modalUsuarioId=id||null;
   const u=id?usuarios.find(x=>x.id===id):null;
+  const membroEquipe=id?equipe.find(e=>typeof e!=='string'&&e.usuarioId===id):null;
   document.getElementById('mu-titulo').textContent=u?'Editar usuário':'Novo usuário';
   document.getElementById('mu-nome').value=u?.nome||'';
+  document.getElementById('mu-email').value=u?.email||'';
+  document.getElementById('mu-email').disabled=false;
+  document.getElementById('mu-senha').value='';
+  document.getElementById('mu-senha').placeholder=u?'Deixe em branco para manter a senha atual':'Defina uma senha';
+  document.getElementById('mu-senha-label').textContent=u?'Nova senha (opcional)':'Senha de acesso *';
   document.getElementById('mu-cpf').value=u?.cpf||'';
   document.getElementById('mu-nasc').value=u?.nascimento||'';
   document.getElementById('mu-cep').value=u?.cep||'';
@@ -4670,8 +4689,24 @@ function abrirModalUsuario(id){
   document.getElementById('mu-complemento').value=u?.complemento||'';
   document.getElementById('mu-obs').value=u?.obs||'';
   document.getElementById('mu-cep-hint').textContent='';
+  document.getElementById('mu-erro').style.display='none';
+  const selCargo=document.getElementById('mu-cargo');
+  selCargo.innerHTML=cargos.map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join('');
+  selCargo.value=membroEquipe?.cargoId||cargos[0]?.id||'';
   document.getElementById('mu-excluir').style.display=u?'':'none';
   document.getElementById('modal-usuario').classList.add('open');
+}
+
+// Chama a função administrativa segura (criar/editar login, senha, e-mail, cargo)
+async function chamarAdminUsuarios(payload){
+  const { data: sessao } = await supa.auth.getSession();
+  const token = sessao?.session?.access_token;
+  const resp = await fetch(SUPABASE_URL + '/functions/v1/admin-usuarios', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify(payload),
+  });
+  return await resp.json();
 }
 
 async function buscarCEPUsuario(){
@@ -4689,13 +4724,25 @@ async function buscarCEPUsuario(){
   }catch(e){hint.textContent='Erro ao buscar CEP';hint.className='input-hint err';}
 }
 
-function salvarUsuario(){
+async function salvarUsuario(){
   const nome=document.getElementById('mu-nome').value.trim();
+  const email=document.getElementById('mu-email').value.trim();
+  const senha=document.getElementById('mu-senha').value;
+  const cargoId=document.getElementById('mu-cargo').value;
+  const erroEl=document.getElementById('mu-erro');
+  erroEl.style.display='none';
   if(!nome){alert('Informe o nome do usuário.');return;}
+  if(!email){alert('Informe o e-mail de acesso.');return;}
+  if(!modalUsuarioId && !senha){alert('Defina uma senha de acesso.');return;}
+  if(!cargoId){alert('Selecione um cargo.');return;}
   const cpfEl=document.getElementById('mu-cpf');
   if(cpfEl.value.trim()&&!validarCPF(cpfEl)){alert('O CPF informado é inválido.');return;}
-  const dados={
-    nome,
+
+  const btn=document.getElementById('mu-salvar-btn');
+  btn.disabled=true; btn.textContent='Salvando…';
+
+  const dadosLocais={
+    nome, email,
     cpf:cpfEl.value.trim(),
     nascimento:document.getElementById('mu-nasc').value,
     cep:document.getElementById('mu-cep').value.trim(),
@@ -4705,33 +4752,65 @@ function salvarUsuario(){
     complemento:document.getElementById('mu-complemento').value.trim(),
     obs:document.getElementById('mu-obs').value.trim(),
   };
-  if(modalUsuarioId){
-    const u=usuarios.find(x=>x.id===modalUsuarioId);
-    Object.assign(u,dados);
-    // mantém nome sincronizado na equipe
-    equipe.forEach(e=>{ if(typeof e!=='string'&&e.usuarioId===modalUsuarioId) e.nome=dados.nome; });
-    salvarLS('sk3-equipe',equipe);
-  } else {
-    usuarios.push({id:'us_'+Date.now(),...dados});
+
+  try{
+    if(!modalUsuarioId){
+      // ── NOVO USUÁRIO: cria login real + perfil + cargo, tudo de uma vez ──
+      const r = await chamarAdminUsuarios({ action:'criar', email, senha, nome, cargo_id:cargoId });
+      if(r.error){ erroEl.textContent=r.error; erroEl.style.display='block'; btn.disabled=false; btn.textContent='Salvar →'; return; }
+      usuarios.push({id:r.id, ...dadosLocais});
+      equipe.push({nome, usuarioId:r.id, cargoId, principal:false});
+      salvarLS('sk3-usuarios',usuarios);
+      salvarLS('sk3-equipe',equipe);
+    } else {
+      // ── EDITAR USUÁRIO EXISTENTE ──
+      const u=usuarios.find(x=>x.id===modalUsuarioId);
+      const emailMudou = email !== u.email;
+      if(emailMudou){
+        const r = await chamarAdminUsuarios({ action:'trocar_email', user_id:modalUsuarioId, novo_email:email });
+        if(r.error){ erroEl.textContent=r.error; erroEl.style.display='block'; btn.disabled=false; btn.textContent='Salvar →'; return; }
+      }
+      if(senha){
+        const r = await chamarAdminUsuarios({ action:'trocar_senha', user_id:modalUsuarioId, nova_senha:senha });
+        if(r.error){ erroEl.textContent=r.error; erroEl.style.display='block'; btn.disabled=false; btn.textContent='Salvar →'; return; }
+      }
+      const membroEquipe=equipe.find(e=>typeof e!=='string'&&e.usuarioId===modalUsuarioId);
+      if(!membroEquipe || membroEquipe.cargoId!==cargoId || u.nome!==nome){
+        const r = await chamarAdminUsuarios({ action:'editar_cargo', user_id:modalUsuarioId, cargo_id:cargoId, nome });
+        if(r.error){ erroEl.textContent=r.error; erroEl.style.display='block'; btn.disabled=false; btn.textContent='Salvar →'; return; }
+      }
+      Object.assign(u,dadosLocais);
+      if(membroEquipe){ membroEquipe.cargoId=cargoId; membroEquipe.nome=nome; }
+      else { equipe.push({nome, usuarioId:modalUsuarioId, cargoId, principal:false}); }
+      salvarLS('sk3-equipe',equipe);
+      salvarLS('sk3-usuarios',usuarios);
+    }
+  }catch(e){
+    erroEl.textContent='Erro de conexão. Tente novamente.';
+    erroEl.style.display='block';
+    btn.disabled=false; btn.textContent='Salvar →';
+    return;
   }
-  salvarLS('sk3-usuarios',usuarios);
+
+  btn.disabled=false; btn.textContent='Salvar →';
   fecharModal('modal-usuario');
   renderUsuarios();
   renderEquipe();
   showSaveToast('Usuário salvo');
 }
 
-function excluirUsuario(){
+async function excluirUsuario(){
   if(!modalUsuarioId)return;
-  if(equipe.some(e=>typeof e!=='string'&&e.usuarioId===modalUsuarioId)){
-    alert('Este usuário está vinculado à Equipe. Remova-o da Equipe antes de excluir.');
-    return;
-  }
-  if(!confirm('Excluir este usuário? Não pode ser desfeito.'))return;
+  if(!confirm('Excluir este usuário? O login dele deixa de funcionar imediatamente. Não pode ser desfeito.'))return;
+  const r = await chamarAdminUsuarios({ action:'excluir', user_id:modalUsuarioId });
+  if(r.error){ alert('Erro ao excluir: '+r.error); return; }
   usuarios=usuarios.filter(u=>u.id!==modalUsuarioId);
+  equipe=equipe.filter(e=>typeof e==='string'||e.usuarioId!==modalUsuarioId);
   salvarLS('sk3-usuarios',usuarios);
+  salvarLS('sk3-equipe',equipe);
   fecharModal('modal-usuario');
   renderUsuarios();
+  renderEquipe();
 }
 
 // ── CARGOS ───────────────────────────────────────────────────────────────
@@ -9349,7 +9428,7 @@ async function _carregarDadosEAtivar(){
 
   const [{ data: dados, error: e1 }, { data: perfis, error: e2 }, { data: cargosDb, error: e3 }] = await Promise.all([
     supa.from('dados_sistema').select('chave,valor'),
-    supa.from('profiles').select('id,nome,cpf,nascimento,cargo_id,ativo'),
+    supa.from('profiles').select('id,nome,cpf,nascimento,cargo_id,ativo,email'),
     supa.from('cargos').select('id,nome,permissoes'),
   ]);
 
@@ -9367,7 +9446,7 @@ async function _carregarDadosEAtivar(){
   const meuId = sessao?.session?.user?.id;
 
   const usuariosMap = (perfis || []).filter(p => p.ativo !== false).map(p => ({
-    id: p.id, nome: p.nome || '', cpf: p.cpf || '', nascimento: p.nascimento || '',
+    id: p.id, nome: p.nome || '', cpf: p.cpf || '', nascimento: p.nascimento || '', email: p.email || '',
     cep:'', cidade:'', rua:'', numero:'', complemento:'', obs:''
   }));
   const equipeMap = (perfis || []).filter(p => p.ativo !== false).map(p => ({
