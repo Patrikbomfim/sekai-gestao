@@ -9637,7 +9637,16 @@ function agmRenderCamposExtras(agendamentoExistente){
   });
 
   // Campos extras configuráveis (camposAgendamento)
-  const ativos = camposAgendamento.filter(c=>c.ativo!==false);
+  // Exclui campos que duplicam campos nativos do sistema
+  const IDS_SISTEMA = new Set(CAMPOS_AGM_SISTEMA.map(c=>c.id));
+  const LABELS_SISTEMA_NORMALIZED = new Set(CAMPOS_AGM_SISTEMA.map(c=>c.label.toLowerCase().trim()));
+  const ativos = camposAgendamento.filter(c=>{
+    if(c.ativo===false) return false;
+    if(IDS_SISTEMA.has(c.id)) return false;
+    // Evita duplicar "Primeira consulta" se já está como campo nativo
+    if(c.label && LABELS_SISTEMA_NORMALIZED.has(c.label.toLowerCase().trim())) return false;
+    return true;
+  });
   ativos.forEach(c=>{
     // Tenta pegar de camposExtras; caso seja o Procedimento customizado e não tenha camposExtras, usa o campo nativo
     let val = agendamentoExistente && agendamentoExistente.camposExtras ? (agendamentoExistente.camposExtras[c.id]||'') : '';
