@@ -43,7 +43,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:13px
 
 /* CONFIG SUBNAV */
 .subnav{background:var(--surface);border-right:1px solid var(--border);padding:14px 0;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;display:none}
-.layout.has-subnav .subnav{display:block}
+.layout.has-subnav .subnav.subnav-ativo{display:block}
 .subnav-title{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:4px 0 10px}
 .subnav-btn{display:flex;align-items:center;gap:8px;padding:7px 16px;cursor:pointer;font-size:12px;color:var(--tx2);border:none;border-left:2px solid transparent;background:none;width:100%;text-align:left;transition:color .1s;font-family:var(--font)}
 .subnav-btn:hover{color:var(--tx)}
@@ -561,6 +561,13 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <button class="nav-btn" onclick="goTo('melhorias',this)"><span class="nav-ic">🛠</span>Melhorias para o sistema</button>
 </nav>
 
+<nav class="subnav" id="fluxo-subnav">
+  <div class="subnav-title">Fluxo de ação</div>
+  <div id="fluxo-subnav-situacoes"></div>
+  <div style="height:1px;background:var(--border);margin:10px 16px"></div>
+  <button class="subnav-btn" id="fluxo-subnav-historico" onclick="selectFluxoSubnav('historico',this)"><span class="nav-ic">📋</span>Histórico</button>
+</nav>
+
 <nav class="subnav" id="config-subnav">
   <div class="subnav-title">Configurações</div>
   <button class="subnav-btn on" onclick="showCfg('usuarios',this)"><span class="nav-ic">◉</span>Usuários</button>
@@ -841,28 +848,26 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 <!-- FLUXOS DE AÇÃO -->
 <div id="sec-fluxos" class="sec">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1px">
-    <div class="pg-title">Fluxos de ação</div>
-    <button class="btn btn-ghost btn-sm" onclick="abrirHistoricoAcoes()">📋 Histórico de ações</button>
-  </div>
-  <div class="pg-desc">Defina quais ações são geradas automaticamente para cada situação do paciente</div>
-  <div class="alert a-info">Cada ação define: quando acontece (dias a partir do evento ou de hoje), o responsável, o tipo e o script da mensagem. Ao alterar aqui, todos os pacientes novos seguirão o fluxo atualizado.</div>
-
-  <div class="flow-status-tabs" id="fst-tabs"></div>
-  <div id="fst-content"></div>
-
-  <div style="margin-top:16px">
-    <button class="btn btn-primary" onclick="addFlowAction()" data-perm="fluxos_criar">+ Nova ação nesta situação</button>
-  </div>
-</div>
-
-<!-- MODAL HISTÓRICO DE AÇÕES -->
-<div class="modal-ov" id="modal-historico-acoes">
-  <div class="modal" style="width:720px">
-    <div class="modal-header">
-      <div class="modal-title">Histórico de ações</div>
+  <!-- subpágina: situação -->
+  <div id="fluxo-area-situacao">
+    <div style="margin-bottom:16px">
+      <div class="pg-title" id="fluxo-area-titulo">Fluxo de ação</div>
+      <div class="pg-desc">Defina quais ações são geradas automaticamente para cada situação do paciente</div>
     </div>
-    <div class="modal-body">
+    <div class="alert a-info" style="margin-bottom:14px">Cada ação define: quando acontece (dias a partir do evento ou de hoje), o responsável, o tipo e o script da mensagem. Ao alterar aqui, todos os pacientes novos seguirão o fluxo atualizado.</div>
+    <div id="fst-content"></div>
+    <div style="margin-top:16px">
+      <button class="btn btn-primary" id="btn-add-flow-action" onclick="addFlowAction()" data-perm="fluxos_criar">+ Nova ação nesta situação</button>
+    </div>
+  </div>
+
+  <!-- subpágina: histórico -->
+  <div id="fluxo-area-historico" style="display:none">
+    <div style="margin-bottom:16px">
+      <div class="pg-title">Histórico de ações</div>
+      <div class="pg-desc">Registro de todas as ações concluídas ou não realizadas</div>
+    </div>
+    <div class="card" style="padding:14px 16px">
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
         <select id="hac-filtro-situacao" onchange="renderHistoricoAcoes()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
           <option value="">Todas as situações</option>
@@ -876,13 +881,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <option value="">Todos responsáveis</option>
         </select>
       </div>
-      <div id="hac-lista" style="max-height:480px;overflow-y:auto"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="fecharModal('modal-historico-acoes')">Fechar</button>
+      <div id="hac-lista"></div>
     </div>
   </div>
 </div>
+
+<!-- modal-historico-acoes removido: virou subpágina inline -->
 
 <!-- MODAL CONCLUIR AÇÃO (realizada / não realizada + motivo) -->
 <div class="modal-ov" id="modal-concluir-acao">
@@ -3396,7 +3400,9 @@ function goTo(id, btn){
   document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('on'));
   document.getElementById('sec-'+id).classList.add('on');
   if(btn) btn.classList.add('on');
-  document.querySelector('.layout').classList.toggle('has-subnav', id==='config');
+  document.querySelector('.layout').classList.toggle('has-subnav', id==='config' || id==='fluxos');
+  document.getElementById('fluxo-subnav').classList.toggle('subnav-ativo', id==='fluxos');
+  document.getElementById('config-subnav').classList.toggle('subnav-ativo', id==='config');
   if(btn && btn.classList.contains('nav-btn')) colapsarMenuLateral();
   if(id==='hoje') renderHoje();
   if(id==='proximos') renderProximos();
@@ -3569,7 +3575,7 @@ function salvarConclusaoAcao(){
 
 // ── HISTÓRICO DE AÇÕES ─────────────────────────────────────────────────
 function abrirHistoricoAcoes(){
-  // Popula filtros
+  // Popula filtros (agora na subpágina inline)
   const selSit = document.getElementById('hac-filtro-situacao');
   if(selSit){
     selSit.innerHTML = '<option value="">Todas as situações</option>' +
@@ -3582,7 +3588,6 @@ function abrirHistoricoAcoes(){
       resps.map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join('');
   }
   renderHistoricoAcoes();
-  document.getElementById('modal-historico-acoes').classList.add('open');
 }
 
 function renderHistoricoAcoes(){
@@ -5281,12 +5286,51 @@ function excluirPt(){
 // ── FLUXOS EDITOR ────────────────────────────────────────────────────
 const STATUS_ORDER=['lead','avaliacao','encaminhar','orcamento','tratamento','alta'];
 let fluxoStatusAtual='lead';
+let fluxoSubnavAtual='lead'; // 'historico' ou um id de status
+
 function renderFluxos(){
-  const tabs=document.getElementById('fst-tabs');
-  tabs.innerHTML=statusList.map(s=>`<button class="fst${s.id===fluxoStatusAtual?' on':''}" onclick="selectFluxoStatus('${s.id}')">${statusLabelFmt(s.icone,s.label)}</button>`).join('');
-  renderFluxoContent();
+  // Monta os botões no subnav lateral
+  const subnav = document.getElementById('fluxo-subnav-situacoes');
+  if(subnav){
+    subnav.innerHTML = statusList.map(s=>{
+      const on = s.id===fluxoStatusAtual && fluxoSubnavAtual!=='historico';
+      const icone = s.icone ? s.icone+' ' : '';
+      return `<button class="subnav-btn${on?' on':''}" onclick="selectFluxoSubnav('${s.id}',this)">${icone}${esc(s.label)}</button>`;
+    }).join('');
+  }
+  // Atualiza ativo no botão histórico
+  const btnHist = document.getElementById('fluxo-subnav-historico');
+  if(btnHist) btnHist.classList.toggle('on', fluxoSubnavAtual==='historico');
+
+  if(fluxoSubnavAtual==='historico'){
+    document.getElementById('fluxo-area-situacao').style.display='none';
+    document.getElementById('fluxo-area-historico').style.display='';
+    abrirHistoricoAcoes();
+  } else {
+    document.getElementById('fluxo-area-situacao').style.display='';
+    document.getElementById('fluxo-area-historico').style.display='none';
+    // Atualiza título da subpágina
+    const st = statusList.find(s=>s.id===fluxoStatusAtual);
+    const tituloEl = document.getElementById('fluxo-area-titulo');
+    if(tituloEl && st) tituloEl.textContent = (st.icone?st.icone+' ':'')+st.label;
+    renderFluxoContent();
+  }
 }
-function selectFluxoStatus(s){fluxoStatusAtual=s;renderFluxos();}
+
+function selectFluxoSubnav(id, btn){
+  // Remove .on de todos os botões do subnav
+  document.querySelectorAll('#fluxo-subnav .subnav-btn').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+  if(id==='historico'){
+    fluxoSubnavAtual='historico';
+  } else {
+    fluxoStatusAtual=id;
+    fluxoSubnavAtual=id;
+  }
+  renderFluxos();
+}
+
+function selectFluxoStatus(s){fluxoStatusAtual=s;fluxoSubnavAtual=s;renderFluxos();}
 function renderFluxoContent(){
   const c=document.getElementById('fst-content');
   const acoes=fluxos[fluxoStatusAtual]||[];
@@ -5295,7 +5339,7 @@ function renderFluxoContent(){
   const podeCriar=temPerm('fluxos_criar');
 
   // Atualiza botão de adicionar ação
-  const btnAdd=document.querySelector('[data-perm="fluxos_criar"]');
+  const btnAdd=document.getElementById('btn-add-flow-action');
   if(btnAdd) btnAdd.style.display=podeCriar?'':'none';
 
   if(!acoes.length){c.innerHTML=`<div class="card"><div class="empty"><div class="empty-ic">⚙️</div>Nenhuma ação nesta situação ainda.</div></div>`;return;}
