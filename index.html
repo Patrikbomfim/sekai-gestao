@@ -1890,38 +1890,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             <textarea id="agm-recontato-obs" rows="2" placeholder="Observação sobre o contato (opcional)" style="margin-top:6px"></textarea>
           </div>
         </div>
-        <div class="fl fg-full">
-          <label>Procedimento</label>
-          <input type="text" id="agm-procedimento" placeholder="Ex: Avaliação, Limpeza, Clareamento...">
-        </div>
-        <div class="fl fg-full">
-          <label>Observação</label>
-          <textarea id="agm-obs" rows="2" placeholder="Informações adicionais sobre este agendamento..."></textarea>
-        </div>
-        <div class="fl fg-full">
-          <label>Primeira consulta?</label>
-          <select id="agm-primeira-consulta" onchange="agmTogglePrimeiraConsulta()">
-            <option value="">Selecionar...</option>
-            <option value="nao">Não</option>
-            <option value="sim">Sim</option>
-          </select>
-        </div>
-        <div class="fl fg-full" id="agm-origem-wrap" style="display:none">
-          <label>Origem</label>
-          <select id="agm-origem" onchange="agmToggleOrigemTexto()">
-            <option value="">Selecionar...</option>
-            <option value="Instagram">Instagram</option>
-            <option value="Facebook">Facebook</option>
-            <option value="Google">Google</option>
-            <option value="Radio">Rádio</option>
-            <option value="Indicação">Indicação</option>
-            <option value="Outro">Outro</option>
-          </select>
-        </div>
-        <div class="fl fg-full" id="agm-origem-texto-wrap" style="display:none">
-          <label id="agm-origem-texto-label">Detalhes</label>
-          <input type="text" id="agm-origem-texto" placeholder="Informe os detalhes...">
-        </div>
+        <div id="agm-campos-extras" style="display:contents"></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -8646,6 +8615,7 @@ const CAMPOS_AGM_SISTEMA = [
   {id:'agm_status',      label:'Status',           tipo:'sistema', obrigatorio:false, hardLocked:false},
   {id:'agm_procedimento',label:'Procedimento',     tipo:'texto',   obrigatorio:false, hardLocked:false},
   {id:'agm_obs',         label:'Observação',       tipo:'textarea',obrigatorio:false, hardLocked:false},
+  {id:'agm_primeira_consulta', label:'Primeira consulta?', tipo:'primeira_consulta', obrigatorio:false, hardLocked:false},
 ];
 
 const CAMPOS_EVT_SISTEMA = [
@@ -8675,7 +8645,7 @@ function renderCfgCamposModal(containerId, sistemaCampos, extraCampos, addFn, re
   const el = document.getElementById(containerId);
   if(!el) return;
 
-  const TIPO_LABELS = {sistema:'Sistema',texto:'Texto',lista:'Lista (opções)',textarea:'Texto longo',toggle:'Sim/Não',numero:'Número'};
+  const TIPO_LABELS = {sistema:'Sistema',texto:'Texto',lista:'Lista (opções)',textarea:'Texto longo',toggle:'Sim/Não',numero:'Número',primeira_consulta:'1ª Consulta + Origem'};
 
   let html = '';
 
@@ -9538,14 +9508,7 @@ function abrirModalAgendamento(agendamentoId, dataPre, horaPre, salaPre, usuario
   document.getElementById('agm-recontato-obs').value = a ? (a.recontatoObs||'') : '';
   agmToggleCancelamento();
 
-  document.getElementById('agm-procedimento').value = a ? (a.procedimento||'') : '';
-  document.getElementById('agm-obs').value = a ? (a.obs||'') : '';
-
-  document.getElementById('agm-primeira-consulta').value = a ? (a.primeiraConsulta||'') : '';
-  document.getElementById('agm-origem').value = a ? (a.origemPaciente||'') : '';
-  document.getElementById('agm-origem-texto').value = a ? (a.origemPacienteTexto||'') : '';
-  agmTogglePrimeiraConsulta();
-  if(a && a.origemPaciente) agmToggleOrigemTexto();
+  agmRenderCamposExtras(a || null);
 
   document.getElementById('modal-agendamento').classList.add('open');
 
@@ -9608,36 +9571,170 @@ function agmToggleRecontatoInfo(){
   }
 }
 
+function agmRenderCamposExtras(agendamentoExistente){
+  const cont = document.getElementById('agm-campos-extras');
+  if(!cont) return;
+  let html = '';
+
+  // Campos sistema soft-locked: Procedimento, Obs, Primeira consulta
+  const sisCampos = [{id:'agm_procedimento'},{id:'agm_obs'},{id:'agm_primeira_consulta'}];
+  sisCampos.forEach(({id}) => {
+    const cfg = cfgCamposAgmSistema[id] || {};
+    const ativo = cfg.ativo !== false;
+    if(!ativo) return;
+    const def = CAMPOS_AGM_SISTEMA.find(c=>c.id===id);
+    const obrig = (cfg.obrigatorio !== undefined ? cfg.obrigatorio : (def?def.obrigatorio:false));
+    const labelStar = obrig ? ' *' : '';
+
+    if(id==='agm_procedimento'){
+      // Verifica se há campo customizado de lista chamado Procedimento ativo em camposAgendamento
+      // Se sim, usa o customizado (lista), se não, usa o texto nativo
+      const customProc = camposAgendamento.find(c=>c.ativo!==false && c.tipo==='lista' && c.label.toLowerCase().includes('procedimento'));
+      if(customProc) return; // será renderizado pelos campos extras abaixo
+      const val = agendamentoExistente ? (agendamentoExistente.procedimento||'') : '';
+      html += `<div class="fl fg-full"><label>Procedimento${labelStar}</label>
+        <input type="text" id="agm-procedimento" placeholder="Ex: Avaliação, Limpeza, Clareamento..." value="${esc(val)}">
+      </div>`;
+    } else if(id==='agm_obs'){
+      const val = agendamentoExistente ? (agendamentoExistente.obs||'') : '';
+      html += `<div class="fl fg-full"><label>Observação${labelStar}</label>
+        <textarea id="agm-obs" rows="2" placeholder="Informações adicionais sobre este agendamento...">${esc(val)}</textarea>
+      </div>`;
+    } else if(id==='agm_primeira_consulta'){
+      const val = agendamentoExistente ? (agendamentoExistente.primeiraConsulta||'') : '';
+      const origemVal = agendamentoExistente ? (agendamentoExistente.origemPaciente||'') : '';
+      const origemTextoVal = agendamentoExistente ? (agendamentoExistente.origemPacienteTexto||'') : '';
+      const showOrigem = val==='sim';
+      const showTexto = showOrigem && (origemVal==='Indicação'||origemVal==='Outro');
+      const labelOrigem = origemVal==='Indicação' ? 'Quem indicou?' : 'Qual a origem?';
+      const placeholderTexto = origemVal==='Indicação' ? 'Nome de quem indicou...' : 'Descreva a origem...';
+      html += `<div class="fl fg-full"><label>Primeira consulta?${labelStar}</label>
+        <select id="agm-primeira-consulta" onchange="agmTogglePrimeiraConsulta()">
+          <option value="">Selecionar...</option>
+          <option value="nao" ${val==='nao'?'selected':''}>Não</option>
+          <option value="sim" ${val==='sim'?'selected':''}>Sim</option>
+        </select>
+      </div>
+      <div class="fl fg-full" id="agm-origem-wrap" style="${showOrigem?'':'display:none'}">
+        <label>Origem</label>
+        <select id="agm-origem" onchange="agmToggleOrigemTexto()">
+          <option value="">Selecionar...</option>
+          <option value="Instagram" ${origemVal==='Instagram'?'selected':''}>Instagram</option>
+          <option value="Facebook" ${origemVal==='Facebook'?'selected':''}>Facebook</option>
+          <option value="Google" ${origemVal==='Google'?'selected':''}>Google</option>
+          <option value="Radio" ${origemVal==='Radio'?'selected':''}>Rádio</option>
+          <option value="Indicação" ${origemVal==='Indicação'?'selected':''}>Indicação</option>
+          <option value="Outro" ${origemVal==='Outro'?'selected':''}>Outro</option>
+        </select>
+      </div>
+      <div class="fl fg-full" id="agm-origem-texto-wrap" style="${showTexto?'':'display:none'}">
+        <label id="agm-origem-texto-label">${labelOrigem}</label>
+        <input type="text" id="agm-origem-texto" placeholder="${placeholderTexto}" value="${esc(origemTextoVal)}">
+      </div>`;
+    }
+  });
+
+  // Campos extras configuráveis (camposAgendamento)
+  const ativos = camposAgendamento.filter(c=>c.ativo!==false);
+  ativos.forEach(c=>{
+    // Tenta pegar de camposExtras; caso seja o Procedimento customizado e não tenha camposExtras, usa o campo nativo
+    let val = agendamentoExistente && agendamentoExistente.camposExtras ? (agendamentoExistente.camposExtras[c.id]||'') : '';
+    if(!val && agendamentoExistente && c.tipo==='lista' && c.label.toLowerCase().includes('procedimento')){
+      val = agendamentoExistente.procedimento || '';
+    }
+    const labelStar = c.obrigatorio ? ' *' : '';
+    if(c.tipo==='lista'){
+      html += `<div class="fl fg-full"><label>${esc(c.label)}${labelStar}</label>
+        <select id="agmx-${c.id}" data-campo-id="${c.id}">
+          <option value="">Selecionar...</option>
+          ${(c.opcoes||[]).map(o=>`<option value="${esc(o)}" ${val===o?'selected':''}>${esc(o)}</option>`).join('')}
+        </select>
+      </div>`;
+    } else if(c.tipo==='textarea'){
+      html += `<div class="fl fg-full"><label>${esc(c.label)}${labelStar}</label>
+        <textarea id="agmx-${c.id}" data-campo-id="${c.id}" rows="2">${esc(val)}</textarea>
+      </div>`;
+    } else if(c.tipo==='toggle'){
+      html += `<div class="fl fg-full" style="flex-direction:row;align-items:center;gap:8px">
+        <input type="checkbox" id="agmx-${c.id}" data-campo-id="${c.id}" ${val==='sim'?'checked':''} style="width:auto">
+        <label for="agmx-${c.id}" style="font-size:13px;color:var(--tx);font-weight:400">${esc(c.label)}${labelStar}</label>
+      </div>`;
+    } else if(c.tipo==='numero'){
+      html += `<div class="fl fg-full"><label>${esc(c.label)}${labelStar}</label>
+        <input type="number" id="agmx-${c.id}" data-campo-id="${c.id}" value="${esc(val)}">
+      </div>`;
+    } else {
+      html += `<div class="fl fg-full"><label>${esc(c.label)}${labelStar}</label>
+        <input type="text" id="agmx-${c.id}" data-campo-id="${c.id}" value="${esc(val)}">
+      </div>`;
+    }
+  });
+
+  cont.innerHTML = html;
+}
+
 function agmTogglePrimeiraConsulta(){
-  const val = document.getElementById('agm-primeira-consulta').value;
+  const val = document.getElementById('agm-primeira-consulta')?.value;
   const origemWrap = document.getElementById('agm-origem-wrap');
   const textoWrap = document.getElementById('agm-origem-texto-wrap');
+  if(!origemWrap) return;
   if(val === 'sim'){
     origemWrap.style.display = '';
   } else {
     origemWrap.style.display = 'none';
-    textoWrap.style.display = 'none';
-    document.getElementById('agm-origem').value = '';
-    document.getElementById('agm-origem-texto').value = '';
+    if(textoWrap) textoWrap.style.display = 'none';
+    const sel = document.getElementById('agm-origem'); if(sel) sel.value='';
+    const txt = document.getElementById('agm-origem-texto'); if(txt) txt.value='';
   }
 }
 
 function agmToggleOrigemTexto(){
-  const origem = document.getElementById('agm-origem').value;
+  const origem = document.getElementById('agm-origem')?.value;
   const textoWrap = document.getElementById('agm-origem-texto-wrap');
   const label = document.getElementById('agm-origem-texto-label');
+  if(!textoWrap) return;
   if(origem === 'Indicação'){
     textoWrap.style.display = '';
-    label.textContent = 'Quem indicou?';
-    document.getElementById('agm-origem-texto').placeholder = 'Nome de quem indicou...';
+    if(label) label.textContent = 'Quem indicou?';
+    const inp = document.getElementById('agm-origem-texto'); if(inp) inp.placeholder='Nome de quem indicou...';
   } else if(origem === 'Outro'){
     textoWrap.style.display = '';
-    label.textContent = 'Qual a origem?';
-    document.getElementById('agm-origem-texto').placeholder = 'Descreva a origem...';
+    if(label) label.textContent = 'Qual a origem?';
+    const inp = document.getElementById('agm-origem-texto'); if(inp) inp.placeholder='Descreva a origem...';
   } else {
     textoWrap.style.display = 'none';
-    document.getElementById('agm-origem-texto').value = '';
+    const inp = document.getElementById('agm-origem-texto'); if(inp) inp.value='';
   }
+}
+
+function agmLerCamposExtras(){
+  const resultado = {};
+  camposAgendamento.filter(c=>c.ativo!==false).forEach(c=>{
+    const el = document.getElementById('agmx-'+c.id);
+    if(!el) return;
+    if(c.tipo==='toggle') resultado[c.id] = el.checked ? 'sim' : 'nao';
+    else resultado[c.id] = el.value.trim();
+  });
+  return resultado;
+}
+
+function agmValidarCamposExtras(){
+  const ativos = camposAgendamento.filter(c=>c.ativo!==false && c.obrigatorio);
+  for(const c of ativos){
+    const el = document.getElementById('agmx-'+c.id);
+    if(!el) continue;
+    const v = c.tipo==='toggle' ? null : el.value.trim();
+    if(v !== null && !v){ alert(`O campo "${c.label}" é obrigatório.`); el.focus(); return false; }
+  }
+  // Valida Primeira consulta se obrigatório
+  const cfgPc = cfgCamposAgmSistema['agm_primeira_consulta']||{};
+  const defPc = CAMPOS_AGM_SISTEMA.find(c=>c.id==='agm_primeira_consulta');
+  const pcObrig = cfgPc.obrigatorio !== undefined ? cfgPc.obrigatorio : (defPc?defPc.obrigatorio:false);
+  if(pcObrig && (cfgPc.ativo !== false)){
+    const el = document.getElementById('agm-primeira-consulta');
+    if(el && !el.value){ alert('O campo "Primeira consulta?" é obrigatório.'); el.focus(); return false; }
+  }
+  return true;
 }
 
 function agmAtualizarSalasDisponiveis(salaPreSelecionada){
@@ -9763,11 +9860,27 @@ function salvarAgendamento(){
   const usuarioId=document.getElementById('agm-profissional').value;
   const salaId=document.getElementById('agm-sala').value;
   const status=document.getElementById('agm-status').value;
-  const procedimento=document.getElementById('agm-procedimento').value.trim();
-  const obs=document.getElementById('agm-obs').value.trim();
-  const primeiraConsulta=document.getElementById('agm-primeira-consulta').value||null;
-  const origemPaciente=document.getElementById('agm-origem').value||null;
-  const origemPacienteTexto=document.getElementById('agm-origem-texto').value.trim()||null;
+  const procedimentoEl=document.getElementById('agm-procedimento');
+  let procedimento=procedimentoEl ? procedimentoEl.value.trim() : '';
+  // Se Procedimento nativo está oculto mas há campo customizado de lista Procedimento, usa esse valor
+  if(!procedimento){
+    const customProc = camposAgendamento.find(c=>c.ativo!==false && c.tipo==='lista' && c.label.toLowerCase().includes('procedimento'));
+    if(customProc){
+      const cpEl = document.getElementById('agmx-'+customProc.id);
+      if(cpEl) procedimento = cpEl.value.trim();
+    }
+  }
+  const obsEl=document.getElementById('agm-obs');
+  const obs=obsEl ? obsEl.value.trim() : '';
+  const primeiraConsultaEl=document.getElementById('agm-primeira-consulta');
+  const primeiraConsulta=primeiraConsultaEl ? (primeiraConsultaEl.value||null) : null;
+  const origemPacienteEl=document.getElementById('agm-origem');
+  const origemPaciente=origemPacienteEl ? (origemPacienteEl.value||null) : null;
+  const origemPacienteTextoEl=document.getElementById('agm-origem-texto');
+  const origemPacienteTexto=origemPacienteTextoEl ? (origemPacienteTextoEl.value.trim()||null) : null;
+  const camposExtras = agmLerCamposExtras();
+
+  if(!agmValidarCamposExtras()) return;
 
   const situacaoVisivel = document.getElementById('agm-situacao-wrap').style.display!=='none';
   if(status==='realizado' && pacienteId && !situacaoVisivel){
@@ -9824,7 +9937,7 @@ function salvarAgendamento(){
 
   const fluxo = null; // definido apenas em agendamentos via encaminhamento
   const item={pacienteId,pacienteNome,pacienteFone:pacienteId?'':pacienteFone,usuarioId,salaId,data,horaInicio,horaFim,status,origem:'interno',procedimento,fluxo,obs,situacaoRegistrada:situacaoPaciente,
-    motivoCancelamento,jaReagendado,recontatoStatus,recontatoResponsavel,recontatoObs,recontatoCriadoEm,recontatoResolvidoEm,primeiraConsulta,origemPaciente,origemPacienteTexto};
+    motivoCancelamento,jaReagendado,recontatoStatus,recontatoResponsavel,recontatoObs,recontatoCriadoEm,recontatoResolvidoEm,primeiraConsulta,origemPaciente,origemPacienteTexto,camposExtras};
 
   if(editId){
     const idx=agendamentos.findIndex(a=>a.id===editId);
