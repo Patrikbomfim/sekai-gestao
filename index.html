@@ -636,6 +636,15 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <input type="date" id="ag-data" style="font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);height:28px;flex-shrink:0;width:130px">
     <button class="ag-today-btn" onclick="agendaBuscarData()" style="background:var(--ac);color:#fff;border-color:var(--ac);flex-shrink:0">Buscar</button>
     <button class="ag-today-btn" onclick="agendaLimparBusca()" id="ag-busca-limpar" style="display:none;flex-shrink:0">Limpar</button>
+    <div class="ag-divider"></div>
+    <!-- Busca por paciente -->
+    <span style="font-size:12px;color:var(--tx2);white-space:nowrap;flex-shrink:0">Paciente:</span>
+    <div style="position:relative;flex-shrink:0">
+      <input type="text" id="ag-busca-paciente" placeholder="Buscar paciente…" oninput="agendaBuscarPaciente(this.value)" autocomplete="off"
+        style="font-size:12px;padding:4px 28px 4px 7px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);height:28px;width:160px">
+      <button id="ag-busca-paciente-limpar" onclick="agendaLimparBuscaPaciente()" title="Limpar busca"
+        style="display:none;position:absolute;right:5px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;color:var(--tx3);font-size:13px;line-height:1;padding:0">✕</button>
+    </div>
     <div class="ag-toolbar-spacer"></div>
     <div class="ag-divider"></div>
     <!-- Dia / Semana -->
@@ -9400,6 +9409,80 @@ function agendaLimparBusca(){
   renderAgenda();
 }
 
+// ── BUSCA POR PACIENTE NA AGENDA ─────────────────────────────────────
+let agBuscaPacienteTexto = '';
+
+function agendaBuscarPaciente(texto){
+  agBuscaPacienteTexto = (texto||'').trim().toLowerCase();
+  const btnLimpar = document.getElementById('ag-busca-paciente-limpar');
+  if(btnLimpar) btnLimpar.style.display = agBuscaPacienteTexto ? '' : 'none';
+  renderAgendaBuscaPaciente();
+}
+
+function agendaLimparBuscaPaciente(){
+  agBuscaPacienteTexto = '';
+  const inp = document.getElementById('ag-busca-paciente');
+  if(inp) inp.value = '';
+  const btnLimpar = document.getElementById('ag-busca-paciente-limpar');
+  if(btnLimpar) btnLimpar.style.display = 'none';
+  const painel = document.getElementById('ag-busca-paciente-resultado');
+  if(painel) painel.remove();
+}
+
+function renderAgendaBuscaPaciente(){
+  const anterior = document.getElementById('ag-busca-paciente-resultado');
+  if(anterior) anterior.remove();
+  if(!agBuscaPacienteTexto) return;
+
+  const encontrados = agendamentos.filter(function(a){
+    return a.pacienteNome && a.pacienteNome.toLowerCase().includes(agBuscaPacienteTexto);
+  }).sort(function(a,b){
+    if(a.data > b.data) return -1;
+    if(a.data < b.data) return 1;
+    return a.horaInicio.localeCompare(b.horaInicio);
+  });
+
+  const sec = document.getElementById('sec-agenda');
+  if(!sec) return;
+
+  const statusLabel = {agendado:'Agendado', confirmado:'Confirmado', realizado:'Realizado', cancelado:'Cancelado', falta:'Falta'};
+  const statusPill  = {agendado:'p-info', confirmado:'p-green', realizado:'p-purple', cancelado:'p-danger', falta:'p-warn'};
+
+  let rows = '';
+  encontrados.forEach(function(a){
+    const prof = equipe.find(function(e){ return e.usuarioId===a.usuarioId; });
+    const profNome = prof ? prof.nome : (a.usuarioId||'—');
+    const sala = salas.find(function(s){ return s.id===a.salaId; });
+    const salaNome = sala ? sala.nome : (a.salaId||'—');
+    const dataFmt = a.data ? a.data.split('-').reverse().join('/') : '—';
+    const st = a.status||'agendado';
+    const pill = statusPill[st]||'p-neutral';
+    const lbl  = statusLabel[st]||st;
+    rows += '<tr style="border-bottom:1px solid var(--border);cursor:pointer" onclick="agendaIrParaAgendamento(\''+a.id+'\',\''+a.data+'\')"><td style="padding:8px 12px;font-weight:500">'+a.pacienteNome+'</td><td style="padding:8px 12px">'+dataFmt+'</td><td style="padding:8px 12px">'+a.horaInicio+'–'+a.horaFim+'</td><td style="padding:8px 12px">'+profNome+'</td><td style="padding:8px 12px">'+salaNome+'</td><td style="padding:8px 12px"><span class=\"pill '+pill+'\">'+lbl+'</span></td><td style="padding:8px 12px;color:var(--tx2)">'+(a.procedimento||'—')+'</td><td style="padding:8px 12px"><button class=\"btn btn-ghost btn-sm\" onclick=\"event.stopPropagation();agendaIrParaAgendamento(\''+a.id+'\',\''+a.data+'\')\">Ver →</button></td></tr>';
+  });
+
+  let tabela = '';
+  if(encontrados.length === 0){
+    tabela = '<div class="card" style="text-align:center;padding:24px;color:var(--tx2);font-size:13px">Nenhum agendamento encontrado para este paciente.</div>';
+  } else {
+    tabela = '<div class="card" style="padding:0;overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="border-bottom:1px solid var(--border);background:var(--s2)"><th style="padding:8px 12px;text-align:left;font-weight:600;color:var(--tx2)">Paciente</th><th style="padding:8px 12px;text-align:left;font-weight:600;color:var(--tx2)">Data</th><th style="padding:8px 12px;text-align:left;font-weight:600;color:var(--tx2)">Horário</th><th style="padding:8px 12px;text-align:left;font-weight:600;color:var(--tx2)">Profissional</th><th style="padding:8px 12px;text-align:left;font-weight:600;color:var(--tx2)">Sala</th><th style="padding:8px 12px;text-align:left;font-weight:600;color:var(--tx2)">Situação</th><th style="padding:8px 12px;text-align:left;font-weight:600;color:var(--tx2)">Procedimento</th><th style="padding:8px 12px"></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+
+  const html = '<div id="ag-busca-paciente-resultado" style="margin-bottom:14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div><span style="font-size:13px;font-weight:600">Agendamentos encontrados</span><span style="font-size:12px;color:var(--tx2);margin-left:6px">'+encontrados.length+' resultado'+(encontrados.length!==1?'s':'')+' para "'+agBuscaPacienteTexto+'"</span></div><button onclick="agendaLimparBuscaPaciente()" class="btn btn-ghost btn-sm">✕ Limpar busca</button></div>'+tabela+'</div>';
+
+  const toolbar = sec.querySelector('div[style*="display:flex;align-items:flex-start"]') || sec.firstElementChild;
+  sec.insertBefore(document.createRange().createContextualFragment(html), toolbar);
+}
+
+function agendaIrParaAgendamento(agId, data){
+  if(data){ agendaData = data; }
+  renderAgenda();
+  setTimeout(function(){
+    const ag = agendamentos.find(function(a){ return a.id===agId; });
+    if(ag) abrirModalAgendamento(ag.data, ag.horaInicio, ag.salaId||null, ag.usuarioId||null, ag.id);
+  }, 80);
+}
+
 // ── MINI CALENDÁRIO MENSAL (toolbar da Agenda) ───────────────────────
 function renderAgMiniCal(){
   const el = document.getElementById('ag-mini-cal');
@@ -10303,6 +10386,10 @@ function abrirPacienteDoAgendamento(){
 }
 
 function salvarAgendamento(){
+  _bypassQueue=true;
+  try{ _salvarAgendamentoInterno(); } finally{ _bypassQueue=false; }
+}
+function _salvarAgendamentoInterno(){
   const editId=document.getElementById('modal-agendamento').dataset.editId;
   const pacienteNome=document.getElementById('agm-paciente-busca').value.trim();
   if(!pacienteNome){ alert('Informe o nome do paciente.'); return; }
@@ -10457,7 +10544,8 @@ function excluirAgendamento(){
   if(!editId)return;
   if(!confirm('Excluir este agendamento?'))return;
   agendamentos = agendamentos.filter(a=>a.id!==editId);
-  salvarLS('sk3-agendamentos',agendamentos);
+  _bypassQueue=true;
+  try{ salvarLS('sk3-agendamentos',agendamentos); } finally{ _bypassQueue=false; }
   fecharModal('modal-agendamento');
   renderAgenda();
 }
