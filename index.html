@@ -2068,12 +2068,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <select id="blq-usuario"></select>
         </div>
         <div class="fl">
-          <label>Data início *</label>
-          <input type="date" id="blq-data-ini">
-        </div>
-        <div class="fl">
-          <label>Data fim *</label>
-          <input type="date" id="blq-data-fim">
+          <label>Data *</label>
+          <input type="date" id="blq-data-ini" onchange="document.getElementById('blq-data-fim').value=this.value">
+          <input type="date" id="blq-data-fim" style="display:none">
         </div>
         <div class="fl fg-full">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
@@ -8771,8 +8768,8 @@ function abrirModalBloqueio(i){
   document.getElementById('blq-usuario').innerHTML = usuariosNaAgenda().map(ap=>`<option value="${ap.usuarioId}" ${b&&b.usuarioId===ap.usuarioId?'selected':''}>${ap.nome}</option>`).join('');
   blqAtualizarCampos();
 
-  document.getElementById('blq-data-ini').value = b ? b.dataInicio : iso(hoje);
-  document.getElementById('blq-data-fim').value = b ? b.dataFim : iso(hoje);
+  document.getElementById('blq-data-ini').value = b ? b.dataInicio : (typeof agendaData!=='undefined' ? agendaData : iso(hoje));
+  document.getElementById('blq-data-fim').value = b ? b.dataFim : (typeof agendaData!=='undefined' ? agendaData : iso(hoje));
 
   const sw=document.getElementById('blq-dia-todo-sw');
   const diaTodo = b ? !!b.diaTodo : true;
@@ -8793,9 +8790,10 @@ function salvarBloqueio(){
   const salaId = (tipo==='sala'||tipo==='ambos') ? document.getElementById('blq-sala').value : null;
   const usuarioId = (tipo==='profissional'||tipo==='ambos') ? document.getElementById('blq-usuario').value : null;
   const dataInicio=document.getElementById('blq-data-ini').value;
-  const dataFim=document.getElementById('blq-data-fim').value;
-  if(!dataInicio||!dataFim){ alert('Informe o período.'); return; }
-  if(dataInicio>dataFim){ alert('A data início deve ser anterior ou igual à data fim.'); return; }
+  // data-fim oculta — sempre igual à data selecionada (evento de dia único)
+  document.getElementById('blq-data-fim').value = dataInicio;
+  const dataFim=dataInicio;
+  if(!dataInicio){ alert('Informe a data.'); return; }
   const diaTodo=document.getElementById('blq-dia-todo-sw').classList.contains('on');
   const horaInicio = diaTodo ? null : document.getElementById('blq-hora-ini').value;
   const horaFim = diaTodo ? null : document.getElementById('blq-hora-fim').value;
@@ -10166,8 +10164,12 @@ function agmRenderCamposExtras(agendamentoExistente){
   const ativos = camposAgendamento.filter(c=>{
     if(c.ativo===false) return false;
     if(IDS_SISTEMA.has(c.id)) return false;
-    // Evita duplicar "Primeira consulta" se já está como campo nativo
-    if(c.label && LABELS_SISTEMA_NORMALIZED.has(c.label.toLowerCase().trim())) return false;
+    // Evita duplicar campos nativos — mas permite campo de lista "Procedimento"
+    // porque quando existe, o campo nativo de texto é suprimido (a lista substitui).
+    if(c.label && LABELS_SISTEMA_NORMALIZED.has(c.label.toLowerCase().trim())){
+      const isProcCustom = c.tipo==='lista' && c.label.toLowerCase().includes('procedimento');
+      if(!isProcCustom) return false;
+    }
     return true;
   });
   ativos.forEach(c=>{
