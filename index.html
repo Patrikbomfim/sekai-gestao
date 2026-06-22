@@ -1811,7 +1811,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 <!-- MODAL AGENDAMENTO -->
 <div class="modal-ov" id="modal-agendamento">
-  <div class="modal" style="width:560px">
+  <div class="modal" style="width:680px">
     <div class="modal-header">
       <div class="modal-title" id="ag-modal-titulo">Novo agendamento</div>
     </div>
@@ -1860,14 +1860,18 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <select id="agm-status" onchange="agmToggleSituacao();agmToggleCancelamento()"></select>
         </div>
         <div class="fl fg-full" id="agm-cancelamento-wrap" style="display:none">
-          <label>Motivo do cancelamento</label>
-          <select id="agm-motivo-cancelamento" onchange="agmToggleRecontatoInfo()">
+          <label>Motivo do cancelamento *</label>
+          <select id="agm-motivo-cancelamento" onchange="agmToggleRecontatoInfo();agmToggleMotivoOutro()">
             <option value="">Selecionar...</option>
             <option value="paciente_desmarcou">Paciente desmarcou</option>
             <option value="clinica_remarcou">Clínica remarcou</option>
             <option value="profissional_indisponivel">Profissional indisponível</option>
             <option value="outro">Outro</option>
           </select>
+          <div id="agm-motivo-outro-wrap" style="display:none;margin-top:8px">
+            <label>Descreva o motivo *</label>
+            <input type="text" id="agm-motivo-outro-texto" placeholder="Descreva o motivo do cancelamento...">
+          </div>
           <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
             <input type="checkbox" id="agm-ja-reagendado" onchange="agmToggleRecontatoInfo()" style="width:auto">
             <label for="agm-ja-reagendado" style="font-size:13px;color:var(--tx);font-weight:400">Já existe novo agendamento marcado para este paciente</label>
@@ -1883,6 +1887,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             </select>
             <textarea id="agm-recontato-obs" rows="2" placeholder="Observação sobre o contato (opcional)" style="margin-top:6px"></textarea>
           </div>
+        </div>
+        <div class="fl fg-full" id="agm-faltou-wrap" style="display:none">
+          <button type="button" class="btn btn-ghost btn-sm" data-perm="pendencias_criar" onclick="agmAbrirLembretePaciente()">+ Agendar lembrete</button>
         </div>
         <div id="agm-campos-extras" style="display:contents"></div>
       </div>
@@ -9491,6 +9498,8 @@ function abrirModalAgendamento(agendamentoId, dataPre, horaPre, salaPre, usuario
 
   // cancelamento / recontato
   document.getElementById('agm-motivo-cancelamento').value = a ? (a.motivoCancelamento||'') : '';
+  const motivoOutroEl = document.getElementById('agm-motivo-outro-texto');
+  if(motivoOutroEl) motivoOutroEl.value = a ? (a.motivoCancelamentoOutro||'') : '';
   document.getElementById('agm-ja-reagendado').checked = a ? !!a.jaReagendado : false;
   document.getElementById('agm-recontato-status').value = a && a.recontatoStatus ? a.recontatoStatus : 'aberto';
   document.getElementById('agm-recontato-obs').value = a ? (a.recontatoObs||'') : '';
@@ -9537,9 +9546,18 @@ function agmToggleSituacao(){
 function agmToggleCancelamento(){
   const status=document.getElementById('agm-status').value;
   const wrap=document.getElementById('agm-cancelamento-wrap');
+  const faltouWrap=document.getElementById('agm-faltou-wrap');
   const pacienteId=document.getElementById('agm-paciente-id').value;
   wrap.style.display = (status==='cancelado' && pacienteId) ? '' : 'none';
+  if(faltouWrap) faltouWrap.style.display = (status==='faltou' && pacienteId) ? '' : 'none';
   agmToggleRecontatoInfo();
+  agmToggleMotivoOutro();
+}
+
+function agmToggleMotivoOutro(){
+  const motivo=document.getElementById('agm-motivo-cancelamento')?.value;
+  const wrap=document.getElementById('agm-motivo-outro-wrap');
+  if(wrap) wrap.style.display = (motivo==='outro') ? '' : 'none';
 }
 
 // Decide se mostra o aviso informativo ("será criada uma tarefa automática") ou o seletor
@@ -9918,10 +9936,15 @@ function salvarAgendamento(){
   if(status==='cancelado' && pacienteId && !document.getElementById('agm-motivo-cancelamento').value){
     alert('Selecione o motivo do cancelamento.'); return;
   }
-  let motivoCancelamento=null, jaReagendado=false, recontatoStatus=null,
+  if(status==='cancelado' && pacienteId && document.getElementById('agm-motivo-cancelamento').value==='outro'){
+    const outroTexto = document.getElementById('agm-motivo-outro-texto')?.value.trim();
+    if(!outroTexto){ alert('Descreva o motivo do cancelamento.'); document.getElementById('agm-motivo-outro-texto')?.focus(); return; }
+  }
+  let motivoCancelamento=null, motivoCancelamentoOutro=null, jaReagendado=false, recontatoStatus=null,
       recontatoResponsavel=null, recontatoObs=null, recontatoCriadoEm=null, recontatoResolvidoEm=null;
   if(status==='cancelado' && pacienteId){
     motivoCancelamento = document.getElementById('agm-motivo-cancelamento').value || null;
+    motivoCancelamentoOutro = (motivoCancelamento==='outro') ? (document.getElementById('agm-motivo-outro-texto')?.value.trim()||null) : null;
     jaReagendado = document.getElementById('agm-ja-reagendado').checked;
     const precisaRecontato = motivoCancelamento==='paciente_desmarcou' && !jaReagendado;
     const existente = editId ? agendamentos.find(a=>a.id===editId) : null;
@@ -9957,7 +9980,7 @@ function salvarAgendamento(){
 
   const fluxo = null; // definido apenas em agendamentos via encaminhamento
   const item={pacienteId,pacienteNome,pacienteFone:pacienteId?'':pacienteFone,usuarioId,salaId,data,horaInicio,horaFim,status,origem:'interno',procedimento,fluxo,obs,situacaoRegistrada:situacaoPaciente,
-    motivoCancelamento,jaReagendado,recontatoStatus,recontatoResponsavel,recontatoObs,recontatoCriadoEm,recontatoResolvidoEm,primeiraConsulta,origemPaciente,origemPacienteTexto,camposExtras};
+    motivoCancelamento,motivoCancelamentoOutro,jaReagendado,recontatoStatus,recontatoResponsavel,recontatoObs,recontatoCriadoEm,recontatoResolvidoEm,primeiraConsulta,origemPaciente,origemPacienteTexto,camposExtras};
 
   if(editId){
     const idx=agendamentos.findIndex(a=>a.id===editId);
