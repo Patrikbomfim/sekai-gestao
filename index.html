@@ -2443,9 +2443,28 @@ let _pendingSaves = {}; // key → value, queued for manual save
 let _bypassQueue = false; // when true, salvarLS writes immediately (modal saves)
 
 function _salvarLSReal(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
+
+// Salva imediatamente (localStorage + Supabase) e garante que o botão
+// flutuante não apareça / suma se não houver mais nada pendente.
+function _salvarImediato(k,v){
+  // Remove da fila pendente se estava lá
+  delete _pendingSaves[k];
+  // Usa window._salvarLSReal para pegar a versão sobrescrita pelo Supabase (late binding)
+  window._salvarLSReal(k,v);
+  // Reseta o bypass no próximo tick (após todos os salvarLS síncronos do bloco)
+  setTimeout(()=>{
+    _bypassQueue=false;
+    // Esconde botão se não há mais nada pendente
+    if(Object.keys(_pendingSaves).length === 0){
+      const btn=document.getElementById('floating-save-btn');
+      if(btn){ btn.classList.remove('visible','saved'); }
+    }
+  }, 0);
+}
+
 function salvarLS(k,v){
   if(_bypassQueue){
-    _salvarLSReal(k,v);
+    _salvarImediato(k,v);
   } else {
     _pendingSaves[k]=v;
     _mostrarBotaoSalvar();
@@ -2463,7 +2482,7 @@ function commitPendingSaves(){
   const btn=document.getElementById('floating-save-btn');
   // Flush all pending saves to localStorage
   for(const [k,v] of Object.entries(_pendingSaves)){
-    _salvarLSReal(k,v);
+    window._salvarLSReal(k,v);
   }
   _pendingSaves={};
   // Visual feedback: turn green "✓ Salvo"
@@ -2595,7 +2614,7 @@ function injetarAcoesNosStatusCustomizados(){
       modificou = true;
     }
   });
-  if(modificou) _salvarLSReal('sk3-fluxos', fluxos);
+  if(modificou) window._salvarLSReal('sk3-fluxos', fluxos);
 }
 
 let fluxos = carregarLS('sk3-fluxos', FLUXOS_PADRAO);
@@ -3730,6 +3749,7 @@ function concluirLembrete(id){
 }
 function descartarLembrete(id){
   if(!confirm('Descartar este lembrete?'))return;
+  _bypassQueue=true;
   const l=lembretesGerados.find(x=>x.id===id);
   if(!l)return;
   l.status='descartado';
@@ -3836,7 +3856,7 @@ function renderCfgRegrasLembretes(){
 }
 function updateLembRegraField(i,field,value){ regrasLembretes[i][field]=value; salvarLS('sk3-regras-lembretes',regrasLembretes); if(field!=='titulo') renderCfgRegrasLembretes(); else { const row=document.getElementById('lembrule-'+regrasLembretes[i].id); if(row){const t=row.querySelector('.fa-header-title');if(t)t.textContent=value||'Nova regra';} } }
 function addRegraLembrete(){ regrasLembretes.push({id:'lemb_'+Date.now(),titulo:'Nova regra',gatilhoCampo:'status_agendamento',gatilhoValor:'agendado',offset:1,unidade:'dias',offsetSinal:'antes',responsavel:'',script:'',ativo:true}); salvarLS('sk3-regras-lembretes',regrasLembretes); lembExpandidos.add(regrasLembretes[regrasLembretes.length-1].id); renderCfgRegrasLembretes(); }
-function deleteLembRegra(i){ if(!confirm(`Excluir a regra "${regrasLembretes[i].titulo}"?`))return; regrasLembretes.splice(i,1); salvarLS('sk3-regras-lembretes',regrasLembretes); renderCfgRegrasLembretes(); }
+function deleteLembRegra(i){ if(!confirm(`Excluir a regra "${regrasLembretes[i].titulo}"?`))return; regrasLembretes.splice(i,1); _salvarImediato('sk3-regras-lembretes',regrasLembretes); renderCfgRegrasLembretes(); }
 
 // ── RENDER PRÓXIMOS ───────────────────────────────────────────────────
 function renderProximos(){
@@ -4845,6 +4865,7 @@ function abrirLinkAnamnese(){
 
 function limparAnamnese(pacienteId){
   if(!confirm('Limpar todas as respostas desta anamnese?')) return;
+  _bypassQueue=true;
   const token = (respostasAnamnese[pacienteId]||{})._token;
   if(token) delete tokensAnamnese[token];
   delete respostasAnamnese[pacienteId];
@@ -4954,6 +4975,7 @@ function editarCampoAnamnese(idx){ abrirModalCampoAnamnese(idx); }
 
 function removerCampoAnamnese(idx){
   if(!confirm('Remover este campo da anamnese?')) return;
+  _bypassQueue=true;
   camposAnamnese.splice(idx,1);
   salvarAnamnese();
   renderCfgAnamnese();
@@ -5246,6 +5268,7 @@ function atualizarStatusPt(){
 
 function excluirPt(){
   if(!confirm('Excluir este paciente? Não pode ser desfeito.'))return;
+  _bypassQueue=true;
   pacientes=pacientes.filter(p=>p.id!==modalPtId);
   salvarLS('sk3-pacientes',pacientes);
   voltarParaPacientes();
@@ -5483,6 +5506,7 @@ function showSaveToast(msg){
 }
 function deleteFlowAction(id){
   if(!confirm('Excluir esta ação do fluxo?'))return;
+  _bypassQueue=true;
   fluxos[fluxoStatusAtual]=fluxos[fluxoStatusAtual].filter(a=>a.id!==id);
   salvarLS('sk3-fluxos',fluxos);
   renderFluxoContent();
@@ -5742,6 +5766,7 @@ async function salvarUsuario(){
 async function excluirUsuario(){
   if(!modalUsuarioId)return;
   if(!confirm('Excluir este usuário? O login dele deixa de funcionar imediatamente. Não pode ser desfeito.'))return;
+  _bypassQueue=true;
   const r = await chamarAdminUsuarios({ action:'excluir', user_id:modalUsuarioId });
   if(r.error){ alert('Erro ao excluir: '+r.error); return; }
   usuarios=usuarios.filter(u=>u.id!==modalUsuarioId);
@@ -5812,6 +5837,7 @@ function excluirCargo(){
     return;
   }
   if(!confirm('Excluir este cargo? Não pode ser desfeito.'))return;
+  _bypassQueue=true;
   cargos=cargos.filter(c=>c.id!==modalCargoId);
   salvarLS('sk3-cargos',cargos);
   fecharModal('modal-cargo');
@@ -5861,6 +5887,7 @@ function addRitual(){
 
 function removeRitual(id){
   if(!confirm('Excluir este ritual e todos os seus itens?'))return;
+  _bypassQueue=true;
   rituais=rituais.filter(r=>r.id!==id);
   salvarLS('sk3-rituais',rituais);
   renderRituais();
@@ -5885,6 +5912,7 @@ function removeRitualLinha(ritualId,linhaId){
   const r=rituais.find(x=>x.id===ritualId);
   if(!r)return;
   if(!confirm('Excluir este item?'))return;
+  _bypassQueue=true;
   r.linhas=r.linhas.filter(l=>l.id!==linhaId);
   salvarLS('sk3-rituais',rituais);
   renderRituais();
@@ -5941,6 +5969,7 @@ function renderCfgReunioes(){
 
 function removeReuniaoTemplate(id){
   if(!confirm('Excluir este tipo de reunião? Ocorrências já registradas não serão afetadas.'))return;
+  _bypassQueue=true;
   reunioesTemplates=reunioesTemplates.filter(t=>t.id!==id);
   salvarLS('sk3-reunioes-templates',reunioesTemplates);
   renderCfgReunioes();
@@ -6319,6 +6348,7 @@ function salvarOcorrenciaReuniao(){
 
 function excluirOcorrenciaReuniao(){
   if(!confirm('Excluir esta reunião e suas pendências associadas? Não pode ser desfeito.'))return;
+  _bypassQueue=true;
   reunioesOcorrencias=reunioesOcorrencias.filter(o=>o.id!==ocorrenciaAtualId);
   salvarLS('sk3-reunioes-ocorrencias',reunioesOcorrencias);
   fecharModal('modal-reuniao-detalhe');
@@ -6559,6 +6589,7 @@ function togglePendenciaCentral(ocorrenciaId,pendId){
 
 function removerPendenciaAvulsa(pendId){
   if(!confirm('Remover esta pendência?'))return;
+  _bypassQueue=true;
   pendenciasAvulsas=pendenciasAvulsas.filter(p=>p.id!==pendId);
   salvarLS('sk3-pendencias-avulsas',pendenciasAvulsas);
   renderPendencias();
@@ -6566,6 +6597,7 @@ function removerPendenciaAvulsa(pendId){
 
 function excluirPendenciaCentral(ocorrenciaId,pendId,avulsa){
   if(!confirm('Excluir esta pendência? Esta ação não pode ser desfeita.'))return;
+  _bypassQueue=true;
   if(avulsa===true||avulsa==='true'||ocorrenciaId==='null'||!ocorrenciaId){
     pendenciasAvulsas=pendenciasAvulsas.filter(p=>p.id!==pendId);
     salvarLS('sk3-pendencias-avulsas',pendenciasAvulsas);
@@ -6600,7 +6632,7 @@ function salvarMelhoria(){
   const texto=input.value.trim();
   if(!texto) return;
   melhorias.push({id:uid('melhoria'),texto,data:new Date().toISOString(),criadoPor:usuarioAtualId,resolvido:false});
-  salvarLS('sk3-melhorias',melhorias);
+  _salvarImediato('sk3-melhorias',melhorias);
   cancelarFormMelhoria();
   renderMelhorias();
 }
@@ -6608,13 +6640,13 @@ function toggleMelhoria(id){
   const m=melhorias.find(x=>x.id===id);
   if(!m)return;
   m.resolvido=!m.resolvido;
-  salvarLS('sk3-melhorias',melhorias);
+  _salvarImediato('sk3-melhorias',melhorias);
   renderMelhorias();
 }
 function excluirMelhoria(id){
   if(!confirm('Excluir este item?'))return;
   melhorias=melhorias.filter(m=>m.id!==id);
-  salvarLS('sk3-melhorias',melhorias);
+  _salvarImediato('sk3-melhorias',melhorias);
   renderMelhorias();
 }
 function renderMelhorias(){
@@ -7154,6 +7186,7 @@ function salvarCheckinItem(){
 function excluirCheckinItem(){
   if(!modalCheckinItemId)return;
   if(!confirm('Excluir esta tarefa? Não pode ser desfeito.'))return;
+  _bypassQueue=true;
   checkinTemplates[modalCheckinCargoId]=(checkinTemplates[modalCheckinCargoId]||[]).filter(x=>x.id!==modalCheckinItemId);
   salvarLS('sk3-checkin-templates',checkinTemplates);
   fecharModal('modal-checkin-item');
@@ -7431,6 +7464,7 @@ function removeStatus(sid){
   const idx=statusList.findIndex(s=>s.id===sid);
   if(idx<0)return;
   if(!confirm(`Remover "${statusList[idx].label}"? Pacientes com este status não serão afetados.`))return;
+  _bypassQueue=true;
   statusList.splice(idx,1);
   salvarLS('sk3-statuslist',statusList);
   renderCfgStatus();
@@ -7565,6 +7599,7 @@ function removeCampoCadastro(i){
     msg+=`\n\nAtenção: a(s) coluna(s) ${nomes} da lista de pacientes usa(m) este campo e será(ão) removida(s) também.`;
   }
   if(!confirm(msg))return;
+  _bypassQueue=true;
   camposCadastro.splice(i,1);
   salvarLS('sk3-camposcadastro',camposCadastro);
   if(colsDependentes.length){
@@ -7649,6 +7684,7 @@ function removerEmpresaAtual(){
   if(!e) return;
   const nome=(e.dados['razaoSocial']||'').trim()||'esta empresa';
   if(!confirm(`Remover "${nome}"? Todos os dados e anexos desta empresa serão apagados.`)) return;
+  _bypassQueue=true;
   empresas=empresas.filter(x=>x.id!==e.id);
   empresaAtualId=empresas[0]?.id||null;
   salvarLS('sk3-empresas',empresas);
@@ -7946,6 +7982,7 @@ function removeCampoEmpresa(i){
   if(camposEmpresa[i].locked)return;
   const campo=camposEmpresa[i];
   if(!confirm(`Remover o campo "${campo.label}"? Os valores já preenchidos para esse campo em cada empresa serão perdidos.`))return;
+  _bypassQueue=true;
   camposEmpresa.splice(i,1);
   salvarLS('sk3-camposempresa',camposEmpresa);
   renderCfgCamposEmpresa();
@@ -7975,6 +8012,7 @@ function addPastaEmpresa(){
 function removePastaEmpresa(i){
   const p=pastasEmpresa[i];
   if(!confirm(`Remover a pasta "${p.nome}"? Documentos já anexados nela continuarão guardados, mas a pasta deixará de aparecer.`))return;
+  _bypassQueue=true;
   pastasEmpresa.splice(i,1);
   salvarLS('sk3-pastasempresa',pastasEmpresa);
   renderCfgPastasEmpresa();
@@ -8047,6 +8085,7 @@ function addColunaPaciente(){
 function removeColunaPaciente(i){
   if(colunasPaciente[i].locked)return;
   if(!confirm(`Remover a coluna "${colunasPaciente[i].label}"?`))return;
+  _bypassQueue=true;
   colunasPaciente.splice(i,1);
   salvarLS('sk3-colunaspaciente',colunasPaciente);
   renderCfgColunas();
@@ -8225,6 +8264,7 @@ function addRegraConfirmacao(){
 }
 function deleteRegraConfirmacao(id){
   if(!confirm('Excluir esta regra de confirmação?')) return;
+  _bypassQueue=true;
   regrasConfirmacaoAgendamento = regrasConfirmacaoAgendamento.filter(r=>r.id!==id);
   salvarLS('sk3-regras-confirmacao', regrasConfirmacaoAgendamento);
   renderCfgRegrasConfirmacao();
@@ -8332,6 +8372,7 @@ function addRegraRecontato(){
 }
 function deleteRegraRecontato(id){
   if(!confirm('Excluir esta regra de recontato?')) return;
+  _bypassQueue=true;
   regrasRecontatoCancelamento = regrasRecontatoCancelamento.filter(r=>r.id!==id);
   salvarLS('sk3-regras-recontato', regrasRecontatoCancelamento);
   renderListaRegrasRecontato();
@@ -8481,6 +8522,7 @@ function salvarFeriado(){
 
 function removeFeriado(i){
   if(!confirm(`Remover "${feriados[i].nome}"?`)) return;
+  _bypassQueue=true;
   feriados.splice(i,1);
   salvarLS('sk3-feriados', feriados);
   renderCfgFeriados();
@@ -8537,6 +8579,7 @@ function addSala(){
 function removeSala(i){
   const s=salas[i];
   if(!confirm(`Remover "${s.nome}"? Agendamentos e disponibilidades vinculados a esta sala continuarão referenciando o ID, mas a sala não aparecerá mais na agenda.`))return;
+  _bypassQueue=true;
   salas.splice(i,1);
   salvarLS('sk3-salas',salas);
   renderCfgSalas();
@@ -8613,6 +8656,7 @@ function excluirAgendaProfissional(){
   const i = document.getElementById('modal-agenda-prof').dataset.editIndex;
   if(i==='')return;
   if(!confirm('Remover esta profissional da agenda? Disponibilidades e bloqueios vinculados não serão excluídos automaticamente.'))return;
+  _bypassQueue=true;
   agendaProfissionais.splice(Number(i),1);
   salvarLS('sk3-agenda-profissionais',agendaProfissionais);
   fecharModal('modal-agenda-prof');
@@ -8811,6 +8855,7 @@ function excluirBloqueio(){
   const i = document.getElementById('modal-bloqueio').dataset.editIndex;
   if(i==='')return;
   if(!confirm('Excluir este bloqueio/evento?')) return;
+  _bypassQueue=true;
   bloqueios.splice(Number(i),1);
   salvarLS('sk3-bloqueios',bloqueios);
   fecharModal('modal-bloqueio');
@@ -9004,6 +9049,7 @@ function erSalvar(){
 
 function erExcluir(id){
   if(!confirm('Excluir este evento recorrente?')) return;
+  _bypassQueue=true;
   eventosRecorrentes = eventosRecorrentes.filter(e=>e.id!==id);
   salvarLS('sk3-eventos-recorrentes', eventosRecorrentes);
   erRenderLista();
@@ -9208,6 +9254,7 @@ function addCampoAgendamento(){
 }
 function removeCampoAgendamento(i){
   if(!confirm(`Remover "${camposAgendamento[i].label}"?`))return;
+  _bypassQueue=true;
   camposAgendamento.splice(i,1);
   salvarLS('sk3-campos-agm',camposAgendamento);
   renderCfgCamposAgendamento();
@@ -9238,6 +9285,7 @@ function addCampoEvento(){
 }
 function removeCampoEvento(i){
   if(!confirm(`Remover "${camposEvento[i].label}"?`))return;
+  _bypassQueue=true;
   camposEvento.splice(i,1);
   salvarLS('sk3-campos-evt',camposEvento);
   renderCfgCamposEvento();
@@ -9354,6 +9402,7 @@ function excluirLinkAgenda(){
   const i = document.getElementById('modal-link-agenda').dataset.editIndex;
   if(i==='')return;
   if(!confirm('Excluir este link? Quem já tiver o link salvo não conseguirá mais usá-lo.'))return;
+  _bypassQueue=true;
   linksAgenda.splice(Number(i),1);
   salvarLS('sk3-links-agenda',linksAgenda);
   fecharModal('modal-link-agenda');
@@ -10546,8 +10595,7 @@ function excluirAgendamento(){
   if(!editId)return;
   if(!confirm('Excluir este agendamento?'))return;
   agendamentos = agendamentos.filter(a=>a.id!==editId);
-  _bypassQueue=true;
-  try{ salvarLS('sk3-agendamentos',agendamentos); } finally{ _bypassQueue=false; }
+  _salvarImediato('sk3-agendamentos',agendamentos);
   fecharModal('modal-agendamento');
   renderAgenda();
 }
