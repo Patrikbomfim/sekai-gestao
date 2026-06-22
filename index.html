@@ -525,7 +525,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
   <div style="display:flex;align-items:center;gap:14px">
     <div class="hdr-alert" id="hdr-alert" onclick="goTo('hoje')"></div>
-    <select id="hdr-usuario-atual" onchange="onChangeUsuarioAtual(this.value)" style="display:none"></select>
+    <div id="hdr-impersonar-wrap" style="display:none;align-items:center;gap:6px">
+      <span style="font-size:11px;color:#fff;opacity:.75">Ver como:</span>
+      <select id="hdr-usuario-atual" onchange="onChangeUsuarioAtual(this.value)" style="font-size:12px;padding:4px 8px;border-radius:var(--r6);border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff"></select>
+      <button id="hdr-voltar-eu" onclick="voltarParaUsuarioPrincipal()" title="Voltar a ser você mesmo" style="display:none;font-size:11px;padding:4px 8px;border-radius:var(--r6);border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;cursor:pointer">↩ Voltar</button>
+    </div>
     <span id="hdr-usuario-logado" style="font-size:12px;color:#fff;opacity:.9"></span>
     <button onclick="fazerLogout()" style="font-size:12px;padding:5px 10px;border-radius:var(--r6);border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;cursor:pointer">Sair</button>
     <span class="hdr-date" id="hdr-date"></span>
@@ -2219,11 +2223,50 @@ document.getElementById('hdr-date').textContent = `${DIAS[hoje.getDay()]}, ${hoj
 document.getElementById('hoje-desc').textContent = `${DIAS[hoje.getDay()]}, ${hoje.getDate()} de ${MESES[hoje.getMonth()]} — suas ações do dia`;
 
 // ── USUÁRIO ATUAL (simula login) ────────────────────────────────────────
+// "Usuário principal" = quem realmente autenticou na sessão (campo `principal` em
+// `equipe`, definido no login real via Supabase). É diferente de `usuarioAtualId`,
+// que é quem o sistema está "tratando como" no momento — e que o seletor abaixo
+// pode trocar. Mantemos os dois separados de propósito: assim, mesmo "vestindo a
+// pele" de alguém sem permissão de admin, o seletor continua visível pra voltar.
+function getUsuarioPrincipal(){
+  const p = equipe.find(e=>typeof e!=='string' && e.principal);
+  if(p) return p;
+  // fallback (ex.: ambiente de teste sem login real / dado antigo sem `principal`):
+  // usa o primeiro administrador encontrado na equipe, se houver.
+  return equipe.find(e=>typeof e!=='string' && cargoEhAdministrador(e.cargoId)) || null;
+}
+function cargoEhAdministrador(cargoId){
+  const cargo = cargos.find(c=>c.id===cargoId);
+  return !!cargo && (cargo.id==='cg_administrador' || cargo.nome==='Administrador');
+}
+// Permissão pra usar o seletor "Ver como" — baseada em QUEM VOCÊ É DE VERDADE,
+// nunca em quem você está simulando no momento.
+function souAdministradorReal(){
+  const principal = getUsuarioPrincipal();
+  if(!principal) return true; // equipe vazia/sem dado = ambiente de teste, libera
+  return cargoEhAdministrador(principal.cargoId);
+}
+function atualizarIndicadorImpersonar(){
+  const wrap = document.getElementById('hdr-impersonar-wrap');
+  const voltarBtn = document.getElementById('hdr-voltar-eu');
+  if(!wrap) return;
+  const podeImpersonar = souAdministradorReal();
+  wrap.style.display = podeImpersonar ? 'flex' : 'none';
+  if(!podeImpersonar){ if(voltarBtn) voltarBtn.style.display='none'; return; }
+  const principal = getUsuarioPrincipal();
+  if(voltarBtn) voltarBtn.style.display = (principal && usuarioAtualId!==principal.usuarioId) ? '' : 'none';
+}
+function voltarParaUsuarioPrincipal(){
+  const principal = getUsuarioPrincipal();
+  if(principal) onChangeUsuarioAtual(principal.usuarioId);
+}
 function popularUsuarioAtual(){
   const sel=document.getElementById('hdr-usuario-atual');
   if(!sel)return;
   if(!usuarios.find(u=>u.id===usuarioAtualId)) usuarioAtualId=usuarios[0]?.id||null;
-  sel.innerHTML=usuarios.map(u=>`<option value="${u.id}" style="color:#0a0a0a" ${u.id===usuarioAtualId?'selected':''}>${u.nome}</option>`).join('');
+  const principal = getUsuarioPrincipal();
+  sel.innerHTML=usuarios.map(u=>`<option value="${u.id}" style="color:#0a0a0a" ${u.id===usuarioAtualId?'selected':''}>${u.nome}${principal && u.id===principal.usuarioId?' (você)':''}</option>`).join('');
+  atualizarIndicadorImpersonar();
 }
 function onChangeUsuarioAtual(id){
   usuarioAtualId=id;
@@ -2233,6 +2276,10 @@ function onChangeUsuarioAtual(id){
   acoesModoEquipe=false; acoesFiltroPessoa='';
   pendModoEquipe=false; pendFiltroResp='';
   aplicarPermissoesNav();
+  atualizarIndicadorImpersonar();
+  const sel=document.getElementById('hdr-usuario-atual');
+  if(sel) sel.value=id;
+  if(typeof _exibirUsuarioLogadoNoHeader==='function') _exibirUsuarioLogadoNoHeader();
   renderHoje();
   renderProximos();
   renderPendencias();
