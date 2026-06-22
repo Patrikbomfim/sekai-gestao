@@ -1859,12 +1859,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <label>Status</label>
           <select id="agm-status" onchange="agmToggleSituacao();agmToggleCancelamento()"></select>
         </div>
-        <div class="fl fg-full" id="agm-situacao-wrap" style="display:none">
-          <label>Situação do paciente</label>
-          <select id="agm-situacao"></select>
-          <div style="font-size:11px;color:var(--tx3);margin-top:4px">Atendimento marcado como Realizado — atualize a situação do paciente (alta, continuação do tratamento, aguardando retorno etc).</div>
-          <button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px" data-perm="pendencias_criar" onclick="agmAbrirLembretePaciente()">+ Agendar lembrete</button>
-        </div>
         <div class="fl fg-full" id="agm-cancelamento-wrap" style="display:none">
           <label>Motivo do cancelamento</label>
           <select id="agm-motivo-cancelamento" onchange="agmToggleRecontatoInfo()">
@@ -8615,6 +8609,7 @@ const CAMPOS_AGM_SISTEMA = [
   {id:'agm_status',      label:'Status',           tipo:'sistema', obrigatorio:false, hardLocked:false},
   {id:'agm_procedimento',label:'Procedimento',     tipo:'texto',   obrigatorio:false, hardLocked:false},
   {id:'agm_obs',         label:'Observação',       tipo:'textarea',obrigatorio:false, hardLocked:false},
+  {id:'agm_situacao_paciente', label:'Situação do paciente', tipo:'situacao', obrigatorio:false, hardLocked:false},
   {id:'agm_primeira_consulta', label:'Primeira consulta?', tipo:'primeira_consulta', obrigatorio:false, hardLocked:false},
 ];
 
@@ -8645,7 +8640,7 @@ function renderCfgCamposModal(containerId, sistemaCampos, extraCampos, addFn, re
   const el = document.getElementById(containerId);
   if(!el) return;
 
-  const TIPO_LABELS = {sistema:'Sistema',texto:'Texto',lista:'Lista (opções)',textarea:'Texto longo',toggle:'Sim/Não',numero:'Número',primeira_consulta:'1ª Consulta + Origem'};
+  const TIPO_LABELS = {sistema:'Sistema',texto:'Texto',lista:'Lista (opções)',textarea:'Texto longo',toggle:'Sim/Não',numero:'Número',primeira_consulta:'1ª Consulta + Origem',situacao:'Situação do paciente'};
 
   let html = '';
 
@@ -9494,13 +9489,6 @@ function abrirModalAgendamento(agendamentoId, dataPre, horaPre, salaPre, usuario
   selStatus.innerHTML = STATUS_AGENDAMENTO.map(s=>`<option value="${s.id}">${s.label}</option>`).join('');
   selStatus.value = a ? a.status : 'agendado';
 
-  const selSituacao=document.getElementById('agm-situacao');
-  selSituacao.innerHTML = statusList.map(s=>`<option value="${s.id}">${s.label}</option>`).join('');
-  const pacIdAtual = document.getElementById('agm-paciente-id').value;
-  const pacAtual = pacIdAtual ? pacientes.find(p=>p.id===pacIdAtual || String(p.id)===String(pacIdAtual)) : null;
-  selSituacao.value = a && a.situacaoRegistrada ? a.situacaoRegistrada : (pacAtual ? pacAtual.status : (statusList[0] && statusList[0].id));
-  agmToggleSituacao();
-
   // cancelamento / recontato
   document.getElementById('agm-motivo-cancelamento').value = a ? (a.motivoCancelamento||'') : '';
   document.getElementById('agm-ja-reagendado').checked = a ? !!a.jaReagendado : false;
@@ -9538,7 +9526,10 @@ function agmToggleSituacao(){
   const status=document.getElementById('agm-status').value;
   const wrap=document.getElementById('agm-situacao-wrap');
   const pacienteId=document.getElementById('agm-paciente-id').value;
-  wrap.style.display = (status==='realizado' && pacienteId) ? '' : 'none';
+  if(!wrap) return;
+  const cfg = cfgCamposAgmSistema['agm_situacao_paciente']||{};
+  const ativo = cfg.ativo !== false;
+  wrap.style.display = (ativo && status==='realizado' && pacienteId) ? '' : 'none';
 }
 
 // Mostra o bloco de cancelamento (motivo + recontato) quando o status vira 'Cancelado'.
@@ -9577,7 +9568,7 @@ function agmRenderCamposExtras(agendamentoExistente){
   let html = '';
 
   // Campos sistema soft-locked: Procedimento, Obs, Primeira consulta
-  const sisCampos = [{id:'agm_procedimento'},{id:'agm_obs'},{id:'agm_primeira_consulta'}];
+  const sisCampos = [{id:'agm_procedimento'},{id:'agm_obs'},{id:'agm_situacao_paciente'},{id:'agm_primeira_consulta'}];
   sisCampos.forEach(({id}) => {
     const cfg = cfgCamposAgmSistema[id] || {};
     const ativo = cfg.ativo !== false;
@@ -9599,6 +9590,17 @@ function agmRenderCamposExtras(agendamentoExistente){
       const val = agendamentoExistente ? (agendamentoExistente.obs||'') : '';
       html += `<div class="fl fg-full"><label>Observação${labelStar}</label>
         <textarea id="agm-obs" rows="2" placeholder="Informações adicionais sobre este agendamento...">${esc(val)}</textarea>
+      </div>`;
+    } else if(id==='agm_situacao_paciente'){
+      const pacienteId = document.getElementById('agm-paciente-id')?.value||'';
+      if(!pacienteId) return; // sem paciente vinculado, não exibe
+      const situacaoSalva = agendamentoExistente ? (agendamentoExistente.situacaoRegistrada||'') : '';
+      const opcoesHtml = statusList.map(s=>`<option value="${esc(s.id)}" ${situacaoSalva===s.id?'selected':''}>${esc(s.label)}</option>`).join('');
+      html += `<div class="fl fg-full" id="agm-situacao-wrap">
+        <label>Situação do paciente${labelStar}</label>
+        <select id="agm-situacao">${opcoesHtml}</select>
+        <div id="agm-situacao-hint" style="font-size:11px;color:var(--tx3);margin-top:4px">Atendimento marcado como Realizado — atualize a situação do paciente.</div>
+        <button id="agm-situacao-lembrete" type="button" class="btn btn-ghost btn-sm" style="margin-top:8px" data-perm="pendencias_criar" onclick="agmAbrirLembretePaciente()">+ Agendar lembrete</button>
       </div>`;
     } else if(id==='agm_primeira_consulta'){
       const val = agendamentoExistente ? (agendamentoExistente.primeiraConsulta||'') : '';
@@ -9775,8 +9777,13 @@ function agmSelecionarPaciente(id,nome){
   document.getElementById('agm-paciente-resultados').innerHTML='';
   document.getElementById('agm-paciente-novo-wrap').style.display='none';
   const p=pacientes.find(x=>x.id===id);
+  // Re-renderiza campos extras para mostrar situação do paciente com o status correto
+  const editId=document.getElementById('modal-agendamento').dataset.editId;
+  const agAtual = editId ? agendamentos.find(a=>a.id===editId) : null;
+  agmRenderCamposExtras(agAtual||null);
+  // Pré-seleciona situação com o status atual do paciente
   const selSituacao=document.getElementById('agm-situacao');
-  if(p && selSituacao) selSituacao.value=p.status;
+  if(p && selSituacao && !agAtual?.situacaoRegistrada) selSituacao.value=p.status;
   agmToggleSituacao();
   agmAtualizarPacienteView();
 }
@@ -9882,14 +9889,18 @@ function salvarAgendamento(){
 
   if(!agmValidarCamposExtras()) return;
 
-  const situacaoVisivel = document.getElementById('agm-situacao-wrap').style.display!=='none';
-  if(status==='realizado' && pacienteId && !situacaoVisivel){
-    // segurança: força reavaliação do campo caso algo tenha ficado fora de sincronia
-    agmToggleSituacao();
-  }
-  const situacaoPaciente = (status==='realizado' && pacienteId) ? document.getElementById('agm-situacao').value : null;
-  if(status==='realizado' && pacienteId && !situacaoPaciente){
+  const situacaoWrap = document.getElementById('agm-situacao-wrap');
+  const situacaoCfg = cfgCamposAgmSistema['agm_situacao_paciente']||{};
+  const situacaoAtivo = situacaoCfg.ativo !== false;
+  const situacaoObrig = situacaoCfg.obrigatorio !== undefined ? situacaoCfg.obrigatorio : false;
+  const situacaoEl = document.getElementById('agm-situacao');
+  const situacaoPaciente = (situacaoAtivo && situacaoEl && situacaoWrap) ? (situacaoEl.value||null) : null;
+
+  if(status==='realizado' && pacienteId && situacaoAtivo && !situacaoPaciente){
     alert('Selecione a situação do paciente após o atendimento.'); return;
+  }
+  if(situacaoObrig && situacaoAtivo && pacienteId && !situacaoPaciente){
+    alert('O campo "Situação do paciente" é obrigatório.'); return;
   }
 
   // ── Cancelamento / recontato ──────────────────────────────────────────
