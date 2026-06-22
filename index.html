@@ -1898,6 +1898,30 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <label>Observação</label>
           <textarea id="agm-obs" rows="2" placeholder="Informações adicionais sobre este agendamento..."></textarea>
         </div>
+        <div class="fl fg-full">
+          <label>Primeira consulta?</label>
+          <select id="agm-primeira-consulta" onchange="agmTogglePrimeiraConsulta()">
+            <option value="">Selecionar...</option>
+            <option value="nao">Não</option>
+            <option value="sim">Sim</option>
+          </select>
+        </div>
+        <div class="fl fg-full" id="agm-origem-wrap" style="display:none">
+          <label>Origem</label>
+          <select id="agm-origem" onchange="agmToggleOrigemTexto()">
+            <option value="">Selecionar...</option>
+            <option value="Instagram">Instagram</option>
+            <option value="Facebook">Facebook</option>
+            <option value="Google">Google</option>
+            <option value="Radio">Rádio</option>
+            <option value="Indicação">Indicação</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div class="fl fg-full" id="agm-origem-texto-wrap" style="display:none">
+          <label id="agm-origem-texto-label">Detalhes</label>
+          <input type="text" id="agm-origem-texto" placeholder="Informe os detalhes...">
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -9517,6 +9541,12 @@ function abrirModalAgendamento(agendamentoId, dataPre, horaPre, salaPre, usuario
   document.getElementById('agm-procedimento').value = a ? (a.procedimento||'') : '';
   document.getElementById('agm-obs').value = a ? (a.obs||'') : '';
 
+  document.getElementById('agm-primeira-consulta').value = a ? (a.primeiraConsulta||'') : '';
+  document.getElementById('agm-origem').value = a ? (a.origemPaciente||'') : '';
+  document.getElementById('agm-origem-texto').value = a ? (a.origemPacienteTexto||'') : '';
+  agmTogglePrimeiraConsulta();
+  if(a && a.origemPaciente) agmToggleOrigemTexto();
+
   document.getElementById('modal-agendamento').classList.add('open');
 
   // Permissões no modal de agendamento
@@ -9575,6 +9605,38 @@ function agmToggleRecontatoInfo(){
   } else {
     desfechoWrap.style.display='none';
     infoEl.style.display = precisaRecontato ? '' : 'none';
+  }
+}
+
+function agmTogglePrimeiraConsulta(){
+  const val = document.getElementById('agm-primeira-consulta').value;
+  const origemWrap = document.getElementById('agm-origem-wrap');
+  const textoWrap = document.getElementById('agm-origem-texto-wrap');
+  if(val === 'sim'){
+    origemWrap.style.display = '';
+  } else {
+    origemWrap.style.display = 'none';
+    textoWrap.style.display = 'none';
+    document.getElementById('agm-origem').value = '';
+    document.getElementById('agm-origem-texto').value = '';
+  }
+}
+
+function agmToggleOrigemTexto(){
+  const origem = document.getElementById('agm-origem').value;
+  const textoWrap = document.getElementById('agm-origem-texto-wrap');
+  const label = document.getElementById('agm-origem-texto-label');
+  if(origem === 'Indicação'){
+    textoWrap.style.display = '';
+    label.textContent = 'Quem indicou?';
+    document.getElementById('agm-origem-texto').placeholder = 'Nome de quem indicou...';
+  } else if(origem === 'Outro'){
+    textoWrap.style.display = '';
+    label.textContent = 'Qual a origem?';
+    document.getElementById('agm-origem-texto').placeholder = 'Descreva a origem...';
+  } else {
+    textoWrap.style.display = 'none';
+    document.getElementById('agm-origem-texto').value = '';
   }
 }
 
@@ -9703,6 +9765,9 @@ function salvarAgendamento(){
   const status=document.getElementById('agm-status').value;
   const procedimento=document.getElementById('agm-procedimento').value.trim();
   const obs=document.getElementById('agm-obs').value.trim();
+  const primeiraConsulta=document.getElementById('agm-primeira-consulta').value||null;
+  const origemPaciente=document.getElementById('agm-origem').value||null;
+  const origemPacienteTexto=document.getElementById('agm-origem-texto').value.trim()||null;
 
   const situacaoVisivel = document.getElementById('agm-situacao-wrap').style.display!=='none';
   if(status==='realizado' && pacienteId && !situacaoVisivel){
@@ -9759,7 +9824,7 @@ function salvarAgendamento(){
 
   const fluxo = null; // definido apenas em agendamentos via encaminhamento
   const item={pacienteId,pacienteNome,pacienteFone:pacienteId?'':pacienteFone,usuarioId,salaId,data,horaInicio,horaFim,status,origem:'interno',procedimento,fluxo,obs,situacaoRegistrada:situacaoPaciente,
-    motivoCancelamento,jaReagendado,recontatoStatus,recontatoResponsavel,recontatoObs,recontatoCriadoEm,recontatoResolvidoEm};
+    motivoCancelamento,jaReagendado,recontatoStatus,recontatoResponsavel,recontatoObs,recontatoCriadoEm,recontatoResolvidoEm,primeiraConsulta,origemPaciente,origemPacienteTexto};
 
   if(editId){
     const idx=agendamentos.findIndex(a=>a.id===editId);
