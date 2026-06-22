@@ -548,6 +548,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <button class="nav-btn" id="navbtn-agenda" onclick="goTo('agenda',this)">Agenda</button>
   <button class="nav-btn" id="navbtn-pacientes" onclick="goTo('pacientes',this)">Pacientes</button>
   <button class="nav-btn" onclick="goTo('fluxos',this)">Fluxo de ação</button>
+  <button class="nav-btn" onclick="goTo('lembretes',this)">Lembretes<span class="nav-badge" id="bdg-lembretes" style="display:none">0</span></button>
   <div class="slb-label">Gestão</div>
   <button class="nav-btn" onclick="goTo('dashboard',this)">Dashboard</button>
   <button class="nav-btn" onclick="goTo('relatorios',this)">Relatórios</button>
@@ -668,7 +669,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <!-- PACIENTES -->
 <div id="sec-pacientes" class="sec">
   <div class="pg-title">Pacientes</div>
-  <div class="pg-desc">Clique em um paciente para ver o histórico, atualizar status e ver o fluxo completo</div>
+  <div class="pg-desc">Clique em um paciente para ver o histórico, atualizar a situação e ver o fluxo completo</div>
 
   <div class="pt-tabs" id="pt-tabs">
     <button class="pt-tab on" onclick="switchPtTab('lista',this)">Lista</button>
@@ -689,7 +690,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
   <!-- ABA FUNIL (KANBAN) -->
   <div id="pt-tab-funil" class="pt-tabcontent">
-    <div class="pg-desc" style="margin-top:-6px;margin-bottom:12px">Arraste o nome do paciente entre as colunas para atualizar o status</div>
+    <div class="pg-desc" style="margin-top:-6px;margin-bottom:12px">Arraste o nome do paciente entre as colunas para atualizar a situação</div>
     <div id="pt-kanban" class="kanban"></div>
   </div>
 
@@ -831,16 +832,88 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 <!-- FLUXOS DE AÇÃO -->
 <div id="sec-fluxos" class="sec">
-  <div class="pg-title">Fluxos de ação</div>
-  <div class="pg-desc">Defina quais ações são geradas automaticamente para cada status de paciente</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1px">
+    <div class="pg-title">Fluxos de ação</div>
+    <button class="btn btn-ghost btn-sm" onclick="abrirHistoricoAcoes()">📋 Histórico de ações</button>
+  </div>
+  <div class="pg-desc">Defina quais ações são geradas automaticamente para cada situação do paciente</div>
   <div class="alert a-info">Cada ação define: quando acontece (dias a partir do evento ou de hoje), o responsável, o tipo e o script da mensagem. Ao alterar aqui, todos os pacientes novos seguirão o fluxo atualizado.</div>
 
   <div class="flow-status-tabs" id="fst-tabs"></div>
   <div id="fst-content"></div>
 
   <div style="margin-top:16px">
-    <button class="btn btn-primary" onclick="addFlowAction()" data-perm="fluxos_criar">+ Nova ação neste status</button>
+    <button class="btn btn-primary" onclick="addFlowAction()" data-perm="fluxos_criar">+ Nova ação nesta situação</button>
   </div>
+</div>
+
+<!-- MODAL HISTÓRICO DE AÇÕES -->
+<div class="modal-ov" id="modal-historico-acoes">
+  <div class="modal" style="width:720px">
+    <div class="modal-header">
+      <div class="modal-title">Histórico de ações</div>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <select id="hac-filtro-situacao" onchange="renderHistoricoAcoes()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
+          <option value="">Todas as situações</option>
+        </select>
+        <select id="hac-filtro-resultado" onchange="renderHistoricoAcoes()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
+          <option value="">Todos os resultados</option>
+          <option value="realizada">Realizada</option>
+          <option value="nao_realizada">Não realizada</option>
+        </select>
+        <select id="hac-filtro-responsavel" onchange="renderHistoricoAcoes()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
+          <option value="">Todos responsáveis</option>
+        </select>
+      </div>
+      <div id="hac-lista" style="max-height:480px;overflow-y:auto"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-historico-acoes')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONCLUIR AÇÃO (realizada / não realizada + motivo) -->
+<div class="modal-ov" id="modal-concluir-acao">
+  <div class="modal" style="width:480px">
+    <div class="modal-header">
+      <div class="modal-title" id="mca-titulo">Concluir ação</div>
+    </div>
+    <div class="modal-body">
+      <div class="fl" style="margin-bottom:12px">
+        <label>Resultado</label>
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;cursor:pointer">
+            <input type="radio" name="mca-resultado" value="realizada" onchange="mcaToggleMotivo()" style="width:auto"> Realizada
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;cursor:pointer">
+            <input type="radio" name="mca-resultado" value="nao_realizada" onchange="mcaToggleMotivo()" style="width:auto"> Não realizada
+          </label>
+        </div>
+      </div>
+      <div class="fl" id="mca-motivo-wrap" style="display:none">
+        <label>Motivo de não realização *</label>
+        <input type="text" id="mca-motivo" placeholder="Ex: Paciente já fez contato anteriormente...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-concluir-acao')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarConclusaoAcao()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- LEMBRETES -->
+<div id="sec-lembretes" class="sec">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+    <div class="pg-title">Lembretes</div>
+  </div>
+  <div class="pg-desc">Lembretes gerados automaticamente pelas regras configuradas em Config. de agenda</div>
+  <div id="lemb-modo-visao"></div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="lemb-filtros"></div>
+  <div id="lemb-lista-wrap"></div>
 </div>
 
 <!-- RITUAIS -->
@@ -1155,36 +1228,16 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
     </div>
 
-    <!-- CONFIRMAÇÃO DE AGENDAMENTOS -->
+    <!-- LEMBRETES -->
     <div class="card" style="max-width:760px;margin-top:0">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-        <div><div class="card-title">Confirmação de agendamentos</div><div class="card-sub">Gera ações automáticas para todo agendamento com status "Agendado" — ex: lembrar a secretária de confirmar a véspera. A ação some sozinha assim que o status do agendamento mudar; não é preciso marcar como concluída.</div></div>
-        <button class="btn btn-primary btn-sm" onclick="addRegraConfirmacao()">+ Nova regra</button>
-      </div>
-      <div id="cfg-regras-confirmacao-lista" style="margin-top:12px"></div>
-    </div>
-
-    <!-- RECONTATO DE CANCELAMENTOS -->
-    <div class="card" style="max-width:760px;margin-top:0">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-        <div><div class="card-title">Recontato de cancelamentos</div><div class="card-sub">Quando um paciente desmarca (motivo "Paciente desmarcou") e ainda não há novo agendamento, o sistema abre automaticamente uma tarefa de recontato em "Pacientes desmarcados" — vale para qualquer profissional da agenda. A tarefa só some quando o desfecho é registrado.</div></div>
-        <button class="btn btn-primary btn-sm" onclick="addRegraRecontato()">+ Nova regra</button>
-      </div>
-      <div id="cfg-regras-recontato-lista" style="margin-top:12px"></div>
-      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
-        <div class="card-title" style="font-size:13px">Escalonamento</div>
-        <div class="card-sub" style="margin-bottom:10px">Se o recontato continuar em aberto além do prazo abaixo, gera um alerta extra para o responsável definido — além das regras de cima.</div>
-        <div style="display:flex;gap:14px;flex-wrap:wrap">
-          <div class="fl" style="max-width:240px">
-            <label>Dias em aberto até escalonar</label>
-            <input type="number" min="0" id="cfg-recontato-dias-esc" onfocus="_mostrarBotaoSalvar()" onchange="updateConfigRecontato('diasEscalonamento',parseInt(this.value)||0)">
-          </div>
-          <div class="fl" style="max-width:260px">
-            <label>Responsável pela escalada</label>
-            <select id="cfg-recontato-resp-esc" onfocus="_mostrarBotaoSalvar()" onchange="updateConfigRecontato('responsavelEscalonamento',this.value)"></select>
-          </div>
+        <div>
+          <div class="card-title">Lembretes automáticos</div>
+          <div class="card-sub">Configure lembretes disparados automaticamente com base nos campos do agendamento. Cada lembrete define o gatilho (campo + valor), quando acontece e quem é responsável. Os lembretes aparecem no módulo "Lembretes" e podem ser marcados como concluídos ou descartados.</div>
         </div>
+        <button class="btn btn-primary btn-sm" onclick="addRegraLembrete()">+ Nova regra</button>
       </div>
+      <div id="cfg-regras-lembretes-lista" style="margin-top:12px"></div>
     </div>
 
   </div>
@@ -2277,6 +2330,7 @@ function onChangeUsuarioAtual(id){
   renderHoje();
   renderProximos();
   renderPendencias();
+  atualizarBadgeLembretes();
 }
 
 // ── CONTROLE DE PERMISSÕES ────────────────────────────────────────────
@@ -2301,6 +2355,7 @@ const PERM_SECAO = {
   reuniao:   'reunioes_ver',
   rituais:   'rituais_ver',
   pendencias:'pendencias_ver',
+  lembretes: 'agenda_ver',
   desmarcados:'agenda_ver',
   dashboard: 'dashboard_ver',
   relatorios:'relatorios_ver',
@@ -2568,6 +2623,27 @@ function nomeComCodigoTexto(p){
 }
 
 let concluidasIds = carregarLS('sk3-concluidas', []);
+
+// ── HISTÓRICO DE AÇÕES ────────────────────────────────────────────────
+// {id, acaoId, acaoTitulo, pacienteId, pacienteNome, situacaoId, situacaoLabel,
+//  responsavel, data(ISO), concluidaEm(ISO), resultado('realizada'|'nao_realizada'),
+//  motivo(string|null), concluidoPorId, concluidoPorNome}
+let historicoAcoes = carregarLS('sk3-historico-acoes', []);
+
+// ── REGRAS DE LEMBRETES ───────────────────────────────────────────────
+// {id, titulo, gatilhoCampo, gatilhoValor, offset(int), unidade('dias'),
+//  offsetSinal('antes'|'depois'|'no_dia'), responsavel, script, ativo}
+// gatilhoCampo: 'status'(agendamento)|campo extra id|'primeira_consulta'|...
+// gatilhoValor: valor que o campo deve ter para disparar
+let regrasLembretes = carregarLS('sk3-regras-lembretes', [
+  {id:'lemb_confirmacao', titulo:'Confirmar agendamento', gatilhoCampo:'status_agendamento', gatilhoValor:'agendado', offset:1, unidade:'dias', offsetSinal:'antes', responsavel:'', script:'Entrar em contato com [Nome] para confirmar presença no agendamento de [data] às [hora].', ativo:true},
+]);
+
+// ── LEMBRETES GERADOS (instâncias) ────────────────────────────────────
+// {id, regraId, titulo, agendamentoId, pacienteId, pacienteNome,
+//  responsavel, script, dataLembrete(ISO), status('pendente'|'concluido'|'descartado'),
+//  concluidoEm, concluidoPorId}
+let lembretesGerados = carregarLS('sk3-lembretes-gerados', []);
 let equipe = carregarLS('sk3-equipe', [
   {nome:'Patrik Bomfim',usuarioId:'us_owner',cargoId:'cg_administrador',principal:true},
   {nome:'Leticia',usuarioId:'us_leticia',cargoId:'cg_dentista'},
@@ -3304,6 +3380,7 @@ function goTo(id, btn){
   if(id==='rituais') renderRituais();
   if(id==='reuniao') renderReunioes();
   if(id==='pendencias') renderPendencias();
+  if(id==='lembretes') renderLembretes();
   if(id==='desmarcados') renderDesmarcados();
   if(id==='melhorias') renderMelhorias();
   if(id==='dashboard') renderDashboard();
@@ -3402,12 +3479,357 @@ function renderAcaoCard(a, tipo){
 }
 
 
+let _acaoPendenteConclusao = null; // {k, a} aguardando modal
+
 function marcarFeito(k, a){
+  // Abre modal para escolher resultado (realizada / não realizada)
+  _acaoPendenteConclusao = {k, a};
+  const el = document.getElementById('mca-titulo');
+  if(el) el.textContent = `Concluir: ${a.titulo}`;
+  // reset form
+  document.querySelectorAll('input[name="mca-resultado"]').forEach(r=>r.checked=false);
+  const motivo = document.getElementById('mca-motivo');
+  if(motivo) motivo.value='';
+  const motivoWrap = document.getElementById('mca-motivo-wrap');
+  if(motivoWrap) motivoWrap.style.display='none';
+  document.getElementById('modal-concluir-acao').classList.add('open');
+}
+
+function mcaToggleMotivo(){
+  const val = document.querySelector('input[name="mca-resultado"]:checked')?.value;
+  const w = document.getElementById('mca-motivo-wrap');
+  if(w) w.style.display = val==='nao_realizada' ? '' : 'none';
+}
+
+function salvarConclusaoAcao(){
+  if(!_acaoPendenteConclusao) return;
+  const {k, a} = _acaoPendenteConclusao;
+  const resultado = document.querySelector('input[name="mca-resultado"]:checked')?.value;
+  if(!resultado){ alert('Selecione o resultado.'); return; }
+  const motivo = document.getElementById('mca-motivo')?.value.trim()||'';
+  if(resultado==='nao_realizada' && !motivo){ alert('Informe o motivo de não realização.'); document.getElementById('mca-motivo')?.focus(); return; }
+
+  // Salva no histórico
+  const u = usuarios.find(x=>x.id===usuarioAtualId);
+  const situacaoInfo = statusList.find(s=>s.id===(a.situacaoId||fluxoStatusAtual))||{label:''};
+  const pac = pacientes.find(p=>p.id===a.pacienteId);
+  historicoAcoes.unshift({
+    id: 'hac_'+Date.now(),
+    acaoId: a.id||'',
+    acaoTitulo: a.titulo||'',
+    pacienteId: a.pacienteId||null,
+    pacienteNome: a.pacienteNome||'',
+    situacaoId: pac?.status||'',
+    situacaoLabel: pac ? getStatusLabel(pac.status) : '',
+    responsavel: a.responsavel||'',
+    dataAcao: iso(a.data),
+    concluidaEm: iso(hoje),
+    resultado,
+    motivo: resultado==='nao_realizada' ? motivo : null,
+    concluidoPorId: usuarioAtualId||null,
+    concluidoPorNome: u?.nome||'',
+  });
+  salvarLS('sk3-historico-acoes', historicoAcoes);
+
+  // Marca como concluída no sistema de ações
   concluirAcao(a);
+
+  fecharModal('modal-concluir-acao');
+  _acaoPendenteConclusao = null;
   const card=document.getElementById('card-'+k);
   if(card){card.classList.add('done');}
   setTimeout(()=>renderHoje(),450);
 }
+
+// ── HISTÓRICO DE AÇÕES ─────────────────────────────────────────────────
+function abrirHistoricoAcoes(){
+  // Popula filtros
+  const selSit = document.getElementById('hac-filtro-situacao');
+  if(selSit){
+    selSit.innerHTML = '<option value="">Todas as situações</option>' +
+      statusList.map(s=>`<option value="${esc(s.id)}">${esc(s.label)}</option>`).join('');
+  }
+  const selResp = document.getElementById('hac-filtro-responsavel');
+  if(selResp){
+    const resps = [...new Set(historicoAcoes.map(h=>h.responsavel).filter(Boolean))];
+    selResp.innerHTML = '<option value="">Todos responsáveis</option>' +
+      resps.map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join('');
+  }
+  renderHistoricoAcoes();
+  document.getElementById('modal-historico-acoes').classList.add('open');
+}
+
+function renderHistoricoAcoes(){
+  const filtroSit = document.getElementById('hac-filtro-situacao')?.value||'';
+  const filtroRes = document.getElementById('hac-filtro-resultado')?.value||'';
+  const filtroResp = document.getElementById('hac-filtro-responsavel')?.value||'';
+  let lista = historicoAcoes.slice();
+  if(filtroSit) lista = lista.filter(h=>h.situacaoId===filtroSit);
+  if(filtroRes) lista = lista.filter(h=>h.resultado===filtroRes);
+  if(filtroResp) lista = lista.filter(h=>h.responsavel===filtroResp);
+  const el = document.getElementById('hac-lista');
+  if(!el) return;
+  if(!lista.length){
+    el.innerHTML = `<div class="empty"><div class="empty-ic">📋</div>Nenhum registro encontrado.</div>`;
+    return;
+  }
+  const gridCols = '90px 1fr 120px 100px 100px 110px';
+  el.innerHTML = `<div style="display:grid;grid-template-columns:${gridCols};gap:10px;padding:0 0 8px;border-bottom:1px solid var(--border);margin-bottom:4px">
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Data</div>
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Ação / Paciente</div>
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Situação</div>
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Responsável</div>
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Concluído por</div>
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Resultado</div>
+  </div>` + lista.map(h=>{
+    const pillCls = h.resultado==='realizada' ? 'p-green' : 'p-danger';
+    const pillLbl = h.resultado==='realizada' ? '✓ Realizada' : '✗ Não realizada';
+    return `<div style="display:grid;grid-template-columns:${gridCols};gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:start">
+      <div style="font-size:12px;color:var(--tx2)">${fmtDate(parseIso(h.concluidaEm))}</div>
+      <div>
+        <div style="font-size:13px;font-weight:500">${esc(h.acaoTitulo)}</div>
+        <div style="font-size:12px;color:var(--tx2)">👤 ${esc(h.pacienteNome||'—')}</div>
+        ${h.motivo?`<div style="font-size:11px;color:var(--da);margin-top:3px">Motivo: ${esc(h.motivo)}</div>`:''}
+      </div>
+      <div style="font-size:12px;color:var(--tx2)">${esc(h.situacaoLabel||'—')}</div>
+      <div style="font-size:12px;color:var(--tx2)">${esc(h.responsavel||'—')}</div>
+      <div style="font-size:12px;color:var(--tx2)">${esc(h.concluidoPorNome||'—')}</div>
+      <div><span class="pill ${pillCls}" style="font-size:11px">${pillLbl}</span></div>
+    </div>`;
+  }).join('');
+}
+
+// ── LEMBRETES — GERAÇÃO ───────────────────────────────────────────────
+function gerarLembretesParaAgendamento(ag){
+  // Chamado ao salvar um agendamento. Percorre regrasLembretes e cria instâncias.
+  if(!regrasLembretes || !regrasLembretes.length) return;
+  regrasLembretes.filter(r=>r.ativo).forEach(r=>{
+    // Verifica se gatilho bate
+    let gatilhoBate = false;
+    if(r.gatilhoCampo==='status_agendamento'){
+      gatilhoBate = ag.status === r.gatilhoValor;
+    } else if(r.gatilhoCampo==='primeira_consulta'){
+      gatilhoBate = ag.primeiraConsulta === r.gatilhoValor;
+    } else {
+      // campo extra
+      gatilhoBate = ag.camposExtras && ag.camposExtras[r.gatilhoCampo] === r.gatilhoValor;
+    }
+    if(!gatilhoBate) return;
+
+    // Evita duplicata para mesma regra+agendamento
+    const jaExiste = lembretesGerados.find(l=>l.regraId===r.id && l.agendamentoId===ag.id);
+    if(jaExiste) return;
+
+    // Calcula data do lembrete
+    const baseData = parseIso(ag.data);
+    if(!baseData) return;
+    let dataLembrete;
+    if(r.offsetSinal==='antes') dataLembrete = addDays(baseData, -(r.offset||0));
+    else if(r.offsetSinal==='depois') dataLembrete = addDays(baseData, r.offset||0);
+    else dataLembrete = new Date(baseData);
+
+    const script = (r.script||'')
+      .replace(/\[Nome\]/g, ag.pacienteNome||'paciente')
+      .replace(/\[data\]/g, ag.data ? ag.data.split('-').reverse().join('/') : '')
+      .replace(/\[hora\]/g, ag.horaInicio||'');
+
+    lembretesGerados.push({
+      id: 'lemb_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
+      regraId: r.id,
+      titulo: r.titulo||'Lembrete',
+      agendamentoId: ag.id,
+      pacienteId: ag.pacienteId||null,
+      pacienteNome: ag.pacienteNome||'',
+      responsavel: r.responsavel||'',
+      script,
+      dataLembrete: iso(dataLembrete),
+      status: 'pendente',
+      concluidoEm: null,
+      concluidoPorId: null,
+    });
+  });
+  salvarLS('sk3-lembretes-gerados', lembretesGerados);
+}
+
+// ── LEMBRETES — MÓDULO ────────────────────────────────────────────────
+let lembModoEquipe = false;
+let lembFiltroStatus = 'pendente';
+let lembFiltroResp = '';
+
+function lembToggleModoEquipe(v){ lembModoEquipe=v; renderLembretes(); }
+
+function renderLembretes(){
+  renderModoVisaoControl('lemb-modo-visao', lembModoEquipe, '', [], 'lembToggleModoEquipe', '');
+  const nomeAtual = nomeUsuarioAtual();
+  let lista = lembretesGerados.filter(l=>{
+    if(!lembModoEquipe && nomeAtual && l.responsavel && l.responsavel.toLowerCase().trim()!==nomeAtual.toLowerCase().trim()) return false;
+    return true;
+  });
+  // filtros
+  const resps = [...new Set(lembretesGerados.map(l=>l.responsavel).filter(Boolean))];
+  const filtrosEl = document.getElementById('lemb-filtros');
+  if(filtrosEl) filtrosEl.innerHTML = `
+    <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('')" style="${lembFiltroStatus===''?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Todos</button>
+    <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('pendente')" style="${lembFiltroStatus==='pendente'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Pendentes</button>
+    <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('concluido')" style="${lembFiltroStatus==='concluido'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Concluídos</button>
+    <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('descartado')" style="${lembFiltroStatus==='descartado'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Descartados</button>
+    <span style="width:1px;background:var(--border);margin:0 4px"></span>
+    <button class="btn btn-ghost btn-sm" onclick="setLembFiltroResp('')" style="${lembFiltroResp===''?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Todos responsáveis</button>
+    ${resps.map(r=>`<button class="btn btn-ghost btn-sm" onclick="setLembFiltroResp('${r}')" style="${lembFiltroResp===r?'background:var(--ac);color:#fff;border-color:var(--ac):''}">${esc(r)}</button>`).join('')}
+  `;
+  if(lembFiltroStatus) lista = lista.filter(l=>l.status===lembFiltroStatus);
+  if(lembFiltroResp) lista = lista.filter(l=>l.responsavel===lembFiltroResp);
+  lista = lista.slice().sort((a,b)=>a.dataLembrete>b.dataLembrete?1:-1);
+  const wrap = document.getElementById('lemb-lista-wrap');
+  if(!wrap) return;
+  if(!lista.length){
+    wrap.innerHTML=`<div class="card"><div class="empty"><div class="empty-ic">🔔</div>Nenhum lembrete encontrado.</div></div>`;
+    atualizarBadgeLembretes();
+    return;
+  }
+  const hojeStr = iso(hoje);
+  wrap.innerHTML = `<div class="card">` + lista.map(l=>{
+    const atrasado = l.status==='pendente' && l.dataLembrete < hojeStr;
+    const pillCls = l.status==='concluido'?'p-green':l.status==='descartado'?'p-neutral':atrasado?'p-danger':'p-info';
+    const pillLbl = l.status==='concluido'?'✓ Concluído':l.status==='descartado'?'Descartado':atrasado?'Atrasado':'Pendente';
+    const borderLeft = atrasado?'border-left:3px solid var(--da)':'';
+    return `<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);${borderLeft}">
+      <div style="font-size:22px;flex-shrink:0">🔔</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600">${esc(l.titulo)}</div>
+        <div style="font-size:12px;color:var(--tx2);margin-top:2px">👤 ${esc(l.pacienteNome||'—')} · ${esc(l.responsavel||'—')}</div>
+        ${l.script?`<div style="font-size:12px;color:var(--tx2);margin-top:5px;padding:6px 10px;background:var(--s2);border-radius:var(--r6);border-left:2px solid var(--border-s)">"${esc(l.script)}"</div>`:''}
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
+          <span class="pill ${pillCls}" style="font-size:11px">${pillLbl}</span>
+          <span class="pill p-neutral" style="font-size:11px">📅 ${fmtDate(parseIso(l.dataLembrete))}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+        ${l.status==='pendente'?`<button class="btn btn-primary btn-sm" onclick="concluirLembrete('${l.id}')">✓ Concluir</button>
+        <button class="btn btn-ghost btn-sm" onclick="descartarLembrete('${l.id}')">Descartar</button>`:''}
+      </div>
+    </div>`;
+  }).join('') + `</div>`;
+  atualizarBadgeLembretes();
+}
+function setLembFiltroStatus(s){lembFiltroStatus=s;renderLembretes();}
+function setLembFiltroResp(r){lembFiltroResp=r;renderLembretes();}
+function concluirLembrete(id){
+  const l=lembretesGerados.find(x=>x.id===id);
+  if(!l)return;
+  l.status='concluido';l.concluidoEm=iso(hoje);l.concluidoPorId=usuarioAtualId;
+  salvarLS('sk3-lembretes-gerados',lembretesGerados);
+  renderLembretes();
+}
+function descartarLembrete(id){
+  if(!confirm('Descartar este lembrete?'))return;
+  const l=lembretesGerados.find(x=>x.id===id);
+  if(!l)return;
+  l.status='descartado';
+  salvarLS('sk3-lembretes-gerados',lembretesGerados);
+  renderLembretes();
+}
+function atualizarBadgeLembretes(){
+  const hojeStr=iso(hoje);
+  const nomeAtual=nomeUsuarioAtual();
+  const pendentes=lembretesGerados.filter(l=>{
+    if(l.status!=='pendente')return false;
+    if(l.dataLembrete>hojeStr)return false;
+    if(!lembModoEquipe && nomeAtual && l.responsavel && l.responsavel.toLowerCase().trim()!==nomeAtual.toLowerCase().trim()) return false;
+    return true;
+  }).length;
+  const bdg=document.getElementById('bdg-lembretes');
+  if(bdg){bdg.textContent=pendentes;bdg.style.display=pendentes>0?'':'none';}
+}
+
+// ── LEMBRETES — CONFIG ────────────────────────────────────────────────
+let lembExpandidos = new Set();
+function toggleLembExpand(id){ if(lembExpandidos.has(id)) lembExpandidos.delete(id); else lembExpandidos.add(id); renderCfgRegrasLembretes(); }
+
+function renderCfgRegrasLembretes(){
+  const c = document.getElementById('cfg-regras-lembretes-lista');
+  if(!c) return;
+  // Monta lista de campos disponíveis como gatilho
+  const camposGatilho = [
+    {value:'status_agendamento', label:'Status do agendamento'},
+    {value:'primeira_consulta', label:'Primeira consulta?'},
+    ...camposAgendamento.filter(x=>x.ativo!==false).map(x=>({value:x.id, label:x.label})),
+  ];
+  // Valores possíveis por campo
+  const valoresPorCampo = {
+    status_agendamento: [{v:'agendado',l:'Agendado'},{v:'confirmado',l:'Confirmado'},{v:'realizado',l:'Realizado'},{v:'cancelado',l:'Cancelado'},{v:'faltou',l:'Faltou'}],
+    primeira_consulta: [{v:'sim',l:'Sim'},{v:'nao',l:'Não'}],
+  };
+  camposAgendamento.filter(x=>x.ativo!==false && x.tipo==='lista').forEach(x=>{
+    valoresPorCampo[x.id] = (x.opcoes||[]).map(o=>({v:o,l:o}));
+  });
+  camposAgendamento.filter(x=>x.ativo!==false && x.tipo==='toggle').forEach(x=>{
+    valoresPorCampo[x.id] = [{v:'sim',l:'Sim'},{v:'nao',l:'Não'}];
+  });
+
+  if(!regrasLembretes.length){
+    c.innerHTML=`<div class="empty"><div class="empty-ic">🔔</div>Nenhuma regra criada ainda.</div>`;
+    return;
+  }
+  c.innerHTML = regrasLembretes.map((r,i)=>{
+    const expandido = lembExpandidos.has(r.id);
+    const valores = valoresPorCampo[r.gatilhoCampo]||[];
+    return `<div class="flow-action-row ${expandido?'':'collapsed'}" id="lembrule-${r.id}">
+      <span class="fa-handle" style="opacity:.3;cursor:default">⠿</span>
+      <div class="fa-row-inner" style="flex:1">
+        <div class="fa-header" onclick="toggleLembExpand('${r.id}')">
+          <span class="fa-header-caret">▶</span>
+          <span class="fa-header-title">${esc(r.titulo||'Nova regra')}</span>
+          <span class="pill p-neutral" style="margin-left:8px;font-size:10px">${r.ativo?'Ativa':'Inativa'}</span>
+        </div>
+        <div class="fa-body" style="${expandido?'':'display:none'}">
+          <div class="fl fa-body-full"><label>Título</label>
+            <input type="text" value="${esc(r.titulo)}" onfocus="_mostrarBotaoSalvar()" oninput="updateLembRegraField(${i},'titulo',this.value)">
+          </div>
+          <div class="fl"><label>Gatilho — campo</label>
+            <select onchange="updateLembRegraField(${i},'gatilhoCampo',this.value);renderCfgRegrasLembretes()">
+              ${camposGatilho.map(cg=>`<option value="${esc(cg.value)}" ${r.gatilhoCampo===cg.value?'selected':''}>${esc(cg.label)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="fl"><label>Gatilho — valor</label>
+            <select onchange="updateLembRegraField(${i},'gatilhoValor',this.value)">
+              ${valores.map(v=>`<option value="${esc(v.v)}" ${r.gatilhoValor===v.v?'selected':''}>${esc(v.l)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="fl" style="display:flex;flex-direction:row;gap:8px;align-items:flex-end">
+            <div class="fl" style="flex:0 0 80px"><label>Dias</label>
+              <input type="number" min="0" value="${r.offset||0}" onfocus="_mostrarBotaoSalvar()" oninput="updateLembRegraField(${i},'offset',parseInt(this.value)||0)">
+            </div>
+            <div class="fl" style="flex:1"><label>Quando</label>
+              <select onchange="updateLembRegraField(${i},'offsetSinal',this.value)">
+                <option value="antes" ${r.offsetSinal==='antes'?'selected':''}>antes</option>
+                <option value="no_dia" ${r.offsetSinal==='no_dia'?'selected':''}>no dia</option>
+                <option value="depois" ${r.offsetSinal==='depois'?'selected':''}>depois</option>
+              </select>
+            </div>
+          </div>
+          <div class="fl fa-body-full"><label>Responsável</label>
+            <select onchange="updateLembRegraField(${i},'responsavel',this.value)">
+              <option value="">— selecionar —</option>
+              ${equipe.map(nomeEquipeItem).map(e=>`<option value="${esc(e)}" ${r.responsavel===e?'selected':''}>${esc(e)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="fl fa-body-full"><label>Script (use [Nome], [data], [hora])</label>
+            <textarea rows="2" onfocus="_mostrarBotaoSalvar()" oninput="updateLembRegraField(${i},'script',this.value)" style="resize:vertical">${esc(r.script||'')}</textarea>
+          </div>
+          <div class="fl fa-body-full" style="flex-direction:row;align-items:center;gap:8px">
+            <input type="checkbox" id="lemb-atv-${r.id}" ${r.ativo?'checked':''} onchange="updateLembRegraField(${i},'ativo',this.checked)" style="width:auto">
+            <label for="lemb-atv-${r.id}" style="font-size:13px;color:var(--tx)">Regra ativa</label>
+          </div>
+        </div>
+      </div>
+      <button class="fa-delete" onclick="deleteLembRegra(${i})">Excluir</button>
+    </div>`;
+  }).join('');
+}
+function updateLembRegraField(i,field,value){ regrasLembretes[i][field]=value; salvarLS('sk3-regras-lembretes',regrasLembretes); if(field!=='titulo') renderCfgRegrasLembretes(); else { const row=document.getElementById('lembrule-'+regrasLembretes[i].id); if(row){const t=row.querySelector('.fa-header-title');if(t)t.textContent=value||'Nova regra';} } }
+function addRegraLembrete(){ regrasLembretes.push({id:'lemb_'+Date.now(),titulo:'Nova regra',gatilhoCampo:'status_agendamento',gatilhoValor:'agendado',offset:1,unidade:'dias',offsetSinal:'antes',responsavel:'',script:'',ativo:true}); salvarLS('sk3-regras-lembretes',regrasLembretes); lembExpandidos.add(regrasLembretes[regrasLembretes.length-1].id); renderCfgRegrasLembretes(); }
+function deleteLembRegra(i){ if(!confirm(`Excluir a regra "${regrasLembretes[i].titulo}"?`))return; regrasLembretes.splice(i,1); salvarLS('sk3-regras-lembretes',regrasLembretes); renderCfgRegrasLembretes(); }
 
 // ── RENDER PRÓXIMOS ───────────────────────────────────────────────────
 function renderProximos(){
@@ -3730,7 +4152,7 @@ function salvarPaciente(){
     const cpfDigits=onlyDigits(cpfEl.value);
     const existente=pacientes.find(p=>onlyDigits(p.cpf)===cpfDigits);
     if(existente){
-      alert(`Este CPF já está cadastrado para "${existente.nome}". Abra o cadastro existente para atualizar o status.`);
+      alert(`Este CPF já está cadastrado para "${existente.nome}". Abra o cadastro existente para atualizar a situação.`);
       fecharModal('modal-novo');
       goTo('pacientes');
       document.querySelectorAll('.nav-btn').forEach(n=>{ if(n.textContent.includes('Pacientes')) n.classList.add('on'); });
@@ -4846,7 +5268,7 @@ function renderFluxoContent(){
   const btnAdd=document.querySelector('[data-perm="fluxos_criar"]');
   if(btnAdd) btnAdd.style.display=podeCriar?'':'none';
 
-  if(!acoes.length){c.innerHTML=`<div class="card"><div class="empty"><div class="empty-ic">⚙️</div>Nenhuma ação neste status ainda.</div></div>`;return;}
+  if(!acoes.length){c.innerHTML=`<div class="card"><div class="empty"><div class="empty-ic">⚙️</div>Nenhuma ação nesta situação ainda.</div></div>`;return;}
   c.innerHTML=acoes.map((a,i)=>{
     const anexos=a.anexos||[];
     const expandido=flowExpandidos.has(a.id);
@@ -7701,8 +8123,7 @@ function renderCfgAgenda(){
   renderCfgAgendaProfissionais();
   renderCfgCamposAgendamento();
   renderCfgCamposEvento();
-  renderCfgRegrasConfirmacao();
-  renderCfgRegrasRecontato();
+  renderCfgRegrasLembretes();
 }
 
 // ── REGRAS DE CONFIRMAÇÃO DE AGENDAMENTO ────────────────────────────────
@@ -9989,6 +10410,11 @@ function salvarAgendamento(){
     agendamentos.push({id:uid('ag'),...item});
   }
   salvarLS('sk3-agendamentos',agendamentos);
+
+  // Gera lembretes automáticos para o agendamento recém-salvo
+  const agSalvo = agendamentos.find(a=>a.id===(editId||(agendamentos[agendamentos.length-1].id)));
+  if(agSalvo && typeof gerarLembretesParaAgendamento==='function') gerarLembretesParaAgendamento(agSalvo);
+  atualizarBadgeLembretes();
 
   // Auto-detecção: se este paciente tinha um recontato de cancelamento em aberto em OUTRO
   // agendamento e agora está recebendo um novo horário, oferece fechar automaticamente —
