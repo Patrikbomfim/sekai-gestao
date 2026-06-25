@@ -9942,10 +9942,10 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
   const grid=document.getElementById('agenda-grid');
   const nLinhas = Math.ceil((fimMin-iniMin)/passo);
   const SLOT_H = 34;
+  const totalH = nLinhas * SLOT_H;
 
   let style = `grid-template-columns: 64px repeat(${cols.length}, 1fr); grid-auto-rows: ${SLOT_H}px;`;
   let html = `<div class="ag-grid" style="${style}">`;
-
   html += `<div class="ag-head"></div>`;
   cols.forEach(c=>{
     html += `<div class="ag-head"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${c.cor};margin-right:5px;vertical-align:middle"></span>${c.label}</div>`;
@@ -9960,8 +9960,35 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
       html += renderAgendaCell(c, modo, slotIni, slotFim, dataIso, diaSemana, iniMin, passo, SLOT_H);
     });
   }
-
   html += `</div>`;
+
+  // Overlay de cards posicionados com precisao de minuto
+  html += `<div style="position:relative;margin-top:-${totalH}px;height:${totalH}px;pointer-events:none;display:grid;grid-template-columns:64px repeat(${cols.length},1fr)">`;
+  html += `<div></div>`;
+  cols.forEach(c=>{
+    const agsDaCol = agendamentos.filter(a => {
+      if(a.data !== dataIso) return false;
+      return modo==='sala' ? a.salaId===c.id : a.usuarioId===c.id;
+    });
+    html += `<div style="position:relative;pointer-events:none">`;
+    agsDaCol.forEach(a=>{
+      const ap = agendaProfissionais.find(x=>x.usuarioId===a.usuarioId);
+      const cor = ap ? ap.cor : '#9CA3AF';
+      const salaNome = (salas.find(s=>s.id===a.salaId)||{}).nome||'';
+      const agIni = horaParaMin(a.horaInicio);
+      const agFim = horaParaMin(a.horaFim);
+      const topPx = Math.round((agIni - iniMin) / passo * SLOT_H) + 1;
+      const heightPx = Math.max(SLOT_H - 2, Math.round((agFim - agIni) / passo * SLOT_H) - 2);
+      const subLabel = modo==='sala' ? nomeUsuario(a.usuarioId) : salaNome;
+      html += `<div class="ag-card st-${a.status}" style="background:${cor};top:${topPx}px;height:${heightPx}px;pointer-events:all" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}')">
+        <div class="ag-card-tit">${a.horaInicio}\u2013${a.horaFim} ${a.pacienteNome||('sem nome')}</div>
+        <div class="ag-card-sub">${subLabel}${a.procedimento?' \u00b7 '+a.procedimento:''}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  html += `</div>`;
+
   grid.innerHTML = html;
 }
 
@@ -10028,22 +10055,7 @@ function renderAgendaCell(col, modo, slotIni, slotFim, dataIso, diaSemana, iniMi
     }
   }
 
-  // Cards de agendamento — posicionados absolutamente na célula de início
-  agsNoSlot.forEach(a=>{
-    const ap=agendaProfissionais.find(x=>x.usuarioId===a.usuarioId);
-    const cor = ap ? ap.cor : '#9CA3AF';
-    const sala=salas.find(s=>s.id===a.salaId);
-    const agIni = horaParaMin(a.horaInicio);
-    const dur = horaParaMin(a.horaFim)-agIni;
-    const offsetMin = agIni - slotIni; // minutos dentro do slot onde o card começa
-    const topPx = Math.round((offsetMin/passo)*SLOT_H) + 2;
-    const heightPx = Math.max(SLOT_H-4, (dur/passo)*SLOT_H - 4);
-    const subLabel = modo==='sala' ? nomeUsuario(a.usuarioId) : (sala?sala.nome:'');
-    conteudo += `<div class="ag-card st-${a.status}" style="background:${cor};top:${topPx}px;height:${heightPx}px" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}')">
-      <div class="ag-card-tit">${a.horaInicio}–${a.horaFim} ${a.pacienteNome||'(sem nome)'}</div>
-      <div class="ag-card-sub">${subLabel}${a.procedimento?' · '+a.procedimento:''}</div>
-    </div>`;
-  });
+  // Cards renderizados no overlay (renderAgendaGrid) — não renderizar aqui
 
   return `<div class="${cls}" ${onclick} style="overflow:visible">${conteudo}</div>`;
 }
