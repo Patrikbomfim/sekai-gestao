@@ -10037,9 +10037,8 @@ function renderAgendaCell(col, modo, slotIni, slotFim, dataIso, diaSemana, iniMi
     const heightPx = Math.max(SLOT_H-4, (dur/passo)*SLOT_H - 4);
     const subLabel = modo==='sala' ? nomeUsuario(a.usuarioId) : (sala?sala.nome:'');
     conteudo += `<div class="ag-card st-${a.status}" style="background:${cor};top:2px;height:${heightPx}px" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}')">
-      <div class="ag-card-tit">${a.pacienteNome||'(sem nome)'}</div>
-      <div class="ag-card-sub">${a.horaInicio}–${a.horaFim} · ${subLabel}</div>
-      ${a.procedimento?`<div class="ag-card-sub">${a.procedimento}</div>`:''}
+      <div class="ag-card-tit">${a.horaInicio} ${a.pacienteNome||'(sem nome)'}</div>
+      <div class="ag-card-sub">${subLabel}${a.procedimento?' · '+a.procedimento:''}</div>
     </div>`;
   });
 
@@ -10570,18 +10569,7 @@ function _salvarAgendamentoInterno(){
     }
   }
 
-  // checagem simples de conflito (mesma sala ou mesma profissional, mesmo horário)
-  const conflito = agendamentos.find(a=>{
-    if(editId && a.id===editId) return false;
-    if(a.data!==data) return false;
-    if(a.status==='cancelado') return false;
-    const overlap = horaInicio<a.horaFim && horaFim>a.horaInicio;
-    if(!overlap) return false;
-    return a.salaId===salaId || a.usuarioId===usuarioId;
-  });
-  if(conflito){
-    if(!confirm('Já existe um agendamento conflitante nesse horário (mesma sala ou mesma profissional). Deseja salvar mesmo assim?')) return;
-  }
+
 
   const fluxo = null; // definido apenas em agendamentos via encaminhamento
   const item={pacienteId,pacienteNome,pacienteFone:pacienteId?'':pacienteFone,usuarioId,salaId,data,horaInicio,horaFim,status,origem:'interno',procedimento,fluxo,obs,situacaoRegistrada:situacaoPaciente,
