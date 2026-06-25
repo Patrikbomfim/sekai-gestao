@@ -9814,7 +9814,7 @@ function renderAgendaSemana(d){
           const dur = horaParaMin(a.horaFim) - horaParaMin(a.horaInicio);
           const hPx = Math.max(SLOT_H, Math.round(dur / passo * SLOT_H)) - 2;
           const primeiroNome = (a.pacienteNome||'').split(' ')[0];
-          body += `<div style="position:absolute;top:1px;left:1px;right:1px;height:${hPx}px;background:${cor};border-radius:3px;z-index:3;cursor:pointer;overflow:hidden;display:flex;align-items:center;padding:0 3px" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}')" title="${a.pacienteNome||''}\n${a.horaInicio}–${a.horaFim}\n${sala.nome}"><span style="font-size:8px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1">${primeiroNome}</span></div>`;
+          body += `<div style="position:absolute;top:1px;left:1px;right:1px;height:${hPx}px;background:${cor};border-radius:3px;z-index:3;cursor:pointer;overflow:hidden;display:flex;align-items:center;padding:0 3px" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}')" title="${a.pacienteNome||''}\n${a.horaInicio}–${a.horaFim}\n${sala.nome}"><span style="font-size:8px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1">${a.horaInicio} ${primeiroNome}</span></div>`;
         });
         body += `</div>`;
       });
@@ -9981,7 +9981,7 @@ function renderAgendaCell(col, modo, slotIni, slotFim, dataIso, diaSemana, iniMi
   }
 
   // Agendamentos que COMEÇAM neste slot
-  const agsNoSlot = agendamentos.filter(a=> a.data===dataIso && horaParaMin(a.horaInicio)===slotIni && (
+  const agsNoSlot = agendamentos.filter(a=> a.data===dataIso && horaParaMin(a.horaInicio)>=slotIni && horaParaMin(a.horaInicio)<slotFim && (
     modo==='sala' ? a.salaId===col.id : a.usuarioId===col.id
   ));
 
