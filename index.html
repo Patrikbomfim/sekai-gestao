@@ -10037,7 +10037,7 @@ function renderAgendaCell(col, modo, slotIni, slotFim, dataIso, diaSemana, iniMi
     const heightPx = Math.max(SLOT_H-4, (dur/passo)*SLOT_H - 4);
     const subLabel = modo==='sala' ? nomeUsuario(a.usuarioId) : (sala?sala.nome:'');
     conteudo += `<div class="ag-card st-${a.status}" style="background:${cor};top:2px;height:${heightPx}px" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}')">
-      <div class="ag-card-tit">${a.horaInicio} ${a.pacienteNome||'(sem nome)'}</div>
+      <div class="ag-card-tit">${a.horaInicio}–${a.horaFim} ${a.pacienteNome||'(sem nome)'}</div>
       <div class="ag-card-sub">${subLabel}${a.procedimento?' · '+a.procedimento:''}</div>
     </div>`;
   });
