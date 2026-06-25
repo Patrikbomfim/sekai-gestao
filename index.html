@@ -10102,6 +10102,7 @@ function abrirModalAgendamento(agendamentoId, dataPre, horaPre, salaPre, usuario
   agmToggleCancelamento();
 
   agmRenderCamposExtras(a || null);
+  agmToggleSituacao();
 
   document.getElementById('modal-agendamento').classList.add('open');
 
@@ -10210,7 +10211,7 @@ function agmRenderCamposExtras(agendamentoExistente){
       if(!pacienteId) return; // sem paciente vinculado, não exibe
       const situacaoSalva = agendamentoExistente ? (agendamentoExistente.situacaoRegistrada||'') : '';
       const opcoesHtml = statusList.map(s=>`<option value="${esc(s.id)}" ${situacaoSalva===s.id?'selected':''}>${esc(s.label)}</option>`).join('');
-      html += `<div class="fl fg-full" id="agm-situacao-wrap">
+      html += `<div class="fl fg-full" id="agm-situacao-wrap" style="display:none">
         <label>Situação do paciente${labelStar}</label>
         <select id="agm-situacao">${opcoesHtml}</select>
         <div id="agm-situacao-hint" style="font-size:11px;color:var(--tx3);margin-top:4px">Atendimento marcado como Realizado — atualize a situação do paciente.</div>
