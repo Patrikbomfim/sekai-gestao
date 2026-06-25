@@ -9970,7 +9970,7 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
       if(a.data !== dataIso) return false;
       return modo==='sala' ? a.salaId===c.id : a.usuarioId===c.id;
     });
-    html += `<div style="position:relative;pointer-events:none">`;
+    html += `<div style="position:relative;pointer-events:none;height:${totalH}px">`;
     agsDaCol.forEach(a=>{
       const ap = agendaProfissionais.find(x=>x.usuarioId===a.usuarioId);
       const cor = ap ? ap.cor : '#9CA3AF';
