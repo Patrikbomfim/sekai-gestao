@@ -10033,10 +10033,13 @@ function renderAgendaCell(col, modo, slotIni, slotFim, dataIso, diaSemana, iniMi
     const ap=agendaProfissionais.find(x=>x.usuarioId===a.usuarioId);
     const cor = ap ? ap.cor : '#9CA3AF';
     const sala=salas.find(s=>s.id===a.salaId);
-    const dur = horaParaMin(a.horaFim)-horaParaMin(a.horaInicio);
+    const agIni = horaParaMin(a.horaInicio);
+    const dur = horaParaMin(a.horaFim)-agIni;
+    const offsetMin = agIni - slotIni; // minutos dentro do slot onde o card começa
+    const topPx = Math.round((offsetMin/passo)*SLOT_H) + 2;
     const heightPx = Math.max(SLOT_H-4, (dur/passo)*SLOT_H - 4);
     const subLabel = modo==='sala' ? nomeUsuario(a.usuarioId) : (sala?sala.nome:'');
-    conteudo += `<div class="ag-card st-${a.status}" style="background:${cor};top:2px;height:${heightPx}px" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}')">
+    conteudo += `<div class="ag-card st-${a.status}" style="background:${cor};top:${topPx}px;height:${heightPx}px" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}')">
       <div class="ag-card-tit">${a.horaInicio}–${a.horaFim} ${a.pacienteNome||'(sem nome)'}</div>
       <div class="ag-card-sub">${subLabel}${a.procedimento?' · '+a.procedimento:''}</div>
     </div>`;
