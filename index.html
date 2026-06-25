@@ -401,6 +401,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .ag-card .ag-card-tit{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10.5px}
 .ag-card .ag-card-sub{opacity:.85;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ag-card.st-confirmado::before{content:'✓ ';font-weight:700}
+.ag-card-compact.st-confirmado::before{content:''}
 .ag-legend-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--tx2)}
 .ag-legend-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
 .ag-bloqueio-tag{font-size:10px;color:var(--da);text-align:center;padding-top:2px}
@@ -9982,15 +9983,16 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
       const subLabel = modo==='sala' ? nomeUsuario(a.usuarioId) : salaNome;
       const pacNome = a.pacienteNome || 'sem nome';
       let cardContent;
+      const extraClass = heightPx < 30 ? ' ag-card-compact' : '';
       if(heightPx >= 30){
         cardContent = `<div class="ag-card-tit">${a.horaInicio}–${a.horaFim} ${pacNome}</div><div class="ag-card-sub">${subLabel}${a.procedimento?' · '+a.procedimento:''}</div>`;
-      } else if(heightPx >= 16){
+      } else if(heightPx >= 12){
         const sub = subLabel ? ` · ${subLabel}` : '';
-        cardContent = `<div class="ag-card-tit" style="font-size:9px;line-height:1.2">${a.horaInicio}–${a.horaFim} ${pacNome}${sub}</div>`;
+        cardContent = `<div class="ag-card-tit" style="font-size:9px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.horaInicio}–${a.horaFim} ${pacNome}${sub}</div>`;
       } else {
         cardContent = `<div class="ag-card-tit" style="font-size:8px;line-height:1.1">${a.horaInicio}</div>`;
       }
-      html += `<div class="ag-card st-${a.status}" style="background:${cor};top:${topPx}px;height:${heightPx}px;pointer-events:all" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}')" title="${pacNome} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}</div>`;
+      html += `<div class="ag-card st-${a.status}${extraClass}" style="background:${cor};top:${topPx}px;height:${heightPx}px;pointer-events:all;padding:1px 4px" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}')" title="${pacNome} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}</div>`;
     });
     html += `</div>`;
   });
