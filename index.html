@@ -977,6 +977,40 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
+<!-- MODAL ORÇAMENTO -->
+<div class="modal-ov" id="modal-orcamento">
+  <div class="modal" style="width:700px;max-width:96vw">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="modal-title">Orçamento</div>
+        <button onclick="fecharModalOrcamento()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--tx3);line-height:1;padding:2px 6px">&times;</button>
+      </div>
+    </div>
+    <div class="modal-body" id="orc-modal-body" style="padding-top:16px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModalOrcamento()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarOrcamento()">Salvar orçamento</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ADICIONAR PROCEDIMENTO -->
+<div class="modal-ov" id="modal-proc-orc" style="z-index:220">
+  <div class="modal" style="width:580px;max-width:96vw">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="modal-title">Adicionar procedimento</div>
+        <button onclick="document.getElementById('modal-proc-orc').classList.remove('open')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--tx3);line-height:1;padding:2px 6px">&times;</button>
+      </div>
+    </div>
+    <div class="modal-body" id="proc-orc-body" style="padding-top:16px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modal-proc-orc').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarProcOrc()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
 <!-- FLUXOS DE AÇÃO -->
 <div id="sec-fluxos" class="sec">
   <!-- subpágina: situação -->
@@ -4801,7 +4835,7 @@ function voltarParaPacientes(){
 
 function switchPpArea(area){
   const areas=['dados','agenda','anamnese','orcamento','termo','contrato','prontuario','documentos','fotos','historico','acoes','lembretes','pendencias','financeiro'];
-  const menuAreas=['dados','agenda','anamnese','orcamento','termo','contrato','prontuario','documentos','fotos','historico','acoes','lembretes','pendencias'];
+  const menuAreas=['dados','agenda','anamnese','orcamento','termo','contrato','prontuario','documentos','fotos','historico','acoes','lembretes','pendencias','financeiro'];
   areas.forEach(a=>{
     const el=document.getElementById('pp-area-'+a);
     if(el) el.classList.toggle('on',a===area);
@@ -4916,8 +4950,327 @@ let _ppPacienteAtual=null;
 function ppAbrirNovaPendencia(){
   if(_ppPacienteAtual) abrirModalNovaPendencia(_ppPacienteAtual.id,_ppPacienteAtual.nome);
 }
+// ── ORÇAMENTO ─────────────────────────────────────────────────────────────
+// Storage key: sk3-orcamentos → [ {id, pacienteId, clinica, criadoPor, data, obs, itens:[{id,proc,dentista,dentes,valor}], status:'rascunho'|'aprovado'|'recusado'} ]
+
+function _orcamentos(){ return carregarLS('sk3-orcamentos',[]); }
+function _salvarOrcamentos(list){ salvarLS('sk3-orcamentos',list); }
+
 function renderPpOrcamento(p){
-  document.getElementById('pp-orcamento-wrap').innerHTML='<div class="empty"><div class="empty-ic">💰</div>Módulo em configuração.</div>';
+  const wrap=document.getElementById('pp-orcamento-wrap');
+  const orcamentos=_orcamentos().filter(o=>String(o.pacienteId)===String(p.id));
+  const statusPill={rascunho:'p-neutral',aprovado:'p-green',recusado:'p-danger'};
+  const statusLbl={rascunho:'Rascunho',aprovado:'Aprovado',recusado:'Recusado'};
+  let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div style="font-size:13px;font-weight:600">Orçamentos (${orcamentos.length})</div>
+    <button class="btn btn-primary btn-sm" onclick="abrirModalOrcamento('${p.id}')">+ Novo orçamento</button>
+  </div>`;
+  if(!orcamentos.length){
+    html+='<div class="empty" style="padding:28px 0">Nenhum orçamento registrado.<br><span style="font-size:11px;color:var(--tx3)">Clique em "Novo orçamento" para começar.</span></div>';
+  } else {
+    orcamentos.slice().reverse().forEach(o=>{
+      const total=(o.itens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+      const dataFmt=o.data?o.data.split('-').reverse().join('/'):'—';
+      html+=`<div style="display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+            <span style="font-size:13px;font-weight:600">Orçamento #${o.num||o.id.slice(-4)}</span>
+            <span class="pill ${statusPill[o.status]||'p-neutral'}">${statusLbl[o.status]||o.status}</span>
+          </div>
+          <div style="font-size:12px;color:var(--tx3)">${dataFmt} · ${o.criadoPor||'—'} · ${(o.itens||[]).length} procedimento(s)</div>
+          ${o.obs?`<div style="font-size:12px;color:var(--tx2);margin-top:3px">${o.obs}</div>`:''}
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:15px;font-weight:700;color:var(--ac)">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+          <div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end">
+            <button class="btn btn-ghost btn-sm" onclick="abrirModalOrcamento('${p.id}','${o.id}')">Editar</button>
+            <button class="btn btn-ghost btn-sm" onclick="orcamentoMudarStatus('${o.id}','aprovado','${p.id}')" ${o.status==='aprovado'?'disabled':''}>Aprovar</button>
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+  wrap.innerHTML=html;
+}
+
+function _nextOrcNum(){
+  const todos=_orcamentos();
+  return (todos.length?Math.max(...todos.map(o=>o.num||0)):0)+1;
+}
+
+function orcamentoMudarStatus(orcId,novoStatus,pacId){
+  const list=_orcamentos();
+  const idx=list.findIndex(o=>o.id===orcId);
+  if(idx<0) return;
+  list[idx].status=novoStatus;
+  _salvarOrcamentos(list);
+  const p=pacientes.find(x=>String(x.id)===String(pacId));
+  if(p) renderPpOrcamento(p);
+}
+
+let _orcModalPacId=null;
+let _orcModalId=null;
+let _orcItens=[];
+
+function abrirModalOrcamento(pacId, orcId){
+  _orcModalPacId=pacId;
+  _orcModalId=orcId||null;
+  _orcItens=[];
+
+  const emp=getEmpresaAtual()||{};
+  const clinicaNome=(emp.dados&&emp.dados.nome)||'Clínica Sekai';
+  const hojeStr=iso(hoje);
+  const uAtual=usuarios.find(u=>u.id===usuarioAtualId);
+  const uNome=uAtual?uAtual.nome:'';
+
+  if(orcId){
+    const orc=_orcamentos().find(o=>o.id===orcId);
+    if(orc) _orcItens=(orc.itens||[]).map(i=>({...i}));
+  }
+
+  const usuariosOpts=usuarios.map(u=>`<option value="${u.nome}" ${u.nome===uNome?'selected':''}>${u.nome}</option>`).join('');
+  const orcEdit=orcId?(_orcamentos().find(o=>o.id===orcId)||{}):null;
+
+  const modalEl=document.getElementById('modal-orcamento');
+  modalEl.querySelector('.modal-body').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+      <div class="fl">
+        <label>Clínica</label>
+        <div id="orc-modal-clinica" style="padding:7px 9px;border:1px solid var(--border);border-radius:var(--r6);font-size:12px;background:var(--s2);color:var(--tx2)">${clinicaNome}</div>
+      </div>
+      <div class="fl">
+        <label>Criado por</label>
+        <select id="orc-sel-criador">${usuariosOpts}</select>
+      </div>
+      <div class="fl">
+        <label>Data</label>
+        <input type="date" id="orc-input-data" value="${(orcEdit&&orcEdit.data)||hojeStr}">
+      </div>
+      <div class="fl" style="grid-column:1/-1">
+        <label>Observações</label>
+        <textarea id="orc-input-obs" rows="2" placeholder="Observações gerais do orçamento…">${(orcEdit&&orcEdit.obs)||''}</textarea>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:13px;font-weight:600">Procedimentos</div>
+      <button class="btn btn-primary btn-sm" onclick="abrirModalProcOrc()">+ Adicionar procedimento</button>
+    </div>
+    <div id="orc-itens-wrap" style="margin-bottom:16px"></div>
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:16px;padding:12px 0;border-top:1px solid var(--border)">
+      <div style="font-size:12px;color:var(--tx2)">Total do orçamento</div>
+      <div id="orc-total" style="font-size:20px;font-weight:700;color:var(--ac)">R$ 0,00</div>
+    </div>
+  `;
+
+  if(orcEdit) document.getElementById('orc-sel-criador').value=orcEdit.criadoPor||uNome;
+
+  _renderOrcItens();
+  _renderOrcTotal();
+  modalEl.classList.add('open');
+}
+
+function fecharModalOrcamento(){
+  document.getElementById('modal-orcamento').classList.remove('open');
+  document.getElementById('modal-proc-orc').classList.remove('open');
+}
+
+function _renderOrcItens(){
+  const wrap=document.getElementById('orc-itens-wrap');
+  if(!wrap) return;
+  if(!_orcItens.length){
+    wrap.innerHTML='<div style="text-align:center;padding:20px;font-size:12px;color:var(--tx3);background:var(--s2);border-radius:var(--r8)">Nenhum procedimento adicionado.<br>Clique em &ldquo;+ Adicionar procedimento&rdquo; para incluir.</div>';
+    return;
+  }
+  wrap.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead>
+      <tr style="border-bottom:2px solid var(--border);text-align:left">
+        <th style="padding:7px 8px;font-size:11px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Procedimento</th>
+        <th style="padding:7px 8px;font-size:11px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Dente(s)</th>
+        <th style="padding:7px 8px;font-size:11px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Dentista</th>
+        <th style="padding:7px 8px;font-size:11px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.04em;text-align:right">Valor</th>
+        <th style="width:32px"></th>
+      </tr>
+    </thead>
+    <tbody>
+      ${_orcItens.map((it,idx)=>`<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:9px 8px;font-weight:500">${it.proc||'—'}</td>
+        <td style="padding:9px 8px;color:var(--tx2)">${it.dentes&&it.dentes.length?it.dentes.join(', '):'Geral'}</td>
+        <td style="padding:9px 8px;color:var(--tx2)">${it.dentista||'—'}</td>
+        <td style="padding:9px 8px;text-align:right;font-weight:600">
+          <input type="number" min="0" step="0.01" value="${it.valor||0}" onchange="_orcUpdateValor(${idx},this.value)" style="width:90px;text-align:right;padding:4px 7px;font-size:12px">
+        </td>
+        <td style="padding:9px 4px;text-align:center">
+          <button onclick="_orcRemoverItem(${idx})" style="background:none;border:none;cursor:pointer;color:var(--tx3);font-size:16px;padding:2px 5px;border-radius:var(--r4)" title="Remover">&#215;</button>
+        </td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function _orcUpdateValor(idx,val){
+  if(_orcItens[idx]) _orcItens[idx].valor=parseFloat(val)||0;
+  _renderOrcTotal();
+}
+
+function _orcRemoverItem(idx){
+  _orcItens.splice(idx,1);
+  _renderOrcItens();
+  _renderOrcTotal();
+}
+
+function _renderOrcTotal(){
+  const el=document.getElementById('orc-total');
+  if(!el) return;
+  const total=_orcItens.reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+  el.textContent='R$ '+total.toLocaleString('pt-BR',{minimumFractionDigits:2});
+}
+
+function salvarOrcamento(){
+  const clinicaNome=(document.getElementById('orc-modal-clinica')||{}).textContent||'';
+  const criadoPor=(document.getElementById('orc-sel-criador')||{}).value||'';
+  const data=(document.getElementById('orc-input-data')||{}).value||'';
+  const obs=(document.getElementById('orc-input-obs')||{}).value||'';
+  const list=_orcamentos();
+  if(_orcModalId){
+    const idx=list.findIndex(o=>o.id===_orcModalId);
+    if(idx>=0) list[idx]={...list[idx],clinica:clinicaNome,criadoPor,data,obs,itens:[..._orcItens]};
+  } else {
+    list.push({id:'orc_'+Date.now(),num:_nextOrcNum(),pacienteId:_orcModalPacId,clinica:clinicaNome,criadoPor,data,obs,itens:[..._orcItens],status:'rascunho'});
+  }
+  _salvarOrcamentos(list);
+  fecharModalOrcamento();
+  const p=pacientes.find(x=>String(x.id)===String(_orcModalPacId));
+  if(p) renderPpOrcamento(p);
+}
+
+// ── SUB-MODAL: ADICIONAR PROCEDIMENTO ────────────────────────────────────
+let _orcDentesSel=[];
+
+function abrirModalProcOrc(){
+  _orcDentesSel=[];
+  const usuariosOpts=usuarios.map(u=>`<option value="${u.nome}">${u.nome}</option>`).join('');
+  const modal=document.getElementById('modal-proc-orc');
+  modal.querySelector('.modal-body').innerHTML=`
+    <div style="margin-bottom:14px">
+      <div class="fl">
+        <label>Procedimento</label>
+        <div style="padding:9px 12px;border:1px solid var(--border);border-radius:var(--r8);background:var(--s2);font-size:12px;color:var(--tx2);text-align:center;margin-bottom:6px">
+          Tabela de procedimentos em configuração.
+        </div>
+        <input type="text" id="proc-orc-nome" placeholder="Digite o nome do procedimento…">
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:16px">
+      <div class="fl">
+        <label>Dentista responsável</label>
+        <select id="proc-orc-dentista">${usuariosOpts}</select>
+      </div>
+      <div class="fl">
+        <label>Valor (R$)</label>
+        <input type="number" id="proc-orc-valor" min="0" step="0.01" placeholder="0,00">
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em">Dentes / Região</label>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-ghost btn-sm" onclick="_orcSelTodos('sup')">Sup.</button>
+          <button class="btn btn-ghost btn-sm" onclick="_orcSelTodos('inf')">Inf.</button>
+          <button class="btn btn-ghost btn-sm" onclick="_orcLimparDentes()">Limpar</button>
+        </div>
+      </div>
+      <div id="orc-dentes-selecionados" style="font-size:11px;color:var(--tx3);margin-bottom:8px;min-height:20px">Nenhum dente selecionado (procedimento geral)</div>
+      ${_buildOdontograma()}
+    </div>
+  `;
+  modal.classList.add('open');
+}
+
+function _buildOdontograma(){
+  const supE=[18,17,16,15,14,13,12,11];
+  const supD=[21,22,23,24,25,26,27,28];
+  const infE=[48,47,46,45,44,43,42,41];
+  const infD=[31,32,33,34,35,36,37,38];
+
+  function toothHTML(n){
+    return `<div class="orc-tooth" data-dente="${n}" onclick="_orcToggleDente(${n})" title="Dente ${n}">
+      <svg viewBox="0 0 22 30" width="22" height="30" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="1" width="16" height="20" rx="5" fill="currentColor"/>
+        <rect x="5" y="19" width="4" height="9" rx="2" fill="currentColor" opacity=".75"/>
+        <rect x="13" y="19" width="4" height="9" rx="2" fill="currentColor" opacity=".75"/>
+      </svg>
+      <div class="orc-tooth-num">${n}</div>
+    </div>`;
+  }
+
+  return `<div style="background:var(--s2);border-radius:var(--r10);padding:10px 8px;overflow-x:auto">
+    <div style="text-align:center;font-size:9px;color:var(--tx3);margin-bottom:5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Superior</div>
+    <div style="display:flex;justify-content:center;align-items:flex-end;gap:1px">
+      <div style="display:flex;gap:1px">${supE.map(n=>toothHTML(n)).join('')}</div>
+      <div style="width:10px;border-left:1.5px dashed var(--border-s);height:30px;margin:0 3px"></div>
+      <div style="display:flex;gap:1px">${supD.map(n=>toothHTML(n)).join('')}</div>
+    </div>
+    <div style="border-top:1.5px dashed var(--border-s);margin:7px 16px"></div>
+    <div style="display:flex;justify-content:center;align-items:flex-start;gap:1px">
+      <div style="display:flex;gap:1px">${infE.map(n=>toothHTML(n)).join('')}</div>
+      <div style="width:10px;border-left:1.5px dashed var(--border-s);height:30px;margin:0 3px"></div>
+      <div style="display:flex;gap:1px">${infD.map(n=>toothHTML(n)).join('')}</div>
+    </div>
+    <div style="text-align:center;font-size:9px;color:var(--tx3);margin-top:5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Inferior</div>
+  </div>
+  <style>
+    .orc-tooth{display:flex;flex-direction:column;align-items:center;cursor:pointer;color:#d4b896;transition:color .1s,transform .08s;user-select:none}
+    .orc-tooth:hover{color:#b5935a;transform:scale(1.08)}
+    .orc-tooth.sel{color:var(--ac)}
+    .orc-tooth-num{font-size:9px;color:var(--tx3);margin-top:1px;font-weight:600;line-height:1}
+    .orc-tooth.sel .orc-tooth-num{color:var(--ac);font-weight:700}
+  </style>`;
+}
+
+function _orcToggleDente(n){
+  const el=document.querySelector('.orc-tooth[data-dente="'+n+'"]');
+  const idx=_orcDentesSel.indexOf(n);
+  if(idx>=0){ _orcDentesSel.splice(idx,1); el&&el.classList.remove('sel'); }
+  else{ _orcDentesSel.push(n); el&&el.classList.add('sel'); }
+  _orcDentesSel.sort((a,b)=>a-b);
+  _atualizarDentesSelecionados();
+}
+
+function _orcSelTodos(lado){
+  const dentes=lado==='sup'?[18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28]:[48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+  dentes.forEach(n=>{
+    if(!_orcDentesSel.includes(n)){
+      _orcDentesSel.push(n);
+      const el=document.querySelector('.orc-tooth[data-dente="'+n+'"]');
+      el&&el.classList.add('sel');
+    }
+  });
+  _orcDentesSel.sort((a,b)=>a-b);
+  _atualizarDentesSelecionados();
+}
+
+function _orcLimparDentes(){
+  _orcDentesSel=[];
+  document.querySelectorAll('.orc-tooth.sel').forEach(el=>el.classList.remove('sel'));
+  _atualizarDentesSelecionados();
+}
+
+function _atualizarDentesSelecionados(){
+  const el=document.getElementById('orc-dentes-selecionados');
+  if(!el) return;
+  if(!_orcDentesSel.length){ el.textContent='Nenhum dente selecionado (procedimento geral)'; return; }
+  el.innerHTML=_orcDentesSel.map(n=>`<span style="display:inline-block;background:var(--acl);color:var(--ac);font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin:2px">${n}</span>`).join('');
+}
+
+function confirmarProcOrc(){
+  const nome=(document.getElementById('proc-orc-nome')||{}).value;
+  if(!nome||!nome.trim()){ alert('Informe o nome do procedimento.'); return; }
+  const dentista=(document.getElementById('proc-orc-dentista')||{}).value||'';
+  const valor=parseFloat((document.getElementById('proc-orc-valor')||{}).value)||0;
+  _orcItens.push({id:'item_'+Date.now(),proc:nome.trim(),dentista,dentes:[..._orcDentesSel],valor});
+  document.getElementById('modal-proc-orc').classList.remove('open');
+  _renderOrcItens();
+  _renderOrcTotal();
 }
 function renderPpFinanceiro(p){
   document.getElementById('pp-financeiro-wrap').innerHTML='<div class="empty"><div class="empty-ic">💳</div>Módulo em configuração.</div>';
