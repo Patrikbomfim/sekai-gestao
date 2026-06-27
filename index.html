@@ -5389,7 +5389,7 @@ function renderPpOrcamento(p){
       html+=`<div style="display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)">
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
-            <span style="font-size:13px;font-weight:600">Orçamento #${o.num||o.id.slice(-4)}</span>
+            <span style="font-size:13px;font-weight:600">${o.nomeOrc||('Orçamento #'+(o.num||o.id.slice(-4)))}</span>
             <span class="pill ${statusPill[o.status]||'p-neutral'}">${statusLbl[o.status]||o.status}</span>
           </div>
           <div style="font-size:12px;color:var(--tx3)">${dataFmt} · ${o.criadoPor||'—'} · ${(o.itens||[]).length} procedimento(s)</div>
@@ -5426,11 +5426,13 @@ function orcamentoMudarStatus(orcId,novoStatus,pacId){
 let _orcModalPacId=null;
 let _orcModalId=null;
 let _orcItens=[];
+let _orcPagamentos=[];
 
 function abrirModalOrcamento(pacId, orcId){
   _orcModalPacId=pacId;
   _orcModalId=orcId||null;
   _orcItens=[];
+  _orcPagamentos=[];
 
   const emp=getEmpresaAtual()||{};
   const clinicaNome=(emp.dados&&emp.dados.nome)||'Clínica Sekai';
@@ -5440,15 +5442,27 @@ function abrirModalOrcamento(pacId, orcId){
 
   if(orcId){
     const orc=_orcamentos().find(o=>o.id===orcId);
-    if(orc) _orcItens=(orc.itens||[]).map(i=>({...i}));
+    if(orc){ _orcItens=(orc.itens||[]).map(i=>({...i})); _orcPagamentos=(orc.pagamentos||[]).map(p=>({...p})); }
   }
 
   const usuariosOpts=usuarios.map(u=>`<option value="${u.nome}" ${u.nome===uNome?'selected':''}>${u.nome}</option>`).join('');
   const orcEdit=orcId?(_orcamentos().find(o=>o.id===orcId)||{}):null;
 
+  // Busca nome do paciente
+  const pacAtual = pacientes.find(x=>String(x.id)===String(pacId));
+  const pacNome = pacAtual ? (pacAtual.nome||'') : '';
+
   const modalEl=document.getElementById('modal-orcamento');
   modalEl.querySelector('.modal-body').innerHTML=`
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="fl" style="grid-column:1/-1">
+        <label>Nome do orçamento <span style="color:var(--da)">*</span></label>
+        <input type="text" id="orc-input-nome" placeholder="Ex: Tratamento completo — Reabilitação oral" value="${(orcEdit&&orcEdit.nomeOrc)||''}" style="font-size:13px">
+      </div>
+      <div class="fl">
+        <label>Paciente</label>
+        <div id="orc-modal-paciente" style="padding:7px 9px;border:1px solid var(--border);border-radius:var(--r6);font-size:12px;background:var(--s2);color:var(--tx2)">${pacNome||'—'}</div>
+      </div>
       <div class="fl">
         <label>Clínica</label>
         <div id="orc-modal-clinica" style="padding:7px 9px;border:1px solid var(--border);border-radius:var(--r6);font-size:12px;background:var(--s2);color:var(--tx2)">${clinicaNome}</div>
@@ -5471,9 +5485,18 @@ function abrirModalOrcamento(pacId, orcId){
       <button class="btn btn-primary btn-sm" onclick="abrirModalProcOrc()">+ Adicionar procedimento</button>
     </div>
     <div id="orc-itens-wrap" style="margin-bottom:16px"></div>
-    <div style="display:flex;align-items:center;justify-content:flex-end;gap:16px;padding:12px 0;border-top:1px solid var(--border)">
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:16px;padding:12px 0;border-top:1px solid var(--border);margin-bottom:16px">
       <div style="font-size:12px;color:var(--tx2)">Total do orçamento</div>
       <div id="orc-total" style="font-size:20px;font-weight:700;color:var(--ac)">R$ 0,00</div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:13px;font-weight:600">Formas de pagamento</div>
+        <button class="btn btn-ghost btn-sm" onclick="abrirModalFormaPagamento()">+ Forma de pagamento</button>
+      </div>
+      <div id="orc-pagamentos-wrap">
+        <div style="text-align:center;padding:14px;font-size:12px;color:var(--tx3);background:var(--s2);border-radius:var(--r8)">Nenhuma forma de pagamento adicionada.<br>Você pode criar opções para o paciente escolher.</div>
+      </div>
     </div>
   `;
 
@@ -5481,6 +5504,7 @@ function abrirModalOrcamento(pacId, orcId){
 
   _renderOrcItens();
   _renderOrcTotal();
+  _renderOrcPagamentos();
   modalEl.classList.add('open');
 }
 
@@ -5541,6 +5565,12 @@ function _renderOrcTotal(){
 }
 
 function salvarOrcamento(){
+  const nomeOrc=(document.getElementById('orc-input-nome')||{}).value||'';
+  if(!nomeOrc.trim()){
+    const el=document.getElementById('orc-input-nome');
+    if(el){ el.style.borderColor='var(--da)'; el.focus(); el.placeholder='Campo obrigatório'; }
+    return;
+  }
   const clinicaNome=(document.getElementById('orc-modal-clinica')||{}).textContent||'';
   const criadoPor=(document.getElementById('orc-sel-criador')||{}).value||'';
   const data=(document.getElementById('orc-input-data')||{}).value||'';
@@ -5548,9 +5578,9 @@ function salvarOrcamento(){
   const list=_orcamentos();
   if(_orcModalId){
     const idx=list.findIndex(o=>o.id===_orcModalId);
-    if(idx>=0) list[idx]={...list[idx],clinica:clinicaNome,criadoPor,data,obs,itens:[..._orcItens]};
+    if(idx>=0) list[idx]={...list[idx],nomeOrc,clinica:clinicaNome,criadoPor,data,obs,itens:[..._orcItens],pagamentos:[..._orcPagamentos]};
   } else {
-    list.push({id:'orc_'+Date.now(),num:_nextOrcNum(),pacienteId:_orcModalPacId,clinica:clinicaNome,criadoPor,data,obs,itens:[..._orcItens],status:'rascunho'});
+    list.push({id:'orc_'+Date.now(),num:_nextOrcNum(),pacienteId:_orcModalPacId,nomeOrc,clinica:clinicaNome,criadoPor,data,obs,itens:[..._orcItens],pagamentos:[..._orcPagamentos],status:'rascunho'});
   }
   _salvarOrcamentos(list);
   fecharModalOrcamento();
@@ -5558,7 +5588,163 @@ function salvarOrcamento(){
   if(p) renderPpOrcamento(p);
 }
 
-// ── SUB-MODAL: ADICIONAR PROCEDIMENTO ────────────────────────────────────
+// ── FORMAS DE PAGAMENTO ────────────────────────────────────────────────────
+
+function _renderOrcPagamentos(){
+  const wrap=document.getElementById('orc-pagamentos-wrap');
+  if(!wrap) return;
+  if(!_orcPagamentos.length){
+    wrap.innerHTML='<div style="text-align:center;padding:14px;font-size:12px;color:var(--tx3);background:var(--s2);border-radius:var(--r8)">Nenhuma forma de pagamento adicionada.<br>Você pode criar opções para o paciente escolher.</div>';
+    return;
+  }
+  const tipoLabel={avista:'À vista',parcelado:'Parcelado',cartao:'Cartão de crédito',pix:'PIX',boleto:'Boleto'};
+  wrap.innerHTML=_orcPagamentos.map((pg,i)=>{
+    let desc='';
+    if(pg.tipo==='avista') desc=`Desconto de ${pg.desconto||0}%`;
+    else if(pg.tipo==='parcelado') desc=`${pg.parcelas||1}x de R$ ${((pg.valorTotal||0)/(pg.parcelas||1)).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+    else if(pg.tipo==='cartao') desc=`${pg.parcelas||1}x no cartão`;
+    else if(pg.tipo==='pix') desc=`Desconto de ${pg.desconto||0}%`;
+    else if(pg.tipo==='boleto') desc=pg.obs||'';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r8);margin-bottom:6px;background:var(--surface)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;border-radius:var(--r6);background:var(--acl);display:flex;align-items:center;justify-content:center;font-size:14px">${{avista:'💵',parcelado:'📅',cartao:'💳',pix:'⚡',boleto:'🧾'}[pg.tipo]||'💰'}</div>
+        <div>
+          <div style="font-size:13px;font-weight:600">${tipoLabel[pg.tipo]||pg.tipo}</div>
+          ${desc?`<div style="font-size:11px;color:var(--tx2)">${desc}</div>`:''}
+          ${pg.obs&&pg.tipo!=='boleto'?`<div style="font-size:11px;color:var(--tx3)">${pg.obs}</div>`:''}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="font-size:15px;font-weight:700;color:var(--ac)">R$ ${(pg.valorTotal||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+        <button onclick="_orcRemoverPagamento(${i})" style="background:none;border:none;cursor:pointer;color:var(--tx3);font-size:18px;padding:2px 5px;border-radius:var(--r4)" title="Remover">&#215;</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _orcRemoverPagamento(idx){
+  _orcPagamentos.splice(idx,1);
+  _renderOrcPagamentos();
+}
+
+let _orcPagModalMode=null; // 'novo' ou 'editar'
+
+function abrirModalFormaPagamento(){
+  // Calcula total atual
+  const totalOrc=_orcItens.reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+
+  const modalEl=document.getElementById('modal-forma-pgto');
+  if(!modalEl){ _criarModalFormaPagamento(); }
+
+  // Reseta campos
+  const m=document.getElementById('modal-forma-pgto');
+  m.querySelector('#pgto-tipo').value='avista';
+  m.querySelector('#pgto-valor').value=totalOrc.toFixed(2);
+  m.querySelector('#pgto-desconto').value='0';
+  m.querySelector('#pgto-parcelas').value='1';
+  m.querySelector('#pgto-obs').value='';
+  _orcAtualizarCamposPagto();
+  m.classList.add('open');
+}
+
+function _criarModalFormaPagamento(){
+  const div=document.createElement('div');
+  div.className='modal-ov';
+  div.id='modal-forma-pgto';
+  div.style.zIndex='230';
+  div.innerHTML=`
+  <div class="modal" style="width:480px;max-width:96vw">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="modal-title">Forma de pagamento</div>
+        <button onclick="document.getElementById('modal-forma-pgto').classList.remove('open')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--tx3);line-height:1;padding:2px 6px">&times;</button>
+      </div>
+    </div>
+    <div class="modal-body" style="padding-top:16px">
+      <div class="fl" style="margin-bottom:12px">
+        <label>Tipo de pagamento</label>
+        <select id="pgto-tipo" onchange="_orcAtualizarCamposPagto()" style="font-size:13px">
+          <option value="avista">💵 À vista (dinheiro/transferência)</option>
+          <option value="pix">⚡ PIX</option>
+          <option value="cartao">💳 Cartão de crédito</option>
+          <option value="parcelado">📅 Parcelado (próprio)</option>
+          <option value="boleto">🧾 Boleto</option>
+        </select>
+      </div>
+      <div class="fl" style="margin-bottom:12px">
+        <label>Valor total (R$)</label>
+        <input type="number" id="pgto-valor" min="0" step="0.01" oninput="_orcAtualizarPreviewPagto()" style="font-size:13px">
+      </div>
+      <div id="pgto-campos-desconto" style="margin-bottom:12px">
+        <div class="fl">
+          <label>Desconto (%)</label>
+          <input type="number" id="pgto-desconto" min="0" max="100" step="1" value="0" oninput="_orcAtualizarPreviewPagto()" style="font-size:13px">
+        </div>
+      </div>
+      <div id="pgto-campos-parcelas" style="margin-bottom:12px;display:none">
+        <div class="fl">
+          <label>Número de parcelas</label>
+          <select id="pgto-parcelas" onchange="_orcAtualizarPreviewPagto()" style="font-size:13px">
+            ${[2,3,4,5,6,7,8,9,10,11,12].map(n=>`<option value="${n}">${n}x</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="fl" style="margin-bottom:12px">
+        <label>Observação <span style="font-size:11px;color:var(--tx3)">(opcional)</span></label>
+        <input type="text" id="pgto-obs" placeholder="Ex: Entrada + parcelas, vence todo dia 10…" style="font-size:13px">
+      </div>
+      <div id="pgto-preview" style="background:var(--acl);border:1px solid var(--border);border-radius:var(--r8);padding:10px 14px;font-size:13px;color:var(--ac);font-weight:600;display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modal-forma-pgto').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarFormaPagamento()">Adicionar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(div);
+}
+
+function _orcAtualizarCamposPagto(){
+  const tipo=(document.getElementById('pgto-tipo')||{}).value||'avista';
+  const desc=document.getElementById('pgto-campos-desconto');
+  const parc=document.getElementById('pgto-campos-parcelas');
+  if(desc) desc.style.display=(tipo==='avista'||tipo==='pix')?'block':'none';
+  if(parc) parc.style.display=(tipo==='cartao'||tipo==='parcelado')?'block':'none';
+  _orcAtualizarPreviewPagto();
+}
+
+function _orcAtualizarPreviewPagto(){
+  const preview=document.getElementById('pgto-preview');
+  if(!preview) return;
+  const tipo=(document.getElementById('pgto-tipo')||{}).value||'avista';
+  const valor=parseFloat((document.getElementById('pgto-valor')||{}).value)||0;
+  const desconto=parseFloat((document.getElementById('pgto-desconto')||{}).value)||0;
+  const parcelas=parseInt((document.getElementById('pgto-parcelas')||{}).value)||1;
+  let txt='';
+  if(tipo==='avista'||tipo==='pix'){
+    const final=valor*(1-desconto/100);
+    txt=desconto>0?`Valor final com desconto: R$ ${final.toLocaleString('pt-BR',{minimumFractionDigits:2})} (${desconto}% off)`:`Pagamento único: R$ ${final.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+  } else if(tipo==='cartao'||tipo==='parcelado'){
+    const parcVal=valor/parcelas;
+    txt=`${parcelas}x de R$ ${parcVal.toLocaleString('pt-BR',{minimumFractionDigits:2})} = R$ ${valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+  } else {
+    txt=`Total: R$ ${valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+  }
+  preview.textContent=txt;
+  preview.style.display=txt?'block':'none';
+}
+
+function confirmarFormaPagamento(){
+  const tipo=(document.getElementById('pgto-tipo')||{}).value||'avista';
+  const valorTotal=parseFloat((document.getElementById('pgto-valor')||{}).value)||0;
+  const desconto=parseFloat((document.getElementById('pgto-desconto')||{}).value)||0;
+  const parcelas=parseInt((document.getElementById('pgto-parcelas')||{}).value)||1;
+  const obs=(document.getElementById('pgto-obs')||{}).value||'';
+  _orcPagamentos.push({tipo,valorTotal,desconto,parcelas,obs});
+  document.getElementById('modal-forma-pgto').classList.remove('open');
+  _renderOrcPagamentos();
+}
+
+
 let _orcDentesSel=[];
 
 function abrirModalProcOrc(){
