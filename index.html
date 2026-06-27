@@ -805,20 +805,23 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="pp-layout">
     <nav class="pp-menu" id="pp-menu">
       <div class="subnav-title" style="padding:4px 10px 8px;margin:0">Menu do paciente</div>
-      <button class="pp-menu-btn on" id="pp-menu-dados" onclick="switchPpArea('dados')"><span class="pp-menu-ic">▤</span>Dados</button>
-      <button class="pp-menu-btn" id="pp-menu-agenda" onclick="switchPpArea('agenda')"><span class="pp-menu-ic">📅</span>Agenda</button>
-      <button class="pp-menu-btn" id="pp-menu-anamnese" onclick="switchPpArea('anamnese')"><span class="pp-menu-ic">🩺</span>Anamnese inicial</button>
-      <button class="pp-menu-btn" id="pp-menu-orcamento" onclick="switchPpArea('orcamento')"><span class="pp-menu-ic">💰</span>Orçamento</button>
-      <button class="pp-menu-btn" id="pp-menu-termo" onclick="switchPpArea('termo')"><span class="pp-menu-ic">✍️</span>Termo de compromisso</button>
-      <button class="pp-menu-btn" id="pp-menu-contrato" onclick="switchPpArea('contrato')"><span class="pp-menu-ic">📄</span>Contrato</button>
-      <button class="pp-menu-btn" id="pp-menu-prontuario" onclick="switchPpArea('prontuario')"><span class="pp-menu-ic">📋</span>Prontuário</button>
-      <button class="pp-menu-btn" id="pp-menu-documentos" onclick="switchPpArea('documentos')"><span class="pp-menu-ic">📁</span>Documentos</button>
-      <button class="pp-menu-btn" id="pp-menu-fotos" onclick="switchPpArea('fotos')"><span class="pp-menu-ic">🖼</span>Fotos</button>
-      <button class="pp-menu-btn" id="pp-menu-historico" onclick="switchPpArea('historico')"><span class="pp-menu-ic">◷</span>Histórico</button>
+      <button class="pp-menu-btn on" id="pp-menu-dados" onclick="switchPpArea('dados')">Dados</button>
+      <button class="pp-menu-btn" id="pp-menu-agenda" onclick="switchPpArea('agenda')">Agenda</button>
       <div style="height:1px;background:var(--border);margin:6px 2px"></div>
-      <button class="pp-menu-btn" id="pp-menu-acoes" onclick="switchPpArea('acoes')"><span class="pp-menu-ic">✓</span>Ações</button>
-      <button class="pp-menu-btn" id="pp-menu-lembretes" onclick="switchPpArea('lembretes')"><span class="pp-menu-ic">🔔</span>Lembretes</button>
-      <button class="pp-menu-btn" id="pp-menu-pendencias" onclick="switchPpArea('pendencias')"><span class="pp-menu-ic">⚑</span>Pendências</button>
+      <button class="pp-menu-btn" id="pp-menu-anamnese" onclick="switchPpArea('anamnese')">Anamnese inicial</button>
+      <button class="pp-menu-btn" id="pp-menu-termo" onclick="switchPpArea('termo')">Termo de compromisso</button>
+      <button class="pp-menu-btn" id="pp-menu-contrato" onclick="switchPpArea('contrato')">Contrato</button>
+      <div style="height:1px;background:var(--border);margin:6px 2px"></div>
+      <button class="pp-menu-btn" id="pp-menu-orcamento" onclick="switchPpArea('orcamento')">Orçamento</button>
+      <button class="pp-menu-btn" id="pp-menu-financeiro" onclick="switchPpArea('financeiro')">Financeiro</button>
+      <button class="pp-menu-btn" id="pp-menu-prontuario" onclick="switchPpArea('prontuario')">Prontuário</button>
+      <button class="pp-menu-btn" id="pp-menu-documentos" onclick="switchPpArea('documentos')">Documentos</button>
+      <button class="pp-menu-btn" id="pp-menu-fotos" onclick="switchPpArea('fotos')">Fotos</button>
+      <button class="pp-menu-btn" id="pp-menu-historico" onclick="switchPpArea('historico')">Histórico</button>
+      <div style="height:1px;background:var(--border);margin:6px 2px"></div>
+      <button class="pp-menu-btn" id="pp-menu-acoes" onclick="switchPpArea('acoes')">Ações</button>
+      <button class="pp-menu-btn" id="pp-menu-lembretes" onclick="switchPpArea('lembretes')">Lembretes</button>
+      <button class="pp-menu-btn" id="pp-menu-pendencias" onclick="switchPpArea('pendencias')">Pendências</button>
     </nav>
 
     <div class="pp-content">
@@ -964,7 +967,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="card" id="pp-pendencias-wrap"></div>
       </div>
 
-      <!-- FINANCEIRO (mantido oculto no menu, usado internamente) -->
+      <!-- FINANCEIRO -->
       <div class="pp-area" id="pp-area-financeiro">
         <div class="pp-area-title">Financeiro</div>
         <div class="pp-area-desc">Pagamentos, valores em aberto e forma de cobrança vinculados ao orçamento aprovado.</div>
