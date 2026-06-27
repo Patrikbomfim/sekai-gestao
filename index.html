@@ -305,6 +305,35 @@ input.invalid{border-color:var(--da);background:var(--dal)}
 /* MODAL */
 .modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center}
 .modal-ov.open{display:flex}
+
+/* POPOVER DE AGENDAMENTO */
+#ag-popover{display:none;position:fixed;z-index:250;background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);box-shadow:0 8px 24px rgba(0,0,0,.16);width:300px;max-width:94vw;padding:0;overflow:hidden}
+#ag-popover.open{display:block}
+.agpop-header{padding:12px 14px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.agpop-status{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:var(--r4)}
+.agpop-close{background:none;border:none;cursor:pointer;color:var(--tx3);font-size:15px;line-height:1;padding:2px 4px;border-radius:var(--r4)}
+.agpop-close:hover{background:var(--s2);color:var(--tx)}
+.agpop-body{padding:12px 14px;display:flex;flex-direction:column;gap:9px;max-height:70vh;overflow-y:auto}
+.agpop-row{display:flex;align-items:flex-start;gap:8px;font-size:12px}
+.agpop-ic{width:16px;text-align:center;color:var(--tx3);flex-shrink:0;margin-top:1px;font-size:12px}
+.agpop-val{color:var(--tx);flex:1;line-height:1.4}
+.agpop-lbl{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.agpop-footer{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px}
+/* Tags no popover */
+.agpop-tags{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.agpop-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;cursor:default}
+.agpop-tag-remove{background:none;border:none;cursor:pointer;opacity:.6;font-size:11px;padding:0 0 0 2px;line-height:1;color:inherit}
+.agpop-tag-remove:hover{opacity:1}
+/* Tag dropdown */
+.agpop-tag-dropdown{position:relative}
+.agpop-tag-menu{position:absolute;left:0;top:calc(100% + 4px);z-index:400;background:var(--surface);border:1px solid var(--border);border-radius:var(--r8);box-shadow:var(--shadow-md);min-width:190px;padding:6px 0;max-height:200px;overflow-y:auto}
+.agpop-tag-opt{display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--tx)}
+.agpop-tag-opt:hover{background:var(--s2)}
+.agpop-tag-opt-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.agpop-tag-new{padding:6px 12px;display:flex;gap:6px;border-top:1px solid var(--border);margin-top:4px}
+.agpop-tag-new input{flex:1;font-size:12px;padding:3px 7px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);font-family:var(--font)}
+.agpop-tag-new input:focus{outline:none;border-color:var(--ac)}
+
 #modal-nova-pendencia{z-index:260}
 #modal-recontato{z-index:270}
 .modal{background:var(--surface);border-radius:var(--r16);padding:0;width:560px;max-width:95vw;height:88vh;max-height:88vh;display:flex;flex-direction:column}
@@ -2338,7 +2367,64 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
-<script type="text/plain" id="app-script-1">
+<!-- POPOVER DE AGENDAMENTO -->
+<div id="ag-popover">
+  <div class="agpop-header">
+    <span id="agpop-status" class="agpop-status"></span>
+    <button class="agpop-close" onclick="fecharAgPopover()">✕</button>
+  </div>
+  <div class="agpop-body">
+    <div class="agpop-row">
+      <span class="agpop-ic">👤</span>
+      <span class="agpop-val" id="agpop-nome" style="font-weight:600;font-size:13px"></span>
+    </div>
+    <div class="agpop-row">
+      <span class="agpop-ic">📅</span>
+      <span class="agpop-val" id="agpop-data"></span>
+    </div>
+    <div class="agpop-row" id="agpop-fone-row">
+      <span class="agpop-ic">📱</span>
+      <span class="agpop-val" id="agpop-fone"></span>
+    </div>
+    <div class="agpop-row">
+      <span class="agpop-ic">🕐</span>
+      <span class="agpop-val" id="agpop-horario"></span>
+    </div>
+    <div class="agpop-row" id="agpop-proc-row">
+      <span class="agpop-ic">🦷</span>
+      <span class="agpop-val" id="agpop-proc"></span>
+    </div>
+    <div class="agpop-row" id="agpop-prof-row">
+      <span class="agpop-ic">👩‍⚕️</span>
+      <span class="agpop-val" id="agpop-prof"></span>
+    </div>
+    <!-- TAGS -->
+    <div>
+      <div class="agpop-lbl">Tags</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center" id="agpop-tags-wrap"></div>
+      <div class="agpop-tag-dropdown" id="agpop-tag-dropdown" style="margin-top:6px">
+        <button type="button" onclick="agPopToggleTagMenu()" style="font-size:11px;padding:3px 9px;border-radius:10px;border:1.5px dashed var(--border);background:none;cursor:pointer;color:var(--tx2);font-family:var(--font)">＋ Adicionar tag</button>
+        <div class="agpop-tag-menu" id="agpop-tag-menu" style="display:none">
+          <div id="agpop-tag-opts"></div>
+          <div class="agpop-tag-new">
+            <input type="text" id="agpop-tag-nova-input" placeholder="Nova tag..." onkeydown="agPopCriarTagKeydown(event)">
+            <button type="button" class="btn btn-primary btn-sm" onclick="agPopCriarTag()" style="padding:3px 8px;font-size:11px">+ Criar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- OBS -->
+    <div id="agpop-obs-row">
+      <div class="agpop-lbl">Observação</div>
+      <textarea id="agpop-obs" rows="2" placeholder="Adicionar observação..." style="width:100%;font-size:12px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r6);resize:vertical;font-family:var(--font);background:var(--surface);color:var(--tx);line-height:1.4" oninput="agPopSalvarObs()"></textarea>
+    </div>
+  </div>
+  <div class="agpop-footer">
+    <button class="btn btn-primary" style="flex:1" onclick="agPopAbrirModal()">✏️ Editar agendamento</button>
+  </div>
+</div>
+
+
 // ── UTILS ──────────────────────────────────────────────────────────────
 const hoje = new Date(); hoje.setHours(0,0,0,0);
 const DIAS = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
@@ -2797,8 +2883,15 @@ let disponibilidade = carregarLS('sk3-disponibilidade', []);
 // bloqueios: {id, tipo:'sala'|'profissional'|'ambos', salaId, usuarioId, dataInicio, dataFim, diaTodo, horaInicio, horaFim, motivo}
 let bloqueios = carregarLS('sk3-bloqueios', []);
 
-// agendamentos: {id, pacienteId, pacienteNome, pacienteFone, usuarioId, salaId, data(YYYY-MM-DD), horaInicio, horaFim, status, origem, procedimento, fluxo, obs}
+// agendamentos: {id, pacienteId, pacienteNome, pacienteFone, usuarioId, salaId, data(YYYY-MM-DD), horaInicio, horaFim, status, origem, procedimento, fluxo, obs, tags:[tagId,...]}
 let agendamentos = carregarLS('sk3-agendamentos', []);
+
+// tagsAgendamento: {id, label, cor}
+let tagsAgendamento = carregarLS('sk3-tags-agendamento', [
+  {id:'tag_avaliacao', label:'Avaliação', cor:'#0369A1'},
+  {id:'tag_retorno',   label:'Retorno',   cor:'#065F46'},
+  {id:'tag_urgencia',  label:'Urgência',  cor:'#991B1B'},
+]);
 
 // linksAgenda: {id, nome, slug, modo:'profissional'|'escolha', usuarioId, profissionaisPermitidos:[], salasPermitidas:[], diasSemana:[], horaInicio, horaFim, dataValidadeFim, ativo}
 let linksAgenda = carregarLS('sk3-links-agenda', []);
@@ -3587,7 +3680,7 @@ function renderAcaoCard(a, tipo){
   // Ações de confirmação de agendamento e de recontato de cancelamento não têm "concluir"
   // manual: só somem quando o status/desfecho muda, então o botão leva direto à ação certa.
   const botaoHtml = a.origemConfirmacao
-    ? `<button class="btn-done" onclick="abrirModalAgendamento('${a.agendamentoId}')">Abrir agendamento →</button>`
+    ? `<button class="btn-done" onclick="_abrirModalAgendamentoReal('${a.agendamentoId}')">Abrir agendamento →</button>`
     : a.origemRecontato
     ? `<button class="btn-done" onclick="abrirModalRecontato('${a.agendamentoId}')">Registrar contato →</button>`
     : `<button class="btn-done" onclick="marcarFeito('${k}',${aStr})">✓ Feito</button>`;
@@ -4658,7 +4751,7 @@ function abrirModalPt(id){
 function voltarParaPacientes(){
   if(pacienteOrigemTab==='agenda'){
     goTo('agenda', document.getElementById('navbtn-agenda'));
-    if(pacienteOrigemAgendamentoId) abrirModalAgendamento(pacienteOrigemAgendamentoId);
+    if(pacienteOrigemAgendamentoId) _abrirModalAgendamentoReal(pacienteOrigemAgendamentoId);
   } else {
     goTo('pacientes', document.getElementById('navbtn-pacientes'));
   }
@@ -4819,7 +4912,7 @@ function renderPpAgenda(p){
     const salaObj=salas.find(s=>s.id===a.salaId);
     const profObj=usuarios.find(u=>u.id===a.usuarioId);
     const passado=a.data<hojeStr;
-    return `<div class="pp-row" style="cursor:pointer;${passado?'opacity:.7':''}" onclick="pacienteOrigemAgendamentoId=${a.id};abrirModalAgendamento('${a.id}')">
+    return `<div class="pp-row" style="cursor:pointer;${passado?'opacity:.7':''}" onclick="pacienteOrigemAgendamentoId=${a.id};_abrirModalAgendamentoReal('${a.id}')">
       <div style="width:90px;flex-shrink:0">
         <div style="font-size:13px;font-weight:600">${a.data.split('-').reverse().join('/')}</div>
         <div style="font-size:11px;color:var(--tx3)">${a.horaInicio}${a.horaFim?' – '+a.horaFim:''}</div>
@@ -7037,7 +7130,7 @@ function abrirModalRecontato(agendamentoId){
 function abrirAgendamentoDoRecontato(){
   const id=recontatoModalAgendamentoId;
   fecharModal('modal-recontato');
-  if(id) abrirModalAgendamento(id);
+  if(id) _abrirModalAgendamentoReal(id);
 }
 function salvarRecontato(){
   const ag=agendamentos.find(a=>a.id===recontatoModalAgendamentoId);
@@ -9709,7 +9802,7 @@ function agendaIrParaAgendamento(agId, data){
   renderAgenda();
   setTimeout(function(){
     const ag = agendamentos.find(function(a){ return a.id===agId; });
-    if(ag) abrirModalAgendamento(ag.data, ag.horaInicio, ag.salaId||null, ag.usuarioId||null, ag.id);
+    if(ag) _abrirModalAgendamentoReal(ag.id);
   }, 80);
 }
 
@@ -9790,6 +9883,241 @@ function minutosBloqueados(dataIso, salaId, usuarioId){
     ? {ini:0,fim:24*60,motivo:b.motivo,diaTodo:true}
     : {ini:horaParaMin(b.horaInicio),fim:horaParaMin(b.horaFim),motivo:b.motivo,diaTodo:false}
   );
+}
+
+// ── POPOVER DE AGENDAMENTO ───────────────────────────────────────────
+let _agPopoverId = null; // id do agendamento atual no popover
+
+function abrirAgPopover(a, targetEl){
+  _agPopoverId = a.id;
+
+  // Status
+  const stInfo = STATUS_AGENDAMENTO.find(s=>s.id===a.status) || {label:a.status, cor:'#9CA3AF'};
+  const stEl = document.getElementById('agpop-status');
+  stEl.textContent = stInfo.label;
+  stEl.style.background = stInfo.cor + '22';
+  stEl.style.color = stInfo.cor;
+  stEl.style.border = '1px solid ' + stInfo.cor + '44';
+
+  // Nome
+  document.getElementById('agpop-nome').textContent = a.pacienteNome || '(sem nome)';
+
+  // Data/hora
+  const d = a.data ? a.data.split('-').reverse().join('/') : '';
+  document.getElementById('agpop-data').textContent = d;
+  document.getElementById('agpop-horario').textContent = `${a.horaInicio} – ${a.horaFim}`;
+
+  // Telefone
+  const foneRow = document.getElementById('agpop-fone-row');
+  let fone = '';
+  if(a.pacienteId){
+    const pac = pacientes.find(p=>p.id===a.pacienteId);
+    fone = pac ? (pac.fone||'') : '';
+  } else {
+    fone = a.pacienteFone || '';
+  }
+  if(fone){ document.getElementById('agpop-fone').textContent = fone; foneRow.style.display=''; }
+  else { foneRow.style.display='none'; }
+
+  // Procedimento
+  const procRow = document.getElementById('agpop-proc-row');
+  if(a.procedimento){ document.getElementById('agpop-proc').textContent = a.procedimento; procRow.style.display=''; }
+  else { procRow.style.display='none'; }
+
+  // Profissional
+  const profRow = document.getElementById('agpop-prof-row');
+  const ap = agendaProfissionais.find(x=>x.usuarioId===a.usuarioId);
+  const profNome = ap ? ap.nome : (nomeUsuario(a.usuarioId)||'');
+  if(profNome){ document.getElementById('agpop-prof').textContent = profNome; profRow.style.display=''; }
+  else { profRow.style.display='none'; }
+
+  // Obs
+  document.getElementById('agpop-obs').value = a.obs || '';
+
+  // Tags
+  agPopRenderTags();
+
+  // Posicionar o popover
+  const pop = document.getElementById('ag-popover');
+  pop.classList.add('open');
+
+  // Posicionamento inteligente perto do card clicado
+  if(targetEl){
+    const rect = targetEl.getBoundingClientRect();
+    const pw = 300, ph = 480;
+    let left = rect.right + 8;
+    let top = rect.top;
+    if(left + pw > window.innerWidth - 8) left = rect.left - pw - 8;
+    if(left < 8) left = 8;
+    if(top + ph > window.innerHeight - 8) top = window.innerHeight - ph - 8;
+    if(top < 8) top = 8;
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    pop.style.right = 'auto';
+  } else {
+    // Centralizado
+    pop.style.left = '50%';
+    pop.style.top = '50%';
+    pop.style.right = 'auto';
+    pop.style.transform = 'translate(-50%, -50%)';
+  }
+
+  // Fechar ao clicar fora
+  setTimeout(()=>{
+    document.addEventListener('mousedown', _agPopoverOutsideClick);
+  }, 10);
+}
+
+function _agPopoverOutsideClick(e){
+  const pop = document.getElementById('ag-popover');
+  if(!pop.contains(e.target)){
+    fecharAgPopover();
+  }
+}
+
+function fecharAgPopover(){
+  document.getElementById('ag-popover').classList.remove('open');
+  document.getElementById('ag-popover').style.transform = '';
+  document.getElementById('agpop-tag-menu').style.display = 'none';
+  document.removeEventListener('mousedown', _agPopoverOutsideClick);
+  _agPopoverId = null;
+}
+
+function agPopAbrirModal(){
+  const id = _agPopoverId;
+  fecharAgPopover();
+  // Chama o modal real diretamente (bypassa o interceptor passando dataPre dummy que é ignorado em seguida)
+  const a = agendamentos.find(x=>x.id===id);
+  if(!a) return;
+  _abrirModalAgendamentoReal(id);
+}
+
+function agPopSalvarObs(){
+  if(!_agPopoverId) return;
+  const idx = agendamentos.findIndex(a=>a.id===_agPopoverId);
+  if(idx<0) return;
+  agendamentos[idx].obs = document.getElementById('agpop-obs').value;
+  salvarLS('sk3-agendamentos', agendamentos);
+}
+
+// ── TAGS do Popover ──────────────────────────────────────────────────
+function agPopRenderTags(){
+  const a = agendamentos.find(x=>x.id===_agPopoverId);
+  if(!a) return;
+  const wrap = document.getElementById('agpop-tags-wrap');
+  const tags = (a.tags||[]).map(tid=>tagsAgendamento.find(t=>t.id===tid)).filter(Boolean);
+  wrap.innerHTML = tags.map(t=>`
+    <span class="agpop-tag" style="background:${t.cor}22;color:${t.cor};border:1px solid ${t.cor}44">
+      ${esc(t.label)}
+      <button class="agpop-tag-remove" onclick="agPopRemoverTag('${t.id}')" title="Remover">✕</button>
+    </span>`).join('');
+}
+
+function agPopRemoverTag(tagId){
+  if(!_agPopoverId) return;
+  const idx = agendamentos.findIndex(a=>a.id===_agPopoverId);
+  if(idx<0) return;
+  if(!agendamentos[idx].tags) agendamentos[idx].tags=[];
+  agendamentos[idx].tags = agendamentos[idx].tags.filter(t=>t!==tagId);
+  salvarLS('sk3-agendamentos', agendamentos);
+  agPopRenderTags();
+  agPopRenderTagOpts();
+}
+
+function agPopToggleTagMenu(){
+  const menu = document.getElementById('agpop-tag-menu');
+  const open = menu.style.display==='none'||menu.style.display==='';
+  menu.style.display = open ? 'block' : 'none';
+  if(open){ agPopRenderTagOpts(); document.getElementById('agpop-tag-nova-input').value=''; }
+}
+
+function agPopRenderTagOpts(){
+  const a = agendamentos.find(x=>x.id===_agPopoverId);
+  const jaTemIds = new Set(a ? (a.tags||[]) : []);
+  const opts = document.getElementById('agpop-tag-opts');
+  const disponiveis = tagsAgendamento.filter(t=>!jaTemIds.has(t.id));
+  if(disponiveis.length===0){
+    opts.innerHTML='<div style="padding:8px 12px;font-size:12px;color:var(--tx3)">Todas as tags aplicadas</div>';
+  } else {
+    opts.innerHTML = disponiveis.map(t=>`
+      <div class="agpop-tag-opt" onclick="agPopAdicionarTag('${t.id}')">
+        <span class="agpop-tag-opt-dot" style="background:${t.cor}"></span>
+        ${esc(t.label)}
+      </div>`).join('');
+  }
+}
+
+function agPopAdicionarTag(tagId){
+  if(!_agPopoverId) return;
+  const idx = agendamentos.findIndex(a=>a.id===_agPopoverId);
+  if(idx<0) return;
+  if(!agendamentos[idx].tags) agendamentos[idx].tags=[];
+  if(!agendamentos[idx].tags.includes(tagId)) agendamentos[idx].tags.push(tagId);
+  salvarLS('sk3-agendamentos', agendamentos);
+  agPopRenderTags();
+  agPopRenderTagOpts();
+}
+
+function agPopCriarTagKeydown(e){ if(e.key==='Enter'){ e.preventDefault(); agPopCriarTag(); } }
+
+function agPopCriarTag(){
+  const input = document.getElementById('agpop-tag-nova-input');
+  const label = input.value.trim();
+  if(!label) return;
+  const PALETA_TAGS = ['#0369A1','#065F46','#991B1B','#7C3AED','#D97706','#0E7490','#DB2777','#059669','#4338CA','#9D174D'];
+  const cor = PALETA_TAGS[tagsAgendamento.length % PALETA_TAGS.length];
+  const novaTag = {id:'tag_'+Date.now(), label, cor};
+  tagsAgendamento.push(novaTag);
+  salvarLS('sk3-tags-agendamento', tagsAgendamento);
+  input.value = '';
+  agPopAdicionarTag(novaTag.id);
+}
+
+// Wrapper para chamar o modal real diretamente (sem passar pelo interceptor do popover)
+function _abrirModalAgendamentoReal(agendamentoId){
+  const a = agendamentoId ? agendamentos.find(x=>x.id===agendamentoId) : null;
+  document.getElementById('ag-modal-titulo').textContent = a ? 'Editar agendamento' : 'Novo agendamento';
+  document.getElementById('agm-excluir').style.display = a ? '' : 'none';
+  document.getElementById('modal-agendamento').dataset.editId = a ? a.id : '';
+  document.getElementById('agm-paciente-busca').value = a ? (a.pacienteNome||'') : '';
+  document.getElementById('agm-paciente-id').value = a ? (a.pacienteId||'') : '';
+  document.getElementById('agm-paciente-resultados').innerHTML='';
+  const novoWrap=document.getElementById('agm-paciente-novo-wrap');
+  if(a && !a.pacienteId){ novoWrap.style.display=''; document.getElementById('agm-paciente-fone').value=a.pacienteFone||''; }
+  else { novoWrap.style.display='none'; document.getElementById('agm-paciente-fone').value=''; }
+  agmAtualizarPacienteView();
+  document.getElementById('agm-data').value = a ? a.data : '';
+  document.getElementById('agm-hora-ini').value = a ? a.horaInicio : '09:00';
+  document.getElementById('agm-hora-fim').value = a ? a.horaFim : '09:30';
+  const selProf=document.getElementById('agm-profissional');
+  const profs=usuariosNaAgenda();
+  selProf.innerHTML = profs.map(ap=>`<option value="${ap.usuarioId}">${ap.nome}</option>`).join('');
+  selProf.value = a ? a.usuarioId : (profs[0]&&profs[0].usuarioId);
+  agmAtualizarSalasDisponiveis(a ? a.salaId : 'sala4');
+  const selStatus=document.getElementById('agm-status');
+  selStatus.innerHTML = STATUS_AGENDAMENTO.map(s=>`<option value="${s.id}">${s.label}</option>`).join('');
+  selStatus.value = a ? a.status : 'agendado';
+  document.getElementById('agm-motivo-cancelamento').value = a ? (a.motivoCancelamento||'') : '';
+  const motivoOutroEl = document.getElementById('agm-motivo-outro-texto');
+  if(motivoOutroEl) motivoOutroEl.value = a ? (a.motivoCancelamentoOutro||'') : '';
+  document.getElementById('agm-ja-reagendado').checked = a ? !!a.jaReagendado : false;
+  document.getElementById('agm-recontato-status').value = a && a.recontatoStatus ? a.recontatoStatus : 'aberto';
+  document.getElementById('agm-recontato-obs').value = a ? (a.recontatoObs||'') : '';
+  agmToggleCancelamento();
+  agmRenderCamposExtras(a || null);
+  agmToggleSituacao();
+  document.getElementById('modal-agendamento').classList.add('open');
+  const podeGerenciarAgenda = temPerm('agenda_gerenciar');
+  const salvarBtn = document.getElementById('agm-salvar');
+  const excluirBtn = document.getElementById('agm-excluir');
+  if(salvarBtn) salvarBtn.style.display = podeGerenciarAgenda ? '' : 'none';
+  if(excluirBtn && a) excluirBtn.style.display = podeGerenciarAgenda ? '' : 'none';
+  document.querySelectorAll('#modal-agendamento .modal-body input, #modal-agendamento .modal-body select, #modal-agendamento .modal-body textarea').forEach(el=>{
+    el.disabled = !podeGerenciarAgenda;
+    if(!podeGerenciarAgenda) el.style.opacity='.65';
+  });
+  const trocarBtn = document.querySelector('#agm-paciente-link-wrap .btn-ghost');
+  if(trocarBtn) trocarBtn.style.display = podeGerenciarAgenda ? '' : 'none';
 }
 
 function renderAgenda(){
@@ -9954,7 +10282,7 @@ function renderAgendaSemana(d){
           const dur = horaParaMin(a.horaFim) - horaParaMin(a.horaInicio);
           const hPx = Math.max(10, Math.round(dur / passo * SLOT_H)) - 2;
           const primeiroNome = (a.pacienteNome||'').split(' ')[0];
-          body += `<div style="position:absolute;top:1px;left:1px;right:1px;height:${hPx}px;background:${cor};border-radius:3px;z-index:3;cursor:pointer;overflow:hidden;display:flex;align-items:center;padding:0 3px" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}')" title="${a.pacienteNome||''}\n${a.horaInicio}–${a.horaFim}\n${sala.nome}"><span style="font-size:8px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1">${a.horaInicio} ${primeiroNome}</span></div>`;
+          body += `<div style="position:absolute;top:1px;left:1px;right:1px;height:${hPx}px;background:${cor};border-radius:3px;z-index:3;cursor:pointer;overflow:hidden;display:flex;align-items:center;padding:0 3px" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${a.pacienteNome||''}\n${a.horaInicio}–${a.horaFim}\n${sala.nome}"><span style="font-size:8px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1">${a.horaInicio} ${primeiroNome}</span></div>`;
         });
         body += `</div>`;
       });
@@ -10004,7 +10332,7 @@ function renderAgendaMes(d){
     agmsDia.slice(0, MAX_SHOW).forEach(a => {
       const prof = agendaProfissionais.find(ap => ap.usuarioId === a.usuarioId);
       const cor = prof ? prof.cor : '#9CA3AF';
-      html += `<div class="ag-month-event" style="background:${cor}" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}')" title="${a.pacienteNome||''} ${a.horaInicio}">${a.horaInicio} ${a.pacienteNome||'(sem nome)'}</div>`;
+      html += `<div class="ag-month-event" style="background:${cor}" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${a.pacienteNome||''} ${a.horaInicio}">${a.horaInicio} ${a.pacienteNome||'(sem nome)'}</div>`;
     });
     if(agmsDia.length > MAX_SHOW){
       html += `<div class="ag-month-more">+${agmsDia.length - MAX_SHOW} mais</div>`;
@@ -10135,7 +10463,7 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
       } else {
         cardContent = `<div class="ag-card-tit" style="font-size:8px;line-height:1.1;display:flex;align-items:center">${statusIc}<span>${a.horaInicio}</span></div>`;
       }
-      html += `<div class="ag-card st-${a.status}${extraClass}" style="background:${cor};top:${topPx}px;height:${heightPx}px;pointer-events:all;padding:1px 4px" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}')" title="${pacNome} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}</div>`;
+      html += `<div class="ag-card st-${a.status}${extraClass}" style="background:${cor};top:${topPx}px;height:${heightPx}px;pointer-events:all;padding:1px 4px" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${pacNome} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}</div>`;
     });
     html += `</div>`;
   });
@@ -10225,8 +10553,14 @@ function bloqueioCobre(b,dataIso,slotIni,slotFim){
 }
 
 // ── MODAL AGENDAMENTO ─────────────────────────────────────────────────
-function abrirModalAgendamento(agendamentoId, dataPre, horaPre, salaPre, usuarioPre){
+function abrirModalAgendamento(agendamentoId, dataPre, horaPre, salaPre, usuarioPre, targetEl){
   const a = agendamentoId ? agendamentos.find(x=>x.id===agendamentoId) : null;
+
+  // Se é um agendamento existente, abre o popover em vez do modal
+  if(a && agendamentoId && !dataPre && !horaPre){
+    abrirAgPopover(a, targetEl);
+    return;
+  }
   document.getElementById('ag-modal-titulo').textContent = a ? 'Editar agendamento' : 'Novo agendamento';
   document.getElementById('agm-excluir').style.display = a ? '' : 'none';
   document.getElementById('modal-agendamento').dataset.editId = a ? a.id : '';
@@ -10739,8 +11073,10 @@ function _salvarAgendamentoInterno(){
 
 
   const fluxo = null; // definido apenas em agendamentos via encaminhamento
+  const existenteParaTags = editId ? agendamentos.find(a=>a.id===editId) : null;
   const item={pacienteId,pacienteNome,pacienteFone:pacienteId?'':pacienteFone,usuarioId,salaId,data,horaInicio,horaFim,status,origem:'interno',procedimento,fluxo,obs,situacaoRegistrada:situacaoPaciente,
-    motivoCancelamento,motivoCancelamentoOutro,jaReagendado,recontatoStatus,recontatoResponsavel,recontatoObs,recontatoCriadoEm,recontatoResolvidoEm,primeiraConsulta,origemPaciente,origemPacienteTexto,camposExtras};
+    motivoCancelamento,motivoCancelamentoOutro,jaReagendado,recontatoStatus,recontatoResponsavel,recontatoObs,recontatoCriadoEm,recontatoResolvidoEm,primeiraConsulta,origemPaciente,origemPacienteTexto,camposExtras,
+    tags: existenteParaTags ? (existenteParaTags.tags||[]) : []};
 
   if(editId){
     const idx=agendamentos.findIndex(a=>a.id===editId);
