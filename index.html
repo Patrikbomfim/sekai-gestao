@@ -742,15 +742,15 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <nav class="pp-menu" id="pp-menu">
       <div class="subnav-title" style="padding:4px 10px 8px;margin:0">Menu do paciente</div>
       <button class="pp-menu-btn on" id="pp-menu-dados" onclick="switchPpArea('dados')"><span class="pp-menu-ic">▤</span>Dados</button>
-      <button class="pp-menu-btn" id="pp-menu-acoes" onclick="switchPpArea('acoes')"><span class="pp-menu-ic">✓</span>Ações programadas</button>
+      <button class="pp-menu-btn" id="pp-menu-agenda" onclick="switchPpArea('agenda')"><span class="pp-menu-ic">📅</span>Agenda</button>
+      <button class="pp-menu-btn" id="pp-menu-anamnese" onclick="switchPpArea('anamnese')"><span class="pp-menu-ic">🩺</span>Anamnese inicial</button>
       <button class="pp-menu-btn" id="pp-menu-orcamento" onclick="switchPpArea('orcamento')"><span class="pp-menu-ic">💰</span>Orçamento</button>
-      <button class="pp-menu-btn" id="pp-menu-financeiro" onclick="switchPpArea('financeiro')"><span class="pp-menu-ic">📊</span>Financeiro</button>
+      <button class="pp-menu-btn" id="pp-menu-termo" onclick="switchPpArea('termo')"><span class="pp-menu-ic">✍️</span>Termo de compromisso</button>
+      <button class="pp-menu-btn" id="pp-menu-contrato" onclick="switchPpArea('contrato')"><span class="pp-menu-ic">📄</span>Contrato</button>
       <button class="pp-menu-btn" id="pp-menu-prontuario" onclick="switchPpArea('prontuario')"><span class="pp-menu-ic">📋</span>Prontuário</button>
       <button class="pp-menu-btn" id="pp-menu-documentos" onclick="switchPpArea('documentos')"><span class="pp-menu-ic">📁</span>Documentos</button>
       <button class="pp-menu-btn" id="pp-menu-fotos" onclick="switchPpArea('fotos')"><span class="pp-menu-ic">🖼</span>Fotos</button>
-      <button class="pp-menu-btn" id="pp-menu-agenda" onclick="switchPpArea('agenda')"><span class="pp-menu-ic">◫</span>Agenda</button>
       <button class="pp-menu-btn" id="pp-menu-historico" onclick="switchPpArea('historico')"><span class="pp-menu-ic">◷</span>Histórico</button>
-      <button class="pp-menu-btn" id="pp-menu-anamnese" onclick="switchPpArea('anamnese')"><span class="pp-menu-ic">🩺</span>Anamnese</button>
     </nav>
 
     <div class="pp-content">
@@ -788,9 +788,25 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
       </div>
 
-      <!-- AÇÕES PROGRAMADAS -->
-      <div class="pp-area" id="pp-area-acoes">
-        <div class="card" id="pp-acoes-wrap"></div>
+      <!-- AGENDA DO PACIENTE -->
+      <div class="pp-area" id="pp-area-agenda">
+        <div class="pp-area-title">Agenda</div>
+        <div class="pp-area-desc">Consultas agendadas e histórico de atendimentos deste paciente.</div>
+        <div class="card" id="pp-agenda-wrap"></div>
+      </div>
+
+      <!-- ANAMNESE INICIAL -->
+      <div class="pp-area" id="pp-area-anamnese">
+        <div class="pp-area-title">Anamnese inicial</div>
+        <div class="pp-area-desc">Ficha de saúde geral preenchida pelo paciente antes do início do tratamento.</div>
+        <div class="card" id="pp-anamnese-wrap">
+          <div class="empty" style="padding:32px 0;text-align:center">
+            <div style="font-size:32px;margin-bottom:8px">🩺</div>
+            <div style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:4px">Anamnese não preenchida</div>
+            <div style="font-size:12px;color:var(--tx3);margin-bottom:16px">O paciente ainda não respondeu a ficha de anamnese inicial.</div>
+            <button class="btn btn-primary btn-sm" onclick="alert('Em desenvolvimento')">Enviar link de anamnese</button>
+          </div>
+        </div>
       </div>
 
       <!-- ORÇAMENTO -->
@@ -800,11 +816,32 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="card" id="pp-orcamento-wrap"></div>
       </div>
 
-      <!-- FINANCEIRO -->
-      <div class="pp-area" id="pp-area-financeiro">
-        <div class="pp-area-title">Financeiro</div>
-        <div class="pp-area-desc">Pagamentos, valores em aberto e forma de cobrança vinculados ao orçamento aprovado.</div>
-        <div class="card" id="pp-financeiro-wrap"></div>
+      <!-- TERMO DE COMPROMISSO -->
+      <div class="pp-area" id="pp-area-termo">
+        <div class="pp-area-title">Termo de compromisso</div>
+        <div class="pp-area-desc">Termos assinados pelo paciente referentes aos procedimentos acordados e responsabilidades.</div>
+        <div class="card" id="pp-termo-wrap">
+          <div class="empty" style="padding:32px 0;text-align:center">
+            <div style="font-size:32px;margin-bottom:8px">✍️</div>
+            <div style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:4px">Nenhum termo registrado</div>
+            <div style="font-size:12px;color:var(--tx3);margin-bottom:16px">Emita o termo de compromisso após a aprovação do orçamento pelo paciente.</div>
+            <button class="btn btn-primary btn-sm" onclick="alert('Em desenvolvimento')">+ Gerar termo</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTRATO -->
+      <div class="pp-area" id="pp-area-contrato">
+        <div class="pp-area-title">Contrato</div>
+        <div class="pp-area-desc">Contrato de prestação de serviços odontológicos firmado entre o paciente e a Clínica Sekai.</div>
+        <div class="card" id="pp-contrato-wrap">
+          <div class="empty" style="padding:32px 0;text-align:center">
+            <div style="font-size:32px;margin-bottom:8px">📄</div>
+            <div style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:4px">Nenhum contrato gerado</div>
+            <div style="font-size:12px;color:var(--tx3);margin-bottom:16px">O contrato é gerado após assinatura do termo de compromisso e início do tratamento.</div>
+            <button class="btn btn-primary btn-sm" onclick="alert('Em desenvolvimento')">+ Gerar contrato</button>
+          </div>
+        </div>
       </div>
 
       <!-- PRONTUÁRIO -->
@@ -828,21 +865,21 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="card" id="pp-fotos-wrap"></div>
       </div>
 
-      <!-- AGENDA -->
-      <div class="pp-area" id="pp-area-agenda">
-        <div class="pp-area-title">Agenda</div>
-        <div class="pp-area-desc">Consultas agendadas e histórico de atendimentos deste paciente.</div>
-        <div class="card" id="pp-agenda-wrap"></div>
-      </div>
-
       <!-- HISTÓRICO -->
       <div class="pp-area" id="pp-area-historico">
         <div class="card" id="pp-historico-wrap"></div>
       </div>
 
-      <!-- ANAMNESE -->
-      <div class="pp-area" id="pp-area-anamnese">
-        <div class="card" id="pp-anamnese-wrap"></div>
+      <!-- AÇÕES PROGRAMADAS (mantido oculto no menu, usado internamente) -->
+      <div class="pp-area" id="pp-area-acoes">
+        <div class="card" id="pp-acoes-wrap"></div>
+      </div>
+
+      <!-- FINANCEIRO (mantido oculto no menu, usado internamente) -->
+      <div class="pp-area" id="pp-area-financeiro">
+        <div class="pp-area-title">Financeiro</div>
+        <div class="pp-area-desc">Pagamentos, valores em aberto e forma de cobrança vinculados ao orçamento aprovado.</div>
+        <div class="card" id="pp-financeiro-wrap"></div>
       </div>
     </div>
   </div>
@@ -4573,10 +4610,15 @@ function voltarParaPacientes(){
 }
 
 function switchPpArea(area){
-  const areas=['dados','acoes','orcamento','financeiro','prontuario','documentos','fotos','agenda','historico','anamnese'];
+  const areas=['dados','agenda','anamnese','orcamento','termo','contrato','prontuario','documentos','fotos','historico','acoes','financeiro'];
+  const menuAreas=['dados','agenda','anamnese','orcamento','termo','contrato','prontuario','documentos','fotos','historico'];
   areas.forEach(a=>{
-    document.getElementById('pp-area-'+a).classList.toggle('on',a===area);
-    document.getElementById('pp-menu-'+a).classList.toggle('on',a===area);
+    const el=document.getElementById('pp-area-'+a);
+    if(el) el.classList.toggle('on',a===area);
+  });
+  menuAreas.forEach(a=>{
+    const el=document.getElementById('pp-menu-'+a);
+    if(el) el.classList.toggle('on',a===area);
   });
 }
 
