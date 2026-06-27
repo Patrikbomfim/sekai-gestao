@@ -4703,6 +4703,7 @@ function toggleAcaoTab(k, a, el){
 let modalPtId=null;
 let pacienteOrigemTab='pacientes'; // para saber pra onde voltar
 let pacienteOrigemAgendamentoId=null; // se veio do modal de um agendamento específico, reabre ele ao voltar
+let pacienteOrigemEraPopover=false; // se veio do popover, reabre o popover ao voltar
 
 function abrirModalPt(id){
   const p=pacientes.find(x=>x.id===id || String(x.id)===String(id));
@@ -4778,12 +4779,21 @@ function abrirModalPt(id){
 function voltarParaPacientes(){
   if(pacienteOrigemTab==='agenda'){
     goTo('agenda', document.getElementById('navbtn-agenda'));
-    if(pacienteOrigemAgendamentoId) _abrirModalAgendamentoReal(pacienteOrigemAgendamentoId);
+    if(pacienteOrigemAgendamentoId){
+      if(pacienteOrigemEraPopover){
+        // Reabrir o popover, não o modal
+        const ag = agendamentos.find(a=>a.id===pacienteOrigemAgendamentoId);
+        if(ag) setTimeout(()=>abrirAgPopover(ag), 60);
+      } else {
+        _abrirModalAgendamentoReal(pacienteOrigemAgendamentoId);
+      }
+    }
   } else {
     goTo('pacientes', document.getElementById('navbtn-pacientes'));
   }
   pacienteOrigemTab='pacientes';
   pacienteOrigemAgendamentoId=null;
+  pacienteOrigemEraPopover=false;
 }
 
 function switchPpArea(area){
@@ -10019,6 +10029,9 @@ function agPopAbrirPaciente(e){
   e.preventDefault();
   const id = document.getElementById('agpop-nome').dataset.pacienteId;
   if(!id) return;
+  // Guardar o agendamento para reabrir o popover ao voltar
+  pacienteOrigemAgendamentoId = _agPopoverId || null;
+  pacienteOrigemEraPopover = true;
   fecharAgPopover();
   document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('on'));
   const navPac = document.getElementById('navbtn-pacientes');
