@@ -4717,24 +4717,35 @@ function renderPpFotos(p){
     <div style="margin-top:14px"><button class="btn btn-ghost btn-sm" disabled style="opacity:.6;cursor:not-allowed">+ Adicionar fotos</button></div>`;
 }
 
-// ── MOCK FUNCIONAL: AGENDA DO PACIENTE ───────────────────────────────────
+// ── AGENDA DO PACIENTE — dados reais ─────────────────────────────────────
 function renderPpAgenda(p){
-  const consultas=[
-    {data:'2026-06-24',hora:'14:00',proc:'Clareamento — sessão 1',status:'agendado'},
-    {data:'2026-06-19',hora:'09:30',proc:'Avaliação clínica',status:'realizado'},
-    {data:'2026-06-10',hora:'11:00',proc:'Profilaxia',status:'realizado'},
-  ];
-  const pillMap={agendado:'p-info',realizado:'p-green',faltou:'p-danger'};
-  const lblMap={agendado:'Agendado',realizado:'Realizado',faltou:'Faltou'};
   const wrap=document.getElementById('pp-agenda-wrap');
-  wrap.innerHTML=consultas.map(c=>`<div class="pp-row">
+  const lista=agendamentos
+    .filter(a=>a.pacienteId===p.id)
+    .sort((a,b)=> a.data<b.data?1:a.data>b.data?-1:0);
+  if(!lista.length){
+    wrap.innerHTML='<div class="empty"><div class="empty-ic">📅</div>Nenhum agendamento encontrado para este paciente.</div>';
+    return;
+  }
+  const pillMap={agendado:'p-neutral',confirmado:'p-green',realizado:'p-info',faltou:'p-danger',cancelado:'p-neutral'};
+  const lblMap={agendado:'Agendado',confirmado:'Confirmado',realizado:'Realizado',faltou:'Faltou',cancelado:'Cancelado'};
+  const hojeStr=iso(hoje);
+  wrap.innerHTML=lista.map(a=>{
+    const salaObj=salas.find(s=>s.id===a.salaId);
+    const profObj=usuarios.find(u=>u.id===a.usuarioId);
+    const passado=a.data<hojeStr;
+    return `<div class="pp-row" style="cursor:pointer;${passado?'opacity:.7':''}" onclick="pacienteOrigemAgendamentoId=${a.id};abrirModalAgendamento('${a.id}')">
       <div style="width:90px;flex-shrink:0">
-        <div style="font-size:13px;font-weight:600">${c.data.split('-').reverse().join('/')}</div>
-        <div style="font-size:11px;color:var(--tx3)">${c.hora}</div>
+        <div style="font-size:13px;font-weight:600">${a.data.split('-').reverse().join('/')}</div>
+        <div style="font-size:11px;color:var(--tx3)">${a.horaInicio}${a.horaFim?' – '+a.horaFim:''}</div>
       </div>
-      <div style="flex:1;min-width:0;font-size:13px">${c.proc}</div>
-      <span class="pill ${pillMap[c.status]}">${lblMap[c.status]}</span>
-    </div>`).join('')+`<div style="margin-top:14px"><button class="btn btn-ghost btn-sm" disabled style="opacity:.6;cursor:not-allowed">+ Agendar consulta</button></div>`;
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500">${a.procedimento||'—'}</div>
+        <div style="font-size:11px;color:var(--tx3)">${salaObj?salaObj.nome:''}${profObj?' · '+profObj.nome:''}</div>
+      </div>
+      <span class="pill ${pillMap[a.status]||'p-neutral'}" style="flex-shrink:0">${lblMap[a.status]||a.status}</span>
+    </div>`;
+  }).join('');
 }
 
 function toggleIndicadorEdit(){
