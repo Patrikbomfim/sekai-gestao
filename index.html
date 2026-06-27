@@ -9873,7 +9873,7 @@ function renderAgendaSemana(d){
   const SLOT_H = 26;        // altura de cada slot de 1h
   const TIME_W = 44;        // largura da coluna de horário
   const SALA_MIN_W = 28;    // largura mínima de cada sub-coluna de sala
-  const salas = salasAtivas();
+  const salas = salasParaGrade();
   const nSalas = salas.length || 1;
 
   // ── cabeçalho de dias (linha 1) ──────────────────────────────────
