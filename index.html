@@ -4621,100 +4621,20 @@ function renderPpHistorico(p){
     </div>`).join('');
 }
 
-// ── MOCK FUNCIONAL: ORÇAMENTO ───────────────────────────────────────────
-function gerarMockOrcamento(p){
-  const seed=(p.id||0)+(p.nome||'').length;
-  const itens=[
-    {proc:'Avaliação clínica completa',valor:0,status:'concluido'},
-    {proc:'Clareamento dental supervisionado',valor:1200,status:seed%2===0?'aprovado':'pendente'},
-    {proc:'Faceta de resina composta (un.)',valor:850,status:seed%3===0?'aprovado':'pendente'},
-    {proc:'Tratamento de canal — molar',valor:1450,status:'recusado'},
-  ];
-  return itens;
-}
 function renderPpOrcamento(p){
-  const itens=gerarMockOrcamento(p);
-  const total=itens.filter(i=>i.status==='aprovado').reduce((s,i)=>s+i.valor,0);
-  const pillMap={aprovado:'p-green',pendente:'p-warn',recusado:'p-danger',concluido:'p-neutral'};
-  const lblMap={aprovado:'Aprovado',pendente:'Pendente',recusado:'Recusado',concluido:'Cortesia'};
-  const wrap=document.getElementById('pp-orcamento-wrap');
-  wrap.innerHTML=`
-    <div style="display:flex;gap:18px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
-      <div><div style="font-size:10px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">Total aprovado</div><div style="font-size:18px;font-weight:700;color:var(--ac)">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
-      <div><div style="font-size:10px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">Itens orçados</div><div style="font-size:18px;font-weight:700">${itens.length}</div></div>
-    </div>
-    ${itens.map(i=>`<div class="pp-row">
-      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${i.proc}</div><div style="font-size:11px;color:var(--tx3)">Tabela de preços Sekai</div></div>
-      <div style="font-size:13px;font-weight:600;white-space:nowrap">${i.valor>0?'R$ '+i.valor.toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'}</div>
-      <span class="pill ${pillMap[i.status]}" style="flex-shrink:0">${lblMap[i.status]}</span>
-    </div>`).join('')}
-    <div style="margin-top:14px"><button class="btn btn-ghost btn-sm" disabled style="opacity:.6;cursor:not-allowed">+ Novo item de orçamento</button></div>
-  `;
+  document.getElementById('pp-orcamento-wrap').innerHTML='<div class="empty"><div class="empty-ic">💰</div>Módulo em configuração.</div>';
 }
-
-// ── MOCK FUNCIONAL: FINANCEIRO ──────────────────────────────────────────
 function renderPpFinanceiro(p){
-  const itens=gerarMockOrcamento(p).filter(i=>i.status==='aprovado');
-  const totalAprovado=itens.reduce((s,i)=>s+i.valor,0);
-  const pago=Math.round(totalAprovado*0.4);
-  const aberto=totalAprovado-pago;
-  const wrap=document.getElementById('pp-financeiro-wrap');
-  if(!itens.length){
-    wrap.innerHTML='<div class="empty"><div class="empty-ic">💳</div>Nenhum orçamento aprovado — nada a cobrar ainda.</div>';
-    return;
-  }
-  wrap.innerHTML=`
-    <div class="g4" style="margin-bottom:16px">
-      <div class="metric"><div class="metric-lbl">Total contratado</div><div class="metric-val" style="font-size:18px">R$ ${totalAprovado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
-      <div class="metric"><div class="metric-lbl">Pago</div><div class="metric-val" style="font-size:18px;color:var(--su)">R$ ${pago.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
-      <div class="metric"><div class="metric-lbl">Em aberto</div><div class="metric-val" style="font-size:18px;color:var(--wa)">R$ ${aberto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
-      <div class="metric"><div class="metric-lbl">Forma de pagamento</div><div class="metric-val" style="font-size:13px;font-weight:600">Cartão · 3x</div></div>
-    </div>
-    <div class="card-title" style="font-size:12px;margin-bottom:8px">Lançamentos</div>
-    <div class="pp-row"><div style="flex:1"><div style="font-size:13px;font-weight:500">Entrada — sinal do tratamento</div><div style="font-size:11px;color:var(--tx3)">Cartão de crédito · 1x</div></div><div style="font-size:13px;font-weight:600">R$ ${pago.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><span class="pill p-green">Pago</span></div>
-    <div class="pp-row"><div style="flex:1"><div style="font-size:13px;font-weight:500">Parcela 2 de 3</div><div style="font-size:11px;color:var(--tx3)">Vencimento em 15 dias</div></div><div style="font-size:13px;font-weight:600">R$ ${Math.round(aberto/2).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><span class="pill p-warn">Em aberto</span></div>
-    <div class="pp-row"><div style="flex:1"><div style="font-size:13px;font-weight:500">Parcela 3 de 3</div><div style="font-size:11px;color:var(--tx3)">Vencimento em 45 dias</div></div><div style="font-size:13px;font-weight:600">R$ ${Math.round(aberto/2).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><span class="pill p-neutral">Agendado</span></div>
-  `;
+  document.getElementById('pp-financeiro-wrap').innerHTML='<div class="empty"><div class="empty-ic">💳</div>Módulo em configuração.</div>';
 }
-
-// ── MOCK FUNCIONAL: PRONTUÁRIO ──────────────────────────────────────────
 function renderPpProntuario(p){
-  const evolucoes=[
-    {data:'2026-06-19',resp:'Dra. Leticia',texto:'Avaliação inicial. Paciente sem queixas álgicas. Indicado clareamento e avaliação para faceta nos incisivos superiores.'},
-    {data:'2026-06-10',resp:'Fernanda',texto:'Profilaxia e raspagem supragengival. Orientações de higiene reforçadas.'},
-  ];
-  const wrap=document.getElementById('pp-prontuario-wrap');
-  wrap.innerHTML=evolucoes.map(e=>`<div class="pp-row" style="align-items:flex-start">
-      <div style="width:90px;flex-shrink:0;font-size:11px;color:var(--tx3);padding-top:2px">${e.data.split('-').reverse().join('/')}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:3px">${e.resp}</div>
-        <div style="font-size:13px;color:var(--tx);line-height:1.5">${e.texto}</div>
-      </div>
-    </div>`).join('')+`<div style="margin-top:14px"><button class="btn btn-ghost btn-sm" disabled style="opacity:.6;cursor:not-allowed">+ Nova evolução</button></div>`;
+  document.getElementById('pp-prontuario-wrap').innerHTML='<div class="empty"><div class="empty-ic">📋</div>Módulo em configuração.</div>';
 }
-
-// ── MOCK FUNCIONAL: DOCUMENTOS ──────────────────────────────────────────
 function renderPpDocumentos(p){
-  const docs=[
-    {nome:'Exame panorâmico.pdf',tipo:'Exame',data:'2026-06-15',ic:'📄'},
-    {nome:'Termo de consentimento — clareamento.pdf',tipo:'Termo',data:'2026-06-19',ic:'📝'},
-  ];
-  const wrap=document.getElementById('pp-documentos-wrap');
-  wrap.innerHTML=docs.map(d=>`<div class="pp-row">
-      <div class="pp-doc-thumb">${d.ic}</div>
-      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${d.nome}</div><div style="font-size:11px;color:var(--tx3)">${d.tipo} · enviado em ${d.data.split('-').reverse().join('/')}</div></div>
-      <button class="btn btn-ghost btn-sm" disabled style="opacity:.6;cursor:not-allowed">Abrir</button>
-    </div>`).join('')+`<div style="margin-top:14px"><button class="btn btn-ghost btn-sm" disabled style="opacity:.6;cursor:not-allowed">+ Anexar documento</button></div>`;
+  document.getElementById('pp-documentos-wrap').innerHTML='<div class="empty"><div class="empty-ic">📄</div>Módulo em configuração.</div>';
 }
-
-// ── MOCK FUNCIONAL: FOTOS ────────────────────────────────────────────────
 function renderPpFotos(p){
-  const fotos=[
-    {tag:'Antes',ic:'📷'},{tag:'Depois',ic:'📷'},{tag:'Intraoral',ic:'🦷'},{tag:'Radiografia',ic:'🩻'},
-  ];
-  const wrap=document.getElementById('pp-fotos-wrap');
-  wrap.innerHTML=`<div class="pp-fotos-grid">${fotos.map(f=>`<div class="pp-foto">${f.ic}<span class="pp-foto-tag">${f.tag}</span></div>`).join('')}</div>
-    <div style="margin-top:14px"><button class="btn btn-ghost btn-sm" disabled style="opacity:.6;cursor:not-allowed">+ Adicionar fotos</button></div>`;
+  document.getElementById('pp-fotos-wrap').innerHTML='<div class="empty"><div class="empty-ic">📷</div>Módulo em configuração.</div>';
 }
 
 // ── AGENDA DO PACIENTE — dados reais ─────────────────────────────────────
