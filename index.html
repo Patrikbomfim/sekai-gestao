@@ -751,6 +751,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="pp-menu-btn" id="pp-menu-documentos" onclick="switchPpArea('documentos')"><span class="pp-menu-ic">📁</span>Documentos</button>
       <button class="pp-menu-btn" id="pp-menu-fotos" onclick="switchPpArea('fotos')"><span class="pp-menu-ic">🖼</span>Fotos</button>
       <button class="pp-menu-btn" id="pp-menu-historico" onclick="switchPpArea('historico')"><span class="pp-menu-ic">◷</span>Histórico</button>
+      <div style="height:1px;background:var(--border);margin:6px 2px"></div>
+      <button class="pp-menu-btn" id="pp-menu-acoes" onclick="switchPpArea('acoes')"><span class="pp-menu-ic">✓</span>Ações</button>
+      <button class="pp-menu-btn" id="pp-menu-lembretes" onclick="switchPpArea('lembretes')"><span class="pp-menu-ic">🔔</span>Lembretes</button>
+      <button class="pp-menu-btn" id="pp-menu-pendencias" onclick="switchPpArea('pendencias')"><span class="pp-menu-ic">⚑</span>Pendências</button>
     </nav>
 
     <div class="pp-content">
@@ -870,9 +874,30 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="card" id="pp-historico-wrap"></div>
       </div>
 
-      <!-- AÇÕES PROGRAMADAS (mantido oculto no menu, usado internamente) -->
+      <!-- AÇÕES DO FLUXO -->
       <div class="pp-area" id="pp-area-acoes">
+        <div class="pp-area-title">Ações</div>
+        <div class="pp-area-desc">Ações geradas automaticamente pelo fluxo da situação atual deste paciente.</div>
         <div class="card" id="pp-acoes-wrap"></div>
+      </div>
+
+      <!-- LEMBRETES DO PACIENTE -->
+      <div class="pp-area" id="pp-area-lembretes">
+        <div class="pp-area-title">Lembretes</div>
+        <div class="pp-area-desc">Lembretes gerados a partir dos agendamentos deste paciente.</div>
+        <div class="card" id="pp-lembretes-wrap"></div>
+      </div>
+
+      <!-- PENDÊNCIAS DO PACIENTE -->
+      <div class="pp-area" id="pp-area-pendencias">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div>
+            <div class="pp-area-title">Pendências</div>
+            <div class="pp-area-desc" style="margin-bottom:0">Pendências vinculadas a este paciente.</div>
+          </div>
+          <button class="btn btn-primary btn-sm" id="pp-btn-nova-pendencia" onclick="ppAbrirNovaPendencia()">+ Nova pendência</button>
+        </div>
+        <div class="card" id="pp-pendencias-wrap"></div>
       </div>
 
       <!-- FINANCEIRO (mantido oculto no menu, usado internamente) -->
@@ -4574,6 +4599,11 @@ function abrirModalPt(id){
   // anamnese
   document.getElementById('pp-anamnese-wrap').innerHTML=renderAbaAnamnese(p);
 
+  // lembretes e pendências do paciente
+  _ppPacienteAtual=p;
+  renderPpLembretes(p);
+  renderPpPendencias(p);
+
   switchPpArea('dados');
   bindFoneMask('mpt-fone');
 
@@ -4602,8 +4632,8 @@ function voltarParaPacientes(){
 }
 
 function switchPpArea(area){
-  const areas=['dados','agenda','anamnese','orcamento','termo','contrato','prontuario','documentos','fotos','historico','acoes','financeiro'];
-  const menuAreas=['dados','agenda','anamnese','orcamento','termo','contrato','prontuario','documentos','fotos','historico'];
+  const areas=['dados','agenda','anamnese','orcamento','termo','contrato','prontuario','documentos','fotos','historico','acoes','lembretes','pendencias','financeiro'];
+  const menuAreas=['dados','agenda','anamnese','orcamento','termo','contrato','prontuario','documentos','fotos','historico','acoes','lembretes','pendencias'];
   areas.forEach(a=>{
     const el=document.getElementById('pp-area-'+a);
     if(el) el.classList.toggle('on',a===area);
@@ -4656,7 +4686,68 @@ function renderPpHistorico(p){
     </div>`).join('');
 }
 
-function renderPpOrcamento(p){
+function renderPpLembretes(p){
+  const wrap=document.getElementById('pp-lembretes-wrap');
+  const lista=(lembretesGerados||[])
+    .filter(l=>String(l.pacienteId)===String(p.id))
+    .slice().sort((a,b)=>a.dataLembrete>b.dataLembrete?1:-1);
+  if(!lista.length){
+    wrap.innerHTML='<div class="empty"><div class="empty-ic">🔔</div>Nenhum lembrete gerado para este paciente.</div>';
+    return;
+  }
+  const pillMap={pendente:'p-warn',concluido:'p-green',descartado:'p-neutral'};
+  const lblMap={pendente:'Pendente',concluido:'Concluído',descartado:'Descartado'};
+  const hojeStr=iso(hoje);
+  wrap.innerHTML=lista.map(l=>{
+    const atrasado=l.status==='pendente'&&l.dataLembrete<hojeStr;
+    const pill=atrasado?'p-danger':(pillMap[l.status]||'p-neutral');
+    const lbl=atrasado?'Atrasado':(lblMap[l.status]||l.status);
+    const dataFmt=l.dataLembrete?l.dataLembrete.split('-').reverse().join('/'):'—';
+    return `<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);${l.status!=='pendente'?'opacity:.5':''}">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;margin-bottom:2px">${esc(l.titulo)}</div>
+        <div style="font-size:12px;color:var(--tx3)">${esc(l.responsavel||'')} · ${dataFmt}</div>
+        ${l.script?`<div style="font-size:12px;color:var(--tx3);font-style:italic;margin-top:5px;background:var(--s2);padding:6px 9px;border-radius:var(--r8);line-height:1.5">"${esc(l.script)}"</div>`:''}
+      </div>
+      <span class="pill ${pill}" style="flex-shrink:0">${lbl}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderPpPendencias(p){
+  const wrap=document.getElementById('pp-pendencias-wrap');
+  const lista=(pendenciasAvulsas||[])
+    .filter(x=>String(x.pacienteId)===String(p.id))
+    .slice().sort((a,b)=>a.criadaEm>b.criadaEm?-1:1);
+  if(!lista.length){
+    wrap.innerHTML='<div class="empty"><div class="empty-ic">⚑</div>Nenhuma pendência vinculada a este paciente.</div>';
+    return;
+  }
+  const urgPill={baixa:'p-neutral',media:'p-warn',alta:'p-danger'};
+  const urgLbl={baixa:'Baixa',media:'Média',alta:'Alta'};
+  const statusPill={pendente:'p-warn',concluida:'p-green'};
+  const statusLbl={pendente:'Pendente',concluida:'Concluída'};
+  wrap.innerHTML=lista.map(x=>{
+    const prazoFmt=x.prazo?x.prazo.split('-').reverse().join('/'):'—';
+    const atrasado=x.status==='pendente'&&x.prazo&&x.prazo<iso(hoje);
+    return `<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);${x.status==='concluida'?'opacity:.5':''}">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;margin-bottom:3px">${esc(x.texto)}</div>
+        <div style="font-size:12px;color:var(--tx3);display:flex;gap:8px;flex-wrap:wrap">
+          ${x.responsavel?`<span>${esc(x.responsavel)}</span>`:''}
+          ${x.prazo?`<span style="${atrasado?'color:var(--da);font-weight:600':''}">Prazo: ${prazoFmt}</span>`:''}
+          <span class="pill ${urgPill[x.urgencia]||'p-neutral'}" style="font-size:10px">${urgLbl[x.urgencia]||x.urgencia}</span>
+        </div>
+      </div>
+      <span class="pill ${statusPill[x.status]||'p-neutral'}" style="flex-shrink:0">${statusLbl[x.status]||x.status}</span>
+    </div>`;
+  }).join('');
+}
+
+let _ppPacienteAtual=null;
+function ppAbrirNovaPendencia(){
+  if(_ppPacienteAtual) abrirModalNovaPendencia(_ppPacienteAtual.id,_ppPacienteAtual.nome);
+}
   document.getElementById('pp-orcamento-wrap').innerHTML='<div class="empty"><div class="empty-ic">💰</div>Módulo em configuração.</div>';
 }
 function renderPpFinanceiro(p){
@@ -6727,12 +6818,12 @@ function agmAbrirLembretePaciente(){
   },30);
 }
 
-function abrirModalNovaPendencia(){
+function abrirModalNovaPendencia(pacienteId, pacienteNome){
   pendModalEdit=null;
-  pendModalPacienteContexto=null;
+  pendModalPacienteContexto=(pacienteId&&pacienteNome)?{id:pacienteId,nome:pacienteNome}:null;
   const sel=document.getElementById('np-responsavel');
   sel.innerHTML='<option value="">—</option>'+equipe.map(nomeEquipeItem).map(e=>`<option value="${e}">${e}</option>`).join('');
-  document.getElementById('np-modal-title').textContent='Nova pendência';
+  document.getElementById('np-modal-title').textContent='Nova pendência'+(pacienteNome?' — '+pacienteNome:'');
   document.getElementById('np-modal-salvar').textContent='Criar pendência';
   document.getElementById('np-texto').value='';
   document.getElementById('np-prazo').value='';
@@ -6800,6 +6891,7 @@ function salvarPendenciaModal(){
   fecharModal('modal-nova-pendencia');
   pendModalEdit=null;
   renderPendencias();
+  if(_ppPacienteAtual) renderPpPendencias(_ppPacienteAtual);
   showSaveToast('Pendência salva');
 }
 
