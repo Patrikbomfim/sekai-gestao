@@ -5235,7 +5235,6 @@ function tbRenderTabela(){
   }
 
   tbody.innerHTML=slice.map(p=>{
-    const idx=procs.indexOf(p);
     const ct=comTotal(p);
     const inativo=p.ativo===false;
     return `<tr style="${inativo?'opacity:.45':''}">
@@ -5247,10 +5246,10 @@ function tbRenderTabela(){
       <td style="padding:8px 8px;text-align:center">${p.comissaoPct?parseFloat(p.comissaoPct).toFixed(1)+'%':'—'}</td>
       <td style="padding:8px 8px;text-align:right;font-weight:600;color:${ct?'var(--ac)':'var(--tx3)'}">${ct?brl(ct):'—'}</td>
       <td style="padding:8px 8px;text-align:center">
-        <div class="toggle-sw ${inativo?'':'on'}" onclick="tbToggleAtivo(${idx})" style="cursor:pointer"></div>
+        <div class="toggle-sw ${inativo?'':'on'}" onclick="tbToggleAtivoById('${p.id}')" style="cursor:pointer"></div>
       </td>
       <td style="padding:8px 4px;text-align:center">
-        <button onclick="tbEditarProc(${idx})" style="background:none;border:none;cursor:pointer;color:var(--tx3);font-size:13px;padding:3px 6px;border-radius:var(--r4)" title="Editar">✎</button>
+        <button onclick="tbEditarProc('${p.id}')" style="background:none;border:none;cursor:pointer;color:var(--tx3);font-size:13px;padding:3px 6px;border-radius:var(--r4)" title="Editar">✎</button>
       </td>
     </tr>`;
   }).join('');
@@ -5263,10 +5262,21 @@ function tbRenderTabela(){
 }
 
 function tbToggleAtivo(idx){
+  // legacy — kept for safety
   const list=_tbTabelas();
   const t=list.find(x=>x.id===_tbAtualId);
   if(!t||!t.procedimentos[idx]) return;
   t.procedimentos[idx].ativo=t.procedimentos[idx].ativo===false?true:false;
+  _tbSalvar(list);
+  tbFiltrar();
+}
+function tbToggleAtivoById(procId){
+  const list=_tbTabelas();
+  const t=list.find(x=>x.id===_tbAtualId);
+  if(!t) return;
+  const p=t.procedimentos.find(x=>x.id===procId);
+  if(!p) return;
+  p.ativo=p.ativo===false?true:false;
   _tbSalvar(list);
   tbFiltrar();
 }
@@ -5288,11 +5298,13 @@ function tbNovoProc(){
   document.getElementById('tbp-nome').focus();
 }
 
-function tbEditarProc(idx){
+function tbEditarProc(procId){
   const t=_tbTabelas().find(x=>x.id===_tbAtualId);
-  if(!t||!t.procedimentos[idx]) return;
-  const p=t.procedimentos[idx];
-  _tbProcAtualIdx=idx;
+  if(!t) return;
+  const realIdx=t.procedimentos.findIndex(x=>x.id===procId);
+  if(realIdx<0) return;
+  const p=t.procedimentos[realIdx];
+  _tbProcAtualIdx=realIdx;
   document.getElementById('tb-proc-modal-title').textContent='Editar procedimento';
   document.getElementById('tbp-nome').value=p.nome||'';
   document.getElementById('tbp-esp').value=p.especialidade||'';
