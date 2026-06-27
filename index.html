@@ -5374,38 +5374,73 @@ function _salvarOrcamentos(list){ salvarLS('sk3-orcamentos',list); }
 function renderPpOrcamento(p){
   const wrap=document.getElementById('pp-orcamento-wrap');
   const orcamentos=_orcamentos().filter(o=>String(o.pacienteId)===String(p.id));
-  const statusPill={rascunho:'p-neutral',aprovado:'p-green',recusado:'p-danger'};
-  const statusLbl={rascunho:'Rascunho',aprovado:'Aprovado',recusado:'Recusado'};
-  let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+
+  // status configs
+  const statusCfg={
+    aberto:   {lbl:'Aberto',   dot:'#9CA3AF', bg:'transparent'},
+    aprovado: {lbl:'Aprovado', dot:'#065F46', bg:'#ECFDF5'},
+    reprovado:{lbl:'Reprovado',dot:'#991B1B', bg:'#FEF2F2'},
+    // legado
+    rascunho: {lbl:'Aberto',   dot:'#9CA3AF', bg:'transparent'},
+    recusado: {lbl:'Reprovado',dot:'#991B1B', bg:'#FEF2F2'},
+  };
+
+  let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <div style="font-size:13px;font-weight:600">Orçamentos (${orcamentos.length})</div>
     <button class="btn btn-primary btn-sm" onclick="abrirModalOrcamento('${p.id}')">+ Novo orçamento</button>
   </div>`;
+
   if(!orcamentos.length){
     html+='<div class="empty" style="padding:28px 0">Nenhum orçamento registrado.<br><span style="font-size:11px;color:var(--tx3)">Clique em "Novo orçamento" para começar.</span></div>';
   } else {
     orcamentos.slice().reverse().forEach(o=>{
       const total=(o.itens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
-      const dataFmt=o.data?o.data.split('-').reverse().join('/'):'—';
-      html+=`<div style="display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)">
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
-            <span style="font-size:13px;font-weight:600">${o.nomeOrc||('Orçamento #'+(o.num||o.id.slice(-4)))}</span>
-            <span class="pill ${statusPill[o.status]||'p-neutral'}">${statusLbl[o.status]||o.status}</span>
-          </div>
-          <div style="font-size:12px;color:var(--tx3)">${dataFmt} · ${o.criadoPor||'—'} · ${(o.itens||[]).length} procedimento(s)</div>
-          ${o.obs?`<div style="font-size:12px;color:var(--tx2);margin-top:3px">${o.obs}</div>`:''}
+      const cfg=statusCfg[o.status||'aberto']||statusCfg.aberto;
+      const nome=o.nomeOrc||('Orçamento #'+(o.num||o.id.slice(-4)));
+      const uid='orc-row-'+o.id;
+
+      // procedimentos expandíveis
+      let procHtml='';
+      if((o.itens||[]).length){
+        procHtml=`<div id="${uid}-procs" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px">`;
+        (o.itens||[]).forEach(it=>{
+          const vFmt=(parseFloat(it.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+          procHtml+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12px;color:var(--tx2)">
+            <span>${it.proc||'—'}${it.dentes?' <span style="color:var(--tx3)">('+it.dentes+')</span>':''}</span>
+            <span style="font-weight:600;color:var(--tx)">R$ ${vFmt}</span>
+          </div>`;
+        });
+        procHtml+=`</div>`;
+      }
+
+      html+=`
+      <div style="border:1px solid var(--border);border-radius:var(--r8);margin-bottom:6px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;background:var(--surface)"
+             onclick="abrirModalOrcamento('${p.id}','${o.id}')">
+          <!-- status dot -->
+          <span title="${cfg.lbl}" style="flex-shrink:0;width:9px;height:9px;border-radius:50%;background:${cfg.dot};${o.status==='aberto'||o.status==='rascunho'||!o.status?'border:1.5px solid #9CA3AF;background:transparent':''}"></span>
+          <!-- nome -->
+          <span style="flex:1;font-size:13px;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nome}</span>
+          <!-- valor -->
+          <span style="font-size:13px;font-weight:700;color:var(--ac);flex-shrink:0">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+          <!-- seta expansível -->
+          ${(o.itens||[]).length?`<button onclick="event.stopPropagation();_toggleOrcProcs('${uid}')" id="${uid}-btn"
+            style="flex-shrink:0;border:none;background:none;cursor:pointer;color:var(--tx3);padding:2px 4px;font-size:13px;line-height:1;border-radius:var(--r4);transition:transform .15s" title="Ver procedimentos">▸</button>`:''}
         </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-size:15px;font-weight:700;color:var(--ac)">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-          <div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end">
-            <button class="btn btn-ghost btn-sm" onclick="abrirModalOrcamento('${p.id}','${o.id}')">Editar</button>
-            <button class="btn btn-ghost btn-sm" onclick="orcamentoMudarStatus('${o.id}','aprovado','${p.id}')" ${o.status==='aprovado'?'disabled':''}>Aprovar</button>
-          </div>
-        </div>
+        ${procHtml}
       </div>`;
     });
   }
   wrap.innerHTML=html;
+}
+
+function _toggleOrcProcs(uid){
+  const el=document.getElementById(uid+'-procs');
+  const btn=document.getElementById(uid+'-btn');
+  if(!el) return;
+  const open=el.style.display==='block';
+  el.style.display=open?'none':'block';
+  if(btn) btn.style.transform=open?'':'rotate(90deg)';
 }
 
 function _nextOrcNum(){
@@ -5453,11 +5488,26 @@ function abrirModalOrcamento(pacId, orcId){
   const pacNome = pacAtual ? (pacAtual.nome||'') : '';
 
   const modalEl=document.getElementById('modal-orcamento');
+  const statusAtual=(orcEdit&&orcEdit.status)||'aberto';
+  // normaliza legado
+  const statusNorm=statusAtual==='rascunho'?'aberto':statusAtual==='recusado'?'reprovado':statusAtual;
   modalEl.querySelector('.modal-body').innerHTML=`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
       <div class="fl" style="grid-column:1/-1">
         <label>Nome do orçamento <span style="color:var(--da)">*</span></label>
         <input type="text" id="orc-input-nome" placeholder="Ex: Tratamento completo — Reabilitação oral" value="${(orcEdit&&orcEdit.nomeOrc)||''}" style="font-size:13px">
+      </div>
+      <div class="fl">
+        <label>Status</label>
+        <select id="orc-sel-status" style="font-size:13px">
+          <option value="aberto"   ${statusNorm==='aberto'   ?'selected':''}>Aberto</option>
+          <option value="aprovado" ${statusNorm==='aprovado' ?'selected':''}>Aprovado</option>
+          <option value="reprovado"${statusNorm==='reprovado'?'selected':''}>Reprovado</option>
+        </select>
+      </div>
+      <div class="fl">
+        <label>Data</label>
+        <input type="date" id="orc-input-data" value="${(orcEdit&&orcEdit.data)||hojeStr}">
       </div>
       <div class="fl">
         <label>Paciente</label>
@@ -5470,10 +5520,6 @@ function abrirModalOrcamento(pacId, orcId){
       <div class="fl">
         <label>Criado por</label>
         <select id="orc-sel-criador">${usuariosOpts}</select>
-      </div>
-      <div class="fl">
-        <label>Data</label>
-        <input type="date" id="orc-input-data" value="${(orcEdit&&orcEdit.data)||hojeStr}">
       </div>
       <div class="fl" style="grid-column:1/-1">
         <label>Observações</label>
@@ -5575,13 +5621,14 @@ function salvarOrcamento(){
   const criadoPor=(document.getElementById('orc-sel-criador')||{}).value||'';
   const data=(document.getElementById('orc-input-data')||{}).value||'';
   const obs=(document.getElementById('orc-input-obs')||{}).value||'';
+  const status=(document.getElementById('orc-sel-status')||{}).value||'aberto';
   _comSalvarImediato(()=>{
     const list=_orcamentos();
     if(_orcModalId){
       const idx=list.findIndex(o=>o.id===_orcModalId);
-      if(idx>=0) list[idx]={...list[idx],nomeOrc,clinica:clinicaNome,criadoPor,data,obs,itens:[..._orcItens],pagamentos:[..._orcPagamentos]};
+      if(idx>=0) list[idx]={...list[idx],nomeOrc,clinica:clinicaNome,criadoPor,data,obs,itens:[..._orcItens],pagamentos:[..._orcPagamentos],status};
     } else {
-      list.push({id:'orc_'+Date.now(),num:_nextOrcNum(),pacienteId:_orcModalPacId,nomeOrc,clinica:clinicaNome,criadoPor,data,obs,itens:[..._orcItens],pagamentos:[..._orcPagamentos],status:'rascunho'});
+      list.push({id:'orc_'+Date.now(),num:_nextOrcNum(),pacienteId:_orcModalPacId,nomeOrc,clinica:clinicaNome,criadoPor,data,obs,itens:[..._orcItens],pagamentos:[..._orcPagamentos],status});
     }
     _salvarOrcamentos(list);
   });
