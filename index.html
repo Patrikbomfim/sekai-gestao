@@ -5563,16 +5563,30 @@ let _orcDentesSel=[];
 
 function abrirModalProcOrc(){
   _orcDentesSel=[];
+  _orcProcSelecionado=null;
+
+  // Monta opções de tabelas
+  _tbInit();
+  const tabelas=_tbTabelas();
+  const tabelaOpts=tabelas.map((t,i)=>`<option value="${t.id}" ${i===0?'selected':''}>${t.nome}</option>`).join('');
   const usuariosOpts=usuarios.map(u=>`<option value="${u.nome}">${u.nome}</option>`).join('');
+
   const modal=document.getElementById('modal-proc-orc');
   modal.querySelector('.modal-body').innerHTML=`
     <div style="margin-bottom:14px">
-      <div class="fl">
+      <div class="fl" style="margin-bottom:10px">
+        <label>Tabela de preços</label>
+        <select id="proc-orc-tabela" onchange="_orcTrocarTabela()" style="font-size:12px">${tabelaOpts}</select>
+      </div>
+      <div class="fl" style="position:relative">
         <label>Procedimento</label>
-        <div style="padding:9px 12px;border:1px solid var(--border);border-radius:var(--r8);background:var(--s2);font-size:12px;color:var(--tx2);text-align:center;margin-bottom:6px">
-          Tabela de procedimentos em configuração.
+        <input type="text" id="proc-orc-busca" placeholder="Digite para buscar procedimento…" oninput="_orcBuscarProc(this.value)" autocomplete="off"
+          style="font-size:12px">
+        <div id="proc-orc-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:500;background:var(--surface);border:1px solid var(--border);border-radius:var(--r8);box-shadow:var(--shadow-md);max-height:220px;overflow-y:auto;margin-top:2px"></div>
+        <div id="proc-orc-selecionado" style="display:none;margin-top:6px;padding:8px 10px;background:var(--acl);border-radius:var(--r6);border:1px solid var(--ac)">
+          <div style="font-size:12px;font-weight:600;color:var(--ac)" id="proc-orc-sel-nome"></div>
+          <div style="font-size:11px;color:var(--tx3)" id="proc-orc-sel-esp"></div>
         </div>
-        <input type="text" id="proc-orc-nome" placeholder="Digite o nome do procedimento…">
       </div>
     </div>
     <div class="fg" style="margin-bottom:16px">
@@ -5599,6 +5613,72 @@ function abrirModalProcOrc(){
     </div>
   `;
   modal.classList.add('open');
+  setTimeout(()=>document.getElementById('proc-orc-busca')?.focus(),80);
+}
+
+let _orcProcSelecionado=null;
+
+function _orcGetProcsDaTabela(){
+  const sel=document.getElementById('proc-orc-tabela');
+  const id=sel?sel.value:'';
+  const t=_tbTabelas().find(x=>x.id===id)||_tbTabelas()[0];
+  return t?(t.procedimentos||[]).filter(p=>p.ativo!==false):[];
+}
+
+function _orcTrocarTabela(){
+  // limpa busca e seleção ao trocar tabela
+  const b=document.getElementById('proc-orc-busca');
+  if(b) b.value='';
+  _orcProcSelecionado=null;
+  document.getElementById('proc-orc-dropdown').style.display='none';
+  document.getElementById('proc-orc-selecionado').style.display='none';
+  document.getElementById('proc-orc-valor').value='';
+}
+
+function _orcBuscarProc(termo){
+  const dd=document.getElementById('proc-orc-dropdown');
+  if(!dd) return;
+  if(!termo||termo.trim().length<1){ dd.style.display='none'; return; }
+  const procs=_orcGetProcsDaTabela();
+  const t=termo.toLowerCase();
+  const filtrados=procs.filter(p=>(p.nome||'').toLowerCase().includes(t)).slice(0,12);
+  if(!filtrados.length){
+    dd.innerHTML='<div style="padding:10px 12px;font-size:12px;color:var(--tx3)">Nenhum procedimento encontrado</div>';
+    dd.style.display='block';
+    return;
+  }
+  dd.innerHTML=filtrados.map(p=>{
+    const nomeHL=p.nome.replace(new RegExp('('+termo.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<strong>$1</strong>');
+    const brl=v=>v?'R$ '+parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—';
+    return `<div onclick="_orcSelecionarProc('${p.id}')" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px"
+      onmouseenter="this.style.background='var(--acl)'" onmouseleave="this.style.background=''">
+      <div>
+        <div style="font-size:12px;font-weight:500">${nomeHL}</div>
+        <div style="font-size:11px;color:var(--tx3)">${p.especialidade||''}</div>
+      </div>
+      <div style="font-size:12px;font-weight:600;color:var(--ac);white-space:nowrap">${brl(p.valor)}</div>
+    </div>`;
+  }).join('');
+  dd.style.display='block';
+}
+
+function _orcSelecionarProc(procId){
+  const procs=_orcGetProcsDaTabela();
+  const p=procs.find(x=>x.id===procId);
+  if(!p) return;
+  _orcProcSelecionado=p;
+  // Preenche campo de busca e fecha dropdown
+  const b=document.getElementById('proc-orc-busca');
+  if(b) b.value=p.nome;
+  document.getElementById('proc-orc-dropdown').style.display='none';
+  // Mostra card do selecionado
+  const card=document.getElementById('proc-orc-selecionado');
+  document.getElementById('proc-orc-sel-nome').textContent=p.nome;
+  document.getElementById('proc-orc-sel-esp').textContent=p.especialidade||'';
+  card.style.display='block';
+  // Preenche valor automaticamente
+  const valEl=document.getElementById('proc-orc-valor');
+  if(valEl&&p.valor) valEl.value=parseFloat(p.valor).toFixed(2);
 }
 
 function _buildOdontograma(){
@@ -5677,12 +5757,32 @@ function _atualizarDentesSelecionados(){
   el.innerHTML=_orcDentesSel.map(n=>`<span style="display:inline-block;background:var(--acl);color:var(--ac);font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin:2px">${n}</span>`).join('');
 }
 
+
+// Fecha dropdown de busca de procedimento ao clicar fora
+document.addEventListener('click', function(e){
+  const dd=document.getElementById('proc-orc-dropdown');
+  const busca=document.getElementById('proc-orc-busca');
+  if(dd&&busca&&!dd.contains(e.target)&&e.target!==busca){
+    dd.style.display='none';
+  }
+});
+
 function confirmarProcOrc(){
-  const nome=(document.getElementById('proc-orc-nome')||{}).value;
-  if(!nome||!nome.trim()){ alert('Informe o nome do procedimento.'); return; }
+  // Usa o procedimento selecionado via autocomplete; ou o que está digitado no campo
+  const busca=document.getElementById('proc-orc-busca');
+  const nome=_orcProcSelecionado?_orcProcSelecionado.nome:(busca?busca.value:'');
+  if(!nome||!nome.trim()){ alert('Selecione ou informe o nome do procedimento.'); return; }
   const dentista=(document.getElementById('proc-orc-dentista')||{}).value||'';
   const valor=parseFloat((document.getElementById('proc-orc-valor')||{}).value)||0;
-  _orcItens.push({id:'item_'+Date.now(),proc:nome.trim(),dentista,dentes:[..._orcDentesSel],valor});
+  _orcItens.push({
+    id:'item_'+Date.now(),
+    proc:nome.trim(),
+    procId:_orcProcSelecionado?_orcProcSelecionado.id:null,
+    especialidade:_orcProcSelecionado?_orcProcSelecionado.especialidade:'',
+    dentista,
+    dentes:[..._orcDentesSel],
+    valor
+  });
   document.getElementById('modal-proc-orc').classList.remove('open');
   _renderOrcItens();
   _renderOrcTotal();
