@@ -2429,7 +2429,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center" id="agpop-tags-wrap"></div>
       <div class="agpop-tag-dropdown" id="agpop-tag-dropdown" style="margin-top:6px">
         <button type="button" onclick="agPopToggleTagMenu()" style="font-size:11px;padding:3px 9px;border-radius:10px;border:1.5px dashed var(--border);background:none;cursor:pointer;color:var(--tx2);font-family:var(--font)">＋ Adicionar tag</button>
-        <div class="agpop-tag-menu" id="agpop-tag-menu" style="display:none">
+        <div class="agpop-tag-menu" id="agpop-tag-menu" style="display:none;min-width:220px">
+          <div style="padding:6px 12px 4px;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Todas as tags</div>
           <div id="agpop-tag-opts"></div>
           <div class="agpop-tag-new">
             <input type="text" id="agpop-tag-nova-input" placeholder="Nova tag..." onkeydown="agPopCriarTagKeydown(event)">
@@ -9932,7 +9933,7 @@ function abrirAgPopover(a, targetEl){
   stInline.style.color = stInfo.cor;
 
   // Nome com código — clicável
-  const pac = pacientes.find(p=>p.id===a.pacienteId);
+  const pac = pacientes.find(p=>String(p.id)===String(a.pacienteId));
   const codigo = pac ? pac.codigo : null;
   const nomeEl = document.getElementById('agpop-nome');
   nomeEl.textContent = a.pacienteNome || '(sem nome)';
@@ -10080,27 +10081,51 @@ function agPopRenderTagOpts(){
   const a = agendamentos.find(x=>x.id===_agPopoverId);
   const jaTemIds = new Set(a ? (a.tags||[]) : []);
   const opts = document.getElementById('agpop-tag-opts');
-  const disponiveis = tagsAgendamento.filter(t=>!jaTemIds.has(t.id));
-  if(disponiveis.length===0){
-    opts.innerHTML='<div style="padding:8px 12px;font-size:12px;color:var(--tx3)">Todas as tags aplicadas</div>';
-  } else {
-    opts.innerHTML = disponiveis.map(t=>`
-      <div class="agpop-tag-opt" onclick="agPopAdicionarTag('${t.id}')">
-        <span class="agpop-tag-opt-dot" style="background:${t.cor}"></span>
-        ${esc(t.label)}
-      </div>`).join('');
+  if(tagsAgendamento.length===0){
+    opts.innerHTML='<div style="padding:8px 12px;font-size:12px;color:var(--tx3)">Nenhuma tag criada ainda.</div>';
+    return;
   }
+  opts.innerHTML = tagsAgendamento.map(t=>{
+    const temTag = jaTemIds.has(t.id);
+    return `<div class="agpop-tag-opt" style="justify-content:space-between;padding-right:6px">
+      <div onclick="agPopToggleTag('${t.id}')" style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;padding:2px 0">
+        <span class="agpop-tag-opt-dot" style="background:${t.cor};${temTag?'box-shadow:0 0 0 2px '+t.cor+'66':''}"></span>
+        <span style="${temTag?'font-weight:600;color:var(--tx)':'color:var(--tx2)'}">${esc(t.label)}</span>
+        ${temTag?'<span style="font-size:10px;color:var(--su);margin-left:2px">✓</span>':''}
+      </div>
+      <button onclick="event.stopPropagation();agPopExcluirTagGlobal('${t.id}')" title="Excluir tag" style="background:none;border:none;cursor:pointer;color:var(--tx3);font-size:11px;padding:2px 4px;border-radius:var(--r4);line-height:1;flex-shrink:0" onmouseenter="this.style.background='var(--dal)';this.style.color='var(--da)'" onmouseleave="this.style.background='none';this.style.color='var(--tx3)'">✕</button>
+    </div>`;
+  }).join('');
 }
 
-function agPopAdicionarTag(tagId){
+function agPopToggleTag(tagId){
   if(!_agPopoverId) return;
   const idx = agendamentos.findIndex(a=>a.id===_agPopoverId);
   if(idx<0) return;
   if(!agendamentos[idx].tags) agendamentos[idx].tags=[];
-  if(!agendamentos[idx].tags.includes(tagId)) agendamentos[idx].tags.push(tagId);
+  if(agendamentos[idx].tags.includes(tagId)){
+    agendamentos[idx].tags = agendamentos[idx].tags.filter(t=>t!==tagId);
+  } else {
+    agendamentos[idx].tags.push(tagId);
+  }
   salvarLS('sk3-agendamentos', agendamentos);
   agPopRenderTags();
   agPopRenderTagOpts();
+}
+
+function agPopExcluirTagGlobal(tagId){
+  if(!confirm('Excluir esta tag? Ela será removida de todos os agendamentos.')) return;
+  tagsAgendamento = tagsAgendamento.filter(t=>t.id!==tagId);
+  salvarLS('sk3-tags-agendamento', tagsAgendamento);
+  // remover de todos os agendamentos
+  agendamentos.forEach(a=>{ if(a.tags) a.tags=a.tags.filter(t=>t!==tagId); });
+  salvarLS('sk3-agendamentos', agendamentos);
+  agPopRenderTags();
+  agPopRenderTagOpts();
+}
+
+function agPopAdicionarTag(tagId){
+  agPopToggleTag(tagId);
 }
 
 function agPopCriarTagKeydown(e){ if(e.key==='Enter'){ e.preventDefault(); agPopCriarTag(); } }
@@ -10109,13 +10134,18 @@ function agPopCriarTag(){
   const input = document.getElementById('agpop-tag-nova-input');
   const label = input.value.trim();
   if(!label) return;
+  // Não cria duplicata
+  if(tagsAgendamento.some(t=>t.label.toLowerCase()===label.toLowerCase())){
+    input.value='';
+    return;
+  }
   const PALETA_TAGS = ['#0369A1','#065F46','#991B1B','#7C3AED','#D97706','#0E7490','#DB2777','#059669','#4338CA','#9D174D'];
   const cor = PALETA_TAGS[tagsAgendamento.length % PALETA_TAGS.length];
   const novaTag = {id:'tag_'+Date.now(), label, cor};
   tagsAgendamento.push(novaTag);
   salvarLS('sk3-tags-agendamento', tagsAgendamento);
   input.value = '';
-  agPopAdicionarTag(novaTag.id);
+  agPopRenderTagOpts();
 }
 
 // Wrapper para chamar o modal real diretamente (sem passar pelo interceptor do popover)
@@ -10493,7 +10523,7 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
       const topPx = Math.round((agIni - iniMin) / passo * SLOT_H) + 1;
       const heightPx = Math.max(10, Math.round((agFim - agIni) / passo * SLOT_H) - 2);
       const subLabel = modo==='sala' ? nomeUsuario(a.usuarioId) : salaNome;
-      const pacObj = pacientes.find(p=>p.id===a.pacienteId);
+      const pacObj = pacientes.find(p=>String(p.id)===String(a.pacienteId));
       const pacNome = a.pacienteNome || 'sem nome';
       const pacNomeComCod = pacObj && pacObj.codigo ? `${pacNome} (${pacObj.codigo})` : pacNome;
       // ícone de status: agendado = ✓ vermelho; qualquer outro = ✓✓ verde
