@@ -653,6 +653,14 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
     <div class="ag-sidebar-divider"></div>
 
+    <!-- Filtro de salas -->
+    <div class="ag-sidebar-section">
+      <div class="ag-sidebar-label">Salas visíveis</div>
+      <div id="ag-salas-chips" style="display:flex;flex-direction:column;gap:4px"></div>
+    </div>
+
+    <div class="ag-sidebar-divider"></div>
+
     <!-- Ações -->
     <div class="ag-sidebar-section" data-perm="agenda_gerenciar">
       <div class="ag-sidebar-label">Ações</div>
@@ -9568,6 +9576,15 @@ function excluirLinkAgenda(){
 
 let agendaData = iso(hoje);
 let agendaView = 'sala'; // 'sala' | 'profissional'
+let agSalasFiltro = carregarLS('sk3-ag-salas-filtro', ['sala1','sala4']);
+function salasParaGrade(){ return salasAtivas().filter(s=>agSalasFiltro.includes(s.id)); }
+function agToggleSala(id){
+  if(agSalasFiltro.includes(id)) agSalasFiltro=agSalasFiltro.filter(x=>x!==id);
+  else agSalasFiltro=[...agSalasFiltro,id];
+  salvarLS('sk3-ag-salas-filtro',agSalasFiltro);
+  renderAgSalaChips();
+  renderAgenda();
+}
 let agendaPeriodo = 'dia'; // 'dia' | 'semana' | 'mes'
 let agMiniCalMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 
@@ -9575,6 +9592,19 @@ function agendaSetData(v){ agendaData=v; renderAgenda(); }
 function agendaMudarDia(n){ agendaData = iso(addDays(parseIso(agendaData),n)); renderAgenda(); }
 function agendaHoje(){ agendaData = iso(hoje); renderAgenda(); }
 function agendaSetView(v){ agendaView=v; renderAgenda(); }
+
+function renderAgSalaChips(){
+  const wrap=document.getElementById('ag-salas-chips');
+  if(!wrap) return;
+  wrap.innerHTML=salasAtivas().map(s=>{
+    const on=agSalasFiltro.includes(s.id);
+    return `<button onclick="agToggleSala('${s.id}')" style="display:flex;align-items:center;gap:6px;padding:5px 9px;border-radius:var(--r6);border:1.5px solid ${on?s.cor:'var(--border)'};background:${on?s.cor+'18':'var(--surface)'};color:${on?s.cor:'var(--tx3)'};cursor:pointer;font-size:11px;font-family:var(--font);font-weight:600;width:100%;text-align:left;transition:all .1s" title="${on?'Ocultar':'Mostrar'} ${esc(s.nome)}">
+      <span style="width:8px;height:8px;border-radius:2px;background:${s.cor};flex-shrink:0;opacity:${on?1:.35}"></span>
+      ${esc(s.nome)}
+      ${on?'<span style="margin-left:auto;font-size:10px;opacity:.7">✓</span>':''}
+    </button>`;
+  }).join('');
+}
 function agendaSetPeriodo(p){ agendaPeriodo=p; renderAgenda(); }
 
 function agendaIrHoje(){
@@ -9814,6 +9844,7 @@ function renderAgenda(){
   document.getElementById('ag-semana-wrap').style.display = agendaPeriodo==='semana' ? '' : 'none';
 
   renderAgendaLegenda();
+  renderAgSalaChips();
 
   if(agendaPeriodo==='dia'){
     if(agendaView==='sala') renderAgendaPorSala(d);
@@ -10012,8 +10043,8 @@ function granularidadeFor(usuarioId){
 function renderAgendaPorSala(d){
   const dataIso=iso(d);
   const diaSemana=d.getDay();
-  const cols = salasAtivas();
-  if(!cols.length){ document.getElementById('agenda-grid').innerHTML=`<div class="empty"><div class="empty-ic">📅</div>Nenhuma sala configurada. Vá em Configurações → Config. de agenda.</div>`; return; }
+  const cols = salasParaGrade();
+  if(!cols.length){ document.getElementById('agenda-grid').innerHTML=`<div class="empty"><div class="empty-ic">📅</div>Nenhuma sala selecionada. Escolha ao menos uma sala na barra lateral.</div>`; return; }
 
   const {ini,fim} = janelaGlobalDoDia(diaSemana);
   const passo = 30; // grid base de 30min para visão por sala (cards podem ocupar mais espaço internamente)
