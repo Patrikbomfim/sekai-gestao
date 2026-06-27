@@ -2376,27 +2376,52 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="agpop-body">
     <div class="agpop-row">
       <span class="agpop-ic">👤</span>
-      <span class="agpop-val" id="agpop-nome" style="font-weight:600;font-size:13px"></span>
+      <span class="agpop-val">
+        <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:1px">Paciente</span>
+        <a id="agpop-nome" href="#" onclick="agPopAbrirPaciente(event)" style="font-weight:600;font-size:13px;color:var(--ac);text-decoration:none;cursor:pointer"></a>
+      </span>
+    </div>
+    <div class="agpop-row">
+      <span class="agpop-ic">📋</span>
+      <span class="agpop-val">
+        <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:1px">Status</span>
+        <span id="agpop-status-inline"></span>
+      </span>
     </div>
     <div class="agpop-row">
       <span class="agpop-ic">📅</span>
-      <span class="agpop-val" id="agpop-data"></span>
+      <span class="agpop-val">
+        <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:1px">Data</span>
+        <span id="agpop-data"></span>
+      </span>
     </div>
     <div class="agpop-row" id="agpop-fone-row">
       <span class="agpop-ic">📱</span>
-      <span class="agpop-val" id="agpop-fone"></span>
+      <span class="agpop-val">
+        <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:1px">Telefone</span>
+        <span id="agpop-fone"></span>
+      </span>
     </div>
     <div class="agpop-row">
       <span class="agpop-ic">🕐</span>
-      <span class="agpop-val" id="agpop-horario"></span>
+      <span class="agpop-val">
+        <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:1px">Horário</span>
+        <span id="agpop-horario"></span>
+      </span>
     </div>
     <div class="agpop-row" id="agpop-proc-row">
       <span class="agpop-ic">🦷</span>
-      <span class="agpop-val" id="agpop-proc"></span>
+      <span class="agpop-val">
+        <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:1px">Procedimento</span>
+        <span id="agpop-proc"></span>
+      </span>
     </div>
     <div class="agpop-row" id="agpop-prof-row">
       <span class="agpop-ic">👩‍⚕️</span>
-      <span class="agpop-val" id="agpop-prof"></span>
+      <span class="agpop-val">
+        <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:1px">Profissional</span>
+        <span id="agpop-prof"></span>
+      </span>
     </div>
     <!-- TAGS -->
     <div>
@@ -9892,7 +9917,7 @@ let _agPopoverId = null; // id do agendamento atual no popover
 function abrirAgPopover(a, targetEl){
   _agPopoverId = a.id;
 
-  // Status
+  // Status no header
   const stInfo = STATUS_AGENDAMENTO.find(s=>s.id===a.status) || {label:a.status, cor:'#9CA3AF'};
   const stEl = document.getElementById('agpop-status');
   stEl.textContent = stInfo.label;
@@ -9900,8 +9925,19 @@ function abrirAgPopover(a, targetEl){
   stEl.style.color = stInfo.cor;
   stEl.style.border = '1px solid ' + stInfo.cor + '44';
 
-  // Nome
-  document.getElementById('agpop-nome').textContent = a.pacienteNome || '(sem nome)';
+  // Status inline no corpo
+  const stInline = document.getElementById('agpop-status-inline');
+  stInline.textContent = stInfo.label;
+  stInline.style.fontWeight = '500';
+  stInline.style.color = stInfo.cor;
+
+  // Nome com código — clicável
+  const pac = pacientes.find(p=>p.id===a.pacienteId);
+  const codigo = pac ? pac.codigo : null;
+  const nomeEl = document.getElementById('agpop-nome');
+  nomeEl.textContent = a.pacienteNome || '(sem nome)';
+  if(codigo) nomeEl.textContent += ` (${codigo})`;
+  nomeEl.dataset.pacienteId = a.pacienteId || '';
 
   // Data/hora
   const d = a.data ? a.data.split('-').reverse().join('/') : '';
@@ -9910,13 +9946,7 @@ function abrirAgPopover(a, targetEl){
 
   // Telefone
   const foneRow = document.getElementById('agpop-fone-row');
-  let fone = '';
-  if(a.pacienteId){
-    const pac = pacientes.find(p=>p.id===a.pacienteId);
-    fone = pac ? (pac.fone||'') : '';
-  } else {
-    fone = a.pacienteFone || '';
-  }
+  const fone = pac ? (pac.fone||'') : (a.pacienteFone||'');
   if(fone){ document.getElementById('agpop-fone').textContent = fone; foneRow.style.display=''; }
   else { foneRow.style.display='none'; }
 
@@ -9982,6 +10012,20 @@ function fecharAgPopover(){
   document.getElementById('agpop-tag-menu').style.display = 'none';
   document.removeEventListener('mousedown', _agPopoverOutsideClick);
   _agPopoverId = null;
+}
+
+function agPopAbrirPaciente(e){
+  e.preventDefault();
+  const id = document.getElementById('agpop-nome').dataset.pacienteId;
+  if(!id) return;
+  fecharAgPopover();
+  document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('on'));
+  const navPac = document.getElementById('navbtn-pacientes');
+  if(navPac) navPac.classList.add('on');
+  const layout = document.querySelector('.layout');
+  if(layout) layout.classList.remove('has-subnav');
+  pacienteOrigemTab = 'agenda';
+  abrirModalPt(id);
 }
 
 function agPopAbrirModal(){
@@ -10449,7 +10493,9 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
       const topPx = Math.round((agIni - iniMin) / passo * SLOT_H) + 1;
       const heightPx = Math.max(10, Math.round((agFim - agIni) / passo * SLOT_H) - 2);
       const subLabel = modo==='sala' ? nomeUsuario(a.usuarioId) : salaNome;
+      const pacObj = pacientes.find(p=>p.id===a.pacienteId);
       const pacNome = a.pacienteNome || 'sem nome';
+      const pacNomeComCod = pacObj && pacObj.codigo ? `${pacNome} (${pacObj.codigo})` : pacNome;
       // ícone de status: agendado = ✓ vermelho; qualquer outro = ✓✓ verde
       const statusIc = a.status==='agendado'
         ? '<span style="color:#fca5a5;font-weight:700;margin-right:3px;flex-shrink:0">✓</span>'
@@ -10457,14 +10503,14 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
       let cardContent;
       const extraClass = heightPx < 30 ? ' ag-card-compact' : '';
       if(heightPx >= 30){
-        cardContent = `<div class="ag-card-tit" style="display:flex;align-items:center">${statusIc}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio}–${a.horaFim} ${pacNome}</span></div><div class="ag-card-sub">${subLabel}${a.procedimento?' · '+a.procedimento:''}</div>`;
+        cardContent = `<div class="ag-card-tit" style="display:flex;align-items:center">${statusIc}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio}–${a.horaFim} ${pacNomeComCod}</span></div><div class="ag-card-sub">${subLabel}${a.procedimento?' · '+a.procedimento:''}</div>`;
       } else if(heightPx >= 12){
         const sub = subLabel ? ` · ${subLabel}` : '';
-        cardContent = `<div class="ag-card-tit" style="font-size:9px;line-height:1.15;display:flex;align-items:center;overflow:hidden">${statusIc}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio}–${a.horaFim} ${pacNome}${sub}</span></div>`;
+        cardContent = `<div class="ag-card-tit" style="font-size:9px;line-height:1.15;display:flex;align-items:center;overflow:hidden">${statusIc}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio}–${a.horaFim} ${pacNomeComCod}${sub}</span></div>`;
       } else {
         cardContent = `<div class="ag-card-tit" style="font-size:8px;line-height:1.1;display:flex;align-items:center">${statusIc}<span>${a.horaInicio}</span></div>`;
       }
-      html += `<div class="ag-card st-${a.status}${extraClass}" style="background:${cor};top:${topPx}px;height:${heightPx}px;pointer-events:all;padding:1px 4px" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${pacNome} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}</div>`;
+      html += `<div class="ag-card st-${a.status}${extraClass}" style="background:${cor};top:${topPx}px;height:${heightPx}px;pointer-events:all;padding:1px 4px" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${pacNomeComCod} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}</div>`;
     });
     html += `</div>`;
   });
