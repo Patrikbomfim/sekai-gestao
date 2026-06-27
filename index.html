@@ -422,6 +422,21 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .ag-nav-btn{width:30px;height:30px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2);transition:all .1s;font-size:13px}
 .ag-nav-btn:hover{background:var(--s2);border-color:var(--border-s);color:var(--tx)}
 
+/* ── LAYOUT AGENDA COM SIDEBAR ───────────────────────────────────── */
+#sec-agenda{display:flex;flex-direction:row;height:calc(100vh - 52px);overflow:hidden;margin:-18px -24px}
+.ag-sidebar{width:210px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px 12px;gap:12px;overflow-y:auto}
+.ag-sidebar-section{display:flex;flex-direction:column;gap:6px}
+.ag-sidebar-label{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.ag-sidebar-btn{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:var(--r8);border:1px solid var(--border);background:var(--surface);color:var(--tx2);cursor:pointer;font-size:12px;font-family:var(--font);font-weight:500;transition:all .1s;width:100%;text-align:left}
+.ag-sidebar-btn:hover{background:var(--s2);color:var(--tx)}
+.ag-sidebar-btn.primary{background:var(--ac);color:#fff;border-color:var(--ac)}
+.ag-sidebar-btn.primary:hover{background:var(--act)}
+.ag-sidebar-divider{height:1px;background:var(--border);margin:2px 0}
+.ag-main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.ag-topbar{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;flex-wrap:nowrap;overflow-x:auto}
+.ag-grid-area{flex:1;overflow:auto;padding:0}
+.ag-grid-area .card{border-radius:0;border-left:none;border-right:none;border-bottom:none;box-shadow:none;margin:0}
+
 /* MINI CALENDÁRIO MENSAL */
 .ag-mini-cal{width:176px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r10);padding:8px;box-shadow:var(--shadow)}
 .ag-mini-cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
@@ -615,69 +630,81 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 <!-- AGENDA -->
 <div id="sec-agenda" class="sec">
-  <!-- Linha 1: ações -->
-  <div style="display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <button class="btn btn-ghost btn-sm" onclick="addLinkAgenda()" style="display:flex;align-items:center;gap:5px" data-perm="agenda_gerenciar">🔗 Gerar link</button>
-      <button class="btn btn-ghost btn-sm" onclick="abrirModalEventosRecorrentes()" style="display:flex;align-items:center;gap:5px" data-perm="agenda_gerenciar">🔁 Recorrentes</button>
-      <button class="btn btn-ghost btn-sm" onclick="addBloqueio()" style="display:flex;align-items:center;gap:5px" data-perm="agenda_gerenciar">🚫 Evento</button>
-      <button class="btn btn-primary btn-sm" onclick="abrirModalAgendamento(null,null,null,null)" data-perm="agenda_gerenciar">+ Agendamento</button>
+
+  <!-- SIDEBAR ESQUERDA -->
+  <div class="ag-sidebar">
+    <!-- Mini calendário -->
+    <div class="ag-mini-cal" id="ag-mini-cal" style="width:auto;box-shadow:none;border:none;padding:0"></div>
+
+    <div class="ag-sidebar-divider"></div>
+
+    <!-- Navegação de período -->
+    <div class="ag-sidebar-section">
+      <div class="ag-sidebar-label">Visualização</div>
+      <div class="ag-period-group" style="width:100%">
+        <button class="ag-period-btn on" id="agp-dia" onclick="agendaSetPeriodo('dia')" style="flex:1;padding:6px 8px;font-size:12px">Dia</button>
+        <button class="ag-period-btn" id="agp-semana" onclick="agendaSetPeriodo('semana')" style="flex:1;padding:6px 8px;font-size:12px">Semana</button>
+      </div>
+      <div id="ag-view-group" class="ag-view-group" style="width:100%">
+        <button class="ag-view-btn on" id="ag-view-sala" onclick="agendaSetView('sala')" style="flex:1;padding:6px 6px;font-size:11px">Por Sala</button>
+        <button class="ag-view-btn" id="ag-view-prof" onclick="agendaSetView('profissional')" style="flex:1;padding:6px 6px;font-size:11px">Por Prof.</button>
+      </div>
+    </div>
+
+    <div class="ag-sidebar-divider"></div>
+
+    <!-- Ações -->
+    <div class="ag-sidebar-section" data-perm="agenda_gerenciar">
+      <div class="ag-sidebar-label">Ações</div>
+      <button class="ag-sidebar-btn primary" onclick="abrirModalAgendamento(null,null,null,null)" data-perm="agenda_gerenciar">＋ Agendamento</button>
+      <button class="ag-sidebar-btn" onclick="addLinkAgenda()" data-perm="agenda_gerenciar">🔗 Gerar link</button>
+      <button class="ag-sidebar-btn" onclick="abrirModalEventosRecorrentes()" data-perm="agenda_gerenciar">🔁 Recorrentes</button>
+      <button class="ag-sidebar-btn" onclick="addBloqueio()" data-perm="agenda_gerenciar">🚫 Bloquear horário</button>
+    </div>
+
+    <div class="ag-sidebar-divider"></div>
+
+    <!-- Legenda -->
+    <div class="ag-sidebar-section">
+      <div class="ag-sidebar-label">Legenda</div>
+      <div id="agenda-legenda" style="display:flex;flex-direction:column;gap:4px"></div>
     </div>
   </div>
 
-  <!-- Mini calendário + Toolbar -->
-  <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:14px">
-    <div class="ag-mini-cal" id="ag-mini-cal"></div>
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;flex:1;min-width:0">
-    <!-- Nav -->
-    <button class="ag-nav-btn" onclick="agendaNavAnterior()" title="Anterior">‹</button>
-    <button class="ag-today-btn" id="ag-hoje-btn" onclick="agendaIrHoje()">Hoje</button>
-    <button class="ag-nav-btn" onclick="agendaNavProximo()" title="Próximo">›</button>
-    <!-- Label -->
-    <div style="white-space:nowrap">
-      <span class="ag-date-label" id="ag-data-label" style="font-size:13px;font-weight:600;color:var(--tx)"></span>
-      <span id="ag-data-sub" style="font-size:11px;color:var(--tx3);margin-left:4px"></span>
+  <!-- ÁREA PRINCIPAL -->
+  <div class="ag-main">
+    <!-- Topbar: navegação + busca -->
+    <div class="ag-topbar">
+      <button class="ag-nav-btn" onclick="agendaNavAnterior()" title="Anterior">‹</button>
+      <button class="ag-today-btn" id="ag-hoje-btn" onclick="agendaIrHoje()">Hoje</button>
+      <button class="ag-nav-btn" onclick="agendaNavProximo()" title="Próximo">›</button>
+      <div style="white-space:nowrap;margin-left:4px">
+        <span class="ag-date-label" id="ag-data-label" style="font-size:13px;font-weight:600;color:var(--tx)"></span>
+        <span id="ag-data-sub" style="font-size:11px;color:var(--tx3);margin-left:4px"></span>
+      </div>
+      <div class="ag-divider"></div>
+      <span style="font-size:12px;color:var(--tx2);white-space:nowrap;flex-shrink:0">Data:</span>
+      <input type="date" id="ag-data" style="font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);height:28px;flex-shrink:0;width:130px">
+      <button class="ag-today-btn" onclick="agendaBuscarData()" style="background:var(--ac);color:#fff;border-color:var(--ac);flex-shrink:0">Buscar</button>
+      <button class="ag-today-btn" onclick="agendaLimparBusca()" id="ag-busca-limpar" style="display:none;flex-shrink:0">Limpar</button>
+      <div class="ag-divider"></div>
+      <span style="font-size:12px;color:var(--tx2);white-space:nowrap;flex-shrink:0">Paciente:</span>
+      <div style="position:relative;flex-shrink:0">
+        <input type="text" id="ag-busca-paciente" placeholder="Buscar paciente…" oninput="agendaBuscarPaciente(this.value)" autocomplete="off"
+          style="font-size:12px;padding:4px 28px 4px 7px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);height:28px;width:160px">
+        <button id="ag-busca-paciente-limpar" onclick="agendaLimparBuscaPaciente()" title="Limpar busca"
+          style="display:none;position:absolute;right:5px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;color:var(--tx3);font-size:13px;line-height:1;padding:0">✕</button>
+      </div>
     </div>
-    <div class="ag-divider"></div>
-    <!-- Busca -->
-    <span style="font-size:12px;color:var(--tx2);white-space:nowrap;flex-shrink:0">Buscar data:</span>
-    <input type="date" id="ag-data" style="font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);height:28px;flex-shrink:0;width:130px">
-    <button class="ag-today-btn" onclick="agendaBuscarData()" style="background:var(--ac);color:#fff;border-color:var(--ac);flex-shrink:0">Buscar</button>
-    <button class="ag-today-btn" onclick="agendaLimparBusca()" id="ag-busca-limpar" style="display:none;flex-shrink:0">Limpar</button>
-    <div class="ag-divider"></div>
-    <!-- Busca por paciente -->
-    <span style="font-size:12px;color:var(--tx2);white-space:nowrap;flex-shrink:0">Paciente:</span>
-    <div style="position:relative;flex-shrink:0">
-      <input type="text" id="ag-busca-paciente" placeholder="Buscar paciente…" oninput="agendaBuscarPaciente(this.value)" autocomplete="off"
-        style="font-size:12px;padding:4px 28px 4px 7px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);height:28px;width:160px">
-      <button id="ag-busca-paciente-limpar" onclick="agendaLimparBuscaPaciente()" title="Limpar busca"
-        style="display:none;position:absolute;right:5px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;color:var(--tx3);font-size:13px;line-height:1;padding:0">✕</button>
-    </div>
-    <div class="ag-toolbar-spacer"></div>
-    <div class="ag-divider"></div>
-    <!-- Dia / Semana -->
-    <div class="ag-period-group" style="flex-shrink:0">
-      <button class="ag-period-btn on" id="agp-dia" onclick="agendaSetPeriodo('dia')">Dia</button>
-      <button class="ag-period-btn" id="agp-semana" onclick="agendaSetPeriodo('semana')">Semana</button>
-    </div>
-    <div class="ag-divider"></div>
-    <!-- Por Sala / Por Profissional -->
-    <div class="ag-view-group" id="ag-view-group" style="flex-shrink:0">
-      <button class="ag-view-btn on" id="ag-view-sala" onclick="agendaSetView('sala')">Por Sala</button>
-      <button class="ag-view-btn" id="ag-view-prof" onclick="agendaSetView('profissional')">Por Profissional</button>
-    </div>
-    </div>
-  </div>
 
-  <div id="agenda-legenda" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"></div>
-
-  <div class="card" style="overflow-x:auto;padding:0" id="ag-dia-wrap">
-    <div id="agenda-grid"></div>
-  </div>
-
-  <div id="ag-semana-wrap" style="display:none">
-    <div class="card" style="overflow-x:auto;padding:0">
-      <div id="agenda-semana-grid"></div>
+    <!-- Grade -->
+    <div class="ag-grid-area">
+      <div id="ag-dia-wrap">
+        <div id="agenda-grid"></div>
+      </div>
+      <div id="ag-semana-wrap" style="display:none">
+        <div id="agenda-semana-grid"></div>
+      </div>
     </div>
   </div>
 
@@ -10008,7 +10035,7 @@ function renderAgendaPorProfissional(d){
 function janelaGlobalDoDia(diaSemana){
   // Usa horário de funcionamento configurado como base, se disponível
   const hf = horarioFuncionamento.find(h=>h.dia===diaSemana && h.ativo);
-  const fallback = hf ? {ini:horaParaMin(hf.ini), fim:horaParaMin(hf.fim)} : {ini:8*60,fim:18*60};
+  const fallback = hf ? {ini:horaParaMin(hf.ini), fim:horaParaMin(hf.fim)} : {ini:8*60,fim:19*60};
   if(!disponibilidade.length) return fallback;
   const disps=disponibilidadesDoDia(diaSemana);
   if(!disps.length) return fallback;
