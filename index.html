@@ -626,6 +626,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <button class="subnav-btn" onclick="showCfg('agenda',this)"><span class="nav-ic">◫</span>Config. de agenda</button>
   <button class="subnav-btn" onclick="showCfg('anamnese',this)"><span class="nav-ic">▧</span>Anamnese</button>
   <button class="subnav-btn" onclick="showCfg('dashboard',this)"><span class="nav-ic">▦</span>Dashboard</button>
+  <button class="subnav-btn" onclick="showCfg('tabelas',this)">Tabelas precificação</button>
 </nav>
 
 <main class="main">
@@ -973,6 +974,61 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="pp-area-desc">Pagamentos, valores em aberto e forma de cobrança vinculados ao orçamento aprovado.</div>
         <div class="card" id="pp-financeiro-wrap"></div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR PROCEDIMENTO TABELA -->
+<div class="modal-ov" id="modal-tb-proc" style="z-index:230">
+  <div class="modal" style="width:560px;max-width:96vw;height:auto;max-height:88vh">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="modal-title" id="tb-proc-modal-title">Procedimento</div>
+        <button onclick="fecharModalTbProc()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--tx3);line-height:1;padding:2px 6px">&times;</button>
+      </div>
+    </div>
+    <div class="modal-body" style="padding-top:16px">
+      <div class="fg" style="margin-bottom:12px">
+        <div class="fl fg-full"><label>Nome do procedimento</label><input type="text" id="tbp-nome" placeholder="Ex: Limpeza + Profilaxia"></div>
+        <div class="fl"><label>Especialidade</label><input type="text" id="tbp-esp" placeholder="Ex: Prevenção" list="tbp-esp-list"><datalist id="tbp-esp-list"></datalist></div>
+        <div class="fl"><label>Valor (R$)</label><input type="number" id="tbp-valor" min="0" step="0.01" placeholder="0,00"></div>
+        <div class="fl"><label>Custo para Clínica (R$)</label><input type="number" id="tbp-custo" min="0" step="0.01" placeholder="0,00"></div>
+      </div>
+      <div style="background:var(--s2);border-radius:var(--r8);padding:12px 14px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Comissão</div>
+        <div class="fg">
+          <div class="fl">
+            <label>Valor fixo (R$)</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="tbp-com-fixo" min="0" step="0.01" placeholder="0,00" style="flex:1">
+              <label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:0;font-size:12px;color:var(--tx2);font-weight:500;cursor:pointer">
+                <input type="checkbox" id="tbp-com-fixo-ativo" style="width:auto"> Ativo
+              </label>
+            </div>
+          </div>
+          <div class="fl">
+            <label>Porcentagem (%)</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="tbp-com-pct" min="0" max="100" step="0.1" placeholder="0,0" style="flex:1">
+              <span style="font-size:12px;color:var(--tx3)" id="tbp-com-pct-preview"></span>
+            </div>
+            <div style="font-size:11px;color:var(--tx3);margin-top:3px">% sobre o valor do procedimento</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:12px;color:var(--tx2)">Total comissão estimado:</span>
+          <span id="tbp-com-total" style="font-size:14px;font-weight:700;color:var(--ac)">R$ 0,00</span>
+        </div>
+      </div>
+      <div class="fl" style="flex-direction:row;align-items:center;gap:10px">
+        <label style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--tx);font-weight:500;cursor:pointer;display:flex;align-items:center;gap:7px">
+          <input type="checkbox" id="tbp-ativo" checked style="width:auto"> Procedimento ativo na tabela
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModalTbProc()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarTbProc()">Salvar</button>
     </div>
   </div>
 </div>
@@ -1439,6 +1495,66 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="card-title">Configuração do Dashboard</div>
       <div class="card-sub">O dashboard é alimentado automaticamente pelas ações do sistema — cadastros de pacientes, agendamentos e, futuramente, orçamentos e financeiro. Nenhum preenchimento manual é necessário.</div>
       <div id="cfg-dashboard-lista" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <!-- TABELAS DE PRECIFICAÇÃO -->
+  <div id="cfg-tabelas" class="cfg-sub" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div class="pg-title" style="font-size:16px">Tabelas de precificação</div>
+        <div class="pg-desc" style="margin-bottom:0">Gerencie tabelas de procedimentos com valores, custos e comissões.</div>
+      </div>
+      <button class="btn btn-primary" onclick="tbNova()">+ Nova tabela</button>
+    </div>
+    <div id="tb-lista-cards" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:0"></div>
+    <div id="tb-editor" style="display:none;margin-top:4px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <button class="btn btn-ghost btn-sm" onclick="tbVoltar()">← Voltar</button>
+        <div style="font-size:15px;font-weight:700" id="tb-editor-nome"></div>
+        <button class="btn btn-ghost btn-sm" onclick="tbRenomear()" style="margin-left:4px">Renomear</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap">
+          <input type="text" id="tb-busca" placeholder="Buscar procedimento…" style="width:220px;font-size:12px" oninput="tbFiltrar()">
+          <select id="tb-filtro-esp" style="font-size:12px;width:180px" onchange="tbFiltrar()"><option value="">Todas as especialidades</option></select>
+          <select id="tb-filtro-ativo" style="font-size:12px;width:130px" onchange="tbFiltrar()">
+            <option value="">Todos</option>
+            <option value="1">Ativos</option>
+            <option value="0">Inativos</option>
+          </select>
+          <div style="margin-left:auto;font-size:12px;color:var(--tx3)" id="tb-count"></div>
+          <button class="btn btn-primary btn-sm" onclick="tbNovoProc()">+ Adicionar procedimento</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px">
+            <thead>
+              <tr style="background:var(--s2);border-bottom:2px solid var(--border)">
+                <th style="padding:9px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em;cursor:pointer" onclick="tbSort('nome')">Procedimento <span id="tb-sort-nome"></span></th>
+                <th style="padding:9px 8px;text-align:left;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em;cursor:pointer" onclick="tbSort('especialidade')">Especialidade <span id="tb-sort-especialidade"></span></th>
+                <th style="padding:9px 8px;text-align:right;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em;cursor:pointer" onclick="tbSort('valor')">Valor <span id="tb-sort-valor"></span></th>
+                <th style="padding:9px 8px;text-align:right;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em">Custo Clínica</th>
+                <th style="padding:9px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em">Valor fixo comissão</th>
+                <th style="padding:9px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em">% Comissão</th>
+                <th style="padding:9px 8px;text-align:right;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em">Total comissão</th>
+                <th style="padding:9px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em">Ativo</th>
+                <th style="width:32px"></th>
+              </tr>
+            </thead>
+            <tbody id="tb-tbody"></tbody>
+          </table>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--border)">
+          <button class="btn btn-ghost btn-sm" id="tb-prev" onclick="tbPagina(-1)">‹ Anterior</button>
+          <span id="tb-pag-info" style="font-size:12px;color:var(--tx2)"></span>
+          <button class="btn btn-ghost btn-sm" id="tb-next" onclick="tbPagina(1)">Próxima ›</button>
+          <select id="tb-per-page" style="font-size:12px;margin-left:auto" onchange="tbRenderTabela()">
+            <option value="20">20 por página</option>
+            <option value="50">50 por página</option>
+            <option value="100">100 por página</option>
+          </select>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -4950,6 +5066,290 @@ let _ppPacienteAtual=null;
 function ppAbrirNovaPendencia(){
   if(_ppPacienteAtual) abrirModalNovaPendencia(_ppPacienteAtual.id,_ppPacienteAtual.nome);
 }
+// ── TABELAS DE PRECIFICAÇÃO ──────────────────────────────────────────────────
+// sk3-tabelas → [{id, nome, procedimentos:[{id,nome,especialidade,valor,custoClinica,comissaoFixo,comissaoFixoAtivo,comissaoPct,ativo}]}]
+
+const TB_PROCS_PADRAO = [{"id":"proc_0001","nome":"0110 – Consulta Inicial: Exame clínico e plano de tratamento","especialidade":"Diagnóstico","valor":180,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0002","nome":"0111 – Urgência horário comercial","especialidade":"Diagnóstico","valor":459.8,"custoClinica":0,"comissaoFixo":115,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0003","nome":"0120 - Urgência; Noturna, Sábado, Domingos ou Feriados","especialidade":"Diagnóstico","valor":665.5,"custoClinica":0,"comissaoFixo":165,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0004","nome":"0130 - Avaliação Técnica: Perícia inicial ou final","especialidade":"Diagnóstico","valor":242,"custoClinica":0,"comissaoFixo":60,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0005","nome":"0140 - Falta a consulta","especialidade":"Diagnóstico","valor":217.8,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0006","nome":"0210 – Periapical","especialidade":"Radiologia","valor":48.4,"custoClinica":0,"comissaoFixo":10,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0007","nome":"0220 - Interproximal (Bite - wing)","especialidade":"Radiologia","valor":48.4,"custoClinica":0,"comissaoFixo":10,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0008","nome":"0230 - Oclusal","especialidade":"Radiologia","valor":54.43,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0009","nome":"0240 - Rx Postero-Anterior","especialidade":"Radiologia","valor":112.53,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0010","nome":"0250 - Rx da ATM Série Completa (três incidências)","especialidade":"Radiologia","valor":209.76,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0011","nome":"0260 - Panorâmica","especialidade":"Radiologia","valor":121,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0012","nome":"0270 - Telerradiograma Com Traçado Computadorizado","especialidade":"Radiologia","valor":135.41,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0013","nome":"0280 - Telerradiografia Sem Traçado Computadorizado","especialidade":"Radiologia","valor":112.5,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0014","nome":"0290 - Rx da mão (Carpal)","especialidade":"Radiologia","valor":121.83,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0015","nome":"0300 - Modelos Ortodônticos (par)","especialidade":"Radiologia","valor":121,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0016","nome":"0310 - Slides (unidade)","especialidade":"Radiologia","valor":26.49,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0017","nome":"0320 - Fotografia (unidade)","especialidade":"Radiologia","valor":26.04,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0018","nome":"0410 - Teste de Risco de Cárie","especialidade":"Radiologia","valor":80.38,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0019","nome":"0510 - Profilaxia: Polimento coronário (4 hemiarcadas) + kit","especialidade":"Prevenção","valor":352,"custoClinica":0,"comissaoFixo":100,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0020","nome":"0520 - Orientação de higiene bucal","especialidade":"Prevenção","valor":108.9,"custoClinica":0,"comissaoFixo":27,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0021","nome":"0530 - Aplicação tópica de flúor (excluindo profilaxia)","especialidade":"Prevenção","valor":108.9,"custoClinica":0,"comissaoFixo":27,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0022","nome":"0540 - Controle de placa bacteriana (por sessão)","especialidade":"Prevenção","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0023","nome":"0550 - Trat. de Gengivite Terapêutica básica (2 hemiarcadas)","especialidade":"Periodontia","valor":350.9,"custoClinica":0,"comissaoFixo":80,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0024","nome":"0610 - Aplicação Tópica de Flúor-Verniz (4 hemiarcadas)","especialidade":"Odontopediatria","valor":108.9,"custoClinica":0,"comissaoFixo":30,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0025","nome":"0620 - Aplicação de Selante (por dente)","especialidade":"Odontopediatria","valor":254.1,"custoClinica":0,"comissaoFixo":80,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0026","nome":"0630 - Aplicação de Selante - Técnica invasiva (por elemento)","especialidade":"Odontopediatria","valor":254.1,"custoClinica":0,"comissaoFixo":80,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0027","nome":"0640 - Aplicação de Cariostático - 1 sessão","especialidade":"Odontopediatria","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0028","nome":"0650 - Remineralização - Fluorterapia (4 sessões)","especialidade":"Odontopediatria","valor":302.5,"custoClinica":0,"comissaoFixo":80,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0029","nome":"0660 - Adequação do meio Bucal com Ionômero de vidro (por hemiarcada)","especialidade":"Odontopediatria","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0030","nome":"0670 - Adequação do meio Bucal com IRM (por hemiarcada)","especialidade":"Odontopediatria","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0031","nome":"0680 - Restauração de ionômero de vidro (1 face)","especialidade":"Odontopediatria","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0032","nome":"0690 - Restauração Preventiva (ionômero + selante)","especialidade":"Odontopediatria","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0033","nome":"0700 - Coroa de aço","especialidade":"Odontopediatria","valor":266.29,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0034","nome":"0710 - Pulpotomia","especialidade":"Odontopediatria","valor":459.8,"custoClinica":0,"comissaoFixo":110,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0035","nome":"0720 - Tratamento endodôntico em Decíduos","especialidade":"Odontopediatria","valor":544.5,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0036","nome":"0730 - Exodontia de dentes Decíduos","especialidade":"Odontopediatria","valor":217.8,"custoClinica":0,"comissaoFixo":80,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0037","nome":"0740 - Mantenedor de Espaço","especialidade":"Odontopediatria","valor":484,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0038","nome":"0750 - Placa de Mordida","especialidade":"Odontopediatria","valor":484,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0039","nome":"0760 - Plano inclinado","especialidade":"Odontopediatria","valor":484,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0040","nome":"0770 - Condicionamento em odontopediatria (por sessão)","especialidade":"Odontopediatria","valor":105.91,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0041","nome":"0780 - Remoção freio lingual","especialidade":"Odontopediatria","valor":968,"custoClinica":0,"comissaoFixo":380,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0042","nome":"0790 - Ulectomia","especialidade":"Odontopediatria","valor":302.5,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0043","nome":"0800 - Restauração temporária","especialidade":"Odontopediatria","valor":217.8,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0044","nome":"0960 - Rest. Resina Fotopolimerizável - Classe I (Oclusal)","especialidade":"Dentística","valor":459.8,"custoClinica":0,"comissaoFixo":120,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0045","nome":"0970 - Rest. Resina Fotopolimerizável - Classe II","especialidade":"Dentística","valor":665.5,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0046","nome":"0980 - Rest. Resina Fotopolimerizável - Classe III ou IV (estética)","especialidade":"Dentística","valor":665.5,"custoClinica":0,"comissaoFixo":300,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0047","nome":"0981 - Rest. Resina Fotopolimerizável - Classe V","especialidade":"Dentística","valor":450,"custoClinica":0,"comissaoFixo":150,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0048","nome":"0985 - Reparo restauração em resina composta (por dente)","especialidade":"Dentística","valor":423.5,"custoClinica":0,"comissaoFixo":110,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0049","nome":"0990 - Faceta em Resina (subtrato escurecido)","especialidade":"Dentística","valor":1089,"custoClinica":0,"comissaoFixo":350,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0050","nome":"0990 - Faceta em Resina (subtrato favorável)","especialidade":"Dentística","valor":943.8,"custoClinica":0,"comissaoFixo":300,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0051","nome":"1010 - Pino de fibra + Núcleo de Preench. Res. Fotopolimerizável","especialidade":"Dentística","valor":423.5,"custoClinica":0,"comissaoFixo":105,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0052","nome":"1030 - Ajustes Oclusal (por sessão)","especialidade":"Dentística","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0053","nome":"1050 - Clareamento Supervisionado (caseiro) TRAT. COMPLETO","especialidade":"Dentística","valor":1149.5,"custoClinica":0,"comissaoFixo":180,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0054","nome":"1062 - Retoque clareamento caseiro (1 bisnaga, com placa)","especialidade":"Dentística","valor":508.2,"custoClinica":0,"comissaoFixo":80,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0055","nome":"1065 - Retoque clareamento caseiro (1 bisnaga, sem placa)","especialidade":"Dentística","valor":217.8,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0056","nome":"1070 - Clareamento dental com moldeira de uso caseiro (por arcada)","especialidade":"Dentística","valor":574.75,"custoClinica":0,"comissaoFixo":90,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0057","nome":"1090 - Restauração temporária","especialidade":"Dentística","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0058","nome":"1100 - Clareamento dental em consultório (POR SESSÃO)","especialidade":"Dentística","valor":665.5,"custoClinica":0,"comissaoFixo":100,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0059","nome":"1105 - Restauração/reconstrução semi-indireta (sem elevação margem)","especialidade":"Dentística","valor":1210,"custoClinica":0,"comissaoFixo":400,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0060","nome":"1106 - Restauração/reconstrução semi-indireta (com elevação margem)","especialidade":"Dentística","valor":1452,"custoClinica":0,"comissaoFixo":480,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0061","nome":"1110 - Restauração Inlay e Onlay de Porcelana","especialidade":"Dentística","valor":2541,"custoClinica":0,"comissaoFixo":350,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0062","nome":"2010 - Tratamento Endodôntico Incisivo / Canino","especialidade":"Endodontia","valor":1512.5,"custoClinica":0,"comissaoFixo":300,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0063","nome":"2020 - Tratamento Endodôntico de Pré-Molar","especialidade":"Endodontia","valor":1512.5,"custoClinica":0,"comissaoFixo":300,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0064","nome":"2030 - Tratamento Endodôntico de Molar","especialidade":"Endodontia","valor":1512.5,"custoClinica":0,"comissaoFixo":300,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0065","nome":"2040 - Retratamento Endodôntico de Incisivo / Canino","especialidade":"Endodontia","valor":1875.5,"custoClinica":0,"comissaoFixo":360,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0066","nome":"2050 - Retratamento Endodôntico de Pré-Molar","especialidade":"Endodontia","valor":1875.5,"custoClinica":0,"comissaoFixo":360,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0067","nome":"2060 - Retratamento Endodôntico de Molar","especialidade":"Endodontia","valor":1875.5,"custoClinica":0,"comissaoFixo":360,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0068","nome":"2070 - Tratamento de Perfuração","especialidade":"Endodontia","valor":2299,"custoClinica":0,"comissaoFixo":380,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0069","nome":"2080 - Remoção de Núcleo Intrarradicular (por elem.)","especialidade":"Prótese","valor":423.5,"custoClinica":0,"comissaoFixo":105,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0070","nome":"2090 - Capeamento Pulpar","especialidade":"Endodontia","valor":149.94,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0071","nome":"2100 - Pulpotomia","especialidade":"Endodontia","valor":484,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0072","nome":"2120 - Preparo para Núcleo Intrarradicular","especialidade":"Endodontia","valor":181.5,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0073","nome":"2130 - Trat. Dentes com Rizogênese Incompleta (por sessão)","especialidade":"Endodontia","valor":459.8,"custoClinica":0,"comissaoFixo":110,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0074","nome":"2140 - Urgência Endo. Pulpect.","especialidade":"Endodontia","valor":459.8,"custoClinica":0,"comissaoFixo":115,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0075","nome":"2150 - Apicetomia de caninos ou incisivos","especialidade":"Endodontia","valor":1210,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0076","nome":"2160 - Apicetomia de caninos ou incisivos c/ obturação retrógrada","especialidade":"Endodontia","valor":1815,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0077","nome":"2170 - Apicetomia de Pré-molares","especialidade":"Endodontia","valor":1210,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0078","nome":"2180 - Apicetomia de pré-molares c/ Obturação retrógrada","especialidade":"Endodontia","valor":1815,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0079","nome":"2190 - Apicetomia de Molares","especialidade":"Endodontia","valor":1452,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0080","nome":"2200 - Apicetomia de Molares c/ obturação retrógrada","especialidade":"Endodontia","valor":2178,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0081","nome":"2210 - Remoção de corpo Estranho Intracanal por conduto","especialidade":"Endodontia","valor":459.8,"custoClinica":0,"comissaoFixo":115,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0082","nome":"2220 - Curativo de Demora","especialidade":"Endodontia","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0083","nome":"2230 - Reembasamento Provisório","especialidade":"Endodontia","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0084","nome":"2240 - Restauração Temporária","especialidade":"Endodontia","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0085","nome":"3010 - Tratamento não Cirúrg. Periodontite Leve (por seg.)","especialidade":"Periodontia","valor":786.5,"custoClinica":0,"comissaoFixo":195,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0086","nome":"3011 - Biópsia (sem laboratório)","especialidade":"Periodontia","valor":847,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0087","nome":"3020 - Tratamento não Cirúrg. Periodontite Moderada (por seg.)","especialidade":"Periodontia","valor":1210,"custoClinica":0,"comissaoFixo":350,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0088","nome":"3030 - Tratamento não Cirúrg. Periodontite Grave (por seg.)","especialidade":"Periodontia","valor":1815,"custoClinica":0,"comissaoFixo":500,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0089","nome":"3035 - Terapia Periodontal de Suporte","especialidade":"Periodontia","valor":459.8,"custoClinica":0,"comissaoFixo":115,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0090","nome":"3040 - Tratamento de Processo Agudo (por sessão)","especialidade":"Periodontia","valor":459.8,"custoClinica":0,"comissaoFixo":115,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0091","nome":"3050 - Controle de placa bacteriana (por sessão)","especialidade":"Periodontia","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0092","nome":"3060 - Dessensibilização Dentária (por segmento)","especialidade":"Periodontia","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0093","nome":"3070 - Imobiliz. Dentár. com Res. Fotopolimerizável (3 dent.)","especialidade":"Periodontia","valor":363,"custoClinica":0,"comissaoFixo":100,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0094","nome":"3080 - Ajuste Oclusal (por sessão)","especialidade":"Periodontia","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0095","nome":"3090 - Remoção de Fatores de Retenção (por arco)","especialidade":"Periodontia","valor":302.5,"custoClinica":0,"comissaoFixo":80,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0096","nome":"3110 - Proservação Pré-Cirúrgica (por segmento)","especialidade":"Periodontia","valor":181.5,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0097","nome":"3120 - Aumento de coroa protético (por dente)","especialidade":"Periodontia","valor":822.8,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0098","nome":"3121 - Aumento de coroa estético (canino a canino)","especialidade":"Periodontia","valor":5808,"custoClinica":0,"comissaoFixo":800,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0099","nome":"3130 - Raspagem em campo aberto (por região)","especialidade":"Periodontia","valor":968,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0100","nome":"3140 - Sepultamento Radicular (por raiz)","especialidade":"Periodontia","valor":726,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0101","nome":"3150 - Cunha Distal (por elemento)","especialidade":"Periodontia","valor":726,"custoClinica":0,"comissaoFixo":180,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0102","nome":"3160 - Extensão de Vestíbulo (por segmento)","especialidade":"Periodontia","valor":327.45,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0103","nome":"3170 - Enxerto Pediculado (por elemento)","especialidade":"Periodontia","valor":314.16,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0104","nome":"3180 - Enxerto Livre (por região)","especialidade":"Periodontia","valor":2299,"custoClinica":0,"comissaoFixo":500,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0105","nome":"3190 - Enxerto conjuntivo subepitelial (por região)","especialidade":"Periodontia","valor":2299,"custoClinica":0,"comissaoFixo":500,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0106","nome":"3191 - Enxerto conjuntivo com biomaterial importado (por região)","especialidade":"Periodontia","valor":3872,"custoClinica":0,"comissaoFixo":350,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0107","nome":"3200 - Frenectomia ou Bridectomia","especialidade":"Periodontia","valor":847,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0108","nome":"3210 - Odonto - Secção (por elemento)","especialidade":"Periodontia","valor":304.32,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0109","nome":"3220 - Amput. Radiocular s/ obturação Retrógrada","especialidade":"Periodontia","valor":1210,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0110","nome":"3230 - Amput. Radiocular c/ obturação Retrógrada","especialidade":"Periodontia","valor":1815,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0111","nome":"3240 - Manutenção do Tratamento Cirúrgico","especialidade":"Periodontia","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0112","nome":"3280 - Aumento de coroa Clínica (por dente)","especialidade":"Periodontia","valor":822.8,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0113","nome":"3290 - Tratamento Regenerativo com uso de Barreira (ROG)","especialidade":"Periodontia","valor":14800,"custoClinica":0,"comissaoFixo":1000,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0114","nome":"3300 - Tratamento Regenerativo com enxerto de osso autógeno","especialidade":"Periodontia","valor":1210,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0115","nome":"3310 - Tratamento Regenerativo com materiais enxertantes","especialidade":"Periodontia","valor":2299,"custoClinica":0,"comissaoFixo":500,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0116","nome":"3320 - Manutenção do Trat. Cirúrgico Regenerativo (por sessão)","especialidade":"Periodontia","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0117","nome":"3330 - Restauração temporária","especialidade":"Periodontia","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0118","nome":"3340 - Diagnóstico da Halitose","especialidade":"Periodontia","valor":459.8,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0119","nome":"3350 - Tratamento da Halitose","especialidade":"Periodontia","valor":1815,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0120","nome":"4000 - Faceta ou lente de contato (porcelana E-max)","especialidade":"Prótese","valor":2541,"custoClinica":0,"comissaoFixo":400,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0121","nome":"4005 - Planejamento Mock-up para 6 dentes","especialidade":"Prótese","valor":1452,"custoClinica":0,"comissaoFixo":100,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0122","nome":"4010 - Planejamento Mock-up acima de 6 dentes (até 12)","especialidade":"Prótese","valor":2178,"custoClinica":0,"comissaoFixo":150,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0123","nome":"4020 - Enceramento de Diagnóstico (por elemento)","especialidade":"Prótese","valor":181.5,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0124","nome":"4030 - Ajuste Oclusal (por sessão)","especialidade":"Prótese","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0125","nome":"4036 - Extração atraumática + enxerto ósseo","especialidade":"Cirurgia","valor":1800,"custoClinica":0,"comissaoFixo":400,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0126","nome":"4050 - Restauração Inlay e Onlay de Porcelana","especialidade":"Prótese","valor":2541,"custoClinica":0,"comissaoFixo":350,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0127","nome":"4060 - Remoção e Restaurações Metálicas ou Coroas","especialidade":"Prótese","valor":423.5,"custoClinica":0,"comissaoFixo":105,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0128","nome":"4070 - Recolocação de Restauração Metálica Fundida ou Coroas","especialidade":"Prótese","valor":181.5,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0129","nome":"4080 - Pino de fibra de vidro + núcleo de preenchimento resina","especialidade":"Prótese","valor":423.5,"custoClinica":0,"comissaoFixo":105,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0130","nome":"4090 - Coroa Provisória","especialidade":"Prótese","valor":822.8,"custoClinica":0,"comissaoFixo":120,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0131","nome":"4100 - Coroa Provisória Prensada em Resina","especialidade":"Prótese","valor":786.5,"custoClinica":0,"comissaoFixo":120,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0132","nome":"4110 - Reembasamento Provisório","especialidade":"Prótese","valor":363,"custoClinica":0,"comissaoFixo":100,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0133","nome":"4130 - Coroa Total Cerâmica pura","especialidade":"Prótese","valor":2541,"custoClinica":0,"comissaoFixo":350,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0134","nome":"4135 - Coroa total porcelana pura anterior (1 dente)","especialidade":"Prótese","valor":3025,"custoClinica":0,"comissaoFixo":400,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0135","nome":"4140 - Coroa Total porcelana Metalo Cerâmica","especialidade":"Prótese","valor":1936,"custoClinica":0,"comissaoFixo":300,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0136","nome":"4161 - Coroa porcelana sobre implante HE Nacional","especialidade":"Prótese","valor":1815,"custoClinica":0,"comissaoFixo":250,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0137","nome":"4162 - Coroa porcelana sobre implante Neodent GM","especialidade":"Prótese","valor":2395.8,"custoClinica":0,"comissaoFixo":280,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0138","nome":"4163 - Coroa porcelana sobre implante Importado","especialidade":"Prótese","valor":3388,"custoClinica":0,"comissaoFixo":300,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0139","nome":"4164 - Coroa sobre implante provisória","especialidade":"Prótese","valor":968,"custoClinica":0,"comissaoFixo":140,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0140","nome":"4170 - Protocolo inferior acrílico (Neodent Acqua GM)","especialidade":"Prótese","valor":18150,"custoClinica":0,"comissaoFixo":500,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0141","nome":"4171 - Protocolo superior acrílico (6 implantes importados)","especialidade":"Prótese","valor":24200,"custoClinica":0,"comissaoFixo":500,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0142","nome":"4172 - Protocolo superior acrílico (6 implantes Neodent Acqua)","especialidade":"Prótese","valor":19360,"custoClinica":0,"comissaoFixo":500,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0143","nome":"4173 - Protocolo superior cerâmico importado (com implantes)","especialidade":"Prótese","valor":39930,"custoClinica":0,"comissaoFixo":650,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0144","nome":"4174 - Protocolo superior/inferior cerâmico nacional (com implantes)","especialidade":"Prótese","valor":32670,"custoClinica":0,"comissaoFixo":650,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0145","nome":"4175 - Protocolo inferior acrílico (4 implantes importados)","especialidade":"Prótese","valor":21780,"custoClinica":0,"comissaoFixo":500,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0146","nome":"4180 - Overdenture nacional inferior dentes trilux","especialidade":"Prótese","valor":8349,"custoClinica":0,"comissaoFixo":400,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0147","nome":"4181 - Overdenture nacional inferior dentes ivoclar","especialidade":"Prótese","valor":9922,"custoClinica":0,"comissaoFixo":400,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0148","nome":"4182 - Overdenture importada inferior dentes trilux","especialidade":"Prótese","valor":10769,"custoClinica":0,"comissaoFixo":400,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0149","nome":"4183 - Overdenture importada inferior dentes ivoclar","especialidade":"Prótese","valor":12705,"custoClinica":0,"comissaoFixo":400,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0150","nome":"4190 - Dente do protocolo importado (por arco)","especialidade":"Prótese","valor":1452,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0151","nome":"4195 - Reparo Prótese Total ou Parcial (envio para laboratório)","especialidade":"Prótese","valor":786.5,"custoClinica":0,"comissaoFixo":70,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0152","nome":"4196 - Reparo Prótese Total ou Parcial (sem envio lab)","especialidade":"Prótese","valor":484,"custoClinica":0,"comissaoFixo":80,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0153","nome":"4200 - PPR comum / dente nacional acrílico (por arco)","especialidade":"Prótese","valor":2541,"custoClinica":0,"comissaoFixo":300,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0154","nome":"4210 - PPR caracterizada / dente nacional acrílico (por arcada)","especialidade":"Prótese","valor":3509,"custoClinica":0,"comissaoFixo":250,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0155","nome":"4220 - PT caracterizada / dente nacional acrílico (por arcada)","especialidade":"Prótese","valor":3388,"custoClinica":0,"comissaoFixo":400,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0156","nome":"4230 - PT caracterizada / dente importado acrílico (por arcada)","especialidade":"Prótese","valor":4598,"custoClinica":0,"comissaoFixo":400,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0157","nome":"4235 - PT ou PPR provisória (com ou sem grampo)","especialidade":"Prótese","valor":968,"custoClinica":0,"comissaoFixo":60,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0158","nome":"4240 - Onlay ou Inlay porcelana pura (Emax)","especialidade":"Prótese","valor":2541,"custoClinica":0,"comissaoFixo":350,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0159","nome":"4250 - Placa oclusal estabilizadora (bruxismo) - rígida","especialidade":"Prótese","valor":1573,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0160","nome":"4260 - Remoção núcleo ou pinos","especialidade":"Prótese","valor":423.5,"custoClinica":0,"comissaoFixo":105,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0161","nome":"4265 - Remoção de coroa antiga","especialidade":"Prótese","valor":423.5,"custoClinica":0,"comissaoFixo":105,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0162","nome":"4280 - Cimentação provisório","especialidade":"Prótese","valor":217.8,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0163","nome":"4290 - Limpeza protocolo superior ou inferior","especialidade":"Prótese","valor":650,"custoClinica":0,"comissaoFixo":170,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0164","nome":"4291 - Limpeza prótese removível","especialidade":"Prótese","valor":229.9,"custoClinica":0,"comissaoFixo":70,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0165","nome":"4295 - Troca parafuso oclusal da prótese (por dente)","especialidade":"Prótese","valor":121,"custoClinica":0,"comissaoFixo":15,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0166","nome":"5 lesões de laser + Agulhamento","especialidade":"DTM e Dor orofacial","valor":2420,"custoClinica":0,"comissaoFixo":600,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0167","nome":"5010 - Exodontia via alveolar simples","especialidade":"Cirurgia","valor":592.9,"custoClinica":0,"comissaoFixo":100,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0168","nome":"5020 - Exodontia terceiro molar irrompido","especialidade":"Cirurgia","valor":605,"custoClinica":0,"comissaoFixo":120,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0169","nome":"5030 - Exodontia (raiz residual)","especialidade":"Cirurgia","valor":592.9,"custoClinica":0,"comissaoFixo":100,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0170","nome":"5035 - Exodontia terceiro molar incluso","especialidade":"Cirurgia","valor":822.8,"custoClinica":0,"comissaoFixo":150,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0171","nome":"5040 - Alveoloplastia (por segmento)","especialidade":"Cirurgia","valor":423.5,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0172","nome":"5050 - Exodontia molar incluso (próximo nervo ou seio maxilar)","especialidade":"Cirurgia","valor":871.2,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0173","nome":"5060 - Biópsia (sem laboratório)","especialidade":"Cirurgia","valor":847,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0174","nome":"5070 - Sulcoplastia (por elemento)","especialidade":"Cirurgia","valor":227.03,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0175","nome":"5080 - Cirurgia Para Torus Palatino","especialidade":"Cirurgia","valor":1452,"custoClinica":0,"comissaoFixo":300,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0176","nome":"5090 - Cirurgia Para Torus Mandibular - Unilateral","especialidade":"Cirurgia","valor":847,"custoClinica":0,"comissaoFixo":150,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0177","nome":"5100 - Cirurgia Para Torus Mandibular - Bilateral","especialidade":"Cirurgia","valor":1694,"custoClinica":0,"comissaoFixo":300,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0178","nome":"5170 - Frenectomia ou Bridectomia","especialidade":"Cirurgia","valor":847,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0179","nome":"5180 - Remoção de Dentes Inclusos ou Impactados","especialidade":"Cirurgia","valor":713.9,"custoClinica":0,"comissaoFixo":150,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0180","nome":"5200 - Tratamento de Lesão Cística (enucleação)","especialidade":"Cirurgia","valor":401.14,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0181","nome":"5300 - Excisão de Mucocele de Desenvolvimento","especialidade":"Cirurgia","valor":847,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0182","nome":"5310 - Drenagem de Abscesso","especialidade":"Cirurgia","valor":701.8,"custoClinica":0,"comissaoFixo":150,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0183","nome":"5320 - Ulectomia","especialidade":"Cirurgia","valor":847,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0184","nome":"6030 - Manutenção de Aparelho Ortodôntico Fixo","especialidade":"Ortodontia","valor":200,"custoClinica":0,"comissaoFixo":60,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0185","nome":"6310 - Planejamento em Ortodontia","especialidade":"Ortodontia","valor":605,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0186","nome":"6311 - Tratamento completo aparelho convencional metálico (1-2 anos)","especialidade":"Ortodontia","valor":9000,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0187","nome":"6312 - Tratamento completo aparelho convencional estético (1-2 anos)","especialidade":"Ortodontia","valor":9680,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0188","nome":"6313 - Tratamento completo aparelho autoligado metal (1-2 anos)","especialidade":"Ortodontia","valor":10890,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0189","nome":"6314 - Tratamento completo aparelho convencional metálico (+ 2 anos)","especialidade":"Ortodontia","valor":10890,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0190","nome":"6315 - Tratamento completo aparelho convencional estético (+ 2 anos)","especialidade":"Ortodontia","valor":12100,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0191","nome":"6316 - Tratamento completo aparelho autoligado metal (+ 2 anos)","especialidade":"Ortodontia","valor":13310,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0192","nome":"6317 - Tratamento completo Invisalign avançado (acima 1 ano e meio)","especialidade":"Ortodontia","valor":8250,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0193","nome":"6318 - Tratamento completo Invisalign moderado (até 1 ano e meio)","especialidade":"Ortodontia","valor":7480,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0194","nome":"6319 - Tratamento completo Invisalign lite (4 a 6 meses)","especialidade":"Ortodontia","valor":6314,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0195","nome":"6320 - Contenção acrílico nacional (por arco)","especialidade":"Ortodontia","valor":665.5,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0196","nome":"6321 - Contenção Vivera (por arco)","especialidade":"Ortodontia","valor":800,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0197","nome":"6322 - Alinhador Invisalign adicional","especialidade":"Ortodontia","valor":1815,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0198","nome":"6324 - Remoção aparelho fixo (por arco)","especialidade":"Ortodontia","valor":302.5,"custoClinica":0,"comissaoFixo":80,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0199","nome":"6400 - Implante nacional HE","especialidade":"Implante","valor":1694,"custoClinica":0,"comissaoFixo":250,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0200","nome":"6410 - Implante Neodent Acqua GM","especialidade":"Implante","valor":2395.8,"custoClinica":0,"comissaoFixo":300,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0201","nome":"6420 - Implante Importado Straumann","especialidade":"Implante","valor":3025,"custoClinica":0,"comissaoFixo":350,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0202","nome":"6430 - Levantamento do seio maxilar (unilateral, 3 dentes)","especialidade":"Implante","valor":4235,"custoClinica":0,"comissaoFixo":350,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0203","nome":"6431 - Levantamento do seio maxilar (unilateral, 1 dente)","especialidade":"Implante","valor":3500,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0204","nome":"6432 - Levantamento complexo do seio maxilar (unilateral, até 3 dentes)","especialidade":"Implante","valor":8700,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0205","nome":"6440 - Enxerto ósseo (preservação rebordo alveolar)","especialidade":"Implante","valor":1210,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0206","nome":"6450 - Remoção implante dentário (por implante)","especialidade":"Implante","valor":1452,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0207","nome":"8000 - Botox região testa, glabela e redor dos olhos","especialidade":"HOF","valor":1573,"custoClinica":0,"comissaoFixo":150,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0208","nome":"8010 - Botox orbicular do olho","especialidade":"HOF","valor":484,"custoClinica":0,"comissaoFixo":80,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0209","nome":"8020 - Botox masseter (bruxismo)","especialidade":"HOF","valor":1452,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0210","nome":"8030 - Botox sorriso gengival","especialidade":"HOF","valor":484,"custoClinica":0,"comissaoFixo":80,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0211","nome":"8040 - Preenchimento ácido hialurônico - nariz","especialidade":"HOF","valor":1000,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0212","nome":"8041 - Preenchimento ácido hialurônico - lábio","especialidade":"HOF","valor":1400,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0213","nome":"8042 - Preenchimento ácido hialurônico - mento","especialidade":"HOF","valor":1000,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0214","nome":"8043 - Preenchimento ácido hialurônico - fossa piriforme","especialidade":"HOF","valor":1000,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0215","nome":"8044 - Preenchimento ácido hialurônico - marionete","especialidade":"HOF","valor":1000,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0216","nome":"8045 - Preenchimento ácido hialurônico - olheiras","especialidade":"HOF","valor":1000,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0217","nome":"8050 - Microagulhamento (por sessão)","especialidade":"HOF","valor":423.5,"custoClinica":0,"comissaoFixo":60,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0218","nome":"8060 - Bioestimulador de colágeno Sculptra","especialidade":"HOF","valor":2662,"custoClinica":0,"comissaoFixo":300,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0219","nome":"8061 - Bioestimulador de colágeno Radiesse","especialidade":"HOF","valor":2662,"custoClinica":0,"comissaoFixo":300,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0220","nome":"8070 - Peeling químico (por sessão)","especialidade":"HOF","valor":121,"custoClinica":0,"comissaoFixo":30,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0221","nome":"Acompanhamento especialista","especialidade":"Periodontia","valor":605,"custoClinica":0,"comissaoFixo":350,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0222","nome":"Avaliação DTM e dor","especialidade":"DTM e Dor orofacial","valor":480,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0223","nome":"Bichectomia","especialidade":"Harmonização Orofacial","valor":2541,"custoClinica":0,"comissaoFixo":500,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0224","nome":"Cimentação de porcelana","especialidade":"Prótese","valor":459.8,"custoClinica":0,"comissaoFixo":80,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0225","nome":"Clareamento interno (por dente)","especialidade":"Dentística","valor":369.05,"custoClinica":0,"comissaoFixo":75,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0226","nome":"Consulta + Limpeza infantil e aplicação tópica de flúor","especialidade":"Odontopediatria","valor":300,"custoClinica":0,"comissaoFixo":100,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0227","nome":"Consulta infantil com especialista","especialidade":"Odontopediatria","valor":217.8,"custoClinica":0,"comissaoFixo":80,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0228","nome":"Consulta Nevralgia (medicamento)","especialidade":"DTM e Dor orofacial","valor":580.8,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0229","nome":"Contenção reta 3x3 (metal)","especialidade":"Ortodontia","valor":459.8,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0230","nome":"Distalizador de Carriere","especialidade":"Ortodontia","valor":726,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0231","nome":"Escaneamento dos arcos - Itero","especialidade":"Exame Clínico","valor":220,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0232","nome":"Escova elétrica Philips Sonic pro 50","especialidade":"Prevenção","valor":544.5,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0233","nome":"Instalação aparelho fixo metálico e planejamento","especialidade":"Ortodontia","valor":1500,"custoClinica":0,"comissaoFixo":150,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0234","nome":"Laser Lavieen + PDRN","especialidade":"HOF","valor":667.92,"custoClinica":0,"comissaoFixo":135,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0235","nome":"Laser por sessão (para sensibilidade)","especialidade":"DTM e Dor orofacial","valor":250,"custoClinica":0,"comissaoFixo":150,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0236","nome":"Levantamento de margem gengival","especialidade":"Dentística","valor":380,"custoClinica":0,"comissaoFixo":150,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0237","nome":"Limpeza com técnica PDT e laserterapia","especialidade":"Cirurgia","valor":680,"custoClinica":0,"comissaoFixo":150,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0238","nome":"Manutenção e polimento de resinas (por arco)","especialidade":"Dentística","valor":350,"custoClinica":0,"comissaoFixo":150,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0239","nome":"Mini-implante para ortodontia (cada)","especialidade":"Ortodontia","valor":484,"custoClinica":0,"comissaoFixo":100,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0240","nome":"Ortopedia infantil","especialidade":"Ortodontia","valor":5600,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0241","nome":"Parendodôntica (com biomaterial)","especialidade":"Endodontia","valor":3388,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0242","nome":"Pista oclusal (levantamento mordida orto)","especialidade":"Ortodontia","valor":484,"custoClinica":0,"comissaoFixo":150,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0243","nome":"Placa apneia + 3 sessões de acompanhamento","especialidade":"DTM e Dor orofacial","valor":3200,"custoClinica":0,"comissaoFixo":800,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0244","nome":"Placa oclusal rígida","especialidade":"DTM e Dor orofacial","valor":1331,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0245","nome":"PPR caracterizada / dente nacional","especialidade":"Prótese","valor":3025,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0246","nome":"Preenchimento de núcleo com resina composta","especialidade":"Prótese","valor":230,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0247","nome":"Reanatomização / acréscimo estratégico de resina","especialidade":"Dentística","valor":943.8,"custoClinica":0,"comissaoFixo":300,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0248","nome":"Sessão de laser + Agulhamento","especialidade":"DTM e Dor orofacial","valor":580.8,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0249","nome":"Técnica BOPT por dente","especialidade":"Cirurgia","valor":150,"custoClinica":0,"comissaoFixo":50,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0250","nome":"Técnica BOPT por quadrante (parte perio)","especialidade":"Periodontia","valor":302.5,"custoClinica":0,"comissaoFixo":125,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0251","nome":"Terceiro molar incluso (alta complexidade)","especialidade":"Cirurgia","valor":847,"custoClinica":0,"comissaoFixo":200,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0252","nome":"Tratamento DTM completo (com ajuste da placa)","especialidade":"DTM e Dor orofacial","valor":3025,"custoClinica":0,"comissaoFixo":1000,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0253","nome":"Tratamento Invisalign Touch-Up","especialidade":"Ortodontia","valor":4500,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0254","nome":"Troca borrachas do o-ring nacional (por unidade)","especialidade":"Prótese","valor":217.8,"custoClinica":0,"comissaoFixo":60,"comissaoFixoAtivo":true,"comissaoPct":0,"ativo":true},{"id":"proc_0255","nome":"Troca de dentes do protocolo acrílico (dentes importados)","especialidade":"Prótese","valor":4840,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true},{"id":"proc_0256","nome":"Troca dentes do protocolo acrílico (dentes nacionais)","especialidade":"Prótese","valor":3630,"custoClinica":0,"comissaoFixo":0,"comissaoFixoAtivo":false,"comissaoPct":0,"ativo":true}];
+
+function _tbTabelas(){ return carregarLS('sk3-tabelas',[]); }
+function _tbSalvar(list){ salvarLS('sk3-tabelas',list); }
+
+function _tbInit(){
+  const list=_tbTabelas();
+  if(!list.find(t=>t.id==='tb_sekai')){
+    list.unshift({id:'tb_sekai',nome:'Tabela Sekai Odontologia',procedimentos:TB_PROCS_PADRAO.map(p=>({...p}))});
+    _tbSalvar(list);
+  }
+}
+
+let _tbAtualId=null;
+let _tbProcAtualIdx=null;
+let _tbFiltrados=[];
+let _tbPagAtual=1;
+let _tbSortCol='nome';
+let _tbSortDir=1;
+
+function tbRenderLista(){
+  _tbInit();
+  const list=_tbTabelas();
+  const wrap=document.getElementById('tb-lista-cards');
+  if(!wrap) return;
+  document.getElementById('tb-editor').style.display='none';
+  wrap.style.display='flex';
+  wrap.innerHTML=list.map(t=>{
+    const qtd=t.procedimentos?t.procedimentos.length:0;
+    const ativos=t.procedimentos?t.procedimentos.filter(p=>p.ativo!==false).length:0;
+    return `<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r10);padding:16px 18px;min-width:220px;cursor:pointer;transition:border-color .12s,box-shadow .12s;box-shadow:var(--shadow)" onclick="tbAbrirEditor('${t.id}')" onmouseenter="this.style.borderColor='var(--ac)'" onmouseleave="this.style.borderColor='var(--border)'">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">${t.nome}</div>
+      <div style="font-size:12px;color:var(--tx3)">${ativos} ativos · ${qtd} no total</div>
+      <div style="margin-top:10px;font-size:11px;color:var(--ac);font-weight:600">Abrir tabela →</div>
+    </div>`;
+  }).join('');
+  if(!list.length) wrap.innerHTML='<div class="empty">Nenhuma tabela criada.</div>';
+}
+
+function tbNova(){
+  const nome=prompt('Nome da nova tabela:');
+  if(!nome||!nome.trim()) return;
+  const list=_tbTabelas();
+  list.push({id:'tb_'+Date.now(),nome:nome.trim(),procedimentos:[]});
+  _tbSalvar(list);
+  tbRenderLista();
+}
+
+function tbAbrirEditor(id){
+  _tbInit();
+  _tbAtualId=id;
+  _tbPagAtual=1;
+  _tbSortCol='nome';
+  _tbSortDir=1;
+  const t=_tbTabelas().find(x=>x.id===id);
+  if(!t) return;
+  document.getElementById('tb-lista-cards').style.display='none';
+  document.getElementById('tb-editor').style.display='block';
+  document.getElementById('tb-editor-nome').textContent=t.nome;
+  // populate esp datalist
+  const esps=[...new Set((t.procedimentos||[]).map(p=>p.especialidade).filter(Boolean))].sort();
+  const dl=document.getElementById('tbp-esp-list');
+  if(dl) dl.innerHTML=esps.map(e=>`<option value="${e}">`).join('');
+  // populate filter esp
+  const sel=document.getElementById('tb-filtro-esp');
+  if(sel) sel.innerHTML='<option value="">Todas as especialidades</option>'+esps.map(e=>`<option value="${e}">${e}</option>`).join('');
+  tbFiltrar();
+}
+
+function tbVoltar(){
+  _tbAtualId=null;
+  document.getElementById('tb-editor').style.display='none';
+  document.getElementById('tb-lista-cards').style.display='flex';
+  tbRenderLista();
+}
+
+function tbRenomear(){
+  const t=_tbTabelas().find(x=>x.id===_tbAtualId);
+  if(!t) return;
+  const novo=prompt('Novo nome:',t.nome);
+  if(!novo||!novo.trim()) return;
+  t.nome=novo.trim();
+  const list=_tbTabelas();
+  const idx=list.findIndex(x=>x.id===_tbAtualId);
+  if(idx>=0){ list[idx]=t; _tbSalvar(list); }
+  document.getElementById('tb-editor-nome').textContent=t.nome;
+}
+
+function tbFiltrar(){
+  const t=_tbTabelas().find(x=>x.id===_tbAtualId);
+  if(!t){ _tbFiltrados=[]; tbRenderTabela(); return; }
+  const busca=(document.getElementById('tb-busca')||{}).value?.toLowerCase()||'';
+  const esp=(document.getElementById('tb-filtro-esp')||{}).value||'';
+  const ativo=(document.getElementById('tb-filtro-ativo')||{}).value||'';
+  _tbFiltrados=(t.procedimentos||[]).filter(p=>{
+    if(busca&&!(p.nome||'').toLowerCase().includes(busca)) return false;
+    if(esp&&p.especialidade!==esp) return false;
+    if(ativo==='1'&&p.ativo===false) return false;
+    if(ativo==='0'&&p.ativo!==false) return false;
+    return true;
+  });
+  _tbPagAtual=1;
+  tbRenderTabela();
+}
+
+function tbSort(col){
+  if(_tbSortCol===col){ _tbSortDir*=-1; } else { _tbSortCol=col; _tbSortDir=1; }
+  ['nome','especialidade','valor'].forEach(c=>{
+    const el=document.getElementById('tb-sort-'+c);
+    if(el) el.textContent=(c===_tbSortCol)?(_tbSortDir===1?' ↑':' ↓'):'';
+  });
+  tbRenderTabela();
+}
+
+function tbPagina(d){
+  const perPage=parseInt((document.getElementById('tb-per-page')||{}).value||20);
+  const total=Math.ceil(_tbFiltrados.length/perPage);
+  _tbPagAtual=Math.max(1,Math.min(total,_tbPagAtual+d));
+  tbRenderTabela();
+}
+
+function tbRenderTabela(){
+  const tbody=document.getElementById('tb-tbody');
+  if(!tbody) return;
+  const sorted=[..._tbFiltrados].sort((a,b)=>{
+    const av=a[_tbSortCol]||'', bv=b[_tbSortCol]||'';
+    if(typeof av==='number') return (av-bv)*_tbSortDir;
+    return String(av).localeCompare(String(bv),'pt-BR')*_tbSortDir;
+  });
+  const perPage=parseInt((document.getElementById('tb-per-page')||{}).value||20);
+  const total=Math.ceil(sorted.length/perPage)||1;
+  _tbPagAtual=Math.min(_tbPagAtual,total);
+  const slice=sorted.slice((_tbPagAtual-1)*perPage,_tbPagAtual*perPage);
+  const t=_tbTabelas().find(x=>x.id===_tbAtualId);
+  const procs=t?t.procedimentos:[];
+
+  const brl=v=>v?'R$ '+parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—';
+  function comTotal(p){
+    if(p.comissaoFixoAtivo&&p.comissaoFixo) return parseFloat(p.comissaoFixo)||0;
+    if(p.comissaoPct) return ((parseFloat(p.comissaoPct)||0)/100)*(parseFloat(p.valor)||0);
+    return 0;
+  }
+
+  tbody.innerHTML=slice.map(p=>{
+    const idx=procs.indexOf(p);
+    const ct=comTotal(p);
+    const inativo=p.ativo===false;
+    return `<tr style="${inativo?'opacity:.45':''}">
+      <td style="padding:8px 12px;font-size:12px;font-weight:500;max-width:260px">${p.nome||'—'}</td>
+      <td style="padding:8px 8px"><span class="pill p-neutral" style="font-size:10px">${p.especialidade||'—'}</span></td>
+      <td style="padding:8px 8px;text-align:right;font-weight:600">${brl(p.valor)}</td>
+      <td style="padding:8px 8px;text-align:right;color:var(--tx2)">${p.custoClinica?brl(p.custoClinica):'—'}</td>
+      <td style="padding:8px 8px;text-align:center">${p.comissaoFixo?brl(p.comissaoFixo):'—'} ${p.comissaoFixoAtivo?'<span class="pill p-green" style="font-size:9px">Ativo</span>':'<span class="pill p-neutral" style="font-size:9px">Fixo</span>'}</td>
+      <td style="padding:8px 8px;text-align:center">${p.comissaoPct?parseFloat(p.comissaoPct).toFixed(1)+'%':'—'}</td>
+      <td style="padding:8px 8px;text-align:right;font-weight:600;color:${ct?'var(--ac)':'var(--tx3)'}">${ct?brl(ct):'—'}</td>
+      <td style="padding:8px 8px;text-align:center">
+        <div class="toggle-sw ${inativo?'':'on'}" onclick="tbToggleAtivo(${idx})" style="cursor:pointer"></div>
+      </td>
+      <td style="padding:8px 4px;text-align:center">
+        <button onclick="tbEditarProc(${idx})" style="background:none;border:none;cursor:pointer;color:var(--tx3);font-size:13px;padding:3px 6px;border-radius:var(--r4)" title="Editar">✎</button>
+      </td>
+    </tr>`;
+  }).join('');
+  if(!slice.length) tbody.innerHTML='<tr><td colspan="9"><div class="empty">Nenhum procedimento encontrado.</div></td></tr>';
+
+  document.getElementById('tb-count').textContent=`${_tbFiltrados.length} procedimento(s)`;
+  document.getElementById('tb-pag-info').textContent=`Página ${_tbPagAtual} de ${total}`;
+  document.getElementById('tb-prev').disabled=_tbPagAtual<=1;
+  document.getElementById('tb-next').disabled=_tbPagAtual>=total;
+}
+
+function tbToggleAtivo(idx){
+  const list=_tbTabelas();
+  const t=list.find(x=>x.id===_tbAtualId);
+  if(!t||!t.procedimentos[idx]) return;
+  t.procedimentos[idx].ativo=t.procedimentos[idx].ativo===false?true:false;
+  _tbSalvar(list);
+  tbFiltrar();
+}
+
+// ── MODAL PROC ────────────────────────────────────────────────────────────
+function tbNovoProc(){
+  _tbProcAtualIdx=null;
+  document.getElementById('tb-proc-modal-title').textContent='Novo procedimento';
+  document.getElementById('tbp-nome').value='';
+  document.getElementById('tbp-esp').value='';
+  document.getElementById('tbp-valor').value='';
+  document.getElementById('tbp-custo').value='';
+  document.getElementById('tbp-com-fixo').value='';
+  document.getElementById('tbp-com-fixo-ativo').checked=false;
+  document.getElementById('tbp-com-pct').value='';
+  document.getElementById('tbp-ativo').checked=true;
+  _tbAtualizarComTotal();
+  document.getElementById('modal-tb-proc').classList.add('open');
+  document.getElementById('tbp-nome').focus();
+}
+
+function tbEditarProc(idx){
+  const t=_tbTabelas().find(x=>x.id===_tbAtualId);
+  if(!t||!t.procedimentos[idx]) return;
+  const p=t.procedimentos[idx];
+  _tbProcAtualIdx=idx;
+  document.getElementById('tb-proc-modal-title').textContent='Editar procedimento';
+  document.getElementById('tbp-nome').value=p.nome||'';
+  document.getElementById('tbp-esp').value=p.especialidade||'';
+  document.getElementById('tbp-valor').value=p.valor||'';
+  document.getElementById('tbp-custo').value=p.custoClinica||'';
+  document.getElementById('tbp-com-fixo').value=p.comissaoFixo||'';
+  document.getElementById('tbp-com-fixo-ativo').checked=!!p.comissaoFixoAtivo;
+  document.getElementById('tbp-com-pct').value=p.comissaoPct||'';
+  document.getElementById('tbp-ativo').checked=p.ativo!==false;
+  _tbAtualizarComTotal();
+  document.getElementById('modal-tb-proc').classList.add('open');
+}
+
+function fecharModalTbProc(){
+  document.getElementById('modal-tb-proc').classList.remove('open');
+}
+
+function _tbAtualizarComTotal(){
+  const val=parseFloat(document.getElementById('tbp-valor')?.value)||0;
+  const fixo=parseFloat(document.getElementById('tbp-com-fixo')?.value)||0;
+  const fixoAtivo=document.getElementById('tbp-com-fixo-ativo')?.checked;
+  const pct=parseFloat(document.getElementById('tbp-com-pct')?.value)||0;
+  const brl=v=>'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  let total=0;
+  if(fixoAtivo&&fixo) total=fixo;
+  else if(pct) total=val*pct/100;
+  const el=document.getElementById('tbp-com-total');
+  if(el) el.textContent=total?brl(total):'—';
+  const prev=document.getElementById('tbp-com-pct-preview');
+  if(prev) prev.textContent=pct&&val?('= '+brl(val*pct/100)):'';
+}
+
+// wire up live calc on the modal inputs
+document.addEventListener('input', function(e){
+  if(['tbp-valor','tbp-com-fixo','tbp-com-pct'].includes(e.target.id)) _tbAtualizarComTotal();
+});
+document.addEventListener('change', function(e){
+  if(e.target.id==='tbp-com-fixo-ativo') _tbAtualizarComTotal();
+});
+
+function salvarTbProc(){
+  const nome=(document.getElementById('tbp-nome').value||'').trim();
+  if(!nome){ alert('Informe o nome do procedimento.'); return; }
+  const obj={
+    id:_tbProcAtualIdx!==null?undefined:'tbp_'+Date.now(),
+    nome,
+    especialidade:(document.getElementById('tbp-esp').value||'').trim(),
+    valor:parseFloat(document.getElementById('tbp-valor').value)||0,
+    custoClinica:parseFloat(document.getElementById('tbp-custo').value)||0,
+    comissaoFixo:parseFloat(document.getElementById('tbp-com-fixo').value)||0,
+    comissaoFixoAtivo:document.getElementById('tbp-com-fixo-ativo').checked,
+    comissaoPct:parseFloat(document.getElementById('tbp-com-pct').value)||0,
+    ativo:document.getElementById('tbp-ativo').checked,
+  };
+  const list=_tbTabelas();
+  const t=list.find(x=>x.id===_tbAtualId);
+  if(!t) return;
+  if(_tbProcAtualIdx!==null){ obj.id=t.procedimentos[_tbProcAtualIdx].id; t.procedimentos[_tbProcAtualIdx]={...t.procedimentos[_tbProcAtualIdx],...obj}; }
+  else { obj.id='tbp_'+Date.now(); t.procedimentos.push(obj); }
+  _tbSalvar(list);
+  fecharModalTbProc();
+  // refresh esp filter
+  const esps=[...new Set((t.procedimentos||[]).map(p=>p.especialidade).filter(Boolean))].sort();
+  const sel=document.getElementById('tb-filtro-esp');
+  const cur=sel?sel.value:'';
+  if(sel) sel.innerHTML='<option value="">Todas as especialidades</option>'+esps.map(e=>`<option value="${e}" ${e===cur?'selected':''}>${e}</option>`).join('');
+  tbFiltrar();
+}
+
+// Hook into showCfg to render list on open
+const _origShowCfg=window.showCfg;
+if(typeof _origShowCfg==='function'){
+  window.showCfg=function(sub,btn){
+    _origShowCfg(sub,btn);
+    if(sub==='tabelas') tbRenderLista();
+  };
+}
+
+
 // ── ORÇAMENTO ─────────────────────────────────────────────────────────────
 // Storage key: sk3-orcamentos → [ {id, pacienteId, clinica, criadoPor, data, obs, itens:[{id,proc,dentista,dentes,valor}], status:'rascunho'|'aprovado'|'recusado'} ]
 
@@ -7995,7 +8395,7 @@ function showCfg(sub, btn){
     usuarios:'cfg_usuarios_ver', cargos:'cfg_cargos_ver', equipe:'cfg_equipe_ver',
     reunioes:'cfg_reunioes_ver', protocolo:'cfg_protocolo_ver', cadpaciente:'cfg_cadpaciente_ver',
     checkin:'cfg_usuarios_ver', agenda:'cfg_usuarios_ver', anamnese:'cfg_usuarios_ver',
-    dashboard:'dashboard_cfg', empresa:'cfg_empresa_ver',
+    dashboard:'dashboard_cfg', empresa:'cfg_empresa_ver', tabelas:'cfg_usuarios_ver',
   };
   const permNec = cfgPermMapa[sub];
   if(permNec && !temPerm(permNec)){
