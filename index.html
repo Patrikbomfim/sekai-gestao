@@ -4720,11 +4720,14 @@ function renderPpFotos(p){
 // ── AGENDA DO PACIENTE — dados reais ─────────────────────────────────────
 function renderPpAgenda(p){
   const wrap=document.getElementById('pp-agenda-wrap');
+  // diagnóstico: mostra o que temos
+  const todos=agendamentos.filter(a=>a.pacienteNome&&a.pacienteNome.toLowerCase().includes((p.nome||'').toLowerCase().split(' ')[0]));
   const lista=agendamentos
     .filter(a=>String(a.pacienteId)===String(p.id))
     .sort((a,b)=> a.data<b.data?1:a.data>b.data?-1:0);
   if(!lista.length){
-    wrap.innerHTML='<div class="empty"><div class="empty-ic">📅</div>Nenhum agendamento encontrado para este paciente.</div>';
+    const debug=todos.length?`<div style="font-size:11px;color:var(--tx3);margin-top:8px;padding:8px;background:var(--s2);border-radius:var(--r6)">⚠️ Encontrados ${todos.length} agendamento(s) pelo nome mas não pelo ID. p.id = <b>${p.id}</b> (${typeof p.id}), pacienteId nos agendamentos: ${todos.map(a=>`<b>${a.pacienteId}</b> (${typeof a.pacienteId})`).join(', ')}</div>`:'';
+    wrap.innerHTML='<div class="empty"><div class="empty-ic">📅</div>Nenhum agendamento encontrado para este paciente.</div>'+debug;
     return;
   }
   const pillMap={agendado:'p-neutral',confirmado:'p-green',realizado:'p-info',faltou:'p-danger',cancelado:'p-neutral'};
