@@ -1193,9 +1193,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
       <div id="ef-upload-wrap" style="display:none"></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="fecharModalEmissaoFiscal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmarEmissaoFiscal()">Salvar</button>
+    <div class="modal-footer" style="display:flex;align-items:center;justify-content:space-between">
+      <button id="ef-btn-desfazer" onclick="desfazerEmissaoFiscal()" style="display:none;font-size:12px;padding:6px 12px;border-radius:var(--r6);border:1px solid #FCA5A5;background:#FEF2F2;color:#991B1B;cursor:pointer;font-weight:600;font-family:var(--font)">Desfazer emissão</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn btn-ghost" onclick="fecharModalEmissaoFiscal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarEmissaoFiscal()">Salvar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -6665,7 +6668,7 @@ function confirmarProcOrc(){
 function _titulos(){ return carregarLS('sk3-titulos',[]); }
 function _salvarTitulos(list){ salvarLS('sk3-titulos',list); }
 
-function renderPpFinanceiro(p){
+function renderPpFinanceiro(p, _filtroAtivo){
   const wrap=document.getElementById('pp-financeiro-wrap');
   const titulos=_titulos().filter(t=>String(t.pacienteId)===String(p.id));
   const orcamentos=_orcamentos().filter(o=>String(o.pacienteId)===String(p.id));
@@ -6673,10 +6676,16 @@ function renderPpFinanceiro(p){
 
   const fmtMoeda=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
   const fmtData=d=>{ if(!d) return '—'; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
+  const fmtTs=iso=>{
+    if(!iso) return '—';
+    const d=new Date(iso);
+    const pad=n=>String(n).padStart(2,'0');
+    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} às ${pad(d.getHours())}h${pad(d.getMinutes())}`;
+  };
   const statusPill=s=>{
-    if(s==='pago') return `<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#ECFDF5;color:#065F46">Pago</span>`;
-    if(s==='atrasado') return `<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#FEF2F2;color:#991B1B">Atrasado</span>`;
-    return `<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#F3F4F6;color:#6B7280">A pagar</span>`;
+    if(s==='pago') return `<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#ECFDF5;color:#065F46">Recebido</span>`;
+    if(s==='atrasado') return `<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#FEF2F2;color:#991B1B">Vencido</span>`;
+    return `<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#F3F4F6;color:#6B7280">A vencer</span>`;
   };
 
   if(!titulos.length){
@@ -6691,8 +6700,6 @@ function renderPpFinanceiro(p){
     return;
   }
 
-  // ── Totais globais (somam todos os orçamentos) ──────────────────────
-  // Marca atraso automaticamente (em memória, sem persistir)
   const hojeFinStr=new Date().toISOString().slice(0,10);
   titulos.forEach(t=>{ if(t.status!=='pago'&&t.vencimento&&t.vencimento<hojeFinStr) t.status='atrasado'; });
   const totalGeral=titulos.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
@@ -6700,56 +6707,68 @@ function renderPpFinanceiro(p){
   const totalAtrasado=titulos.filter(t=>t.status==='atrasado').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
   const totalAberto=titulos.filter(t=>t.status==='aberto').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
   const nAtrasado=titulos.filter(t=>t.status==='atrasado').length;
+  const nPago=titulos.filter(t=>t.status==='pago').length;
+  const nAberto=titulos.filter(t=>t.status==='aberto').length;
+
+  // Filtro ativo: null | 'pago' | 'aberto' | 'atrasado'
+  const filtro=_filtroAtivo||null;
+
+  const cardStyle=(ativo, cor, bg, border)=>`
+    border:1.5px solid ${ativo?cor:border||'var(--border)'};border-radius:var(--r8);padding:12px 14px;cursor:pointer;
+    background:${ativo?bg:bg};transition:border-color .15s,box-shadow .15s;
+    ${ativo?'box-shadow:0 0 0 3px '+cor+'33':''};outline:none;`;
+
+  const pacId=p.id;
 
   let html=`
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:16px">
-    <div style="background:var(--s2);border-radius:var(--r8);padding:12px 14px">
+    <div onclick="renderPpFinanceiro(pacientes.find(x=>String(x.id)==='${pacId}'), ${filtro===null?'null':'null'})"
+      style="${cardStyle(filtro===null,'var(--ac)','var(--s2)','var(--border)')}">
       <div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Total geral</div>
       <div style="font-size:18px;font-weight:700;color:var(--tx)">R$ ${fmtMoeda(totalGeral)}</div>
       <div style="font-size:11px;color:var(--tx3);margin-top:3px">${orcIds.length} orçamento(s) · ${titulos.length} título(s)</div>
     </div>
-    <div style="background:#ECFDF5;border-radius:var(--r8);padding:12px 14px">
-      <div style="font-size:10px;font-weight:600;color:#065F46;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Pago</div>
+    <div onclick="renderPpFinanceiro(pacientes.find(x=>String(x.id)==='${pacId}'), '${filtro==='pago'?'':' pago'}'.trim()||'pago')"
+      style="${cardStyle(filtro==='pago','#059669','#ECFDF5','#D1FAE5')}">
+      <div style="font-size:10px;font-weight:600;color:#065F46;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Recebido</div>
       <div style="font-size:18px;font-weight:700;color:#065F46">R$ ${fmtMoeda(totalPago)}</div>
-      <div style="font-size:11px;color:#065F46;opacity:.7;margin-top:3px">${titulos.filter(t=>t.status==='pago').length} título(s) quitado(s)</div>
+      <div style="font-size:11px;color:#065F46;opacity:.7;margin-top:3px">${nPago} título(s) recebido(s)</div>
     </div>
-    <div style="background:${totalAberto>0?'#FEF9EE':'#F3F4F6'};border-radius:var(--r8);padding:12px 14px">
+    <div onclick="renderPpFinanceiro(pacientes.find(x=>String(x.id)==='${pacId}'), '${filtro==='aberto'?'':' aberto'}'.trim()||'aberto')"
+      style="${cardStyle(filtro==='aberto','#D97706',totalAberto>0?'#FEF9EE':'#F3F4F6',totalAberto>0?'#FDE68A':'var(--border)')}">
       <div style="font-size:10px;font-weight:600;color:${totalAberto>0?'#7C4A00':'#6B7280'};text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">A vencer</div>
       <div style="font-size:18px;font-weight:700;color:${totalAberto>0?'#7C4A00':'#6B7280'}">R$ ${fmtMoeda(totalAberto)}</div>
-      <div style="font-size:11px;color:${totalAberto>0?'#7C4A00':'#6B7280'};opacity:.7;margin-top:3px">${titulos.filter(t=>t.status==='aberto').length} título(s)</div>
+      <div style="font-size:11px;color:${totalAberto>0?'#7C4A00':'#6B7280'};opacity:.7;margin-top:3px">${nAberto} título(s)</div>
     </div>
-    <div style="background:${nAtrasado>0?'#FEF2F2':'#F3F4F6'};border-radius:var(--r8);padding:12px 14px;${nAtrasado>0?'border:1px solid #FCA5A5':''}">
-      <div style="font-size:10px;font-weight:600;color:${nAtrasado>0?'#991B1B':'#6B7280'};text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">${nAtrasado>0?'Em atraso':'Em atraso'}</div>
+    <div onclick="renderPpFinanceiro(pacientes.find(x=>String(x.id)==='${pacId}'), '${filtro==='atrasado'?'':' atrasado'}'.trim()||'atrasado')"
+      style="${cardStyle(filtro==='atrasado','#DC2626',nAtrasado>0?'#FEF2F2':'#F3F4F6',nAtrasado>0?'#FCA5A5':'var(--border)')}">
+      <div style="font-size:10px;font-weight:600;color:${nAtrasado>0?'#991B1B':'#6B7280'};text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Vencido</div>
       <div style="font-size:18px;font-weight:700;color:${nAtrasado>0?'#991B1B':'#6B7280'}">R$ ${fmtMoeda(totalAtrasado)}</div>
       <div style="font-size:11px;color:${nAtrasado>0?'#991B1B':'#6B7280'};opacity:.7;margin-top:3px">${nAtrasado} título(s) vencido(s)</div>
     </div>
   </div>`;
 
-  // ── Um bloco colapsável por orçamento ──────────────────────────────
+  // ── Um bloco por orçamento ──────────────────────────────
   orcIds.forEach(orcId=>{
     const orc=orcamentos.find(o=>o.id===orcId)||{};
-    const tits=titulos.filter(t=>t.orcamentoId===orcId);
+    let tits=titulos.filter(t=>t.orcamentoId===orcId);
+    // Aplica filtro se ativo
+    const titsVisiveis=filtro?tits.filter(t=>t.status===filtro):tits;
+    if(filtro&&!titsVisiveis.length) return; // pula bloco se não há títulos no filtro
     const nomeOrc=orc.nomeOrc||('Orçamento #'+(orc.num||orcId.slice(-4)));
     const tTotal=tits.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
     const tPago=tits.filter(t=>t.status==='pago').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
     const tAtrasado=tits.filter(t=>t.status==='atrasado').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
     const tAberto=tits.filter(t=>t.status==='aberto').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
     const uid='fin-orc-'+orcId;
+    const expandido=!!filtro; // expande automaticamente se há filtro ativo
 
     html+=`
     <div style="border:1px solid ${tAtrasado>0?'#FCA5A5':'var(--border)'};border-radius:var(--r8);margin-bottom:8px;overflow:hidden">
-
-      <!-- Cabeçalho colapsável -->
       <div onclick="_finToggle('${uid}')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface);cursor:pointer;user-select:none;transition:background .1s"
            onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--surface)'">
-
-        <!-- Seta -->
-        <span id="${uid}-caret" style="font-size:11px;color:var(--tx3);transition:transform .18s;display:inline-block;flex-shrink:0">▶</span>
-
-        <!-- Nome do orçamento -->
+        <span id="${uid}-caret" style="font-size:11px;color:var(--tx3);transition:transform .18s;display:inline-block;flex-shrink:0;${expandido?'transform:rotate(90deg)':''}">▶</span>
         <span style="font-size:13px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nomeOrc}</span>
-
-        <!-- Mini resumo: total / pago / aberto -->
         <div style="display:flex;align-items:center;gap:12px;flex-shrink:0">
           <div style="text-align:right">
             <div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Total</div>
@@ -6757,7 +6776,7 @@ function renderPpFinanceiro(p){
           </div>
           <div style="width:1px;height:28px;background:var(--border)"></div>
           <div style="text-align:right">
-            <div style="font-size:10px;font-weight:600;color:#065F46;text-transform:uppercase;letter-spacing:.06em">Pago</div>
+            <div style="font-size:10px;font-weight:600;color:#065F46;text-transform:uppercase;letter-spacing:.06em">Recebido</div>
             <div style="font-size:13px;font-weight:700;color:#065F46">R$ ${fmtMoeda(tPago)}</div>
           </div>
           <div style="width:1px;height:28px;background:var(--border)"></div>
@@ -6768,23 +6787,16 @@ function renderPpFinanceiro(p){
           ${tAtrasado>0?`
           <div style="width:1px;height:28px;background:var(--border)"></div>
           <div style="text-align:right">
-            <div style="font-size:10px;font-weight:600;color:#991B1B;text-transform:uppercase;letter-spacing:.06em">Atraso</div>
+            <div style="font-size:10px;font-weight:600;color:#991B1B;text-transform:uppercase;letter-spacing:.06em">Vencido</div>
             <div style="font-size:13px;font-weight:700;color:#991B1B">R$ ${fmtMoeda(tAtrasado)}</div>
           </div>`:''}
           <div style="font-size:11px;color:var(--tx3);background:var(--s2);border-radius:10px;padding:2px 8px;font-weight:600;flex-shrink:0">${tits.length}x</div>
         </div>
       </div>
 
-      <!-- Títulos (recolhidos por padrão) -->
-      <div id="${uid}" style="display:none;border-top:1px solid var(--border)">
-        ${tits.map((t,i)=>{
+      <div id="${uid}" style="display:${expandido?'block':'none'};border-top:1px solid var(--border)">
+        ${titsVisiveis.map((t,i)=>{
           const renegs=(t.renegociacoes||[]);
-          const fmtTs=iso=>{
-            if(!iso) return '—';
-            const d=new Date(iso);
-            const pad=n=>String(n).padStart(2,'0');
-            return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} às ${pad(d.getHours())}h${pad(d.getMinutes())}`;
-          };
           const renegHtml=renegs.length?`
             <div style="margin:0 14px 10px;padding:10px 12px;background:#FEF9EE;border:1px solid #FDE68A;border-radius:var(--r6)">
               <div style="font-size:10px;font-weight:700;color:#7C4A00;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Histórico de renegociação</div>
@@ -6798,16 +6810,27 @@ function renderPpFinanceiro(p){
                 </div>`).join('')}
             </div>`:''
           ;
+          // Info de recebimento (quem/quando/forma)
+          let recebidoInfo='';
+          if(t.status==='pago'&&t.dataPagamento){
+            const quemNome=(typeof usuarios!=='undefined'&&t.recebidoPor)
+              ?(usuarios.find(u=>u.id===t.recebidoPor)?.nome||''):'';
+            const horaStr=t.recebidoEm?fmtTs(t.recebidoEm):'';
+            const formaMap={pix:'Pix/Transferência',dinheiro:'Dinheiro',debito:'Débito',credito:'Crédito',boleto:'Boleto'};
+            const formaStr=t.formaRecebimento?(formaMap[t.formaRecebimento]||t.formaRecebimento):'';
+            const partes=[quemNome,horaStr||fmtData(t.dataPagamento),formaStr].filter(Boolean);
+            recebidoInfo=`<div style="font-size:10px;color:var(--su);margin-top:2px">Recebido${partes.length?' — '+partes.join(' · '):''}</div>`;
+          }
           return `
-        <div style="${i<tits.length-1?'border-bottom:1px solid var(--border)':''}">
+        <div style="${i<titsVisiveis.length-1?'border-bottom:1px solid var(--border)':''}">
           <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface)">
             <div style="flex:1;min-width:0">
               <div style="font-size:13px;font-weight:500">${t.descricao||'—'}</div>
               <div style="font-size:11px;color:var(--tx3);margin-top:2px">${t.tipo||''} · Vencimento: ${fmtData(t.vencimento)}</div>
+              ${recebidoInfo}
             </div>
             <div style="flex-shrink:0;text-align:right;min-width:90px">
               <div style="font-size:14px;font-weight:700;color:var(--ac)">R$ ${fmtMoeda(t.valor)}</div>
-              ${t.dataPagamento?`<div style="font-size:10px;color:var(--su);margin-top:1px">Pago em ${fmtData(t.dataPagamento)}</div>`:''}
             </div>
             ${statusPill(t.status||'aberto')}
             <button onclick="abrirModalEmissaoFiscal('${t.id}')"
@@ -6824,8 +6847,6 @@ function renderPpFinanceiro(p){
           ${renegHtml}
         </div>`;
         }).join('')}
-
-        <!-- Rodapé: Cancelar títulos deste orçamento -->
         <div style="padding:10px 14px;border-top:1px solid var(--border);background:var(--s2);display:flex;align-items:center;justify-content:flex-end">
           ${tits.some(t=>t.status==='pago')
             ?`<span style="font-size:11px;color:var(--tx3)">Estorne os pagamentos antes de cancelar os títulos.</span>`
@@ -6904,6 +6925,7 @@ function confirmarRecebimento(){
   if(idx<0) return;
   list[idx].status='pago';
   list[idx].dataPagamento=data;
+  list[idx].recebidoEm=new Date().toISOString();
   if(usuarioId) list[idx].recebidoPor=usuarioId;
   if(forma) list[idx].formaRecebimento=forma;
   _comSalvarImediato(()=>_salvarTitulos(list));
@@ -6921,11 +6943,27 @@ function abrirModalEmissaoFiscal(tituloId){
   const list=_titulos();
   const t=list.find(x=>x.id===tituloId);
   if(!t) return;
-  // Reset UI
   const tipoSel=document.getElementById('ef-tipo');
   tipoSel.value=t.emissaoFiscal?.tipo||'';
   _efAtualizarUpload(tipoSel.value, t.emissaoFiscal);
+  // Mostrar botão "Desfazer emissão" se já há emissão salva
+  const btnDesfazer=document.getElementById('ef-btn-desfazer');
+  if(btnDesfazer) btnDesfazer.style.display=t.emissaoFiscal?.tipo?'inline-block':'none';
   document.getElementById('modal-emissao-fiscal').classList.add('open');
+}
+
+function desfazerEmissaoFiscal(){
+  if(!_emissaoFiscalTituloId) return;
+  if(!confirm('Desfazer a emissão fiscal? O título voltará para o estado "em aberto" de emissão.')) return;
+  const list=_titulos();
+  const idx=list.findIndex(t=>t.id===_emissaoFiscalTituloId);
+  if(idx<0) return;
+  delete list[idx].emissaoFiscal;
+  _comSalvarImediato(()=>_salvarTitulos(list));
+  fecharModalEmissaoFiscal();
+  const pacId=list[idx].pacienteId;
+  const p=pacientes.find(x=>String(x.id)===String(pacId));
+  if(p) renderPpFinanceiro(p);
 }
 
 function fecharModalEmissaoFiscal(){
