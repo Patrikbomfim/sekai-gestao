@@ -6592,15 +6592,22 @@ function renderPpFinanceiro(p){
       <div id="${uid}" style="display:none;border-top:1px solid var(--border)">
         ${tits.map((t,i)=>{
           const renegs=(t.renegociacoes||[]);
+          const fmtTs=iso=>{
+            if(!iso) return '—';
+            const d=new Date(iso);
+            const pad=n=>String(n).padStart(2,'0');
+            return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} às ${pad(d.getHours())}h${pad(d.getMinutes())}`;
+          };
           const renegHtml=renegs.length?`
             <div style="margin:0 14px 10px;padding:10px 12px;background:#FEF9EE;border:1px solid #FDE68A;border-radius:var(--r6)">
               <div style="font-size:10px;font-weight:700;color:#7C4A00;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Histórico de renegociação</div>
-              ${renegs.map(r=>`
-                <div style="font-size:11px;color:var(--tx2);padding:4px 0;${renegs.indexOf(r)<renegs.length-1?'border-bottom:1px dashed #FDE68A;margin-bottom:4px':''}">
-                  <span style="font-weight:600">${fmtData(r.dataAnterior)} → ${fmtData(r.dataNova)}</span>
-                  <span style="color:var(--tx3);margin:0 6px">·</span>
-                  <span>${r.justificativa}</span>
-                  <div style="font-size:10px;color:var(--tx3);margin-top:1px">${r.registradoPor} · ${fmtData(r.registradoEm)}</div>
+              ${renegs.map((r,ri)=>`
+                <div style="font-size:11px;color:var(--tx2);padding:6px 0;${ri<renegs.length-1?'border-bottom:1px dashed #FDE68A;margin-bottom:6px':''}">
+                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+                    <span style="font-weight:700;color:#7C4A00">${fmtData(r.dataAnterior)} → ${fmtData(r.dataNova)}</span>
+                  </div>
+                  <div style="color:var(--tx);margin-bottom:4px">${r.justificativa}</div>
+                  <div style="font-size:10px;color:var(--tx3)">${r.registradoPor} · ${fmtTs(r.registradoEm)}</div>
                 </div>`).join('')}
             </div>`:''
           ;
@@ -6756,7 +6763,7 @@ function confirmarRenegociacao(){
     dataNova:novaData,
     justificativa,
     registradoPor:nomeRegistro,
-    registradoEm:new Date().toISOString().slice(0,10),
+    registradoEm:new Date().toISOString(), // ISO completo com hora
   });
 
   // Atualiza vencimento
@@ -6845,68 +6852,97 @@ function _aprovRenderModal(orc,totalOrc){
 function _aprovRenderEntradas(){
   const wrap=document.getElementById('aprov-entradas-wrap');
   if(!wrap) return;
-  const fmtMoeda=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
   const hojeStr=new Date().toISOString().slice(0,10);
-  const tiposOpts=(sel)=>_APROV_TIPOS.map(t=>`<option value="${t.v}"${t.v===sel?' selected':''}>${t.l}</option>`).join('');
+  const fmtMoeda=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
 
-  wrap.innerHTML=_aprovEntradas.map((e,ei)=>{
-    const isParc=e.tipo.startsWith('parcelado');
+  // Cabeçalho da tabela
+  let html=`
+  <div style="display:grid;grid-template-columns:200px 1fr 140px 32px;gap:0;border:1px solid var(--border);border-radius:var(--r8);overflow:hidden">
+    <div style="display:contents">
+      <div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;padding:7px 12px;background:var(--s2);border-bottom:1px solid var(--border)">Forma</div>
+      <div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;padding:7px 12px;background:var(--s2);border-bottom:1px solid var(--border);border-left:1px solid var(--border)">Detalhes</div>
+      <div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;padding:7px 12px;background:var(--s2);border-bottom:1px solid var(--border);border-left:1px solid var(--border);text-align:right">Valor (R$)</div>
+      <div style="background:var(--s2);border-bottom:1px solid var(--border);border-left:1px solid var(--border)"></div>
+    </div>`;
+
+  _aprovEntradas.forEach((e,ei)=>{
+    const isAvista=e.tipo.startsWith('avista');
     const isBoleto=e.tipo==='parcelado_boleto';
     const isCredito=e.tipo==='parcelado_credito';
+    const borderTop=ei>0?'border-top:1px solid var(--border)':'';
     const parcOpts=[2,3,4,5,6,7,8,9,10,11,12].map(n=>`<option value="${n}"${n===e.nParcelas?' selected':''}>${n}x</option>`).join('');
 
-    let boletoHtml='';
-    if(isBoleto && e.parcelasCustom && e.parcelasCustom.length){
-      boletoHtml=`<div style="display:flex;flex-direction:column;gap:4px;margin-top:8px">
-        ${e.parcelasCustom.map((p,pi)=>`
-        <div style="display:grid;grid-template-columns:20px 1fr 1fr;gap:6px;align-items:end;padding:6px 8px;background:var(--bg);border-radius:var(--r6)">
-          <span style="font-size:11px;font-weight:600;color:var(--tx3);padding-bottom:6px">${pi+1}.</span>
-          <div class="fl"><label>Valor (R$)</label>
-            <input type="number" value="${p.valor.toFixed(2)}" min="0" step="0.01"
-              oninput="_aprovUpdateBoleto(${ei},${pi},'valor',this.value)" style="font-size:12px"></div>
-          <div class="fl"><label>Vencimento</label>
-            <input type="date" value="${p.vencimento}"
-              oninput="_aprovUpdateBoleto(${ei},${pi},'vencimento',this.value)" style="font-size:12px"></div>
-        </div>`).join('')}
+    // Coluna "Detalhes" muda por tipo
+    let detalhesHtml='';
+    if(isAvista){
+      detalhesHtml=`<div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:var(--tx3);white-space:nowrap">Vencimento</span>
+        <input type="date" value="${e.venc1||hojeStr}" oninput="_aprovChangeVenc1(${ei},this.value)"
+          style="font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 8px;background:var(--surface);color:var(--tx);font-family:var(--font)">
+      </div>`;
+    } else if(isCredito){
+      detalhesHtml=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:11px;color:var(--tx3);white-space:nowrap">Desconto</span>
+          <input type="number" value="${e.desconto}" min="0" max="100" step="1" oninput="_aprovChangeDesconto(${ei},this.value)"
+            style="width:52px;font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 6px;background:var(--surface);color:var(--tx);font-family:var(--font)">
+          <span style="font-size:11px;color:var(--tx3)">%</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:11px;color:var(--tx3);white-space:nowrap">Vencimento</span>
+          <input type="date" value="${e.venc1||hojeStr}" oninput="_aprovChangeVenc1(${ei},this.value)"
+            style="font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 8px;background:var(--surface);color:var(--tx);font-family:var(--font)">
+        </div>
+      </div>`;
+    } else if(isBoleto){
+      const boletoLinhas=(e.parcelasCustom||[]).map((p,pi)=>`
+        <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+          <span style="font-size:11px;font-weight:600;color:var(--tx3);min-width:16px">${pi+1}.</span>
+          <input type="date" value="${p.vencimento}" oninput="_aprovUpdateBoleto(${ei},${pi},'vencimento',this.value)"
+            style="font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 8px;background:var(--surface);color:var(--tx);font-family:var(--font)">
+          <input type="number" value="${p.valor.toFixed(2)}" min="0" step="0.01" oninput="_aprovUpdateBoleto(${ei},${pi},'valor',this.value)"
+            style="width:80px;font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 6px;background:var(--surface);color:var(--tx);font-family:var(--font)">
+        </div>`).join('');
+      detalhesHtml=`<div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:${e.parcelasCustom&&e.parcelasCustom.length?'4':'0'}px">
+          <span style="font-size:11px;color:var(--tx3);white-space:nowrap">Parcelas</span>
+          <select onchange="_aprovChangeNParc(${ei},this.value)"
+            style="font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 8px;background:var(--surface);color:var(--tx);font-family:var(--font)">${parcOpts}</select>
+          <span style="font-size:11px;color:var(--tx3);white-space:nowrap">Desconto</span>
+          <input type="number" value="${e.desconto}" min="0" max="100" step="1" oninput="_aprovChangeDesconto(${ei},this.value)"
+            style="width:52px;font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 6px;background:var(--surface);color:var(--tx);font-family:var(--font)">
+          <span style="font-size:11px;color:var(--tx3)">%</span>
+        </div>
+        ${boletoLinhas}
       </div>`;
     }
 
-    return `<div style="border:1px solid var(--border);border-radius:var(--r8);padding:12px 14px;background:var(--surface);position:relative">
-      ${_aprovEntradas.length>1?`<button onclick="_aprovRemoverEntrada(${ei})" title="Remover"
-        style="position:absolute;top:8px;right:8px;border:none;background:none;cursor:pointer;color:var(--tx3);font-size:16px;line-height:1;padding:2px 5px">✕</button>`:''}
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:${isParc?'10':'0'}px">
-        <div class="fl">
-          <label>Tipo</label>
-          <select onchange="_aprovChangeTipo(${ei},this.value)" style="font-size:13px">${tiposOpts(e.tipo)}</select>
-        </div>
-        <div class="fl">
-          <label>Valor (R$)</label>
-          <input type="number" value="${e.valor.toFixed(2)}" min="0" step="0.01"
-            oninput="_aprovChangeValor(${ei},this.value)" style="font-size:13px">
-        </div>
-      </div>
-      ${e.tipo.startsWith('avista')?`<div class="fl" style="margin-top:4px">
-        <label>Data de vencimento</label>
-        <input type="date" value="${e.venc1||hojeStr}" oninput="_aprovChangeVenc1(${ei},this.value)" style="font-size:13px">
-      </div>`:''}
-      ${isCredito?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="fl"><label>Desconto (%)</label>
-          <input type="number" value="${e.desconto}" min="0" max="100" step="1"
-            oninput="_aprovChangeDesconto(${ei},this.value)" style="font-size:13px"></div>
-        <div class="fl"><label>Data de vencimento</label>
-          <input type="date" value="${e.venc1||hojeStr}"
-            oninput="_aprovChangeVenc1(${ei},this.value)" style="font-size:13px"></div>
-      </div>`:''}
-      ${isBoleto?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px">
-        <div class="fl"><label>Nº de parcelas</label>
-          <select onchange="_aprovChangeNParc(${ei},this.value)" style="font-size:13px">${parcOpts}</select></div>
-        <div class="fl"><label>Desconto total (%)</label>
-          <input type="number" value="${e.desconto}" min="0" max="100" step="1"
-            oninput="_aprovChangeDesconto(${ei},this.value)" style="font-size:13px"></div>
-      </div>${boletoHtml}`:''}
+    html+=`
+    <div style="${borderTop};padding:10px 12px;display:flex;align-items:flex-start">
+      <select onchange="_aprovChangeTipo(${ei},this.value)"
+        style="font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:5px 8px;background:var(--surface);color:var(--tx);font-family:var(--font);width:100%">
+        ${_APROV_TIPOS.map(t=>`<option value="${t.v}"${t.v===e.tipo?' selected':''}>${t.l}</option>`).join('')}
+      </select>
+    </div>
+    <div style="${borderTop};padding:10px 12px;border-left:1px solid var(--border);display:flex;align-items:flex-start">
+      ${detalhesHtml}
+    </div>
+    <div style="${borderTop};padding:10px 12px;border-left:1px solid var(--border);text-align:right">
+      <input type="number" value="${e.valor.toFixed(2)}" min="0" step="0.01" oninput="_aprovChangeValor(${ei},this.value)"
+        style="font-size:13px;font-weight:600;border:1px solid var(--border);border-radius:var(--r6);padding:5px 8px;background:var(--surface);color:var(--ac);font-family:var(--font);width:100%;text-align:right">
+      ${isCredito&&e.desconto>0?`<div style="font-size:10px;color:var(--tx3);margin-top:2px">Líquido: R$ ${fmtMoeda(e.valor*(1-e.desconto/100))}</div>`:''}
+    </div>
+    <div style="${borderTop};border-left:1px solid var(--border);display:flex;align-items:center;justify-content:center">
+      ${_aprovEntradas.length>1
+        ?`<button onclick="_aprovRemoverEntrada(${ei})" title="Remover"
+            style="border:none;background:none;cursor:pointer;color:var(--tx3);font-size:15px;line-height:1;padding:4px;border-radius:var(--r4);transition:color .1s"
+            onmouseover="this.style.color='#991B1B'" onmouseout="this.style.color='var(--tx3)'">✕</button>`
+        :''}
     </div>`;
-  }).join('');
+  });
 
+  html+=`</div>`;
+  wrap.innerHTML=html;
   _aprovAtualizarSaldo();
   _aprovGerarPreview();
 }
