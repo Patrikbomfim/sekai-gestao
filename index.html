@@ -5877,10 +5877,8 @@ function gerarPdfOrcamento(){
 
   <!-- DESTINATÁRIO -->
   <div style="margin-bottom:40px">
-    <div style="font-size:10px;font-weight:600;color:#9a9a9a;letter-spacing:.18em;text-transform:uppercase;margin-bottom:10px">Preparado para</div>
     <div style="font-family:'Cormorant Garamond','Georgia',serif;font-size:26px;font-weight:500;color:#1a1a1a;letter-spacing:-.2px">${pacNome}</div>
     <div style="display:flex;gap:20px;margin-top:6px;flex-wrap:wrap">
-      ${pacCpf?`<span style="font-size:11.5px;color:#6a6a6a">CPF ${pacCpf}</span>`:''}
       ${pacTel?`<span style="font-size:11.5px;color:#6a6a6a">${pacTel}</span>`:''}
       ${pacEmail?`<span style="font-size:11.5px;color:#6a6a6a">${pacEmail}</span>`:''}
     </div>
@@ -5904,12 +5902,6 @@ function gerarPdfOrcamento(){
       </div>
       <div style="font-size:13px;font-weight:500;color:#1a1a1a;white-space:nowrap">R$ ${(parseFloat(it.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
     </div>`).join('')}
-
-    <!-- TOTAL -->
-    <div style="display:flex;align-items:baseline;justify-content:space-between;padding:18px 0 0">
-      <div style="font-size:11px;font-weight:600;color:#9a9a9a;letter-spacing:.1em;text-transform:uppercase">Investimento total</div>
-      <div style="font-family:'Cormorant Garamond','Georgia',serif;font-size:28px;font-weight:600;color:#1a1a1a;letter-spacing:-.4px">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-    </div>
   </div>
 
   <!-- CONDIÇÕES DE PAGAMENTO -->
