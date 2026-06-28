@@ -1531,15 +1531,19 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-end">
           <div class="fl">
             <label>Taxa de cartão (%)</label>
-            <input type="number" id="tb-taxa-cartao" min="0" max="100" step="0.01" style="width:130px;font-size:13px" placeholder="ex: 3.5" oninput="tbRenderTabela()">
+            <input type="number" id="tb-taxa-cartao" min="0" max="100" step="0.01" style="width:130px;font-size:13px" placeholder="ex: 3.5" oninput="tbRenderTabela()" disabled>
           </div>
           <div class="fl">
             <label>% NF (imposto)</label>
-            <input type="number" id="tb-pct-nf" min="0" max="100" step="0.01" style="width:130px;font-size:13px" placeholder="ex: 6" oninput="tbRenderTabela()">
+            <input type="number" id="tb-pct-nf" min="0" max="100" step="0.01" style="width:130px;font-size:13px" placeholder="ex: 6" oninput="tbRenderTabela()" disabled>
           </div>
           <div class="fl">
             <label>Custo/hora clínica (R$)</label>
-            <input type="number" id="tb-custo-hora" min="0" step="0.01" style="width:150px;font-size:13px" placeholder="ex: 200" oninput="tbRenderTabela()">
+            <input type="number" id="tb-custo-hora" min="0" step="0.01" style="width:150px;font-size:13px" placeholder="ex: 200" oninput="tbRenderTabela()" disabled>
+          </div>
+          <div class="fl">
+            <label>% Comissão de venda</label>
+            <input type="number" id="tb-com-venda" min="0" max="100" step="0.01" style="width:150px;font-size:13px" placeholder="ex: 5" oninput="tbRenderTabela()" disabled>
           </div>
         </div>
       </div>
@@ -1565,10 +1569,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
                 <th style="padding:9px 8px;text-align:left;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap" onclick="tbSort('especialidade')">Especialidade <span id="tb-sort-especialidade"></span></th>
                 <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap" onclick="tbSort('valor')">Valor (R$) <span id="tb-sort-valor"></span></th>
                 <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Tempo (h)</th>
-                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Comissão (R$)</th>
+                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Comissão Fixa (R$)</th>
                 <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Comissão (%)</th>
                 <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Cartão (%)</th>
                 <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">NF (%)</th>
+                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Com. Venda (%)</th>
                 <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Custo Lab (R$)</th>
                 <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Custo Material (R$)</th>
                 <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Custo Clínica (R$)</th>
@@ -1583,7 +1588,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <!-- Paginação -->
         <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid var(--border)">
           <button class="btn btn-ghost btn-sm" id="tb-prev" onclick="tbPagina(-1)">‹ Anterior</button>
-          <span id="tb-pag-info" style="font-size:12px;color:var(--tx2)"></span>
+          <span id="tb-pag-info" style="font-size:12px;color:var(--tx2);white-space:nowrap"></span>
           <button class="btn btn-ghost btn-sm" id="tb-next" onclick="tbPagina(1)">Próxima ›</button>
           <select id="tb-per-page" style="font-size:12px;margin-left:auto" onchange="tbRenderTabela()">
             <option value="20">20 por página</option>
@@ -5128,12 +5133,13 @@ function _tbInit(){
   let list=carregarLS('sk3-tabelas',null);
   if(!list||list.length===0){ list=_tbCache||[]; }
   if(!list.find(t=>t.id==='tb_sekai')){
-    list=[{id:'tb_sekai',nome:'Tabela Sekai Odontologia',taxaCartao:3.5,pctNF:6,custoHora:200,procedimentos:TB_PROCS_PADRAO.map(p=>({...p}))}, ...list];
+    list=[{id:'tb_sekai',nome:'Tabela Sekai Odontologia',taxaCartao:3.5,pctNF:6,custoHora:200,comVenda:0,procedimentos:TB_PROCS_PADRAO.map(p=>({...p}))}, ...list];
     _tbCache=list;
     try{ localStorage.setItem('sk3-tabelas', JSON.stringify(list)); }catch(e){}
     salvarLS('sk3-tabelas',list);
   } else {
-    // migrar procedimentos antigos sem os novos campos
+    // migrar tabelas sem comVenda
+    list.forEach(t=>{ if(t.comVenda===undefined) t.comVenda=0; });
     list.forEach(t=>{
       if(!t.procedimentos) return;
       t.procedimentos.forEach(p=>{
@@ -5200,6 +5206,7 @@ function tbAbrirEditor(id){
   document.getElementById('tb-taxa-cartao').value=t.taxaCartao||'';
   document.getElementById('tb-pct-nf').value=t.pctNF||'';
   document.getElementById('tb-custo-hora').value=t.custoHora||'';
+  document.getElementById('tb-com-venda').value=t.comVenda||'';
   const esps=[...new Set((t.procedimentos||[]).map(p=>p.especialidade).filter(Boolean))].sort();
   const sel=document.getElementById('tb-filtro-esp');
   if(sel) sel.innerHTML='<option value="">Todas as especialidades</option>'+esps.map(e=>`<option value="${e}">${e}</option>`).join('');
@@ -5259,6 +5266,7 @@ function tbSalvarEdicaoTabela(){
   t.taxaCartao=parseFloat(document.getElementById('tb-taxa-cartao').value)||0;
   t.pctNF=parseFloat(document.getElementById('tb-pct-nf').value)||0;
   t.custoHora=parseFloat(document.getElementById('tb-custo-hora').value)||0;
+  t.comVenda=parseFloat(document.getElementById('tb-com-venda').value)||0;
   const tbody=document.getElementById('tb-tbody');
   if(tbody){
     const rows=tbody.querySelectorAll('tr[data-proc-id]');
@@ -5297,6 +5305,11 @@ function _tbAtualizarBotoesEdicao(){
   if(btnEditar) btnEditar.style.display=_tbModoEdicao?'none':'';
   if(btnSalvar) btnSalvar.style.display=_tbModoEdicao?'':'none';
   if(btnCancelar) btnCancelar.style.display=_tbModoEdicao?'':'none';
+  // habilitar/desabilitar campos globais junto com o modo edição
+  ['tb-taxa-cartao','tb-pct-nf','tb-custo-hora','tb-com-venda'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.disabled=!_tbModoEdicao;
+  });
 }
 
 function tbFiltrar(){
@@ -5339,6 +5352,7 @@ function tbRenderTabela(){
   const taxaCartao=parseFloat((document.getElementById('tb-taxa-cartao')||{}).value)||0;
   const pctNF=parseFloat((document.getElementById('tb-pct-nf')||{}).value)||0;
   const custoHora=parseFloat((document.getElementById('tb-custo-hora')||{}).value)||0;
+  const comVenda=parseFloat((document.getElementById('tb-com-venda')||{}).value)||0;
   const em=_tbModoEdicao;
 
   const sorted=[..._tbFiltrados].sort((a,b)=>{
@@ -5366,10 +5380,11 @@ function tbRenderTabela(){
     const comEfetiva=comFixo>0?comFixo:(comPct>0?(val*comPct/100):0);
     const custoCartao=val*taxaCartao/100;
     const custoNF=val*pctNF/100;
+    const custoComVenda=val*comVenda/100;
     const custoLab=parseFloat(p.custoLab)||0;
     const custoMat=parseFloat(p.custoMaterial)||0;
     const custoClinica=tempo*custoHora;
-    const lucro=val-comEfetiva-custoCartao-custoNF-custoLab-custoMat-custoClinica;
+    const lucro=val-comEfetiva-custoCartao-custoNF-custoComVenda-custoLab-custoMat-custoClinica;
     const pctLucro=val>0?(lucro/val*100):0;
     const lucroColor=lucro>=0?'var(--su)':'var(--da)';
 
@@ -5383,6 +5398,7 @@ function tbRenderTabela(){
         <td style="${roStyle}"><input data-field="comissaoPct" type="number" min="0" max="100" step="0.01" value="${comPct||''}" placeholder="%" style="${inStyle};text-align:right;width:65px" oninput="tbMutexComissao(this,'pct')"></td>
         <td style="${roStyle};color:var(--tx3);font-size:11px">${ppct(taxaCartao)}</td>
         <td style="${roStyle};color:var(--tx3);font-size:11px">${ppct(pctNF)}</td>
+        <td style="${roStyle};color:var(--tx3);font-size:11px">${ppct(comVenda)}</td>
         <td style="${roStyle}"><input data-field="custoLab" type="number" min="0" step="0.01" value="${custoLab||''}" placeholder="R$" style="${inStyle};text-align:right;width:75px" oninput="tbAtualizarLinhaCalc(this)"></td>
         <td style="${roStyle}"><input data-field="custoMaterial" type="number" min="0" step="0.01" value="${custoMat||''}" placeholder="R$" style="${inStyle};text-align:right;width:75px" oninput="tbAtualizarLinhaCalc(this)"></td>
         <td style="${roStyle};color:var(--tx2);font-size:11px" data-calc="custoClinica">${brl(custoClinica)}</td>
@@ -5402,6 +5418,7 @@ function tbRenderTabela(){
         <td style="${roStyle}">${comPct>0?ppct(comPct):'—'}</td>
         <td style="${roStyle};color:var(--tx3)">${ppct(taxaCartao)}</td>
         <td style="${roStyle};color:var(--tx3)">${ppct(pctNF)}</td>
+        <td style="${roStyle};color:var(--tx3)">${ppct(comVenda)}</td>
         <td style="${roStyle};color:var(--tx2)">${custoLab>0?brl(custoLab):'—'}</td>
         <td style="${roStyle};color:var(--tx2)">${custoMat>0?brl(custoMat):'—'}</td>
         <td style="${roStyle};color:var(--tx2)">${custoClinica>0?brl(custoClinica):'—'}</td>
@@ -5414,9 +5431,9 @@ function tbRenderTabela(){
     }
   }).join('');
 
-  if(!slice.length) tbody.innerHTML=`<tr><td colspan="14"><div class="empty">Nenhum procedimento encontrado.</div></td></tr>`;
+  if(!slice.length) tbody.innerHTML=`<tr><td colspan="15"><div class="empty">Nenhum procedimento encontrado.</div></td></tr>`;
   document.getElementById('tb-count').textContent=`${_tbFiltrados.length} procedimento(s)`;
-  document.getElementById('tb-pag-info').textContent=`Página ${_tbPagAtual} de ${total}`;
+  document.getElementById('tb-pag-info').textContent=`${_tbPagAtual} de ${total}`;
   document.getElementById('tb-prev').disabled=_tbPagAtual<=1;
   document.getElementById('tb-next').disabled=_tbPagAtual>=total;
 }
@@ -5441,12 +5458,13 @@ function tbAtualizarLinhaCalc(input){
   const taxaCartao=parseFloat((document.getElementById('tb-taxa-cartao')||{}).value)||0;
   const pctNF=parseFloat((document.getElementById('tb-pct-nf')||{}).value)||0;
   const custoHora=parseFloat((document.getElementById('tb-custo-hora')||{}).value)||0;
+  const comVenda=parseFloat((document.getElementById('tb-com-venda')||{}).value)||0;
   const val=gf('valor'); const tempo=gf('tempo');
   const comFixo=gf('comissaoFixo'); const comPct=gf('comissaoPct');
   const comEfetiva=comFixo>0?comFixo:(comPct>0?(val*comPct/100):0);
   const custoLab=gf('custoLab'); const custoMat=gf('custoMaterial');
   const custoClinica=tempo*custoHora;
-  const lucro=val-comEfetiva-(val*taxaCartao/100)-(val*pctNF/100)-custoLab-custoMat-custoClinica;
+  const lucro=val-comEfetiva-(val*taxaCartao/100)-(val*pctNF/100)-(val*comVenda/100)-custoLab-custoMat-custoClinica;
   const pctLucro=val>0?(lucro/val*100):0;
   const brl=v=>'R$ '+parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const lucroColor=lucro>=0?'var(--su)':'var(--da)';
