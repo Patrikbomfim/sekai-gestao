@@ -158,24 +158,24 @@ input,select,textarea{padding:7px 10px;border:1px solid var(--border);border-rad
 input:focus,select:focus,textarea:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(30,58,95,.07)}
 
 /* PÁGINA DO PACIENTE */
-.pp-header{display:flex;align-items:center;justify-content:space-between;gap:16px;background:#EBEBEB;border:1px solid var(--border);border-radius:var(--r10);padding:14px 18px;margin-bottom:16px;box-shadow:none;position:sticky;top:0;z-index:20}
+.pp-header{display:flex;align-items:center;justify-content:space-between;gap:16px;background:#2E2E2E;border:1px solid #1A1A1A;border-radius:var(--r10);padding:14px 18px;margin-bottom:16px;box-shadow:none;position:sticky;top:0;z-index:20}
 .pp-header-left{display:flex;align-items:center;gap:14px;min-width:0}
-.pp-back{width:32px;height:32px;border-radius:var(--r8);border:1px solid var(--border-s);background:var(--surface);color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;transition:all .1s}
-.pp-back:hover{background:var(--s2);color:var(--tx)}
-.pp-avatar{width:38px;height:38px;border-radius:50%;background:var(--acl);color:var(--ac);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.pp-back{width:32px;height:32px;border-radius:var(--r8);border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#FFFFFF;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;transition:all .1s}
+.pp-back:hover{background:rgba(255,255,255,.2);color:#fff}
+.pp-avatar{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
 .pp-id{min-width:0}
-.pp-nome{font-size:15px;font-weight:700;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pp-meta{font-size:12px;color:var(--tx2);display:flex;align-items:center;gap:8px;margin-top:1px}
+.pp-nome{font-size:15px;font-weight:700;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#FFFFFF}
+.pp-meta{font-size:12px;color:rgba(255,255,255,.65);display:flex;align-items:center;gap:8px;margin-top:1px}
 .pp-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
 
 .pp-layout{display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start}
-.pp-menu{background:#EBEBEB;border:1px solid var(--border);border-radius:var(--r10);padding:8px;box-shadow:none;position:sticky;top:82px}
-.pp-menu-btn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r8);cursor:pointer;font-size:13px;color:var(--tx2);border:none;background:none;width:100%;text-align:left;transition:all .1s;font-family:var(--font);margin-bottom:1px}
-.pp-menu-btn:hover{background:var(--s2);color:var(--tx)}
-.pp-menu-btn.on{background:var(--acl);color:var(--ac);font-weight:600}
+.pp-menu{background:#2E2E2E;border:1px solid #1A1A1A;border-radius:var(--r10);padding:8px;box-shadow:none;position:sticky;top:82px}
+.pp-menu-btn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r8);cursor:pointer;font-size:13px;color:rgba(255,255,255,.7);border:none;background:none;width:100%;text-align:left;transition:all .1s;font-family:var(--font);margin-bottom:1px;font-weight:500}
+.pp-menu-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+.pp-menu-btn.on{background:rgba(255,255,255,.15);color:#fff;font-weight:700}
 .pp-menu-ic{font-size:14px;opacity:.6;width:16px;text-align:center;flex-shrink:0}
 .pp-menu-btn.on .pp-menu-ic{opacity:1}
-.pp-menu-sep{height:1px;background:var(--border-s);margin:6px 8px;opacity:.6}
+.pp-menu-sep{height:1px;background:rgba(255,255,255,.12);margin:6px 8px}
 .pp-content{min-width:0}
 .pp-area{display:none}
 .pp-area.on{display:block}
@@ -801,14 +801,14 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
     </div>
     <div class="pp-actions">
-      <button class="btn btn-danger btn-sm" id="pp-btn-excluir" onclick="excluirPt()">Excluir</button>
+      <button class="btn btn-danger btn-sm" id="pp-btn-excluir" onclick="excluirPt()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff">Excluir</button>
       <button class="btn btn-primary btn-sm" id="pp-btn-salvar" onclick="atualizarStatusPt()">Salvar alterações →</button>
     </div>
   </div>
 
   <div class="pp-layout">
     <nav class="pp-menu" id="pp-menu">
-      <div class="subnav-title" style="padding:4px 10px 8px;margin:0;letter-spacing:.16em">Menu do paciente</div>
+      <div class="subnav-title" style="padding:4px 10px 8px;margin:0;letter-spacing:.16em;color:rgba(255,255,255,.45)">Menu do paciente</div>
       <button class="pp-menu-btn on" id="pp-menu-dados" onclick="switchPpArea('dados')">Dados</button>
       <button class="pp-menu-btn" id="pp-menu-agenda" onclick="switchPpArea('agenda')">Agenda</button>
       <div class="pp-menu-sep"></div>
