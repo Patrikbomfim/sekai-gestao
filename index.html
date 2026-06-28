@@ -7357,7 +7357,11 @@ function _renderProntPlano(p){
               </td>
               <td style="padding:10px 10px;text-align:center">
                 ${exec
-                  ?`<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#ECFDF5;color:#065F46">✓ Realizado</span>`
+                  ?`<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+                      <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#ECFDF5;color:#065F46">✓ Realizado</span>
+                      ${it.realizadoPor?`<span style="font-size:10px;color:var(--tx3)">por ${it.realizadoPor}</span>`:''}
+                      ${it.realizadoEm?`<span style="font-size:10px;color:var(--tx3)">${it.realizadoEm}</span>`:''}
+                    </div>`
                   :`<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#F3F4F6;color:#6B7280">Não realizado</span>`}
               </td>
               <td style="padding:10px 10px;text-align:center">
@@ -7385,30 +7389,46 @@ function _prontTogglePlano(uid){
 }
 
 function _prontUpdateItem(orcId,idx,field,val){
-  const list=_orcamentos();
-  const orc=list.find(o=>o.id===orcId);
-  if(!orc||!orc.itens||!orc.itens[idx]) return;
-  orc.itens[idx][field]=val;
-  _salvarOrcamentos(list);
+  _comSalvarImediato(()=>{
+    const list=_orcamentos();
+    const orc=list.find(o=>o.id===orcId);
+    if(!orc||!orc.itens||!orc.itens[idx]) return;
+    orc.itens[idx][field]=val;
+    _salvarOrcamentos(list);
+  });
 }
 
 function _prontAprovarItem(orcId,idx){
-  const list=_orcamentos();
-  const orc=list.find(o=>o.id===orcId);
-  if(!orc||!orc.itens||!orc.itens[idx]) return;
-  const it=orc.itens[idx];
-  if(!it.execProfissional){ alert('Selecione o profissional antes de marcar como realizado.'); return; }
-  if(!it.execData){ alert('Informe a data de execução antes de marcar como realizado.'); return; }
-  _comSalvarImediato(()=>{ it.executado=true; _salvarOrcamentos(list); });
+  _comSalvarImediato(()=>{
+    const list=_orcamentos();
+    const orc=list.find(o=>o.id===orcId);
+    if(!orc||!orc.itens||!orc.itens[idx]) return;
+    const it=orc.itens[idx];
+    if(!it.execProfissional){ alert('Selecione o profissional antes de marcar como realizado.'); return; }
+    if(!it.execData){ alert('Informe a data de execução antes de marcar como realizado.'); return; }
+    const agora=new Date();
+    const horaStr=agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const dataHoje=agora.toLocaleDateString('pt-BR');
+    const uNome=(usuarios.find(u=>u.id===usuarioAtualId)||{}).nome||'Sistema';
+    it.executado=true;
+    it.realizadoPor=uNome;
+    it.realizadoEm=`${dataHoje} às ${horaStr}`;
+    _salvarOrcamentos(list);
+  });
   const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
   if(p) _renderProntPlano(p);
 }
 
 function _prontDesfazerItem(orcId,idx){
-  const list=_orcamentos();
-  const orc=list.find(o=>o.id===orcId);
-  if(!orc||!orc.itens||!orc.itens[idx]) return;
-  _comSalvarImediato(()=>{ orc.itens[idx].executado=false; _salvarOrcamentos(list); });
+  _comSalvarImediato(()=>{
+    const list=_orcamentos();
+    const orc=list.find(o=>o.id===orcId);
+    if(!orc||!orc.itens||!orc.itens[idx]) return;
+    orc.itens[idx].executado=false;
+    orc.itens[idx].realizadoPor=null;
+    orc.itens[idx].realizadoEm=null;
+    _salvarOrcamentos(list);
+  });
   const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
   if(p) _renderProntPlano(p);
 }
@@ -7427,47 +7447,31 @@ function _renderProntFicha(p){
     ?'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#ECFDF5;color:#065F46">Realizado</span>'
     :'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#FEF9EE;color:#7C4A00">A realizar</span>';
 
-  wrap.innerHTML=fichas.map(f=>{
-    const uid='ficha-'+f.id;
-    return `
-    <div style="border:1px solid var(--border);border-radius:var(--r8);margin-bottom:8px;overflow:hidden">
-      <div onclick="_prontToggleFicha('${uid}')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;background:var(--surface);user-select:none"
-           onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--surface)'">
-        <span id="${uid}-caret" style="font-size:11px;color:var(--tx3);transition:transform .18s;display:inline-block;flex-shrink:0">▶</span>
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <span style="font-size:13px;font-weight:600">${fmtData(f.data)}</span>
-            ${f.profissional?`<span style="font-size:12px;color:var(--tx3)">· ${f.profissional}</span>`:''}
-            ${f.avulso?'<span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:3px;background:var(--pul);color:var(--pu)">Avulso</span>':''}
-            ${f.procedimento?`<span style="font-size:12px;color:var(--tx2)">${f.procedimento}</span>`:''}
-          </div>
-          ${f.descricao?`<div style="font-size:12px;color:var(--tx3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:500px">${f.descricao}</div>`:''}
+  wrap.innerHTML=fichas.map(f=>`
+    <div style="border:1px solid var(--border);border-radius:var(--r8);margin-bottom:10px;overflow:hidden">
+      <!-- Cabeçalho da linha -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span style="font-size:13px;font-weight:700;color:var(--tx)">${fmtData(f.data)}</span>
+          ${f.profissional?`<span style="font-size:12px;color:var(--tx3)">·</span><span style="font-size:12px;font-weight:500;color:var(--tx2)">${f.profissional}</span>`:''}
+          ${f.avulso?'<span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:3px;background:var(--pul);color:var(--pu)">Avulso</span>':''}
+          ${f.procedimento?`<span style="font-size:12px;color:var(--ac);font-weight:500">${f.procedimento}</span>`:''}
         </div>
-        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
           ${statusPill(f.status||'realizado')}
-          <button onclick="event.stopPropagation();_prontEditarFicha('${f.id}')" style="font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--tx2)">Editar</button>
-          <button onclick="event.stopPropagation();_prontExcluirFicha('${f.id}')" style="font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--da)">Excluir</button>
+          <button onclick="_prontEditarFicha('${f.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--tx2)">Editar</button>
+          <button onclick="_prontExcluirFicha('${f.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--da)">Excluir</button>
         </div>
       </div>
-      <div id="${uid}-body" style="display:none;border-top:1px solid var(--border);padding:16px 14px">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-          ${f.planTratamento?`<div style="grid-column:1/-1"><span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em">Plano de tratamento</span><div style="font-size:12px;margin-top:4px">${f.planTratamento}</div></div>`:''}
-          ${f.descricao?`<div style="grid-column:1/-1"><span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em">Descrição do atendimento</span><div style="font-size:12px;margin-top:4px;white-space:pre-line">${f.descricao}</div></div>`:''}
-          ${f.orientacoes?`<div><span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em">Orientações ao paciente</span><div style="font-size:12px;margin-top:4px;white-space:pre-line">${f.orientacoes}</div></div>`:''}
-          ${f.proximaConsulta?`<div><span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em">Detalhes para próxima consulta</span><div style="font-size:12px;margin-top:4px;white-space:pre-line">${f.proximaConsulta}</div></div>`:''}
-        </div>
+      <!-- Corpo sempre visível -->
+      <div style="padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px 24px">
+        ${f.planTratamento?`<div style="grid-column:1/-1"><div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Plano de tratamento</div><div style="font-size:13px;color:var(--tx)">${f.planTratamento}</div></div>`:''}
+        ${f.descricao?`<div style="grid-column:1/-1"><div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Descrição do atendimento</div><div style="font-size:13px;color:var(--tx);white-space:pre-line">${f.descricao}</div></div>`:''}
+        ${f.orientacoes?`<div><div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Orientações ao paciente</div><div style="font-size:13px;color:var(--tx);white-space:pre-line">${f.orientacoes}</div></div>`:''}
+        ${f.proximaConsulta?`<div><div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Detalhes para próxima consulta</div><div style="font-size:13px;color:var(--tx);white-space:pre-line">${f.proximaConsulta}</div></div>`:''}
+        ${!f.descricao&&!f.orientacoes&&!f.proximaConsulta&&!f.planTratamento?'<div style="grid-column:1/-1;font-size:12px;color:var(--tx3)">Nenhum detalhe registrado.</div>':''}
       </div>
-    </div>`;
-  }).join('');
-}
-
-function _prontToggleFicha(uid){
-  const body=document.getElementById(uid+'-body');
-  const caret=document.getElementById(uid+'-caret');
-  if(!body) return;
-  const open=body.style.display==='block';
-  body.style.display=open?'none':'block';
-  if(caret) caret.style.transform=open?'':'rotate(90deg)';
+    </div>`).join('');
 }
 
 function _prontExcluirFicha(id){
