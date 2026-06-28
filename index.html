@@ -5113,8 +5113,14 @@ function abrirModalPt(id){
   // histórico
   renderPpHistorico(p);
 
-  // anamnese
+  // anamnese — sincroniza com Supabase em background e re-renderiza se houver resposta nova
   document.getElementById('pp-anamnese-wrap').innerHTML=renderAbaAnamnese(p);
+  sincronizarRespostaAnamnese(p.id).then(atualizado=>{
+    if(atualizado){
+      document.getElementById('pp-anamnese-wrap').innerHTML=renderAbaAnamnese(pacientes.find(x=>x.id===p.id)||p);
+      showSaveToast('Anamnese recebida e cadastro atualizado!');
+    }
+  });
 
   // lembretes e pendências do paciente
   _ppPacienteAtual=p;
@@ -8224,9 +8230,9 @@ const CAMPOS_ANAMNESE_PADRAO = [
 ];
 
 let camposAnamnese = carregarLS('sk3-campos-anamnese', CAMPOS_ANAMNESE_PADRAO);
-// respostas: { pacienteId: { campoId: valor, campoId_condicional: valor, _token: str, _preenchidoEm: str } }
+// respostas: { pacienteId: { campoId: valor, campoId_cond: valor, _token: str, _preenchidoEm: str } }
 let respostasAnamnese = carregarLS('sk3-respostas-anamnese', {});
-// tokens: { token: pacienteId }
+// tokens locais (cache): { token: pacienteId }
 let tokensAnamnese = carregarLS('sk3-tokens-anamnese', {});
 
 function salvarAnamnese(){
@@ -8237,7 +8243,6 @@ function salvarAnamnese(){
 
 // ── Gerar token único ──────────────────────────────────────────────────
 function gerarTokenAnamnese(pacienteId){
-  // Verifica se já existe token
   const entrada = respostasAnamnese[pacienteId];
   if(entrada && entrada._token) return entrada._token;
   const token = 'sk-an-' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
@@ -8252,6 +8257,76 @@ function urlAnamnese(token){
   return window.location.href.split('?')[0] + '?anamnese=' + token;
 }
 
+// ── Salvar token no Supabase (para o paciente acessar de outro device) ──
+async function publicarTokenAnamnese(token, pacienteId){
+  try {
+    const p = pacientes.find(x => x.id === pacienteId);
+    const payload = {
+      token,
+      paciente_id: String(pacienteId),
+      paciente_nome: p ? p.nome : '',
+      campos: camposAnamnese,
+      respostas: null,
+      preenchido_em: null
+    };
+    await supa.from('anamneses').upsert(payload, { onConflict: 'token' });
+  } catch(e){ console.error('Erro ao publicar token no Supabase:', e); }
+}
+
+// ── Verificar se chegou resposta nova do paciente (chamado ao abrir ficha) ──
+async function sincronizarRespostaAnamnese(pacienteId){
+  try {
+    const resp = respostasAnamnese[pacienteId] || {};
+    const token = resp._token;
+    if(!token) return false; // sem link gerado, nada a verificar
+    if(resp._preenchidoEm) return false; // já temos localmente
+
+    const { data, error } = await supa
+      .from('anamneses')
+      .select('respostas, preenchido_em')
+      .eq('token', token)
+      .single();
+
+    if(error || !data || !data.preenchido_em) return false;
+
+    // Chegou resposta nova! Aplicar localmente
+    const respostasRemotas = data.respostas || {};
+    respostasRemotas._token = token;
+    respostasRemotas._preenchidoEm = data.preenchido_em;
+    respostasAnamnese[pacienteId] = respostasRemotas;
+    salvarAnamnese();
+
+    // Aplicar vínculos no cadastro do paciente
+    const p = pacientes.find(x => x.id === pacienteId);
+    if(p){
+      p.historico = p.historico || [];
+      const camposPreenchidos = aplicarVinculosAnamneseNoCadastro(p, respostasRemotas);
+      // Aplicar campos de cadastro vindos da anamnese (nome, fone, cpf, etc.)
+      _aplicarCamposCadastroAnamnese(p, respostasRemotas);
+      p.historico.push({data: iso(hoje), status: p.status, nota: '🩺 Anamnese preenchida pelo paciente via link'});
+      if(camposPreenchidos.length){
+        p.historico.push({data: iso(hoje), status: p.status, nota: `📋 Cadastro atualizado a partir da anamnese: ${camposPreenchidos.join(', ')}`});
+      }
+      salvarLS('sk3-pacientes', pacientes);
+    }
+    return true; // houve atualização
+  } catch(e){ console.error('Erro ao sincronizar anamnese:', e); return false; }
+}
+
+// ── Aplica campos de cadastro fixos vindos da anamnese ─────────────────
+// Campos como nome, fone, cpf, nascimento, cep, cidade, rua, numero, complemento
+const _MAP_ANAMNESE_CADASTRO = {
+  an_cad_nome:'nome', an_cad_fone:'fone', an_cad_cpf:'cpf',
+  an_cad_nascimento:'nascimento', an_cad_cep:'cep', an_cad_cidade:'cidade',
+  an_cad_rua:'rua', an_cad_numero:'numero', an_cad_complemento:'complemento'
+};
+function _aplicarCamposCadastroAnamnese(p, resp){
+  Object.entries(_MAP_ANAMNESE_CADASTRO).forEach(([campoAn, campoPt])=>{
+    const val = resp[campoAn];
+    if(val && !p[campoPt]) p[campoPt] = val;
+  });
+}
+
 // ── Aba Anamnese dentro do modal do paciente ───────────────────────────
 function renderAbaAnamnese(p){
   const resp = respostasAnamnese[p.id] || {};
@@ -8260,7 +8335,6 @@ function renderAbaAnamnese(p){
 
   let html = '';
 
-  // Botão gerar link
   html += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">`;
   if(preenchido){
     html += `<span style="font-size:13px;color:var(--su)">✓ Preenchida em ${preenchido}</span>`;
@@ -8269,8 +8343,13 @@ function renderAbaAnamnese(p){
       <button class="btn btn-danger btn-sm" onclick="limparAnamnese('${p.id}')">Limpar respostas</button>
     </div>`;
   } else {
-    html += `<span style="font-size:13px;color:var(--tx3)">${token ? 'Link gerado — aguardando preenchimento' : 'Anamnese não enviada'}</span>`;
+    html += `<span style="font-size:13px;color:var(--tx3)" id="an-status-label">${token ? 'Link gerado — aguardando preenchimento' : 'Anamnese não enviada'}</span>`;
+    html += `<div style="display:flex;gap:8px">`;
+    if(token){
+      html += `<button class="btn btn-ghost btn-sm" id="an-btn-verificar" onclick="verificarAnamnese('${p.id}')">🔄 Verificar</button>`;
+    }
     html += `<button class="btn btn-primary btn-sm" onclick="abrirModalLink('${p.id}')">🔗 ${token ? 'Ver link' : '+ Gerar link para paciente'}</button>`;
+    html += `</div>`;
   }
   html += `</div>`;
 
@@ -8294,9 +8373,25 @@ function renderAbaAnamnese(p){
   return html;
 }
 
+// ── Botão verificar anamnese manualmente ──────────────────────────────
+async function verificarAnamnese(pacienteId){
+  const btn = document.getElementById('an-btn-verificar');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Verificando...'; }
+  const atualizado = await sincronizarRespostaAnamnese(pacienteId);
+  if(atualizado){
+    abrirModalPt(pacienteId);
+    switchPpArea('anamnese');
+    showSaveToast('Anamnese recebida e cadastro atualizado!');
+  } else {
+    if(btn){ btn.disabled = false; btn.textContent = '🔄 Verificar'; }
+    const lbl = document.getElementById('an-status-label');
+    if(lbl){ lbl.textContent = 'Ainda aguardando preenchimento...'; setTimeout(()=>{ lbl.textContent = 'Link gerado — aguardando preenchimento'; }, 2500); }
+  }
+}
+
 // ── Modal de link ───────────────────────────────────────────────────────
 let _modalLinkPacienteId = null;
-function abrirModalLink(pacienteId){
+async function abrirModalLink(pacienteId){
   _modalLinkPacienteId = pacienteId;
   const token = gerarTokenAnamnese(pacienteId);
   const url = urlAnamnese(token);
@@ -8308,6 +8403,8 @@ function abrirModalLink(pacienteId){
   document.getElementById('mla-status').innerHTML = status;
   document.getElementById('mla-copiado').style.display = 'none';
   abrirModal('modal-link-anamnese');
+  // Publica token no Supabase em background
+  await publicarTokenAnamnese(token, pacienteId);
 }
 
 function copiarLinkAnamnese(){
@@ -8323,15 +8420,18 @@ function abrirLinkAnamnese(){
   window.open(url, '_blank');
 }
 
-function limparAnamnese(pacienteId){
+async function limparAnamnese(pacienteId){
   if(!confirm('Limpar todas as respostas desta anamnese?')) return;
   _bypassQueue=true;
   const token = (respostasAnamnese[pacienteId]||{})._token;
-  if(token) delete tokensAnamnese[token];
+  if(token){
+    delete tokensAnamnese[token];
+    // Remove do Supabase também
+    try{ await supa.from('anamneses').delete().eq('token', token); }catch(e){}
+  }
   delete respostasAnamnese[pacienteId];
   salvarAnamnese();
   fecharModal('modal-link-anamnese');
-  // re-renderiza página do paciente
   abrirModalPt(pacienteId);
   switchPpArea('anamnese');
 }
@@ -8450,28 +8550,51 @@ function moverCampoAnamnese(idx, dir){
 }
 
 // ── Página pública de anamnese (renderizada quando há ?anamnese=token na URL) ──
+// Busca dados no Supabase — funciona em qualquer dispositivo, sem login
 function verificarModoAnamnese(){
   const params = new URLSearchParams(window.location.search);
   const token = params.get('anamnese');
   if(!token) return false;
-  const pacienteId = tokensAnamnese[token];
-  if(!pacienteId){
-    document.body.innerHTML = renderPaginaAnamneseErro('Link inválido ou expirado. Solicite um novo link à clínica.');
-    return true;
-  }
-  const p = pacientes.find(x=>x.id===pacienteId);
-  if(!p){
-    document.body.innerHTML = renderPaginaAnamneseErro('Paciente não encontrado. Solicite um novo link à clínica.');
-    return true;
-  }
-  const resp = respostasAnamnese[pacienteId] || {};
-  if(resp._preenchidoEm){
-    document.body.innerHTML = renderPaginaAnamneseJaPreenchida(p);
-    return true;
-  }
-  document.body.innerHTML = renderPaginaAnamnesePaciente(p, token, pacienteId);
-  bindEventosAnamnese(token, pacienteId);
+
+  // Mostra tela de carregamento enquanto busca no Supabase
+  document.body.innerHTML = `<div style="font-family:Inter,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:16px;background:#F4F5F7">
+    <div style="width:36px;height:36px;border:3px solid #E5E7EB;border-top-color:#1E3A5F;border-radius:50%;animation:spin .8s linear infinite"></div>
+    <div style="font-size:14px;color:#6B7280">Carregando sua ficha...</div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+  </div>`;
+
+  _carregarAnamnesePublica(token);
   return true;
+}
+
+async function _carregarAnamnesePublica(token){
+  try {
+    const { data, error } = await supa
+      .from('anamneses')
+      .select('*')
+      .eq('token', token)
+      .single();
+
+    if(error || !data){
+      document.body.innerHTML = renderPaginaAnamneseErro('Link inválido ou expirado. Solicite um novo link à clínica.');
+      return;
+    }
+    if(data.preenchido_em){
+      document.body.innerHTML = renderPaginaAnamneseJaPreenchida({ nome: data.paciente_nome });
+      return;
+    }
+    // Carregar campos configurados da clínica (salvos junto com o token)
+    const campos = data.campos || camposAnamnese;
+    document.body.innerHTML = renderPaginaAnamnesePaciente(
+      { id: data.paciente_id, nome: data.paciente_nome },
+      token,
+      data.paciente_id,
+      campos
+    );
+    bindEventosAnamnese(token, data.paciente_id, campos);
+  } catch(e){
+    document.body.innerHTML = renderPaginaAnamneseErro('Erro ao carregar. Verifique sua conexão e tente novamente.');
+  }
 }
 
 function renderPaginaAnamneseErro(msg){
@@ -8490,10 +8613,11 @@ function renderPaginaAnamneseJaPreenchida(p){
   </div>`;
 }
 
-function renderPaginaAnamnesePaciente(p, token, pacienteId){
+function renderPaginaAnamnesePaciente(p, token, pacienteId, camposParam){
+  const _campos = camposParam || camposAnamnese;
   const nome = p.nome.split(' ')[0];
   let campos = '';
-  camposAnamnese.forEach(c=>{
+  _campos.forEach(c=>{
     campos += `<div style="margin-bottom:22px">
       <label style="display:block;font-size:14px;font-weight:600;color:#111827;margin-bottom:8px">${c.label}${c.obrigatorio?' <span style="color:#DC2626">*</span>':''}</label>
       ${renderCampoAnamnesePublico(c)}
@@ -8584,8 +8708,10 @@ function renderCampoAnamnesePublico(c){
   return '';
 }
 
-function bindEventosAnamnese(token, pacienteId){
+function bindEventosAnamnese(token, pacienteId, camposParam){
   // nada extra necessário — eventos inline já estão no HTML
+  // camposParam guardado globalmente para o submit usar
+  window._camposAnamnesePublico = camposParam || camposAnamnese;
 }
 
 function toggleCond(campoId, mostrar){
@@ -8616,9 +8742,11 @@ function aplicarVinculosAnamneseNoCadastro(p, resp){
   return preenchidos;
 }
 
-function submitAnamnese(token, pacienteId){
+async function submitAnamnese(token, pacienteId){
+  const _campos = window._camposAnamnesePublico || camposAnamnese;
+
   // validar obrigatórios
-  for(const c of camposAnamnese){
+  for(const c of _campos){
     if(!c.obrigatorio) continue;
     if(c.tipo === 'sim_nao'){
       const checked = document.querySelector(`input[name="${c.id}"]:checked`);
@@ -8632,9 +8760,12 @@ function submitAnamnese(token, pacienteId){
     }
   }
 
-  const resp = respostasAnamnese[pacienteId] || {};
+  // Desabilitar botão e mostrar carregando
+  const btnSubmit = document.querySelector('.btn-submit');
+  if(btnSubmit){ btnSubmit.disabled = true; btnSubmit.textContent = 'Enviando...'; }
 
-  camposAnamnese.forEach(c=>{
+  const resp = {};
+  _campos.forEach(c=>{
     if(c.tipo === 'sim_nao'){
       const checked = document.querySelector(`input[name="${c.id}"]:checked`);
       resp[c.id] = checked ? checked.value : '';
@@ -8655,28 +8786,31 @@ function submitAnamnese(token, pacienteId){
   });
 
   const agora = new Date();
-  const dia = agora.toLocaleDateString('pt-BR');
-  const hora = agora.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
-  resp._preenchidoEm = `${dia} às ${hora}`;
-  resp._token = token;
+  const preenchidoEm = agora.toLocaleDateString('pt-BR') + ' às ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
 
-  respostasAnamnese[pacienteId] = resp;
-  salvarAnamnese();
+  try {
+    // Gravar respostas no Supabase
+    const { error } = await supa
+      .from('anamneses')
+      .update({ respostas: resp, preenchido_em: preenchidoEm })
+      .eq('token', token);
 
-  // Registrar no histórico do paciente + aplicar vínculos com o cadastro
-  const p = pacientes.find(x=>x.id===pacienteId);
-  if(p){
-    p.historico = p.historico || [];
-    const camposPreenchidos = aplicarVinculosAnamneseNoCadastro(p, resp);
-    p.historico.push({data: iso(hoje), status: p.status, nota: '🩺 Anamnese preenchida pelo paciente'});
-    if(camposPreenchidos.length){
-      p.historico.push({data: iso(hoje), status: p.status, nota: `📋 Cadastro atualizado automaticamente a partir da anamnese: ${camposPreenchidos.join(', ')}`});
-    }
-    salvarLS('sk3-pacientes', pacientes);
+    if(error) throw error;
+
+    // Também atualiza localmente se estiver no mesmo device (raro, mas possível)
+    respostasAnamnese[pacienteId] = respostasAnamnese[pacienteId] || {};
+    Object.assign(respostasAnamnese[pacienteId], resp);
+    respostasAnamnese[pacienteId]._preenchidoEm = preenchidoEm;
+    respostasAnamnese[pacienteId]._token = token;
+    salvarAnamnese();
+
+    document.getElementById('form-area').style.display = 'none';
+    document.getElementById('sucesso-area').style.display = 'block';
+  } catch(e){
+    if(btnSubmit){ btnSubmit.disabled = false; btnSubmit.textContent = 'Enviar ficha ✓'; }
+    alert('Erro ao enviar. Verifique sua conexão e tente novamente.');
+    console.error('Erro ao gravar anamnese:', e);
   }
-
-  document.getElementById('form-area').style.display = 'none';
-  document.getElementById('sucesso-area').style.display = 'block';
 }
 
 // ── Inicializar ao carregar página ─────────────────────────────────────
