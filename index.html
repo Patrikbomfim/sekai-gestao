@@ -7029,8 +7029,14 @@ function _aprovRenderEntradas(){
       ${detalhesHtml}
     </div>
     <div style="${borderTop};padding:10px 12px;border-left:1px solid var(--border);text-align:right">
-      <input type="number" value="${e.valor.toFixed(2)}" min="0" step="0.01" oninput="_aprovChangeValor(${ei},this.value)"
-        style="font-size:13px;font-weight:600;border:1px solid var(--border);border-radius:var(--r6);padding:5px 8px;background:var(--surface);color:var(--ac);font-family:var(--font);width:100%;text-align:right">
+      ${isBoleto?(()=>{
+        const somaParc=(e.parcelasCustom||[]).reduce((s,p)=>s+(p.valor||0),0);
+        const diff=+(somaParc-e.valor*(1-(e.desconto||0)/100)).toFixed(2);
+        const corSoma=Math.abs(diff)<0.01?'var(--ac)':diff>0?'#991B1B':'#065F46';
+        return `<div style="font-size:13px;font-weight:700;color:${corSoma};padding:5px 8px;text-align:right;min-width:90px">R$ ${fmtMoeda(somaParc)}</div>`
+          +(Math.abs(diff)>=0.01?`<div style="font-size:10px;color:${diff>0?'#991B1B':'#065F46'};margin-top:2px">${diff>0?'↑ excede':'↓ falta'} R$ ${fmtMoeda(Math.abs(diff))}</div>`:`<div style="font-size:10px;color:var(--su);margin-top:2px">✓ soma correta</div>`);
+      })():`<input type="number" value="${e.valor.toFixed(2)}" min="0" step="0.01" oninput="_aprovChangeValor(${ei},this.value)"
+        style="font-size:13px;font-weight:600;border:1px solid var(--border);border-radius:var(--r6);padding:5px 8px;background:var(--surface);color:var(--ac);font-family:var(--font);width:100%;text-align:right">`}
       ${isCredito&&e.desconto>0?`<div style="font-size:10px;color:var(--tx3);margin-top:2px">Líquido: R$ ${fmtMoeda(e.valor*(1-e.desconto/100))}</div>`:''}
     </div>
     <div style="${borderTop};border-left:1px solid var(--border);display:flex;align-items:center;justify-content:center">
@@ -7051,10 +7057,15 @@ function _aprovRenderEntradas(){
 function _aprovAtualizarSaldo(){
   const totalOrc=(_orcItens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
   const fmtMoeda=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
-  // Valor bruto das entradas (sem descontos) deve somar ao valor de tabela
-  const totalBrutoEntradas=_aprovEntradas.reduce((s,e)=>s+(e.valor||0),0);
-  // Valor líquido (com descontos individuais) = o que a clínica realmente recebe
-  const totalLiquidoEntradas=_aprovEntradas.reduce((s,e)=>s+(e.valor*(1-(e.desconto||0)/100)),0);
+  // Para boleto: usa a soma real das parcelas customizadas; para demais: usa e.valor
+  const totalBrutoEntradas=_aprovEntradas.reduce((s,e)=>{
+    if(e.tipo==='parcelado_boleto') return s+(e.parcelasCustom||[]).reduce((sp,p)=>sp+(p.valor||0),0);
+    return s+(e.valor||0);
+  },0);
+  const totalLiquidoEntradas=_aprovEntradas.reduce((s,e)=>{
+    if(e.tipo==='parcelado_boleto') return s+(e.parcelasCustom||[]).reduce((sp,p)=>sp+(p.valor||0),0);
+    return s+(e.valor*(1-(e.desconto||0)/100));
+  },0);
   const diff=+(totalOrc-totalBrutoEntradas).toFixed(2);
   const aviso=document.getElementById('aprov-saldo-aviso');
   if(!aviso) return;
@@ -7065,7 +7076,7 @@ function _aprovAtualizarSaldo(){
   } else if(diff>0){
     aviso.innerHTML=`<div style="font-size:12px;color:#7C4A00;padding:6px 10px;background:#FEF9EE;border-radius:var(--r6);border:1px solid #FDE68A">Faltam R$ ${fmtMoeda(diff)} para cobrir o valor de tabela (R$ ${fmtMoeda(totalOrc)})</div>`;
   } else {
-    aviso.innerHTML=`<div style="font-size:12px;color:var(--ac);padding:6px 10px;background:var(--acl);border-radius:var(--r6)">Os títulos excedem o valor de tabela em R$ ${fmtMoeda(-diff)}</div>`;
+    aviso.innerHTML=`<div style="font-size:12px;color:#991B1B;padding:6px 10px;background:#FFF5F5;border-radius:var(--r6);border:1px solid #FECACA;font-weight:500">&#9888;&#65039; T&iacute;tulos excedem o valor de tabela em R$ ${fmtMoeda(-diff)} &mdash; ajuste os valores antes de confirmar</div>`;
   }
 }
 
@@ -7165,6 +7176,18 @@ function confirmarAprovacaoOrcamento(){
   _aprovGerarPreview();
   const titulos=window._aprovTitulosTemp||[];
   if(!titulos.length){ alert('Configure a forma de pagamento antes de confirmar.'); return; }
+  // Bloquear se total exceder o valor do orçamento
+  const totalOrc=(_orcItens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+  const totalEntradas=_aprovEntradas.reduce((s,e)=>{
+    if(e.tipo==='parcelado_boleto') return s+(e.parcelasCustom||[]).reduce((sp,p)=>sp+(p.valor||0),0);
+    return s+(e.valor||0);
+  },0);
+  const excesso=+(totalEntradas-totalOrc).toFixed(2);
+  if(excesso>0.01){
+    const fmt=v=>v.toLocaleString('pt-BR',{minimumFractionDigits:2});
+    alert(`Não é possível confirmar: os títulos (R$ ${fmt(totalEntradas)}) excedem o valor do orçamento (R$ ${fmt(totalOrc)}) em R$ ${fmt(excesso)}.\n\nAjuste os valores das parcelas antes de confirmar.`);
+    return;
+  }
 
   // 1. Marca orçamento como aprovado e grava valores de fechamento
   const totalTabela=(_orcItens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
