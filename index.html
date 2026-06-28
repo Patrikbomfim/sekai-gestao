@@ -6536,7 +6536,7 @@ function registrarPagamentoTitulo(tituloId){
   if(idx<0) return;
   list[idx].status='pago';
   list[idx].dataPagamento=dataInput;
-  _salvarTitulos(list);
+  _comSalvarImediato(()=>_salvarTitulos(list));
   // Re-render
   const pacId=list[idx].pacienteId;
   const p=pacientes.find(x=>String(x.id)===String(pacId));
@@ -6550,7 +6550,7 @@ function estornarPagamentoTitulo(tituloId){
   if(idx<0) return;
   list[idx].status='aberto';
   delete list[idx].dataPagamento;
-  _salvarTitulos(list);
+  _comSalvarImediato(()=>_salvarTitulos(list));
   const pacId=list[idx].pacienteId;
   const p=pacientes.find(x=>String(x.id)===String(pacId));
   if(p) renderPpFinanceiro(p);
@@ -6667,10 +6667,10 @@ function _aprovAtualizarCampos(){
         </div>
       </div>
       <div id="aprov-parcelas-custom" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>`;
-    _aprovGerarParcelasPersonalizadas();
+    setTimeout(()=>_aprovGerarParcelasPersonalizadas(), 0);
     return;
   }
-  _aprovGerarPreview();
+  setTimeout(()=>_aprovGerarPreview(), 0);
 }
 
 function _aprovGerarParcelasPersonalizadas(){
@@ -6780,9 +6780,11 @@ function fecharModalAprovarOrcamento(){
 }
 
 function confirmarAprovacaoOrcamento(){
-  const titulos=window._aprovTitulosTemp||[];
-  if(!titulos.length){ alert('Gere as parcelas antes de confirmar.'); return; }
   if(!_orcModalId){ alert('Salve o orçamento antes de aprovar.'); return; }
+  // Recalcula títulos na hora de confirmar (não depende do preview ter rodado)
+  _aprovGerarPreview();
+  const titulos=window._aprovTitulosTemp||[];
+  if(!titulos.length){ alert('Configure a forma de pagamento antes de confirmar.'); return; }
 
   // 1. Marca orçamento como aprovado
   _comSalvarImediato(()=>{
@@ -6799,6 +6801,7 @@ function confirmarAprovacaoOrcamento(){
   let allTits=_titulos().filter(t=>t.orcamentoId!==_orcModalId);
 
   // 3. Cria novos títulos
+  const hojeIso=new Date().toISOString().slice(0,10);
   titulos.forEach((t,i)=>{
     allTits.push({
       id:'tit_'+Date.now()+'_'+i,
@@ -6809,10 +6812,11 @@ function confirmarAprovacaoOrcamento(){
       vencimento:t.vencimento,
       tipo:t.tipo,
       status:'aberto',
-      criadoEm:new Date().toISOString().slice(0,10),
+      criadoEm:hojeIso,
     });
   });
-  _salvarTitulos(allTits);
+  // Salva imediatamente (sem fila pendente)
+  _comSalvarImediato(()=>_salvarTitulos(allTits));
 
   fecharModalAprovarOrcamento();
   fecharModalOrcamento();
