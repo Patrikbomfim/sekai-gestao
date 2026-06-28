@@ -8,18 +8,18 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 :root{
-  --bg:#F5F5F6;--surface:#FFFFFF;--s2:#EFEFEF;--border:#E2E2E2;--border-s:#CECECE;
-  --tx:#141414;--tx2:#5A5A5A;--tx3:#9A9A9A;
-  --ac:#3D3D3D;--acl:#F0F0F0;--act:#1A1A1A;
+  --bg:#F7F8FA;--surface:#FFFFFF;--s2:#F0F2F5;--border:#E5E7EB;--border-s:#D1D5DB;
+  --tx:#0F172A;--tx2:#64748B;--tx3:#94A3B8;
+  --ac:#1E3A5F;--acl:#F0F4F9;--act:#0F1F33;
   --wa:#7C4A00;--wal:#FEF9EE;
   --da:#991B1B;--dal:#FFF5F5;
-  --in:#3D3D3D;--inl:#F0F0F0;
+  --in:#1E3A5F;--inl:#F0F4F9;
   --pu:#4338CA;--pul:#F3F4FF;
   --su:#065F46;--sul:#F0FDF6;
   --r4:4px;--r6:6px;--r8:8px;--r10:10px;--r12:12px;--r16:16px;
   --font:'Inter',system-ui,-apple-system,sans-serif;
-  --shadow:0 1px 3px rgba(0,0,0,.06);
-  --shadow-md:0 4px 16px rgba(0,0,0,.08);
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,.06);
 }
 body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:13px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
 
@@ -80,9 +80,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:13px
 .toggle-sw.on::after{transform:translateX(15px)}
 
 /* SIDEBAR */
-.sidebar{background:#F2F2F2;border-right:1px solid var(--border);padding:20px 0;position:sticky;top:50px;height:calc(100vh - 50px);overflow-x:hidden;overflow-y:auto;width:200px;transition:width .12s ease}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:20px 0;position:sticky;top:50px;height:calc(100vh - 50px);overflow-x:hidden;overflow-y:auto;width:200px;transition:width .12s ease}
 .layout.nav-collapsed .sidebar{width:0;padding:20px 0;border-right:none}
-.slb-label{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.18em;padding:0 20px;margin:20px 0 6px;white-space:nowrap}
+.slb-label{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.12em;padding:0 20px;margin:20px 0 6px;white-space:nowrap}
 .slb-label:first-child{margin-top:0}
 .nav-gap{height:14px}
 .nav-btn{display:flex;align-items:center;gap:9px;padding:8px 20px;cursor:pointer;font-size:12.5px;color:var(--tx2);border:none;border-left:2px solid transparent;background:none;width:100%;text-align:left;transition:color .1s,background .1s;font-family:var(--font);white-space:nowrap;border-radius:0}
@@ -101,7 +101,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:13px
 .pg-desc{font-size:13px;color:var(--tx2);margin-bottom:20px;font-weight:400}
 
 /* CARD */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);padding:16px 18px;margin-bottom:14px;box-shadow:none}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow)}
 .card-title{font-size:13px;font-weight:600;margin-bottom:2px;letter-spacing:-.1px}
 .card-sub{font-size:12px;color:var(--tx2);margin-bottom:14px}
 
@@ -110,8 +110,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:13px
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 
 /* METRIC */
-.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);padding:16px 18px;box-shadow:none}
-.metric-lbl{font-size:10px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.18em;margin-bottom:6px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);padding:16px 18px;box-shadow:var(--shadow)}
+.metric-lbl{font-size:10px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
 .metric-val{font-size:26px;font-weight:700;line-height:1;letter-spacing:-.8px}
 .metric-note{font-size:11.5px;color:var(--tx2);margin-top:5px}
 
@@ -132,7 +132,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:13px
 .a-danger{background:var(--dal);color:var(--da);border-color:var(--da)}
 
 /* AÇÃO CARD */
-.ac-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r8);padding:10px 12px;margin-bottom:6px;display:flex;align-items:flex-start;gap:10px;box-shadow:none}
+.ac-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r8);padding:10px 12px;margin-bottom:6px;display:flex;align-items:flex-start;gap:10px;box-shadow:var(--shadow)}
 .ac-card.atrasada{border-left:3px solid var(--da)}
 .ac-card.hoje{border-left:3px solid var(--ac)}
 .ac-card.futura{border-left:3px solid var(--border-s)}
@@ -153,29 +153,28 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:13px
 .fl{display:flex;flex-direction:column;gap:4px}
 .link-clicavel{color:var(--ac);cursor:pointer}
 .link-clicavel:hover{text-decoration:underline}
-label{font-size:10.5px;font-weight:600;color:#6B6B6B;text-transform:uppercase;letter-spacing:.08em}
+label{font-size:10.5px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em}
 input,select,textarea{padding:7px 10px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);color:var(--tx);background:var(--surface);outline:none;transition:border .1s,box-shadow .1s;width:100%}
 input:focus,select:focus,textarea:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(30,58,95,.07)}
 
 /* PÁGINA DO PACIENTE */
-.pp-header{display:flex;align-items:center;justify-content:space-between;gap:16px;background:#2E2E2E;border:1px solid #1A1A1A;border-radius:var(--r10);padding:14px 18px;margin-bottom:16px;box-shadow:none;position:sticky;top:0;z-index:20}
+.pp-header{display:flex;align-items:center;justify-content:space-between;gap:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r10);padding:14px 18px;margin-bottom:16px;box-shadow:var(--shadow);position:sticky;top:0;z-index:20}
 .pp-header-left{display:flex;align-items:center;gap:14px;min-width:0}
-.pp-back{width:32px;height:32px;border-radius:var(--r8);border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#FFFFFF;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;transition:all .1s}
-.pp-back:hover{background:rgba(255,255,255,.2);color:#fff}
-.pp-avatar{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.pp-back{width:32px;height:32px;border-radius:var(--r8);border:1px solid var(--border);background:var(--surface);color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;transition:all .1s}
+.pp-back:hover{background:var(--s2);color:var(--tx)}
+.pp-avatar{width:38px;height:38px;border-radius:50%;background:var(--acl);color:var(--ac);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
 .pp-id{min-width:0}
-.pp-nome{font-size:15px;font-weight:700;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#FFFFFF}
-.pp-meta{font-size:12px;color:rgba(255,255,255,.65);display:flex;align-items:center;gap:8px;margin-top:1px}
+.pp-nome{font-size:15px;font-weight:700;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pp-meta{font-size:12px;color:var(--tx2);display:flex;align-items:center;gap:8px;margin-top:1px}
 .pp-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
 
 .pp-layout{display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start}
-.pp-menu{background:#2E2E2E;border:1px solid #1A1A1A;border-radius:var(--r10);padding:8px;box-shadow:none;position:sticky;top:82px}
-.pp-menu-btn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r8);cursor:pointer;font-size:13px;color:rgba(255,255,255,.7);border:none;background:none;width:100%;text-align:left;transition:all .1s;font-family:var(--font);margin-bottom:1px;font-weight:500}
-.pp-menu-btn:hover{background:rgba(255,255,255,.1);color:#fff}
-.pp-menu-btn.on{background:rgba(255,255,255,.15);color:#fff;font-weight:700}
+.pp-menu{background:var(--surface);border:1px solid var(--border);border-radius:var(--r10);padding:8px;box-shadow:var(--shadow);position:sticky;top:82px}
+.pp-menu-btn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r8);cursor:pointer;font-size:13px;color:var(--tx2);border:none;background:none;width:100%;text-align:left;transition:all .1s;font-family:var(--font);margin-bottom:1px}
+.pp-menu-btn:hover{background:var(--s2);color:var(--tx)}
+.pp-menu-btn.on{background:var(--acl);color:var(--ac);font-weight:600}
 .pp-menu-ic{font-size:14px;opacity:.6;width:16px;text-align:center;flex-shrink:0}
 .pp-menu-btn.on .pp-menu-ic{opacity:1}
-.pp-menu-sep{height:1px;background:rgba(255,255,255,.12);margin:6px 8px}
 .pp-content{min-width:0}
 .pp-area{display:none}
 .pp-area.on{display:block}
@@ -801,28 +800,28 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
     </div>
     <div class="pp-actions">
-      <button class="btn btn-danger btn-sm" id="pp-btn-excluir" onclick="excluirPt()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff">Excluir</button>
+      <button class="btn btn-danger btn-sm" id="pp-btn-excluir" onclick="excluirPt()">Excluir</button>
       <button class="btn btn-primary btn-sm" id="pp-btn-salvar" onclick="atualizarStatusPt()">Salvar alterações →</button>
     </div>
   </div>
 
   <div class="pp-layout">
     <nav class="pp-menu" id="pp-menu">
-      <div class="subnav-title" style="padding:4px 10px 8px;margin:0;letter-spacing:.16em;color:rgba(255,255,255,.45)">Menu do paciente</div>
+      <div class="subnav-title" style="padding:4px 10px 8px;margin:0">Menu do paciente</div>
       <button class="pp-menu-btn on" id="pp-menu-dados" onclick="switchPpArea('dados')">Dados</button>
       <button class="pp-menu-btn" id="pp-menu-agenda" onclick="switchPpArea('agenda')">Agenda</button>
-      <div class="pp-menu-sep"></div>
+      <div style="height:1px;background:var(--border);margin:6px 2px"></div>
       <button class="pp-menu-btn" id="pp-menu-anamnese" onclick="switchPpArea('anamnese')">Anamnese inicial</button>
       <button class="pp-menu-btn" id="pp-menu-termo" onclick="switchPpArea('termo')">Termo de compromisso</button>
       <button class="pp-menu-btn" id="pp-menu-contrato" onclick="switchPpArea('contrato')">Contrato</button>
-      <div class="pp-menu-sep"></div>
+      <div style="height:1px;background:var(--border);margin:6px 2px"></div>
       <button class="pp-menu-btn" id="pp-menu-orcamento" onclick="switchPpArea('orcamento')">Orçamento</button>
       <button class="pp-menu-btn" id="pp-menu-financeiro" onclick="switchPpArea('financeiro')">Financeiro</button>
       <button class="pp-menu-btn" id="pp-menu-prontuario" onclick="switchPpArea('prontuario')">Prontuário</button>
       <button class="pp-menu-btn" id="pp-menu-documentos" onclick="switchPpArea('documentos')">Documentos</button>
       <button class="pp-menu-btn" id="pp-menu-fotos" onclick="switchPpArea('fotos')">Fotos</button>
       <button class="pp-menu-btn" id="pp-menu-historico" onclick="switchPpArea('historico')">Histórico</button>
-      <div class="pp-menu-sep"></div>
+      <div style="height:1px;background:var(--border);margin:6px 2px"></div>
       <button class="pp-menu-btn" id="pp-menu-acoes" onclick="switchPpArea('acoes')">Ações</button>
       <button class="pp-menu-btn" id="pp-menu-lembretes" onclick="switchPpArea('lembretes')">Lembretes</button>
       <button class="pp-menu-btn" id="pp-menu-pendencias" onclick="switchPpArea('pendencias')">Pendências</button>
