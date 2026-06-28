@@ -1075,7 +1075,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div class="modal-body" style="padding-top:16px">
       <div style="background:#FEF9EE;border:1px solid #FDE68A;border-radius:var(--r8);padding:10px 14px;margin-bottom:16px;font-size:12px;color:#7C4A00">
-        ⚠ A renegociação fica registrada permanentemente no histórico do título e não pode ser editada ou excluída.
+        A renegociação fica registrada permanentemente no histórico do título e não pode ser editada ou excluída.
       </div>
       <div class="fg" style="margin-bottom:12px">
         <label class="lbl">Vencimento atual</label>
@@ -1099,14 +1099,14 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 <!-- MODAL APROVAR ORÇAMENTO -->
 <div class="modal-ov" id="modal-aprovar-orc" style="z-index:240">
-  <div class="modal" style="width:560px;max-width:96vw">
+  <div class="modal" style="width:760px;max-width:96vw;max-height:90vh">
     <div class="modal-header">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <div class="modal-title">✓ Aprovar orçamento</div>
+        <div class="modal-title">Aprovar orçamento</div>
         <button onclick="fecharModalAprovarOrcamento()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--tx3);line-height:1;padding:2px 6px">&times;</button>
       </div>
     </div>
-    <div class="modal-body" id="modal-aprovar-orc-body" style="padding-top:16px"></div>
+    <div class="modal-body" id="modal-aprovar-orc-body" style="padding-top:16px;overflow-y:auto;max-height:calc(90vh - 110px)"></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="fecharModalAprovarOrcamento()">Cancelar</button>
       <button class="btn btn-primary" onclick="confirmarAprovacaoOrcamento()" style="background:var(--su);border-color:var(--su)">Confirmar aprovação e gerar títulos</button>
@@ -6496,10 +6496,10 @@ function renderPpFinanceiro(p){
     const orcAbertos=orcamentos.filter(o=>(o.status||'aberto')==='aberto');
     wrap.innerHTML=`
       <div class="empty" style="padding:28px 0">
-        <div style="font-size:32px;margin-bottom:8px">💳</div>
+        <div style="font-size:32px;margin-bottom:8px">—</div>
         <div style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:4px">Nenhum título gerado</div>
         <div style="font-size:12px;color:var(--tx3)">Aprove um orçamento para gerar os títulos de cobrança automaticamente.</div>
-        ${orcAbertos.length?`<div style="margin-top:12px;font-size:12px;color:var(--ac)">💡 Há ${orcAbertos.length} orçamento(s) em aberto aguardando aprovação.</div>`:''}
+        ${orcAbertos.length?`<div style="margin-top:12px;font-size:12px;color:var(--ac)">Há ${orcAbertos.length} orçamento(s) em aberto aguardando aprovação.</div>`:''}
       </div>`;
     return;
   }
@@ -6532,7 +6532,7 @@ function renderPpFinanceiro(p){
       <div style="font-size:11px;color:${totalAberto>0?'#7C4A00':'#6B7280'};opacity:.7;margin-top:3px">${titulos.filter(t=>t.status==='aberto').length} título(s)</div>
     </div>
     <div style="background:${nAtrasado>0?'#FEF2F2':'#F3F4F6'};border-radius:var(--r8);padding:12px 14px;${nAtrasado>0?'border:1px solid #FCA5A5':''}">
-      <div style="font-size:10px;font-weight:600;color:${nAtrasado>0?'#991B1B':'#6B7280'};text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">${nAtrasado>0?'⚠ Em atraso':'Em atraso'}</div>
+      <div style="font-size:10px;font-weight:600;color:${nAtrasado>0?'#991B1B':'#6B7280'};text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">${nAtrasado>0?'Em atraso':'Em atraso'}</div>
       <div style="font-size:18px;font-weight:700;color:${nAtrasado>0?'#991B1B':'#6B7280'}">R$ ${fmtMoeda(totalAtrasado)}</div>
       <div style="font-size:11px;color:${nAtrasado>0?'#991B1B':'#6B7280'};opacity:.7;margin-top:3px">${nAtrasado} título(s) vencido(s)</div>
     </div>
@@ -6581,7 +6581,7 @@ function renderPpFinanceiro(p){
           ${tAtrasado>0?`
           <div style="width:1px;height:28px;background:var(--border)"></div>
           <div style="text-align:right">
-            <div style="font-size:10px;font-weight:600;color:#991B1B;text-transform:uppercase;letter-spacing:.06em">⚠ Atraso</div>
+            <div style="font-size:10px;font-weight:600;color:#991B1B;text-transform:uppercase;letter-spacing:.06em">Atraso</div>
             <div style="font-size:13px;font-weight:700;color:#991B1B">R$ ${fmtMoeda(tAtrasado)}</div>
           </div>`:''}
           <div style="font-size:11px;color:var(--tx3);background:var(--s2);border-radius:10px;padding:2px 8px;font-weight:600;flex-shrink:0">${tits.length}x</div>
@@ -6629,8 +6629,8 @@ function renderPpFinanceiro(p){
         <!-- Rodapé: Cancelar títulos deste orçamento -->
         <div style="padding:10px 14px;border-top:1px solid var(--border);background:var(--s2);display:flex;align-items:center;justify-content:flex-end">
           ${tits.some(t=>t.status==='pago')
-            ?`<span style="font-size:11px;color:var(--tx3)">⚠ Estorne os pagamentos antes de cancelar os títulos.</span>`
-            :`<button onclick="cancelarTitulosOrcamento('${orcId}')" style="font-size:11px;padding:4px 12px;border-radius:var(--r6);border:1px solid #FCA5A5;background:#FEF2F2;color:#991B1B;cursor:pointer;font-weight:600;font-family:var(--font)">🗑 Cancelar títulos deste orçamento</button>`
+            ?`<span style="font-size:11px;color:var(--tx3)">Estorne os pagamentos antes de cancelar os títulos.</span>`
+            :`<button onclick="cancelarTitulosOrcamento('${orcId}')" style="font-size:11px;padding:4px 12px;border-radius:var(--r6);border:1px solid #FCA5A5;background:#FEF2F2;color:#991B1B;cursor:pointer;font-weight:600;font-family:var(--font)">Cancelar títulos deste orçamento</button>`
           }
         </div>
       </div>
@@ -6743,13 +6743,19 @@ function confirmarRenegociacao(){
   const dataAnterior=list[idx].vencimento;
   if(novaData===dataAnterior){ alert('A nova data é igual à data atual.'); return; }
 
+  // Busca usuário logado (pode ser chamado fora do escopo do modal de orçamento)
+  const usuariosLS=carregarLS('sk3-usuarios',[]);
+  const sessaoLS=carregarLS('sk3-sessao',null);
+  const uAtualReneg=sessaoLS?usuariosLS.find(u=>u.id===sessaoLS.userId)||null:null;
+  const nomeRegistro=(uAtualReneg&&uAtualReneg.nome)||'Usuário';
+
   // Registra no histórico (imutável — append only)
   if(!list[idx].renegociacoes) list[idx].renegociacoes=[];
   list[idx].renegociacoes.push({
     dataAnterior,
     dataNova:novaData,
     justificativa,
-    registradoPor:uNome||'Usuário',
+    registradoPor:nomeRegistro,
     registradoEm:new Date().toISOString().slice(0,10),
   });
 
@@ -6794,11 +6800,11 @@ let _orcAprovarParcelasTemp=[];
 let _aprovEntradas=[];
 
 const _APROV_TIPOS=[
-  {v:'avista_dinheiro',    l:'💵 À vista — Dinheiro'},
-  {v:'avista_pix',         l:'🏦 À vista — Pix / Transferência'},
-  {v:'avista_debito',      l:'💳 À vista — Débito'},
-  {v:'parcelado_credito',  l:'💳 Parcelado — Crédito'},
-  {v:'parcelado_boleto',   l:'📄 Parcelado — Boleto'},
+  {v:'avista_dinheiro',    l:'À vista — Dinheiro'},
+  {v:'avista_pix',         l:'À vista — Pix / Transferência'},
+  {v:'avista_debito',      l:'À vista — Débito'},
+  {v:'parcelado_credito',  l:'Crédito'},
+  {v:'parcelado_boleto',   l:'Boleto parcelado'},
 ];
 
 function abrirModalAprovarOrcamento(){
@@ -6826,8 +6832,8 @@ function _aprovRenderModal(orc,totalOrc){
       </div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div style="font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em">Entradas de pagamento</div>
-      <button class="btn btn-ghost btn-sm" onclick="_aprovAddEntrada()">+ Adicionar entrada</button>
+      <div style="font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em">Títulos a pagar</div>
+      <button class="btn btn-ghost btn-sm" onclick="_aprovAddEntrada()">+ Adicionar</button>
     </div>
     <div id="aprov-entradas-wrap" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
     <div id="aprov-saldo-aviso" style="margin-bottom:10px"></div>
@@ -6883,13 +6889,11 @@ function _aprovRenderEntradas(){
         <label>Data de vencimento</label>
         <input type="date" value="${e.venc1||hojeStr}" oninput="_aprovChangeVenc1(${ei},this.value)" style="font-size:13px">
       </div>`:''}
-      ${isCredito?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-        <div class="fl"><label>Parcelas</label>
-          <select onchange="_aprovChangeNParc(${ei},this.value)" style="font-size:13px">${parcOpts}</select></div>
+      ${isCredito?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div class="fl"><label>Desconto (%)</label>
           <input type="number" value="${e.desconto}" min="0" max="100" step="1"
             oninput="_aprovChangeDesconto(${ei},this.value)" style="font-size:13px"></div>
-        <div class="fl"><label>1ª parcela</label>
+        <div class="fl"><label>Data de vencimento</label>
           <input type="date" value="${e.venc1||hojeStr}"
             oninput="_aprovChangeVenc1(${ei},this.value)" style="font-size:13px"></div>
       </div>`:''}
@@ -6985,15 +6989,8 @@ function _aprovGerarPreview(){
     if(e.tipo.startsWith('avista')){
       titulos.push({descricao:label,valor:totalFinal,vencimento:e.venc1||new Date().toISOString().slice(0,10),tipo:label});
     } else if(e.tipo==='parcelado_credito'){
-      const n=e.nParcelas||2; const valParc=totalFinal/n;
-      const base=new Date(e.venc1||new Date().toISOString().slice(0,10));
-      const parcelas=Array.from({length:n},(_,i)=>{
-        const d=new Date(base); d.setMonth(d.getMonth()+i);
-        return {descricao:`Parcela ${i+1}/${n} — ${label}`,valor:+(valParc.toFixed(2)),vencimento:d.toISOString().slice(0,10),tipo:label};
-      });
-      const soma=parcelas.reduce((s,t)=>s+t.valor,0);
-      parcelas[n-1].valor+=+(totalFinal-soma).toFixed(2);
-      titulos.push(...parcelas);
+      // Crédito: sempre à vista (recebemos em uma parcela da operadora)
+      titulos.push({descricao:`Crédito`,valor:totalFinal,vencimento:e.venc1||new Date().toISOString().slice(0,10),tipo:label});
     } else if(e.tipo==='parcelado_boleto'){
       (e.parcelasCustom||[]).forEach((p,pi)=>
         titulos.push({descricao:`Parcela ${pi+1}/${e.parcelasCustom.length} — Boleto`,valor:p.valor,vencimento:p.vencimento,tipo:label}));
