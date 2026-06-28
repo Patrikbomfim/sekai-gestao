@@ -1565,20 +1565,20 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:1400px" id="tb-tabela-principal">
             <thead>
               <tr style="background:var(--s2);border-bottom:2px solid var(--border)">
-                <th style="padding:9px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap" onclick="tbSort('nome')">Procedimento <span id="tb-sort-nome"></span></th>
-                <th style="padding:9px 8px;text-align:left;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap" onclick="tbSort('especialidade')">Especialidade <span id="tb-sort-especialidade"></span></th>
-                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap" onclick="tbSort('valor')">Valor (R$) <span id="tb-sort-valor"></span></th>
-                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Tempo (h)</th>
-                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Comissão Fixa (R$)</th>
-                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Comissão (%)</th>
+                <th style="padding:9px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap;user-select:none" onclick="tbSort('nome')">Procedimento <span id="tb-sort-nome"></span></th>
+                <th style="padding:9px 8px;text-align:left;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap;user-select:none" onclick="tbSort('especialidade')">Especialidade <span id="tb-sort-especialidade"></span></th>
+                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap;user-select:none" onclick="tbSort('valor')">Valor (R$) <span id="tb-sort-valor"></span></th>
+                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap;user-select:none" onclick="tbSort('tempo')">Tempo (h) <span id="tb-sort-tempo"></span></th>
+                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap;user-select:none" onclick="tbSort('comissaoFixo')">Comissão Fixa (R$) <span id="tb-sort-comissaoFixo"></span></th>
+                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap;user-select:none" onclick="tbSort('comissaoPct')">Comissão (%) <span id="tb-sort-comissaoPct"></span></th>
                 <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Cartão (%)</th>
                 <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">NF (%)</th>
                 <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Com. Venda (%)</th>
-                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Custo Lab (R$)</th>
-                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Custo Material (R$)</th>
-                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Custo Clínica (R$)</th>
-                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--su);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Lucro (R$)</th>
-                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--su);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">% Lucro</th>
+                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap;user-select:none" onclick="tbSort('custoLab')">Custo Lab (R$) <span id="tb-sort-custoLab"></span></th>
+                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap;user-select:none" onclick="tbSort('custoMaterial')">Custo Material (R$) <span id="tb-sort-custoMaterial"></span></th>
+                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap;user-select:none" onclick="tbSort('_custoClinica')">Custo Clínica (R$) <span id="tb-sort-_custoClinica"></span></th>
+                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--su);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap;user-select:none" onclick="tbSort('_lucro')">Lucro (R$) <span id="tb-sort-_lucro"></span></th>
+                <th style="padding:9px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--su);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap;user-select:none" onclick="tbSort('_pctLucro')">% Lucro <span id="tb-sort-_pctLucro"></span></th>
                 <th style="padding:9px 8px;text-align:center;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Ativo</th>
               </tr>
             </thead>
@@ -1587,9 +1587,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
         <!-- Paginação -->
         <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid var(--border)">
-          <button class="btn btn-ghost btn-sm" id="tb-prev" onclick="tbPagina(-1)">‹ Anterior</button>
+          <button class="btn btn-ghost btn-sm" id="tb-prev" onclick="tbPagina(-1)" style="white-space:nowrap;padding:5px 14px">‹ Anterior</button>
           <span id="tb-pag-info" style="font-size:12px;color:var(--tx2);white-space:nowrap"></span>
-          <button class="btn btn-ghost btn-sm" id="tb-next" onclick="tbPagina(1)">Próxima ›</button>
+          <button class="btn btn-ghost btn-sm" id="tb-next" onclick="tbPagina(1)" style="white-space:nowrap;padding:5px 14px">Próxima ›</button>
           <select id="tb-per-page" style="font-size:12px;margin-left:auto" onchange="tbRenderTabela()">
             <option value="20">20 por página</option>
             <option value="50">50 por página</option>
@@ -5331,7 +5331,8 @@ function tbFiltrar(){
 
 function tbSort(col){
   if(_tbSortCol===col){ _tbSortDir*=-1; } else { _tbSortCol=col; _tbSortDir=1; }
-  ['nome','especialidade','valor'].forEach(c=>{
+  const allCols=['nome','especialidade','valor','tempo','comissaoFixo','comissaoPct','custoLab','custoMaterial','_custoClinica','_lucro','_pctLucro'];
+  allCols.forEach(c=>{
     const el=document.getElementById('tb-sort-'+c);
     if(el) el.textContent=(c===_tbSortCol)?(_tbSortDir===1?' ↑':' ↓'):'';
   });
@@ -5355,10 +5356,20 @@ function tbRenderTabela(){
   const comVenda=parseFloat((document.getElementById('tb-com-venda')||{}).value)||0;
   const em=_tbModoEdicao;
 
-  const sorted=[..._tbFiltrados].sort((a,b)=>{
-    const av=a[_tbSortCol]||'', bv=b[_tbSortCol]||'';
-    if(typeof av==='number') return (av-bv)*_tbSortDir;
-    return String(av).localeCompare(String(bv),'pt-BR')*_tbSortDir;
+  const sorted=[..._tbFiltrados].map(p=>{
+    // pré-calcular valores derivados para permitir ordenação por eles
+    const val=parseFloat(p.valor)||0;
+    const tempo=parseFloat(p.tempo)||0;
+    const comFixo=parseFloat(p.comissaoFixo)||0;
+    const comPct=parseFloat(p.comissaoPct)||0;
+    const comEfetiva=comFixo>0?comFixo:(comPct>0?(val*comPct/100):0);
+    const custoClinica=tempo*custoHora;
+    const lucro=val-comEfetiva-(val*taxaCartao/100)-(val*pctNF/100)-(val*comVenda/100)-(parseFloat(p.custoLab)||0)-(parseFloat(p.custoMaterial)||0)-custoClinica;
+    return {...p, _custoClinica:custoClinica, _lucro:lucro, _pctLucro:val>0?lucro/val*100:0};
+  }).sort((a,b)=>{
+    const av=a[_tbSortCol], bv=b[_tbSortCol];
+    if(typeof av==='number'||typeof bv==='number') return ((parseFloat(av)||0)-(parseFloat(bv)||0))*_tbSortDir;
+    return String(av||'').localeCompare(String(bv||''),'pt-BR')*_tbSortDir;
   });
   const perPage=parseInt((document.getElementById('tb-per-page')||{}).value||20);
   const total=Math.ceil(sorted.length/perPage)||1;
