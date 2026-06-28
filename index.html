@@ -5816,8 +5816,8 @@ function abrirModalOrcamento(pacId, orcId){
     </div>
     <div style="border-top:1px solid var(--border);padding-top:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div style="font-size:13px;font-weight:600">Formas de pagamento</div>
-        <button class="btn btn-ghost btn-sm" onclick="abrirModalFormaPagamento()">+ Forma de pagamento</button>
+        <div style="font-size:13px;font-weight:600">${statusNorm==='aprovado'?'Títulos gerados':'Formas de pagamento'}</div>
+        ${statusNorm!=='aprovado'?`<button class="btn btn-ghost btn-sm" onclick="abrirModalFormaPagamento()">+ Forma de pagamento</button>`:''}
       </div>
       <div id="orc-pagamentos-wrap">
         <div style="text-align:center;padding:14px;font-size:12px;color:var(--tx3);background:var(--s2);border-radius:var(--r8)">Nenhuma forma de pagamento adicionada.<br>Você pode criar opções para o paciente escolher.</div>
@@ -5969,7 +5969,7 @@ function gerarPdfOrcamento(){
     <div style="display:flex;align-items:baseline;justify-content:space-between;padding:12px 0;border-bottom:1px solid ${i===_orcItens.length-1?'transparent':'#f0f0f0'}">
       <div style="flex:1;min-width:0;padding-right:20px">
         <div style="font-size:13px;font-weight:500;color:#1a1a1a">${it.proc||'—'}</div>
-        <div style="font-size:11px;color:#9a9a9a;margin-top:2px">${it.dentista||''}${it.dentes&&it.dentes.length?' · Elemento(s) '+it.dentes.join(', '):''}</div>
+        <div style="font-size:11px;color:#9a9a9a;margin-top:2px">${it.dentista||''}${it.dentes&&it.dentes.length?' · Dente(s) '+it.dentes.join(', '):''}</div>
       </div>
       <div style="font-size:13px;font-weight:500;color:#1a1a1a;white-space:nowrap">R$ ${(parseFloat(it.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
     </div>`).join('')}
@@ -6026,7 +6026,6 @@ function _renderOrcItens(){
       <tr style="border-bottom:2px solid var(--border);text-align:left">
         <th style="padding:7px 8px;font-size:11px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Procedimento</th>
         <th style="padding:7px 8px;font-size:11px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Dente(s)</th>
-        <th style="padding:7px 8px;font-size:11px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Dentista</th>
         <th style="padding:7px 8px;font-size:11px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.04em;text-align:right">Valor</th>
         <th style="width:32px"></th>
       </tr>
@@ -6035,7 +6034,6 @@ function _renderOrcItens(){
       ${_orcItens.map((it,idx)=>`<tr style="border-bottom:1px solid var(--border)">
         <td style="padding:9px 8px;font-weight:500">${it.proc||'—'}</td>
         <td style="padding:9px 8px;color:var(--tx2)">${it.dentes&&it.dentes.length?it.dentes.join(', '):'Geral'}</td>
-        <td style="padding:9px 8px;color:var(--tx2)">${it.dentista||'—'}</td>
         <td style="padding:9px 8px;text-align:right;font-weight:600">
           <input type="text" inputmode="decimal" value="${_fmtMoeda(it.valor||0)}" oninput="_orcMascaraValor(this,${idx})" style="width:100px;text-align:right;padding:4px 7px;font-size:12px">
         </td>
@@ -6121,6 +6119,42 @@ function salvarOrcamento(){
 function _renderOrcPagamentos(){
   const wrap=document.getElementById('orc-pagamentos-wrap');
   if(!wrap) return;
+
+  // Se orçamento aprovado, mostrar títulos reais em vez de sugestões
+  if(_orcModalId){
+    const orc=_orcamentos().find(o=>o.id===_orcModalId);
+    if(orc&&orc.status==='aprovado'){
+      const tits=_titulos().filter(t=>t.orcamentoId===_orcModalId);
+      const fmtMoeda=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+      const fmtData=d=>{ if(!d) return '—'; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
+      const statusPill=s=>s==='pago'
+        ?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--sul);color:var(--su)">Pago</span>`
+        :`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--s2);color:var(--tx3)">A pagar</span>`;
+      if(!tits.length){
+        wrap.innerHTML='<div style="text-align:center;padding:14px;font-size:12px;color:var(--tx3);background:var(--s2);border-radius:var(--r8)">Nenhum título encontrado para este orçamento.</div>';
+        return;
+      }
+      const totalTit=tits.reduce((s,t)=>s+t.valor,0);
+      const totalPago=tits.filter(t=>t.status==='pago').reduce((s,t)=>s+t.valor,0);
+      wrap.innerHTML=`
+        <div style="display:flex;gap:16px;margin-bottom:10px;font-size:12px">
+          <span style="color:var(--tx2)">Total: <strong>R$ ${fmtMoeda(totalTit)}</strong></span>
+          <span style="color:var(--su)">Pago: <strong>R$ ${fmtMoeda(totalPago)}</strong></span>
+          <span style="color:var(--wa)">A receber: <strong>R$ ${fmtMoeda(totalTit-totalPago)}</strong></span>
+        </div>
+        ${tits.map(t=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r8);margin-bottom:5px;background:var(--surface)">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600">${t.descricao||'—'}</div>
+            <div style="font-size:11px;color:var(--tx3);margin-top:1px">${t.tipo||''} · Venc. ${fmtData(t.vencimento)}${t.dataPagamento?' · Pago em '+fmtData(t.dataPagamento):''}</div>
+          </div>
+          <div style="font-size:14px;font-weight:700;color:var(--ac);flex-shrink:0">R$ ${fmtMoeda(t.valor)}</div>
+          ${statusPill(t.status||'aberto')}
+        </div>`).join('')}`;
+      return;
+    }
+  }
+
   if(!_orcPagamentos.length){
     wrap.innerHTML='<div style="text-align:center;padding:14px;font-size:12px;color:var(--tx3);background:var(--s2);border-radius:var(--r8)">Nenhuma forma de pagamento adicionada.<br>Você pode criar opções para o paciente escolher.</div>';
     return;
@@ -6302,11 +6336,7 @@ function abrirModalProcOrc(){
       </div>
     </div>
     <div class="fg" style="margin-bottom:16px">
-      <div class="fl">
-        <label>Dentista responsável</label>
-        <select id="proc-orc-dentista">${usuariosOpts}</select>
-      </div>
-      <div class="fl">
+      <div class="fl" style="flex:1">
         <label>Valor (R$)</label>
         <input type="text" inputmode="decimal" id="proc-orc-valor" placeholder="0,00" oninput="_orcMascaraValorInput(this)">
       </div>
