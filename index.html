@@ -8347,8 +8347,11 @@ function renderAbaAnamnese(p){
     html += `<div style="display:flex;gap:8px">`;
     if(token){
       html += `<button class="btn btn-ghost btn-sm" id="an-btn-verificar" onclick="verificarAnamnese('${p.id}')">🔄 Verificar</button>`;
+      html += `<button class="btn btn-ghost btn-sm" onclick="gerarNovoLinkAnamnese('${p.id}')">🔁 Novo link</button>`;
+      html += `<button class="btn btn-primary btn-sm" onclick="abrirModalLink('${p.id}')">🔗 Ver link</button>`;
+    } else {
+      html += `<button class="btn btn-primary btn-sm" onclick="abrirModalLink('${p.id}')">🔗 + Gerar link para paciente</button>`;
     }
-    html += `<button class="btn btn-primary btn-sm" onclick="abrirModalLink('${p.id}')">🔗 ${token ? 'Ver link' : '+ Gerar link para paciente'}</button>`;
     html += `</div>`;
   }
   html += `</div>`;
@@ -8387,6 +8390,25 @@ async function verificarAnamnese(pacienteId){
     const lbl = document.getElementById('an-status-label');
     if(lbl){ lbl.textContent = 'Ainda aguardando preenchimento...'; setTimeout(()=>{ lbl.textContent = 'Link gerado — aguardando preenchimento'; }, 2500); }
   }
+}
+
+// ── Gerar novo link (apaga o antigo do Supabase e cria um novo) ──────
+async function gerarNovoLinkAnamnese(pacienteId){
+  if(!confirm('Isso vai invalidar o link anterior. O paciente precisará usar o novo link. Continuar?')) return;
+  // Remove token antigo do Supabase e do local
+  const tokenAntigo = (respostasAnamnese[pacienteId]||{})._token;
+  if(tokenAntigo){
+    try{ await supa.from('anamneses').delete().eq('token', tokenAntigo); }catch(e){}
+    delete tokensAnamnese[tokenAntigo];
+  }
+  delete respostasAnamnese[pacienteId];
+  salvarAnamnese();
+  // Gera e publica novo token
+  const novoToken = gerarTokenAnamnese(pacienteId);
+  await abrirModalLink(pacienteId);
+  // Re-renderiza aba
+  const p = pacientes.find(x => x.id === pacienteId);
+  if(p) document.getElementById('pp-anamnese-wrap').innerHTML = renderAbaAnamnese(p);
 }
 
 // ── Modal de link ───────────────────────────────────────────────────────
