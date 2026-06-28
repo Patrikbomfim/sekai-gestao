@@ -5693,14 +5693,14 @@ function renderPpOrcamento(p){
             style="flex-shrink:0;border:none;background:none;cursor:pointer;color:var(--tx3);padding:2px 4px;font-size:12px;line-height:1;border-radius:var(--r4);transition:transform .15s" title="Ver procedimentos">▸</button>`:''}
           <!-- nome -->
           <span style="flex:1;font-size:13px;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nome}</span>
-          <!-- valor: se aprovado com desconto, mostra fechado + risco no tabela -->
-          ${o.status==='aprovado'&&o.valorFechado!=null&&(o.descontoPorc||0)>0
-            ?`<div style="text-align:right;flex-shrink:0">
-                <div style="font-size:11px;color:var(--tx3);text-decoration:line-through">R$ ${(o.valorTabela||total).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-                <div style="font-size:13px;font-weight:700;color:#065F46">R$ ${(o.valorFechado).toLocaleString('pt-BR',{minimumFractionDigits:2})} <span style="font-size:10px;font-weight:600;background:#ECFDF5;color:#065F46;padding:1px 5px;border-radius:3px">−${o.descontoPorc}%</span></div>
-              </div>`
-            :`<span style="font-size:13px;font-weight:700;color:${o.status==='aprovado'?'#065F46':'var(--ac)'};flex-shrink:0">R$ ${(o.valorFechado||total).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`
-          }
+          <!-- valor: se aprovado, usa valorFechado; se há desconto real, mostra tabela riscada -->
+          ${(()=>{
+            const _vf=o.status==='aprovado'&&o.valorFechado!=null?o.valorFechado:total;
+            const _vt=o.valorTabela||total;
+            const _temDesc=o.status==='aprovado'&&o.valorFechado!=null&&Math.abs(_vt-_vf)>0.01;
+            if(_temDesc) return '<div style="text-align:right;flex-shrink:0"><div style="font-size:11px;color:var(--tx3);text-decoration:line-through">R$ '+_vt.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div><div style="font-size:13px;font-weight:700;color:#065F46">R$ '+_vf.toLocaleString('pt-BR',{minimumFractionDigits:2})+' <span style="font-size:10px;font-weight:600;background:#ECFDF5;color:#065F46;padding:1px 5px;border-radius:3px">−'+(o.descontoPorc||0)+'%</span></div></div>';
+            return '<span style="font-size:13px;font-weight:700;color:'+(o.status==='aprovado'?'#065F46':'var(--ac)')+';flex-shrink:0">R$ '+_vf.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>';
+          })()}
         </div>
         ${procHtml}
       </div>`;
