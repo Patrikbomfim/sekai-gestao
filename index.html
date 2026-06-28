@@ -6447,14 +6447,12 @@ function _salvarTitulos(list){ salvarLS('sk3-titulos',list); }
 function renderPpFinanceiro(p){
   const wrap=document.getElementById('pp-financeiro-wrap');
   const titulos=_titulos().filter(t=>String(t.pacienteId)===String(p.id));
-
-  // Agrupa por orçamento
-  const orcIds=[...new Set(titulos.map(t=>t.orcamentoId))];
   const orcamentos=_orcamentos().filter(o=>String(o.pacienteId)===String(p.id));
+  const orcIds=[...new Set(titulos.map(t=>t.orcamentoId))];
 
   const fmtMoeda=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
-  const fmtData=d=>{ if(!d) return '—'; const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
-  const statusPillTit=s=>{
+  const fmtData=d=>{ if(!d) return '—'; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
+  const statusPill=s=>{
     if(s==='pago') return `<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#ECFDF5;color:#065F46">Pago</span>`;
     if(s==='atrasado') return `<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#FEF2F2;color:#991B1B">Atrasado</span>`;
     return `<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#F3F4F6;color:#6B7280">A pagar</span>`;
@@ -6462,19 +6460,17 @@ function renderPpFinanceiro(p){
 
   if(!titulos.length){
     const orcAbertos=orcamentos.filter(o=>(o.status||'aberto')==='aberto');
-    wrap.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div style="font-size:13px;font-weight:600">Títulos financeiros</div>
-    </div>
-    <div class="empty" style="padding:28px 0">
-      <div style="font-size:32px;margin-bottom:8px">💳</div>
-      <div style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:4px">Nenhum título gerado</div>
-      <div style="font-size:12px;color:var(--tx3)">Aprove um orçamento para gerar os títulos de cobrança automaticamente.</div>
-      ${orcAbertos.length?`<div style="margin-top:12px;font-size:12px;color:var(--ac)">💡 Há ${orcAbertos.length} orçamento(s) em aberto aguardando aprovação.</div>`:''}
-    </div>`;
+    wrap.innerHTML=`
+      <div class="empty" style="padding:28px 0">
+        <div style="font-size:32px;margin-bottom:8px">💳</div>
+        <div style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:4px">Nenhum título gerado</div>
+        <div style="font-size:12px;color:var(--tx3)">Aprove um orçamento para gerar os títulos de cobrança automaticamente.</div>
+        ${orcAbertos.length?`<div style="margin-top:12px;font-size:12px;color:var(--ac)">💡 Há ${orcAbertos.length} orçamento(s) em aberto aguardando aprovação.</div>`:''}
+      </div>`;
     return;
   }
 
-  // Totais gerais
+  // ── Totais globais (somam todos os orçamentos) ──────────────────────
   const totalGeral=titulos.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
   const totalPago=titulos.filter(t=>t.status==='pago').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
   const totalAberto=totalGeral-totalPago;
@@ -6482,48 +6478,97 @@ function renderPpFinanceiro(p){
   let html=`
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
     <div style="background:var(--s2);border-radius:var(--r8);padding:12px 14px">
-      <div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Total</div>
+      <div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Total geral</div>
       <div style="font-size:18px;font-weight:700;color:var(--tx)">R$ ${fmtMoeda(totalGeral)}</div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:3px">${orcIds.length} orçamento(s) · ${titulos.length} título(s)</div>
     </div>
     <div style="background:#ECFDF5;border-radius:var(--r8);padding:12px 14px">
       <div style="font-size:10px;font-weight:600;color:#065F46;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Pago</div>
       <div style="font-size:18px;font-weight:700;color:#065F46">R$ ${fmtMoeda(totalPago)}</div>
+      <div style="font-size:11px;color:#065F46;opacity:.7;margin-top:3px">${titulos.filter(t=>t.status==='pago').length} título(s) quitado(s)</div>
     </div>
     <div style="background:${totalAberto>0?'#FEF9EE':'#F3F4F6'};border-radius:var(--r8);padding:12px 14px">
       <div style="font-size:10px;font-weight:600;color:${totalAberto>0?'#7C4A00':'#6B7280'};text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Em aberto</div>
       <div style="font-size:18px;font-weight:700;color:${totalAberto>0?'#7C4A00':'#6B7280'}">R$ ${fmtMoeda(totalAberto)}</div>
+      <div style="font-size:11px;color:${totalAberto>0?'#7C4A00':'#6B7280'};opacity:.7;margin-top:3px">${titulos.filter(t=>t.status!=='pago').length} título(s) pendente(s)</div>
     </div>
   </div>`;
 
+  // ── Um bloco colapsável por orçamento ──────────────────────────────
   orcIds.forEach(orcId=>{
     const orc=orcamentos.find(o=>o.id===orcId)||{};
     const tits=titulos.filter(t=>t.orcamentoId===orcId);
     const nomeOrc=orc.nomeOrc||('Orçamento #'+(orc.num||orcId.slice(-4)));
-    html+=`<div style="border:1px solid var(--border);border-radius:var(--r8);margin-bottom:10px;overflow:hidden">
-      <div style="background:var(--s2);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)">
-        <span style="font-size:12px;font-weight:700;color:var(--tx)">${nomeOrc}</span>
-        <span style="font-size:11px;color:var(--tx3)">${tits.length} título(s)</span>
+    const tTotal=tits.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+    const tPago=tits.filter(t=>t.status==='pago').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+    const tAberto=tTotal-tPago;
+    const uid='fin-orc-'+orcId;
+
+    html+=`
+    <div style="border:1px solid var(--border);border-radius:var(--r8);margin-bottom:8px;overflow:hidden">
+
+      <!-- Cabeçalho colapsável -->
+      <div onclick="_finToggle('${uid}')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface);cursor:pointer;user-select:none;transition:background .1s"
+           onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--surface)'">
+
+        <!-- Seta -->
+        <span id="${uid}-caret" style="font-size:11px;color:var(--tx3);transition:transform .18s;display:inline-block;flex-shrink:0">▶</span>
+
+        <!-- Nome do orçamento -->
+        <span style="font-size:13px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nomeOrc}</span>
+
+        <!-- Mini resumo: total / pago / aberto -->
+        <div style="display:flex;align-items:center;gap:12px;flex-shrink:0">
+          <div style="text-align:right">
+            <div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Total</div>
+            <div style="font-size:13px;font-weight:700;color:var(--tx)">R$ ${fmtMoeda(tTotal)}</div>
+          </div>
+          <div style="width:1px;height:28px;background:var(--border)"></div>
+          <div style="text-align:right">
+            <div style="font-size:10px;font-weight:600;color:#065F46;text-transform:uppercase;letter-spacing:.06em">Pago</div>
+            <div style="font-size:13px;font-weight:700;color:#065F46">R$ ${fmtMoeda(tPago)}</div>
+          </div>
+          <div style="width:1px;height:28px;background:var(--border)"></div>
+          <div style="text-align:right">
+            <div style="font-size:10px;font-weight:600;color:${tAberto>0?'#7C4A00':'#6B7280'};text-transform:uppercase;letter-spacing:.06em">Em aberto</div>
+            <div style="font-size:13px;font-weight:700;color:${tAberto>0?'#7C4A00':'#6B7280'}">R$ ${fmtMoeda(tAberto)}</div>
+          </div>
+          <div style="font-size:11px;color:var(--tx3);background:var(--s2);border-radius:10px;padding:2px 8px;font-weight:600;flex-shrink:0">${tits.length}x</div>
+        </div>
       </div>
-      ${tits.map(t=>`
-      <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface)">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:500">${t.descricao||'—'}</div>
-          <div style="font-size:11px;color:var(--tx3);margin-top:2px">${t.tipo||''} · Vencimento: ${fmtData(t.vencimento)}</div>
-        </div>
-        <div style="flex-shrink:0;text-align:right;margin-right:8px">
-          <div style="font-size:14px;font-weight:700;color:var(--ac)">R$ ${fmtMoeda(t.valor)}</div>
-          ${t.dataPagamento?`<div style="font-size:10px;color:var(--su);margin-top:1px">Pago em ${fmtData(t.dataPagamento)}</div>`:''}
-        </div>
-        ${statusPillTit(t.status||'aberto')}
-        ${t.status!=='pago'
-          ?`<button onclick="registrarPagamentoTitulo('${t.id}')" style="font-size:11px;padding:4px 10px;border-radius:var(--r6);border:1px solid var(--su);background:#ECFDF5;color:var(--su);cursor:pointer;font-weight:600;flex-shrink:0;font-family:var(--font)">Pagar</button>`
-          :`<button onclick="estornarPagamentoTitulo('${t.id}')" style="font-size:11px;padding:4px 10px;border-radius:var(--r6);border:1px solid var(--border);background:var(--s2);color:var(--tx3);cursor:pointer;font-weight:500;flex-shrink:0;font-family:var(--font)">Estornar</button>`
-        }
-      </div>`).join('')}
+
+      <!-- Títulos (recolhidos por padrão) -->
+      <div id="${uid}" style="display:none;border-top:1px solid var(--border)">
+        ${tits.map((t,i)=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;${i<tits.length-1?'border-bottom:1px solid var(--border)':''};background:var(--surface)">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:500">${t.descricao||'—'}</div>
+            <div style="font-size:11px;color:var(--tx3);margin-top:2px">${t.tipo||''} · Vencimento: ${fmtData(t.vencimento)}</div>
+          </div>
+          <div style="flex-shrink:0;text-align:right;min-width:90px">
+            <div style="font-size:14px;font-weight:700;color:var(--ac)">R$ ${fmtMoeda(t.valor)}</div>
+            ${t.dataPagamento?`<div style="font-size:10px;color:var(--su);margin-top:1px">Pago em ${fmtData(t.dataPagamento)}</div>`:''}
+          </div>
+          ${statusPill(t.status||'aberto')}
+          ${t.status!=='pago'
+            ?`<button onclick="registrarPagamentoTitulo('${t.id}')" style="font-size:11px;padding:4px 10px;border-radius:var(--r6);border:1px solid var(--su);background:#ECFDF5;color:var(--su);cursor:pointer;font-weight:600;flex-shrink:0;font-family:var(--font)">Pagar</button>`
+            :`<button onclick="estornarPagamentoTitulo('${t.id}')" style="font-size:11px;padding:4px 10px;border-radius:var(--r6);border:1px solid var(--border);background:var(--s2);color:var(--tx3);cursor:pointer;font-weight:500;flex-shrink:0;font-family:var(--font)">Estornar</button>`
+          }
+        </div>`).join('')}
+      </div>
     </div>`;
   });
 
   wrap.innerHTML=html;
+}
+
+function _finToggle(uid){
+  const body=document.getElementById(uid);
+  const caret=document.getElementById(uid+'-caret');
+  if(!body) return;
+  const open=body.style.display==='block';
+  body.style.display=open?'none':'block';
+  if(caret) caret.style.transform=open?'':'rotate(90deg)';
 }
 
 function registrarPagamentoTitulo(tituloId){
