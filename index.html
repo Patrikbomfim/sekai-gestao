@@ -5683,7 +5683,7 @@ function renderPpOrcamento(p){
       const statusBg=o.status==='aprovado'?'#ECFDF5':o.status==='reprovado'||o.status==='recusado'?'#FEF2F2':'#F3F4F6';
 
       html+=`
-      <div style="border:1px solid var(--border);border-radius:var(--r8);margin-bottom:6px;overflow:hidden">
+      <div style="border:1px solid ${o.status==='aprovado'?'#A7F3D0':o.status==='reprovado'||o.status==='recusado'?'#FCA5A5':'var(--border)'};border-radius:var(--r8);margin-bottom:6px;overflow:hidden">
         <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;background:var(--surface)"
              onclick="abrirModalOrcamento('${p.id}','${o.id}')">
           <!-- status label -->
@@ -5693,8 +5693,14 @@ function renderPpOrcamento(p){
             style="flex-shrink:0;border:none;background:none;cursor:pointer;color:var(--tx3);padding:2px 4px;font-size:12px;line-height:1;border-radius:var(--r4);transition:transform .15s" title="Ver procedimentos">▸</button>`:''}
           <!-- nome -->
           <span style="flex:1;font-size:13px;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nome}</span>
-          <!-- valor -->
-          <span style="font-size:13px;font-weight:700;color:var(--ac);flex-shrink:0">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+          <!-- valor: se aprovado com desconto, mostra fechado + risco no tabela -->
+          ${o.status==='aprovado'&&o.valorFechado!=null&&(o.descontoPorc||0)>0
+            ?`<div style="text-align:right;flex-shrink:0">
+                <div style="font-size:11px;color:var(--tx3);text-decoration:line-through">R$ ${(o.valorTabela||total).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+                <div style="font-size:13px;font-weight:700;color:#065F46">R$ ${(o.valorFechado).toLocaleString('pt-BR',{minimumFractionDigits:2})} <span style="font-size:10px;font-weight:600;background:#ECFDF5;color:#065F46;padding:1px 5px;border-radius:3px">−${o.descontoPorc}%</span></div>
+              </div>`
+            :`<span style="font-size:13px;font-weight:700;color:${o.status==='aprovado'?'#065F46':'var(--ac)'};flex-shrink:0">R$ ${(o.valorFechado||total).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`
+          }
         </div>
         ${procHtml}
       </div>`;
@@ -6805,6 +6811,7 @@ function excluirOrcamento(){
 // ── APROVAR ORÇAMENTO — MODO MISTO ────────────────────────────────────────
 let _orcAprovarParcelasTemp=[];
 let _aprovEntradas=[];
+let _aprovDescGlobal=0; // % de desconto global aplicado no fechamento
 
 const _APROV_TIPOS=[
   {v:'avista_dinheiro',    l:'À vista — Dinheiro'},
@@ -6820,6 +6827,7 @@ function abrirModalAprovarOrcamento(){
   if(!orc){ alert('Orçamento não encontrado.'); return; }
   const total=(_orcItens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
   _orcAprovarParcelasTemp=[];
+  _aprovDescGlobal=0;
   _aprovEntradas=[{tipo:'avista_pix',valor:total,desconto:0,nParcelas:2,venc1:new Date().toISOString().slice(0,10),parcelasCustom:[]}];
   _aprovRenderModal(orc,total);
   document.getElementById('modal-aprovar-orc').classList.add('open');
@@ -6830,16 +6838,46 @@ function _aprovRenderModal(orc,totalOrc){
   if(!totalOrc) totalOrc=(_orcItens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
   const fmtMoeda=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
   const body=document.getElementById('modal-aprovar-orc-body');
+  const valorFechado=totalOrc*(1-(_aprovDescGlobal||0)/100);
+  const temDesc=(_aprovDescGlobal||0)>0;
   body.innerHTML=`
-    <div style="background:var(--sul);border-radius:var(--r8);padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
-      <div style="font-size:18px">✓</div>
-      <div>
-        <div style="font-size:13px;font-weight:600;color:var(--su)">${orc.nomeOrc||'Orçamento'}</div>
-        <div style="font-size:12px;color:var(--su);opacity:.8">Total: R$ ${fmtMoeda(totalOrc)}</div>
+    <!-- Cabeçalho: valor tabela -->
+    <div style="background:var(--s2);border-radius:var(--r8);padding:12px 16px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--tx)">${orc.nomeOrc||'Orçamento'}</div>
+          <div style="font-size:11px;color:var(--tx3);margin-top:1px">Valor de tabela</div>
+        </div>
+        <div style="font-size:18px;font-weight:700;color:var(--tx)">R$ ${fmtMoeda(totalOrc)}</div>
       </div>
     </div>
+
+    <!-- Desconto global -->
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border:1px solid var(--border);border-radius:var(--r8);margin-bottom:14px;background:var(--surface)">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:2px">Desconto negociado</div>
+        <div style="font-size:11px;color:var(--tx3)">Aplicado sobre todos os procedimentos do orçamento</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <input type="number" id="aprov-desc-global" value="${_aprovDescGlobal||0}" min="0" max="100" step="0.5"
+          oninput="_aprovChangeDescGlobal(this.value)"
+          style="width:64px;font-size:15px;font-weight:600;text-align:center;border:1px solid var(--border);border-radius:var(--r6);padding:6px 8px;background:var(--surface);color:var(--tx);font-family:var(--font)">
+        <span style="font-size:15px;font-weight:600;color:var(--tx2)">%</span>
+      </div>
+    </div>
+
+    <!-- Valor fechado -->
+    <div id="aprov-valor-fechado-wrap" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:var(--r8);margin-bottom:16px;background:${temDesc?'var(--sul)':'var(--acl)'};border:1px solid ${temDesc?'#A7F3D0':'var(--border)'}">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:${temDesc?'var(--su)':'var(--ac)'};text-transform:uppercase;letter-spacing:.06em">Valor fechado</div>
+        ${temDesc?`<div style="font-size:11px;color:var(--su);opacity:.8;margin-top:1px">Desconto de ${_aprovDescGlobal}% = − R$ ${fmtMoeda(totalOrc*_aprovDescGlobal/100)}</div>`:'<div style="font-size:11px;color:var(--tx3);margin-top:1px">Sem desconto aplicado</div>'}
+      </div>
+      <div style="font-size:22px;font-weight:700;color:${temDesc?'var(--su)':'var(--ac)'}">R$ ${fmtMoeda(valorFechado)}</div>
+    </div>
+
+    <!-- Títulos a pagar -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div style="font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em">Títulos a pagar</div>
+      <div style="font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em">Forma de pagamento</div>
       <button class="btn btn-ghost btn-sm" onclick="_aprovAddEntrada()">+ Adicionar</button>
     </div>
     <div id="aprov-entradas-wrap" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
@@ -6847,6 +6885,33 @@ function _aprovRenderModal(orc,totalOrc){
     <div id="aprov-preview-titulos" style="border-top:1px solid var(--border);padding-top:14px"></div>
   `;
   setTimeout(()=>_aprovRenderEntradas(),0);
+}
+
+function _aprovChangeDescGlobal(val){
+  const totalOrc=(_orcItens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+  _aprovDescGlobal=Math.max(0,Math.min(100,parseFloat(val)||0));
+  const valorFechado=+(totalOrc*(1-_aprovDescGlobal/100)).toFixed(2);
+  const fmtMoeda=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+  const temDesc=_aprovDescGlobal>0;
+
+  // Atualiza bloco valor fechado
+  const wrap=document.getElementById('aprov-valor-fechado-wrap');
+  if(wrap){
+    wrap.style.background=temDesc?'var(--sul)':'var(--acl)';
+    wrap.style.borderColor=temDesc?'#A7F3D0':'var(--border)';
+    wrap.innerHTML=`
+      <div>
+        <div style="font-size:12px;font-weight:700;color:${temDesc?'var(--su)':'var(--ac)'};text-transform:uppercase;letter-spacing:.06em">Valor fechado</div>
+        ${temDesc?`<div style="font-size:11px;color:var(--su);opacity:.8;margin-top:1px">Desconto de ${_aprovDescGlobal}% = − R$ ${fmtMoeda(totalOrc*_aprovDescGlobal/100)}</div>`:'<div style="font-size:11px;color:var(--tx3);margin-top:1px">Sem desconto aplicado</div>'}
+      </div>
+      <div style="font-size:22px;font-weight:700;color:${temDesc?'var(--su)':'var(--ac)'}">R$ ${fmtMoeda(valorFechado)}</div>`;
+  }
+
+  // Ajusta o valor da primeira (e única, em geral) entrada para o valor fechado
+  if(_aprovEntradas.length===1){
+    _aprovEntradas[0].valor=valorFechado;
+  }
+  _aprovRenderEntradas();
 }
 
 function _aprovRenderEntradas(){
@@ -6949,24 +7014,26 @@ function _aprovRenderEntradas(){
 
 function _aprovAtualizarSaldo(){
   const totalOrc=(_orcItens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+  const valorFechado=+(totalOrc*(1-(_aprovDescGlobal||0)/100)).toFixed(2);
   const fmtMoeda=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
   const totalEntradas=_aprovEntradas.reduce((s,e)=>s+(e.valor*(1-(e.desconto||0)/100)),0);
-  const diff=+(totalOrc-totalEntradas).toFixed(2);
+  const diff=+(valorFechado-totalEntradas).toFixed(2);
   const aviso=document.getElementById('aprov-saldo-aviso');
   if(!aviso) return;
   if(Math.abs(diff)<0.01){
-    aviso.innerHTML=`<div style="font-size:12px;color:var(--su);padding:6px 10px;background:#ECFDF5;border-radius:var(--r6);border:1px solid #A7F3D0">✓ Entradas cobrem exatamente o total do orçamento</div>`;
+    aviso.innerHTML=`<div style="font-size:12px;color:var(--su);padding:6px 10px;background:#ECFDF5;border-radius:var(--r6);border:1px solid #A7F3D0">Títulos cobrem exatamente o valor fechado</div>`;
   } else if(diff>0){
-    aviso.innerHTML=`<div style="font-size:12px;color:#7C4A00;padding:6px 10px;background:#FEF9EE;border-radius:var(--r6);border:1px solid #FDE68A">⚠ Faltam R$ ${fmtMoeda(diff)} para cobrir o total do orçamento (R$ ${fmtMoeda(totalOrc)})</div>`;
+    aviso.innerHTML=`<div style="font-size:12px;color:#7C4A00;padding:6px 10px;background:#FEF9EE;border-radius:var(--r6);border:1px solid #FDE68A">Faltam R$ ${fmtMoeda(diff)} para cobrir o valor fechado (R$ ${fmtMoeda(valorFechado)})</div>`;
   } else {
-    aviso.innerHTML=`<div style="font-size:12px;color:var(--ac);padding:6px 10px;background:var(--acl);border-radius:var(--r6)">ℹ As entradas excedem o total em R$ ${fmtMoeda(-diff)}</div>`;
+    aviso.innerHTML=`<div style="font-size:12px;color:var(--ac);padding:6px 10px;background:var(--acl);border-radius:var(--r6)">Os títulos excedem o valor fechado em R$ ${fmtMoeda(-diff)}</div>`;
   }
 }
 
 function _aprovAddEntrada(){
   const totalOrc=(_orcItens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+  const valorFechado=+(totalOrc*(1-(_aprovDescGlobal||0)/100)).toFixed(2);
   const usado=_aprovEntradas.reduce((s,e)=>s+e.valor,0);
-  const restante=Math.max(0,+(totalOrc-usado).toFixed(2));
+  const restante=Math.max(0,+(valorFechado-usado).toFixed(2));
   _aprovEntradas.push({tipo:'avista_pix',valor:restante,desconto:0,nParcelas:2,venc1:new Date().toISOString().slice(0,10),parcelasCustom:[]});
   _aprovRenderEntradas();
 }
@@ -7059,13 +7126,19 @@ function confirmarAprovacaoOrcamento(){
   const titulos=window._aprovTitulosTemp||[];
   if(!titulos.length){ alert('Configure a forma de pagamento antes de confirmar.'); return; }
 
-  // 1. Marca orçamento como aprovado
+  // 1. Marca orçamento como aprovado e grava valores de fechamento
+  const totalTabela=(_orcItens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+  const descPorc=_aprovDescGlobal||0;
+  const valFechado=+(totalTabela*(1-descPorc/100)).toFixed(2);
   _comSalvarImediato(()=>{
     const list=_orcamentos();
     const idx=list.findIndex(o=>o.id===_orcModalId);
     if(idx>=0){
       list[idx].status='aprovado';
       list[idx].dataDecisao=new Date().toISOString().slice(0,10);
+      list[idx].valorTabela=totalTabela;
+      list[idx].descontoPorc=descPorc;
+      list[idx].valorFechado=valFechado;
     }
     _salvarOrcamentos(list);
   });
