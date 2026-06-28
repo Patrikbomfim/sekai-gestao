@@ -15264,7 +15264,6 @@ function _renderFormAnamnese(nomeCompleto, token, pacienteId, campos){
   campos.forEach(function(c){
     camposHtml+='<div style="margin-bottom:22px"><label style="display:block;font-size:14px;font-weight:600;color:#111827;margin-bottom:8px">'+c.label+(c.obrigatorio?' <span style="color:#DC2626">*</span>':'')+'</label>'+_renderCampoPublico(c)+'</div>';
   });
-  var camposJson=JSON.stringify(campos).replace(/\/g,'\\').replace(/`/g,'\`');
   var supaUrl='https://bryfvifstvbkiqmjgwdt.supabase.co';
   var supaKey='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJyeWZ2aWZzdHZia2lxbWpnd2R0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NzIxNzUsImV4cCI6MjA5NzU0ODE3NX0.DJz8OJaj9GC9TGgMELHMwQ3-R9Z4mywg5y_28zlJRGc';
   return (
