@@ -5811,8 +5811,13 @@ function abrirModalOrcamento(pacId, orcId){
     </div>
     <div id="orc-itens-wrap" style="margin-bottom:16px"></div>
     <div style="display:flex;align-items:center;justify-content:flex-end;gap:16px;padding:12px 0;border-top:1px solid var(--border);margin-bottom:16px">
-      <div style="font-size:12px;color:var(--tx2)">Total do orçamento</div>
-      <div id="orc-total" style="font-size:20px;font-weight:700;color:var(--ac)">R$ 0,00</div>
+      <div style="text-align:right">
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:16px">
+          <div style="font-size:12px;color:var(--tx2)">Total do orçamento</div>
+          <div id="orc-total" style="font-size:20px;font-weight:700;color:var(--ac)">R$ 0,00</div>
+        </div>
+        <div id="orc-total-fechado" style="display:none;margin-top:4px"></div>
+      </div>
     </div>
     <div style="border-top:1px solid var(--border);padding-top:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -6119,74 +6124,94 @@ function salvarOrcamento(){
 function _renderOrcPagamentos(){
   const wrap=document.getElementById('orc-pagamentos-wrap');
   if(!wrap) return;
+  const fmtMoeda=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+  const totalTabela=_orcItens.reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
 
-  // Se orçamento aprovado, mostrar títulos reais em vez de sugestões
+  function _atualizarTotalFechado(valorFechado){
+    const el=document.getElementById('orc-total-fechado');
+    if(!el) return;
+    if(valorFechado===null||Math.abs(valorFechado-totalTabela)<0.01){
+      el.style.display='none'; el.innerHTML=''; return;
+    }
+    const descPorc=totalTabela>0?(((totalTabela-valorFechado)/totalTabela)*100):0;
+    el.style.cssText='display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:4px';
+    el.innerHTML=
+      '<span style="font-size:11px;color:var(--tx3);text-decoration:line-through">R$ '+fmtMoeda(totalTabela)+'</span>'
+      +'<span style="font-size:16px;font-weight:700;color:var(--su)">R$ '+fmtMoeda(valorFechado)+'</span>'
+      +'<span style="font-size:11px;font-weight:600;background:var(--sul);color:var(--su);padding:2px 7px;border-radius:10px">\u2212'+descPorc.toFixed(2).replace('.',',')+'\u0025</span>';
+  }
+
+  // Se orcamento aprovado, mostrar titulos reais em vez de sugestoes
   if(_orcModalId){
     const orc=_orcamentos().find(o=>o.id===_orcModalId);
     if(orc&&orc.status==='aprovado'){
       const tits=_titulos().filter(t=>t.orcamentoId===_orcModalId);
-      const fmtMoeda=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
-      const fmtData=d=>{ if(!d) return '—'; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
+      const fmtData=d=>{ if(!d) return '\u2014'; const[y,m,day]=d.split('-'); return day+'/'+m+'/'+y; };
       const statusPill=s=>s==='pago'
-        ?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--sul);color:var(--su)">Pago</span>`
-        :`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--s2);color:var(--tx3)">A pagar</span>`;
+        ?'<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--sul);color:var(--su)">Pago</span>'
+        :'<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--s2);color:var(--tx3)">A pagar</span>';
       if(!tits.length){
-        wrap.innerHTML='<div style="text-align:center;padding:14px;font-size:12px;color:var(--tx3);background:var(--s2);border-radius:var(--r8)">Nenhum título encontrado para este orçamento.</div>';
+        _atualizarTotalFechado(null);
+        wrap.innerHTML='<div style="text-align:center;padding:14px;font-size:12px;color:var(--tx3);background:var(--s2);border-radius:var(--r8)">Nenhum t\u00edtulo encontrado para este or\u00e7amento.</div>';
         return;
       }
       const totalTit=tits.reduce((s,t)=>s+t.valor,0);
       const totalPago=tits.filter(t=>t.status==='pago').reduce((s,t)=>s+t.valor,0);
-      wrap.innerHTML=`
-        <div style="display:flex;gap:16px;margin-bottom:10px;font-size:12px">
-          <span style="color:var(--tx2)">Total: <strong>R$ ${fmtMoeda(totalTit)}</strong></span>
-          <span style="color:var(--su)">Pago: <strong>R$ ${fmtMoeda(totalPago)}</strong></span>
-          <span style="color:var(--wa)">A receber: <strong>R$ ${fmtMoeda(totalTit-totalPago)}</strong></span>
-        </div>
-        ${tits.map(t=>`
-        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r8);margin-bottom:5px;background:var(--surface)">
-          <div style="flex:1;min-width:0">
-            <div style="font-size:12px;font-weight:600">${t.descricao||'—'}</div>
-            <div style="font-size:11px;color:var(--tx3);margin-top:1px">${t.tipo||''} · Venc. ${fmtData(t.vencimento)}${t.dataPagamento?' · Pago em '+fmtData(t.dataPagamento):''}</div>
-          </div>
-          <div style="font-size:14px;font-weight:700;color:var(--ac);flex-shrink:0">R$ ${fmtMoeda(t.valor)}</div>
-          ${statusPill(t.status||'aberto')}
-        </div>`).join('')}`;
+      _atualizarTotalFechado(totalTit);
+      wrap.innerHTML=
+        '<div style="display:flex;gap:16px;margin-bottom:10px;font-size:12px">'
+        +'<span style="color:var(--tx2)">Total: <strong>R$ '+fmtMoeda(totalTit)+'</strong></span>'
+        +'<span style="color:var(--su)">Pago: <strong>R$ '+fmtMoeda(totalPago)+'</strong></span>'
+        +'<span style="color:var(--wa)">A receber: <strong>R$ '+fmtMoeda(totalTit-totalPago)+'</strong></span>'
+        +'</div>'
+        +tits.map(t=>
+          '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r8);margin-bottom:5px;background:var(--surface)">'
+          +'<div style="flex:1;min-width:0">'
+          +'<div style="font-size:12px;font-weight:600">'+(t.descricao||'\u2014')+'</div>'
+          +'<div style="font-size:11px;color:var(--tx3);margin-top:1px">'+(t.tipo||'')+' \u00b7 Venc. '+fmtData(t.vencimento)+(t.dataPagamento?' \u00b7 Pago em '+fmtData(t.dataPagamento):'')+' </div>'
+          +'</div>'
+          +'<div style="font-size:14px;font-weight:700;color:var(--ac);flex-shrink:0">R$ '+fmtMoeda(t.valor)+'</div>'
+          +statusPill(t.status||'aberto')
+          +'</div>'
+        ).join('');
       return;
     }
   }
 
   if(!_orcPagamentos.length){
-    wrap.innerHTML='<div style="text-align:center;padding:14px;font-size:12px;color:var(--tx3);background:var(--s2);border-radius:var(--r8)">Nenhuma forma de pagamento adicionada.<br>Você pode criar opções para o paciente escolher.</div>';
+    _atualizarTotalFechado(null);
+    wrap.innerHTML='<div style="text-align:center;padding:14px;font-size:12px;color:var(--tx3);background:var(--s2);border-radius:var(--r8)">Nenhuma forma de pagamento adicionada.<br>Voc\u00ea pode criar op\u00e7\u00f5es para o paciente escolher.</div>';
     return;
   }
-  const tipoLabel={dinheiro:'Dinheiro',transferencia:'Transferência',debito:'Débito',credito:'Crédito',boleto:'Boleto'};
-  const tipoIcon={dinheiro:'💵',transferencia:'🏦',debito:'💳',credito:'💳',boleto:'📄'};
+  const valorFechadoSugestoes=_orcPagamentos.reduce((s,pg)=>s+((pg.valorTotal||0)*(1-(pg.desconto||0)/100)),0);
+  _atualizarTotalFechado(valorFechadoSugestoes);
+  const tipoLabel={dinheiro:'Dinheiro',transferencia:'Transfer\u00eancia',debito:'D\u00e9bito',credito:'Cr\u00e9dito',boleto:'Boleto'};
+  const tipoIcon={dinheiro:'\ud83d\udcb5',transferencia:'\ud83c\udfe6',debito:'\ud83d\udcb3',credito:'\ud83d\udcb3',boleto:'\ud83d\udcc4'};
   wrap.innerHTML=_orcPagamentos.map((pg,i)=>{
     const desconto=pg.desconto||0;
     const final=(pg.valorTotal||0)*(1-desconto/100);
     const parcelas=pg.parcelas||1;
     let desc='';
-    if(pg.tipo==='credito'&&parcelas>1) desc=`${parcelas}x de R$ ${(final/parcelas).toLocaleString('pt-BR',{minimumFractionDigits:2})}${desconto>0?` (${desconto}% off)`:''}`;
-    else if(desconto>0) desc=`${desconto}% de desconto → R$ ${final.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r8);margin-bottom:6px;background:var(--surface)">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:32px;height:32px;border-radius:var(--r6);background:var(--acl);display:flex;align-items:center;justify-content:center;font-size:14px">${tipoIcon[pg.tipo]||'💰'}</div>
-        <div>
-          <div style="font-size:13px;font-weight:600">${tipoLabel[pg.tipo]||pg.tipo}</div>
-          ${desc?`<div style="font-size:11px;color:var(--tx2)">${desc}</div>`:''}
-          ${pg.obs?`<div style="font-size:11px;color:var(--tx3)">${pg.obs}</div>`:''}
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <div style="text-align:right">
-          ${desconto>0?`<div style="font-size:11px;color:var(--tx3);text-decoration:line-through">R$ ${(pg.valorTotal||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`:''}
-          <div style="font-size:15px;font-weight:700;color:var(--ac)">R$ ${final.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-        </div>
-        <button onclick="_orcRemoverPagamento(${i})" style="background:none;border:none;cursor:pointer;color:var(--tx3);font-size:18px;padding:2px 5px;border-radius:var(--r4)" title="Remover">&#215;</button>
-      </div>
-    </div>`;
+    if(pg.tipo==='credito'&&parcelas>1) desc=parcelas+'x de R$ '+(final/parcelas).toLocaleString('pt-BR',{minimumFractionDigits:2})+(desconto>0?' ('+desconto+'% off)':'');
+    else if(desconto>0) desc=desconto+'% de desconto \u2192 R$ '+final.toLocaleString('pt-BR',{minimumFractionDigits:2});
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r8);margin-bottom:6px;background:var(--surface)">'
+      +'<div style="display:flex;align-items:center;gap:10px">'
+      +'<div style="width:32px;height:32px;border-radius:var(--r6);background:var(--acl);display:flex;align-items:center;justify-content:center;font-size:14px">'+(tipoIcon[pg.tipo]||'\ud83d\udcb0')+'</div>'
+      +'<div>'
+      +'<div style="font-size:13px;font-weight:600">'+(tipoLabel[pg.tipo]||pg.tipo)+'</div>'
+      +(desc?'<div style="font-size:11px;color:var(--tx2)">'+desc+'</div>':'')
+      +(pg.obs?'<div style="font-size:11px;color:var(--tx3)">'+pg.obs+'</div>':'')
+      +'</div></div>'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<div style="text-align:right">'
+      +(desconto>0?'<div style="font-size:11px;color:var(--tx3);text-decoration:line-through">R$ '+(pg.valorTotal||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>':'')
+      +'<div style="font-size:15px;font-weight:700;color:var(--ac)">R$ '+final.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>'
+      +'</div>'
+      +'<button onclick="_orcRemoverPagamento('+i+')" style="background:none;border:none;cursor:pointer;color:var(--tx3);font-size:18px;padding:2px 5px;border-radius:var(--r4)" title="Remover">\u00d7</button>'
+      +'</div></div>';
   }).join('');
 }
+
 
 function _orcRemoverPagamento(idx){
   _orcPagamentos.splice(idx,1);
