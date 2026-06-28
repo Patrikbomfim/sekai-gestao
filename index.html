@@ -7598,6 +7598,33 @@ function _prontAbrirPdfFichas(fichas, pacNome, clinicaNome, fmtData){
       <div class="col"><div class="col-lbl">Orientações ao paciente</div><div class="col-val">${f.orientacoes||'—'}</div></div>
       <div class="col"><div class="col-lbl">Detalhes próxima consulta</div><div class="col-val">${f.proximaConsulta||'—'}</div></div>
     </div>
+    <!-- Assinaturas -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid #e5e7eb">
+      <div style="padding:20px 24px 14px;border-right:1px solid #e5e7eb">
+        <div style="height:40px"></div>
+        <div style="border-top:1px solid #1a1a1a;padding-top:6px;display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#1a1a1a">${pacNome}</div>
+            <div style="font-size:10px;color:#9a9a9a;margin-top:1px">Assinatura do paciente</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:10px;color:#9a9a9a">Data: ____/____/________</div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:20px 24px 14px">
+        <div style="height:40px"></div>
+        <div style="border-top:1px solid #1a1a1a;padding-top:6px;display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#1a1a1a">${f.profissional||'Responsável pelo atendimento'}</div>
+            <div style="font-size:10px;color:#9a9a9a;margin-top:1px">Assinatura do profissional</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:10px;color:#9a9a9a">CRO: _______________</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>`).join('')}
   <script>window.onload=()=>window.print();<\/script></body></html>`;
   const win=window.open('','_blank');
