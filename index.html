@@ -940,7 +940,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
               <div class="pp-area-desc" style="margin-bottom:0">Orçamentos aprovados e execução dos procedimentos.</div>
             </div>
           </div>
-          <div class="card" id="pp-prontuario-plano-wrap"></div>
+          <div id="pp-prontuario-plano-wrap"></div>
         </div>
 
         <!-- TAB: FICHA CLÍNICA -->
@@ -952,7 +952,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             </div>
             <button class="btn btn-primary btn-sm" onclick="abrirModalAtendimento()">+ Adicionar atendimento</button>
           </div>
-          <div class="card" id="pp-prontuario-ficha-wrap"></div>
+          <div id="pp-prontuario-ficha-wrap"></div>
         </div>
       </div>
 
@@ -7447,15 +7447,21 @@ function _renderProntFicha(p){
     ?'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#ECFDF5;color:#065F46">Realizado</span>'
     :'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#FEF9EE;color:#7C4A00">A realizar</span>';
 
+  const field=(label,val)=>val?`<div style="margin-bottom:10px">
+    <div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">${label}</div>
+    <div style="font-size:13px;color:var(--tx);white-space:pre-line;line-height:1.55">${val}</div>
+  </div>`:'';
+
   wrap.innerHTML=fichas.map(f=>`
     <div style="border:1px solid var(--border);border-radius:var(--r8);margin-bottom:10px;overflow:hidden">
-      <!-- Cabeçalho da linha -->
+
+      <!-- Cabeçalho -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--border)">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <span style="font-size:13px;font-weight:700;color:var(--tx)">${fmtData(f.data)}</span>
-          ${f.profissional?`<span style="font-size:12px;color:var(--tx3)">·</span><span style="font-size:12px;font-weight:500;color:var(--tx2)">${f.profissional}</span>`:''}
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0">
+          <span style="font-size:13px;font-weight:700;color:var(--tx);white-space:nowrap">${fmtData(f.data)}</span>
+          ${f.titulo?`<span style="font-size:12px;color:var(--tx3)">·</span><span style="font-size:13px;font-weight:600;color:var(--ac)">${f.titulo}</span>`:''}
+          ${f.profissional?`<span style="font-size:12px;color:var(--tx3)">·</span><span style="font-size:12px;color:var(--tx2)">${f.profissional}</span>`:''}
           ${f.avulso?'<span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:3px;background:var(--pul);color:var(--pu)">Avulso</span>':''}
-          ${f.procedimento?`<span style="font-size:12px;color:var(--ac);font-weight:500">${f.procedimento}</span>`:''}
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
           ${statusPill(f.status||'realizado')}
@@ -7463,13 +7469,35 @@ function _renderProntFicha(p){
           <button onclick="_prontExcluirFicha('${f.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--da)">Excluir</button>
         </div>
       </div>
-      <!-- Corpo sempre visível -->
-      <div style="padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px 24px">
-        ${f.planTratamento?`<div style="grid-column:1/-1"><div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Plano de tratamento</div><div style="font-size:13px;color:var(--tx)">${f.planTratamento}</div></div>`:''}
-        ${f.descricao?`<div style="grid-column:1/-1"><div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Descrição do atendimento</div><div style="font-size:13px;color:var(--tx);white-space:pre-line">${f.descricao}</div></div>`:''}
-        ${f.orientacoes?`<div><div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Orientações ao paciente</div><div style="font-size:13px;color:var(--tx);white-space:pre-line">${f.orientacoes}</div></div>`:''}
-        ${f.proximaConsulta?`<div><div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Detalhes para próxima consulta</div><div style="font-size:13px;color:var(--tx);white-space:pre-line">${f.proximaConsulta}</div></div>`:''}
-        ${!f.descricao&&!f.orientacoes&&!f.proximaConsulta&&!f.planTratamento?'<div style="grid-column:1/-1;font-size:12px;color:var(--tx3)">Nenhum detalhe registrado.</div>':''}
+
+      <!-- Corpo: col info + 3 colunas de texto -->
+      <div style="display:grid;grid-template-columns:200px 1fr 1fr 1fr;gap:0;background:var(--surface)">
+
+        <!-- Col 1: dados clínicos -->
+        <div style="padding:14px 14px;border-right:1px solid var(--border);background:var(--s2)">
+          ${field('Plano de tratamento', f.planTratamento)}
+          ${field(f.avulso?'Tipo':'Procedimento', f.avulso?'Atendimento avulso':(f.procedimento||''))}
+          ${field('Responsável', f.profissional)}
+        </div>
+
+        <!-- Col 2: Descrição -->
+        <div style="padding:14px 14px;border-right:1px solid var(--border)">
+          ${field('Descrição do atendimento', f.descricao)}
+          ${!f.descricao?'<div style="font-size:12px;color:var(--tx3)">—</div>':''}
+        </div>
+
+        <!-- Col 3: Orientações -->
+        <div style="padding:14px 14px;border-right:1px solid var(--border)">
+          ${field('Orientações ao paciente', f.orientacoes)}
+          ${!f.orientacoes?'<div style="font-size:12px;color:var(--tx3)">—</div>':''}
+        </div>
+
+        <!-- Col 4: Próxima consulta -->
+        <div style="padding:14px 14px">
+          ${field('Detalhes próxima consulta', f.proximaConsulta)}
+          ${!f.proximaConsulta?'<div style="font-size:12px;color:var(--tx3)">—</div>':''}
+        </div>
+
       </div>
     </div>`).join('');
 }
@@ -7501,7 +7529,7 @@ function abrirModalAtendimento(fichaExistente){
     m.id='modal-atendimento';
     m.style.zIndex='250';
     m.innerHTML=`
-    <div class="modal" style="width:620px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column">
+    <div class="modal" style="width:680px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column">
       <div class="modal-header">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div class="modal-title" id="modal-atendimento-title">Adicionar atendimento</div>
@@ -7509,7 +7537,15 @@ function abrirModalAtendimento(fichaExistente){
         </div>
       </div>
       <div class="modal-body" style="overflow-y:auto;flex:1;padding-top:16px">
-        <div class="fg">
+
+        <!-- Linha 1: Título (destaque) -->
+        <div style="margin-bottom:12px">
+          <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Título do atendimento</label>
+          <input type="text" id="atd-titulo" placeholder="Ex: Extração dente 37, Consulta de retorno, Instalação aparelho..." style="width:100%;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);font-family:var(--font)">
+        </div>
+
+        <!-- Linha 2: Data, Profissional, Status -->
+        <div class="fg" style="margin-bottom:4px">
           <div class="fl">
             <label>Data do atendimento</label>
             <input type="date" id="atd-data">
@@ -7551,20 +7587,22 @@ function abrirModalAtendimento(fichaExistente){
           </div>
         </div>
 
-        <div class="fg" style="margin-top:4px">
-          <div class="fl fg-full">
-            <label>Descrição do atendimento</label>
-            <textarea id="atd-descricao" rows="3" placeholder="O que foi realizado, observações gerais..." style="font-family:var(--font);font-size:13px;resize:vertical"></textarea>
+        <!-- 3 textareas lado a lado -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:8px">
+          <div>
+            <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Descrição do atendimento</label>
+            <textarea id="atd-descricao" rows="5" placeholder="O que foi realizado, observações gerais..." style="width:100%;font-family:var(--font);font-size:13px;resize:vertical;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6)"></textarea>
           </div>
-          <div class="fl fg-full">
-            <label>Orientações ao paciente</label>
-            <textarea id="atd-orientacoes" rows="2" placeholder="Cuidados pós-procedimento, medicação, recomendações..." style="font-family:var(--font);font-size:13px;resize:vertical"></textarea>
+          <div>
+            <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Orientações ao paciente</label>
+            <textarea id="atd-orientacoes" rows="5" placeholder="Cuidados pós-procedimento, medicação, recomendações..." style="width:100%;font-family:var(--font);font-size:13px;resize:vertical;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6)"></textarea>
           </div>
-          <div class="fl fg-full">
-            <label>Detalhes para próxima consulta</label>
-            <textarea id="atd-proxima" rows="2" placeholder="O que deverá ser feito ou verificado na próxima consulta..." style="font-family:var(--font);font-size:13px;resize:vertical"></textarea>
+          <div>
+            <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Detalhes para próxima consulta</label>
+            <textarea id="atd-proxima" rows="5" placeholder="O que deverá ser feito ou verificado na próxima consulta..." style="width:100%;font-family:var(--font);font-size:13px;resize:vertical;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6)"></textarea>
           </div>
         </div>
+
       </div>
       <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid var(--border)">
         <button class="btn btn-ghost" onclick="fecharModalAtendimento()">Cancelar</button>
@@ -7590,6 +7628,7 @@ function abrirModalAtendimento(fichaExistente){
   const titulo=document.getElementById('modal-atendimento-title');
   if(fichaExistente){
     titulo.textContent='Editar atendimento';
+    document.getElementById('atd-titulo').value=fichaExistente.titulo||'';
     document.getElementById('atd-data').value=fichaExistente.data||hoje2;
     document.getElementById('atd-profissional').value=fichaExistente.profissional||'';
     document.getElementById('atd-status').value=fichaExistente.status||'realizado';
@@ -7608,6 +7647,7 @@ function abrirModalAtendimento(fichaExistente){
     }
   } else {
     titulo.textContent='Adicionar atendimento';
+    document.getElementById('atd-titulo').value='';
     document.getElementById('atd-data').value=hoje2;
     document.getElementById('atd-profissional').value='';
     document.getElementById('atd-status').value='realizado';
@@ -7647,6 +7687,7 @@ function _atdCarregarProcs(selecionado){
 function salvarAtendimento(){
   const data=document.getElementById('atd-data').value;
   if(!data){ alert('Informe a data do atendimento.'); return; }
+  const tituloAtd=document.getElementById('atd-titulo').value.trim();
   const avulso=document.getElementById('atd-avulso-toggle').classList.contains('on');
   const planId=avulso?'':document.getElementById('atd-plano').value;
   const planNome=planId?(_orcamentos().find(o=>o.id===planId)||{}).nomeOrc||'':'';
@@ -7661,9 +7702,9 @@ function salvarAtendimento(){
     const list=_prontuarios();
     if(_prontFichaEditId){
       const idx=list.findIndex(f=>f.id===_prontFichaEditId);
-      if(idx>=0) list[idx]={...list[idx],data,avulso,planTratamentoId:planId,planTratamento:planNome,procedimento,profissional,status,descricao,orientacoes,proximaConsulta};
+      if(idx>=0) list[idx]={...list[idx],titulo:tituloAtd,data,avulso,planTratamentoId:planId,planTratamento:planNome,procedimento,profissional,status,descricao,orientacoes,proximaConsulta};
     } else {
-      list.push({id:'ficha_'+Date.now(),pacienteId:_prontPacId,data,avulso,planTratamentoId:planId,planTratamento:planNome,procedimento,profissional,status,descricao,orientacoes,proximaConsulta});
+      list.push({id:'ficha_'+Date.now(),pacienteId:_prontPacId,titulo:tituloAtd,data,avulso,planTratamentoId:planId,planTratamento:planNome,procedimento,profissional,status,descricao,orientacoes,proximaConsulta});
     }
     _salvarProntuarios(list);
   });
