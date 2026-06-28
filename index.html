@@ -920,9 +920,40 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
       <!-- PRONTUÁRIO -->
       <div class="pp-area" id="pp-area-prontuario">
-        <div class="pp-area-title">Prontuário</div>
-        <div class="pp-area-desc">Evoluções clínicas registradas por data, por profissional responsável.</div>
-        <div class="card" id="pp-prontuario-wrap"></div>
+        <!-- TABS -->
+        <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px">
+          <button id="pront-tab-btn-plano" onclick="switchProntTab('plano')"
+            style="font-size:13px;font-weight:600;padding:8px 18px;border:none;background:none;cursor:pointer;color:var(--ac);border-bottom:2px solid var(--ac);margin-bottom:-2px;font-family:var(--font)">
+            Plano de tratamento
+          </button>
+          <button id="pront-tab-btn-ficha" onclick="switchProntTab('ficha')"
+            style="font-size:13px;font-weight:600;padding:8px 18px;border:none;background:none;cursor:pointer;color:var(--tx3);border-bottom:2px solid transparent;margin-bottom:-2px;font-family:var(--font)">
+            Ficha clínica
+          </button>
+        </div>
+
+        <!-- TAB: PLANO DE TRATAMENTO -->
+        <div id="pront-tab-plano">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div>
+              <div class="pp-area-title" style="margin-bottom:2px">Plano de tratamento</div>
+              <div class="pp-area-desc" style="margin-bottom:0">Orçamentos aprovados e execução dos procedimentos.</div>
+            </div>
+          </div>
+          <div class="card" id="pp-prontuario-plano-wrap"></div>
+        </div>
+
+        <!-- TAB: FICHA CLÍNICA -->
+        <div id="pront-tab-ficha" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div>
+              <div class="pp-area-title" style="margin-bottom:2px">Ficha clínica</div>
+              <div class="pp-area-desc" style="margin-bottom:0">Registro de cada atendimento, orientações e observações clínicas.</div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="abrirModalAtendimento()">+ Adicionar atendimento</button>
+          </div>
+          <div class="card" id="pp-prontuario-ficha-wrap"></div>
+        </div>
       </div>
 
       <!-- DOCUMENTOS -->
@@ -5062,6 +5093,7 @@ function switchPpArea(area){
     const el=document.getElementById('pp-menu-'+a);
     if(el) el.classList.toggle('on',a===area);
   });
+  if(area==='prontuario') switchProntTab('plano');
 }
 
 function renderPpAcoes(p){
@@ -7237,8 +7269,400 @@ function confirmarAprovacaoOrcamento(){
   // vai direto pro financeiro
   switchPpArea('financeiro');
 }
+// ── PRONTUÁRIO ─────────────────────────────────────────────────────────────
+function _prontuarios(){ return carregarLS('sk3-prontuarios',[]); }
+function _salvarProntuarios(list){ salvarLS('sk3-prontuarios',list); }
+
+let _prontPacId=null; // paciente atual no módulo prontuário
+
+function switchProntTab(tab){
+  document.getElementById('pront-tab-plano').style.display=tab==='plano'?'':'none';
+  document.getElementById('pront-tab-ficha').style.display=tab==='ficha'?'':'none';
+  const btnP=document.getElementById('pront-tab-btn-plano');
+  const btnF=document.getElementById('pront-tab-btn-ficha');
+  if(btnP){ btnP.style.color=tab==='plano'?'var(--ac)':'var(--tx3)'; btnP.style.borderBottomColor=tab==='plano'?'var(--ac)':'transparent'; }
+  if(btnF){ btnF.style.color=tab==='ficha'?'var(--ac)':'var(--tx3)'; btnF.style.borderBottomColor=tab==='ficha'?'var(--ac)':'transparent'; }
+}
+
 function renderPpProntuario(p){
-  document.getElementById('pp-prontuario-wrap').innerHTML='<div class="empty"><div class="empty-ic">📋</div>Módulo em configuração.</div>';
+  _prontPacId=p.id;
+  _renderProntPlano(p);
+  _renderProntFicha(p);
+}
+
+function _renderProntPlano(p){
+  const wrap=document.getElementById('pp-prontuario-plano-wrap');
+  if(!wrap) return;
+  const orcs=_orcamentos().filter(o=>String(o.pacienteId)===String(p.id)&&o.status==='aprovado');
+  if(!orcs.length){
+    wrap.innerHTML='<div class="empty"><div class="empty-ic">📋</div><div style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:4px">Nenhum plano de tratamento aprovado</div><div style="font-size:12px;color:var(--tx3)">Aprove um orçamento para ele aparecer aqui como plano de tratamento.</div></div>';
+    return;
+  }
+  const fmtData=d=>{ if(!d) return '—'; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
+  const equipeLista=(equipe||[]).map(e=>typeof e==='string'?e:(e.nome||'')).filter(Boolean);
+
+  let html='';
+  orcs.forEach(orc=>{
+    const uid='pront-orc-'+orc.id;
+    const itens=orc.itens||[];
+    const total=itens.reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+    const executados=itens.filter(i=>i.executado).length;
+
+    html+=`
+    <div style="border:1px solid var(--border);border-radius:var(--r8);margin-bottom:10px;overflow:hidden">
+      <div onclick="_prontTogglePlano('${uid}')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;background:var(--surface);user-select:none"
+           onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--surface)'">
+        <span id="${uid}-caret" style="font-size:11px;color:var(--tx3);transition:transform .18s;display:inline-block;flex-shrink:0">▶</span>
+        <div style="width:8px;height:8px;border-radius:50%;background:#065F46;flex-shrink:0"></div>
+        <span style="font-size:13px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${orc.nomeOrc||('Plano #'+(orc.num||orc.id.slice(-4)))}</span>
+        <span style="font-size:11px;color:var(--tx3);flex-shrink:0">${executados}/${itens.length} procedimento(s) executado(s)</span>
+        <div style="width:1px;height:24px;background:var(--border);flex-shrink:0"></div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Valor</div>
+          <div style="font-size:13px;font-weight:700;color:#065F46">R$ ${(orc.valorFechado||total).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+        </div>
+      </div>
+      <div id="${uid}-body" style="display:none;border-top:1px solid var(--border)">
+        ${itens.length?`
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:var(--s2)">
+              <th style="padding:8px 14px;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;text-align:left">Procedimento</th>
+              <th style="padding:8px 10px;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;text-align:left">Dente(s)</th>
+              <th style="padding:8px 10px;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;text-align:left">Profissional</th>
+              <th style="padding:8px 10px;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;text-align:left">Data</th>
+              <th style="padding:8px 10px;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;text-align:center">Status</th>
+              <th style="padding:8px 10px;width:80px"></th>
+            </tr>
+          </thead>
+          <tbody>
+          ${itens.map((it,idx)=>{
+            const exec=it.executado;
+            return `<tr style="border-bottom:1px solid var(--border);background:${exec?'#F0FDF6':'var(--surface)'}">
+              <td style="padding:10px 14px;font-size:13px;font-weight:500">${it.proc||'—'}</td>
+              <td style="padding:10px 10px;font-size:12px;color:var(--tx2)">${it.dentes&&it.dentes.length?it.dentes.join(', '):'Geral'}</td>
+              <td style="padding:10px 10px">
+                ${exec?`<span style="font-size:12px;color:var(--tx2)">${it.execProfissional||'—'}</span>`
+                  :`<select onchange="_prontUpdateItem('${orc.id}',${idx},'execProfissional',this.value)" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);max-width:130px">
+                    <option value="">— Profissional —</option>
+                    ${equipeLista.map(e=>`<option value="${e}" ${it.execProfissional===e?'selected':''}>${e}</option>`).join('')}
+                  </select>`}
+              </td>
+              <td style="padding:10px 10px">
+                ${exec?`<span style="font-size:12px;color:var(--tx2)">${fmtData(it.execData)}</span>`
+                  :`<input type="date" value="${it.execData||''}" onchange="_prontUpdateItem('${orc.id}',${idx},'execData',this.value)" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface)">`}
+              </td>
+              <td style="padding:10px 10px;text-align:center">
+                ${exec
+                  ?`<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#ECFDF5;color:#065F46">✓ Executado</span>`
+                  :`<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#F3F4F6;color:#6B7280">Em aberto</span>`}
+              </td>
+              <td style="padding:10px 10px;text-align:center">
+                ${exec?`<button onclick="_prontDesfazerItem('${orc.id}',${idx})" style="font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--tx3)">Desfazer</button>`
+                  :`<button onclick="_prontAprovarItem('${orc.id}',${idx})" style="font-size:11px;padding:3px 10px;border:1px solid #065F46;border-radius:var(--r4);background:#065F46;color:#fff;cursor:pointer;font-weight:600">Aprovar</button>`}
+              </td>
+            </tr>`;
+          }).join('')}
+          </tbody>
+        </table>`
+        :'<div style="padding:16px 14px;font-size:12px;color:var(--tx3)">Nenhum procedimento neste plano.</div>'}
+      </div>
+    </div>`;
+  });
+  wrap.innerHTML=html;
+}
+
+function _prontTogglePlano(uid){
+  const body=document.getElementById(uid+'-body');
+  const caret=document.getElementById(uid+'-caret');
+  if(!body) return;
+  const open=body.style.display==='block';
+  body.style.display=open?'none':'block';
+  if(caret) caret.style.transform=open?'':'rotate(90deg)';
+}
+
+function _prontUpdateItem(orcId,idx,field,val){
+  const list=_orcamentos();
+  const orc=list.find(o=>o.id===orcId);
+  if(!orc||!orc.itens||!orc.itens[idx]) return;
+  orc.itens[idx][field]=val;
+  _salvarOrcamentos(list);
+}
+
+function _prontAprovarItem(orcId,idx){
+  const list=_orcamentos();
+  const orc=list.find(o=>o.id===orcId);
+  if(!orc||!orc.itens||!orc.itens[idx]) return;
+  const it=orc.itens[idx];
+  if(!it.execProfissional){ alert('Selecione o profissional antes de aprovar.'); return; }
+  if(!it.execData){ alert('Informe a data de execução antes de aprovar.'); return; }
+  it.executado=true;
+  _salvarOrcamentos(list);
+  const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
+  if(p) _renderProntPlano(p);
+}
+
+function _prontDesfazerItem(orcId,idx){
+  const list=_orcamentos();
+  const orc=list.find(o=>o.id===orcId);
+  if(!orc||!orc.itens||!orc.itens[idx]) return;
+  orc.itens[idx].executado=false;
+  _salvarOrcamentos(list);
+  const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
+  if(p) _renderProntPlano(p);
+}
+
+// ── FICHA CLÍNICA ──────────────────────────────────────────────────────────
+function _renderProntFicha(p){
+  const wrap=document.getElementById('pp-prontuario-ficha-wrap');
+  if(!wrap) return;
+  const fichas=_prontuarios().filter(f=>String(f.pacienteId)===String(p.id)).sort((a,b)=>b.data.localeCompare(a.data));
+  if(!fichas.length){
+    wrap.innerHTML='<div class="empty"><div class="empty-ic">🗒️</div><div style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:4px">Nenhum atendimento registrado</div><div style="font-size:12px;color:var(--tx3)">Clique em "＋ Adicionar atendimento" para registrar o primeiro atendimento clínico.</div></div>';
+    return;
+  }
+  const fmtData=d=>{ if(!d) return '—'; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
+  const statusPill=s=>s==='realizado'
+    ?'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#ECFDF5;color:#065F46">Realizado</span>'
+    :'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#FEF9EE;color:#7C4A00">A realizar</span>';
+
+  wrap.innerHTML=fichas.map(f=>{
+    const uid='ficha-'+f.id;
+    return `
+    <div style="border:1px solid var(--border);border-radius:var(--r8);margin-bottom:8px;overflow:hidden">
+      <div onclick="_prontToggleFicha('${uid}')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;background:var(--surface);user-select:none"
+           onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--surface)'">
+        <span id="${uid}-caret" style="font-size:11px;color:var(--tx3);transition:transform .18s;display:inline-block;flex-shrink:0">▶</span>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-size:13px;font-weight:600">${fmtData(f.data)}</span>
+            ${f.profissional?`<span style="font-size:12px;color:var(--tx3)">· ${f.profissional}</span>`:''}
+            ${f.avulso?'<span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:3px;background:var(--pul);color:var(--pu)">Avulso</span>':''}
+            ${f.procedimento?`<span style="font-size:12px;color:var(--tx2)">${f.procedimento}</span>`:''}
+          </div>
+          ${f.descricao?`<div style="font-size:12px;color:var(--tx3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:500px">${f.descricao}</div>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+          ${statusPill(f.status||'realizado')}
+          <button onclick="event.stopPropagation();_prontEditarFicha('${f.id}')" style="font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--tx2)">Editar</button>
+          <button onclick="event.stopPropagation();_prontExcluirFicha('${f.id}')" style="font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--da)">Excluir</button>
+        </div>
+      </div>
+      <div id="${uid}-body" style="display:none;border-top:1px solid var(--border);padding:16px 14px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          ${f.planTratamento?`<div style="grid-column:1/-1"><span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em">Plano de tratamento</span><div style="font-size:12px;margin-top:4px">${f.planTratamento}</div></div>`:''}
+          ${f.descricao?`<div style="grid-column:1/-1"><span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em">Descrição do atendimento</span><div style="font-size:12px;margin-top:4px;white-space:pre-line">${f.descricao}</div></div>`:''}
+          ${f.orientacoes?`<div><span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em">Orientações ao paciente</span><div style="font-size:12px;margin-top:4px;white-space:pre-line">${f.orientacoes}</div></div>`:''}
+          ${f.proximaConsulta?`<div><span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em">Detalhes para próxima consulta</span><div style="font-size:12px;margin-top:4px;white-space:pre-line">${f.proximaConsulta}</div></div>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _prontToggleFicha(uid){
+  const body=document.getElementById(uid+'-body');
+  const caret=document.getElementById(uid+'-caret');
+  if(!body) return;
+  const open=body.style.display==='block';
+  body.style.display=open?'none':'block';
+  if(caret) caret.style.transform=open?'':'rotate(90deg)';
+}
+
+function _prontExcluirFicha(id){
+  if(!confirm('Excluir este registro de atendimento?')) return;
+  const list=_prontuarios().filter(f=>f.id!==id);
+  _salvarProntuarios(list);
+  const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
+  if(p) _renderProntFicha(p);
+}
+
+function _prontEditarFicha(id){
+  const f=_prontuarios().find(x=>x.id===id);
+  if(!f) return;
+  abrirModalAtendimento(f);
+}
+
+// ── MODAL ADICIONAR / EDITAR ATENDIMENTO ───────────────────────────────────
+let _prontFichaEditId=null;
+
+function abrirModalAtendimento(fichaExistente){
+  _prontFichaEditId=fichaExistente?fichaExistente.id:null;
+
+  // Monta modal se não existir
+  if(!document.getElementById('modal-atendimento')){
+    const m=document.createElement('div');
+    m.className='modal-ov';
+    m.id='modal-atendimento';
+    m.style.zIndex='250';
+    m.innerHTML=`
+    <div class="modal" style="width:620px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="modal-title" id="modal-atendimento-title">Adicionar atendimento</div>
+          <button onclick="fecharModalAtendimento()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--tx3);line-height:1;padding:2px 6px">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body" style="overflow-y:auto;flex:1;padding-top:16px">
+        <div class="fg">
+          <div class="fl">
+            <label>Data do atendimento</label>
+            <input type="date" id="atd-data">
+          </div>
+          <div class="fl">
+            <label>Profissional</label>
+            <select id="atd-profissional" style="font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface)">
+              <option value="">— Selecione —</option>
+            </select>
+          </div>
+          <div class="fl">
+            <label>Status</label>
+            <select id="atd-status" style="font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface)">
+              <option value="realizado">Realizado</option>
+              <option value="a_realizar">A realizar</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Atendimento avulso toggle -->
+        <div style="display:flex;align-items:center;gap:10px;margin:12px 0">
+          <span class="toggle-sw" id="atd-avulso-toggle" onclick="_atdToggleAvulso()"></span>
+          <span style="font-size:13px;color:var(--tx2)">Atendimento avulso <span style="font-size:11px;color:var(--tx3)">(sem vínculo com plano de tratamento)</span></span>
+        </div>
+
+        <!-- Plano + Procedimento (ocultados se avulso) -->
+        <div id="atd-plano-wrap" class="fg" style="margin-bottom:4px">
+          <div class="fl fg-full">
+            <label>Plano de tratamento</label>
+            <select id="atd-plano" onchange="_atdCarregarProcs()" style="font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface)">
+              <option value="">— Selecione um plano aprovado —</option>
+            </select>
+          </div>
+          <div class="fl fg-full">
+            <label>Procedimento</label>
+            <select id="atd-procedimento" style="font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface)">
+              <option value="">— Selecione o procedimento —</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="fg" style="margin-top:4px">
+          <div class="fl fg-full">
+            <label>Descrição do atendimento</label>
+            <textarea id="atd-descricao" rows="3" placeholder="O que foi realizado, observações gerais..." style="font-family:var(--font);font-size:13px;resize:vertical"></textarea>
+          </div>
+          <div class="fl fg-full">
+            <label>Orientações ao paciente</label>
+            <textarea id="atd-orientacoes" rows="2" placeholder="Cuidados pós-procedimento, medicação, recomendações..." style="font-family:var(--font);font-size:13px;resize:vertical"></textarea>
+          </div>
+          <div class="fl fg-full">
+            <label>Detalhes para próxima consulta</label>
+            <textarea id="atd-proxima" rows="2" placeholder="O que deverá ser feito ou verificado na próxima consulta..." style="font-family:var(--font);font-size:13px;resize:vertical"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid var(--border)">
+        <button class="btn btn-ghost" onclick="fecharModalAtendimento()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarAtendimento()">Salvar atendimento</button>
+      </div>
+    </div>`;
+    document.body.appendChild(m);
+  }
+
+  // Preenche equipe
+  const selProf=document.getElementById('atd-profissional');
+  const equipeLista=(equipe||[]).map(e=>typeof e==='string'?e:(e.nome||'')).filter(Boolean);
+  selProf.innerHTML='<option value="">— Selecione —</option>'+equipeLista.map(e=>`<option value="${e}">${e}</option>`).join('');
+
+  // Preenche planos aprovados do paciente
+  const selPlano=document.getElementById('atd-plano');
+  const orcsAprov=_orcamentos().filter(o=>String(o.pacienteId)===String(_prontPacId)&&o.status==='aprovado');
+  selPlano.innerHTML='<option value="">— Selecione um plano aprovado —</option>'+orcsAprov.map(o=>`<option value="${o.id}">${o.nomeOrc||('Plano #'+(o.num||o.id.slice(-4)))}</option>`).join('');
+  document.getElementById('atd-procedimento').innerHTML='<option value="">— Selecione o procedimento —</option>';
+
+  // Defaults / edição
+  const hoje2=new Date().toISOString().slice(0,10);
+  const titulo=document.getElementById('modal-atendimento-title');
+  if(fichaExistente){
+    titulo.textContent='Editar atendimento';
+    document.getElementById('atd-data').value=fichaExistente.data||hoje2;
+    document.getElementById('atd-profissional').value=fichaExistente.profissional||'';
+    document.getElementById('atd-status').value=fichaExistente.status||'realizado';
+    document.getElementById('atd-descricao').value=fichaExistente.descricao||'';
+    document.getElementById('atd-orientacoes').value=fichaExistente.orientacoes||'';
+    document.getElementById('atd-proxima').value=fichaExistente.proximaConsulta||'';
+    // avulso
+    const tog=document.getElementById('atd-avulso-toggle');
+    const isAvulso=!!fichaExistente.avulso;
+    tog.classList.toggle('on',isAvulso);
+    document.getElementById('atd-plano-wrap').style.display=isAvulso?'none':'';
+    // plano / procedimento
+    if(!isAvulso&&fichaExistente.planTratamentoId){
+      selPlano.value=fichaExistente.planTratamentoId||'';
+      _atdCarregarProcs(fichaExistente.procedimento);
+    }
+  } else {
+    titulo.textContent='Adicionar atendimento';
+    document.getElementById('atd-data').value=hoje2;
+    document.getElementById('atd-profissional').value='';
+    document.getElementById('atd-status').value='realizado';
+    document.getElementById('atd-descricao').value='';
+    document.getElementById('atd-orientacoes').value='';
+    document.getElementById('atd-proxima').value='';
+    const tog=document.getElementById('atd-avulso-toggle');
+    tog.classList.remove('on');
+    document.getElementById('atd-plano-wrap').style.display='';
+  }
+
+  document.getElementById('modal-atendimento').classList.add('open');
+}
+
+function fecharModalAtendimento(){
+  const m=document.getElementById('modal-atendimento');
+  if(m) m.classList.remove('open');
+}
+
+function _atdToggleAvulso(){
+  const tog=document.getElementById('atd-avulso-toggle');
+  tog.classList.toggle('on');
+  const isOn=tog.classList.contains('on');
+  document.getElementById('atd-plano-wrap').style.display=isOn?'none':'';
+}
+
+function _atdCarregarProcs(selecionado){
+  const orcId=document.getElementById('atd-plano').value;
+  const sel=document.getElementById('atd-procedimento');
+  if(!orcId){ sel.innerHTML='<option value="">— Selecione o procedimento —</option>'; return; }
+  const orc=_orcamentos().find(o=>o.id===orcId);
+  const itens=(orc&&orc.itens)||[];
+  sel.innerHTML='<option value="">— Selecione o procedimento —</option>'+itens.map(it=>`<option value="${it.proc||''}">${it.proc||'—'}${it.dentes&&it.dentes.length?' ('+it.dentes.join(', ')+')':''}</option>`).join('');
+  if(selecionado) sel.value=selecionado;
+}
+
+function salvarAtendimento(){
+  const data=document.getElementById('atd-data').value;
+  if(!data){ alert('Informe a data do atendimento.'); return; }
+  const avulso=document.getElementById('atd-avulso-toggle').classList.contains('on');
+  const planId=avulso?'':document.getElementById('atd-plano').value;
+  const planNome=planId?(_orcamentos().find(o=>o.id===planId)||{}).nomeOrc||'':'';
+  const procedimento=avulso?'':document.getElementById('atd-procedimento').value;
+  const profissional=document.getElementById('atd-profissional').value;
+  const status=document.getElementById('atd-status').value;
+  const descricao=document.getElementById('atd-descricao').value.trim();
+  const orientacoes=document.getElementById('atd-orientacoes').value.trim();
+  const proximaConsulta=document.getElementById('atd-proxima').value.trim();
+
+  const list=_prontuarios();
+  if(_prontFichaEditId){
+    const idx=list.findIndex(f=>f.id===_prontFichaEditId);
+    if(idx>=0) list[idx]={...list[idx],data,avulso,planTratamentoId:planId,planTratamento:planNome,procedimento,profissional,status,descricao,orientacoes,proximaConsulta};
+  } else {
+    list.push({id:'ficha_'+Date.now(),pacienteId:_prontPacId,data,avulso,planTratamentoId:planId,planTratamento:planNome,procedimento,profissional,status,descricao,orientacoes,proximaConsulta});
+  }
+  _salvarProntuarios(list);
+  fecharModalAtendimento();
+  const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
+  if(p) _renderProntFicha(p);
 }
 function renderPpDocumentos(p){
   document.getElementById('pp-documentos-wrap').innerHTML='<div class="empty"><div class="empty-ic">📄</div>Módulo em configuração.</div>';
