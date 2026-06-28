@@ -5862,7 +5862,7 @@ function gerarPdfOrcamento(){
     :'<tr><td colspan="4" style="padding:16px;text-align:center;color:#94A3B8;font-size:13px">Nenhum procedimento</td></tr>';
 
   const pagHtml=_orcPagamentos.length?_orcPagamentos.map(pg=>{
-    const tipoLabel2={dinheiro:'Dinheiro',transferencia:'Transferência Bancária',debito:'Cartão de Débito',credito:'Cartão de Crédito'};
+    const tipoLabel2={dinheiro:'Dinheiro',transferencia:'Transferência Bancária',debito:'Cartão de Débito',credito:'Cartão de Crédito',boleto:'Boleto'};
     const desconto=pg.desconto||0;
     const final=(pg.valorTotal||0)*(1-desconto/100);
     const parcelas=pg.parcelas||1;
@@ -5942,7 +5942,7 @@ function gerarPdfOrcamento(){
     <div style="font-size:10px;font-weight:600;color:#9a9a9a;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px">Condições de pagamento</div>
     <div style="display:grid;grid-template-columns:repeat(${Math.min(_orcPagamentos.length,3)},1fr);gap:10px">
     ${_orcPagamentos.map(pg=>{
-      const tipoLabel2={dinheiro:'Dinheiro',transferencia:'Transferência',debito:'Débito',credito:'Crédito'};
+      const tipoLabel2={dinheiro:'Dinheiro',transferencia:'Transferência',debito:'Débito',credito:'Crédito',boleto:'Boleto'};
       const desconto=pg.desconto||0;
       const final=(pg.valorTotal||0)*(1-desconto/100);
       const parcelas=pg.parcelas||1;
@@ -6064,8 +6064,8 @@ function _renderOrcPagamentos(){
     wrap.innerHTML='<div style="text-align:center;padding:14px;font-size:12px;color:var(--tx3);background:var(--s2);border-radius:var(--r8)">Nenhuma forma de pagamento adicionada.<br>Você pode criar opções para o paciente escolher.</div>';
     return;
   }
-  const tipoLabel={dinheiro:'Dinheiro',transferencia:'Transferência',debito:'Débito',credito:'Crédito'};
-  const tipoIcon={dinheiro:'💵',transferencia:'🏦',debito:'💳',credito:'💳'};
+  const tipoLabel={dinheiro:'Dinheiro',transferencia:'Transferência',debito:'Débito',credito:'Crédito',boleto:'Boleto'};
+  const tipoIcon={dinheiro:'💵',transferencia:'🏦',debito:'💳',credito:'💳',boleto:'📄'};
   wrap.innerHTML=_orcPagamentos.map((pg,i)=>{
     const desconto=pg.desconto||0;
     const final=(pg.valorTotal||0)*(1-desconto/100);
@@ -6136,9 +6136,10 @@ function _criarModalFormaPagamento(){
         <label>Tipo de pagamento</label>
         <select id="pgto-tipo" onchange="_orcAtualizarCamposPagto()" style="font-size:13px">
           <option value="dinheiro">💵 Dinheiro</option>
-          <option value="transferencia">🏦 Transferência</option>
+          <option value="transferencia">🏦 Transferência / Pix</option>
           <option value="debito">💳 Débito</option>
           <option value="credito">💳 Crédito</option>
+          <option value="boleto">📄 Boleto</option>
         </select>
       </div>
       <div class="fl" style="margin-bottom:12px">
@@ -6471,12 +6472,17 @@ function renderPpFinanceiro(p){
   }
 
   // ── Totais globais (somam todos os orçamentos) ──────────────────────
+  // Marca atraso automaticamente (em memória, sem persistir)
+  const hojeFinStr=new Date().toISOString().slice(0,10);
+  titulos.forEach(t=>{ if(t.status!=='pago'&&t.vencimento&&t.vencimento<hojeFinStr) t.status='atrasado'; });
   const totalGeral=titulos.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
   const totalPago=titulos.filter(t=>t.status==='pago').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
-  const totalAberto=totalGeral-totalPago;
+  const totalAtrasado=titulos.filter(t=>t.status==='atrasado').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  const totalAberto=titulos.filter(t=>t.status==='aberto').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  const nAtrasado=titulos.filter(t=>t.status==='atrasado').length;
 
   let html=`
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:16px">
     <div style="background:var(--s2);border-radius:var(--r8);padding:12px 14px">
       <div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Total geral</div>
       <div style="font-size:18px;font-weight:700;color:var(--tx)">R$ ${fmtMoeda(totalGeral)}</div>
@@ -6488,9 +6494,14 @@ function renderPpFinanceiro(p){
       <div style="font-size:11px;color:#065F46;opacity:.7;margin-top:3px">${titulos.filter(t=>t.status==='pago').length} título(s) quitado(s)</div>
     </div>
     <div style="background:${totalAberto>0?'#FEF9EE':'#F3F4F6'};border-radius:var(--r8);padding:12px 14px">
-      <div style="font-size:10px;font-weight:600;color:${totalAberto>0?'#7C4A00':'#6B7280'};text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Em aberto</div>
+      <div style="font-size:10px;font-weight:600;color:${totalAberto>0?'#7C4A00':'#6B7280'};text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">A vencer</div>
       <div style="font-size:18px;font-weight:700;color:${totalAberto>0?'#7C4A00':'#6B7280'}">R$ ${fmtMoeda(totalAberto)}</div>
-      <div style="font-size:11px;color:${totalAberto>0?'#7C4A00':'#6B7280'};opacity:.7;margin-top:3px">${titulos.filter(t=>t.status!=='pago').length} título(s) pendente(s)</div>
+      <div style="font-size:11px;color:${totalAberto>0?'#7C4A00':'#6B7280'};opacity:.7;margin-top:3px">${titulos.filter(t=>t.status==='aberto').length} título(s)</div>
+    </div>
+    <div style="background:${nAtrasado>0?'#FEF2F2':'#F3F4F6'};border-radius:var(--r8);padding:12px 14px;${nAtrasado>0?'border:1px solid #FCA5A5':''}">
+      <div style="font-size:10px;font-weight:600;color:${nAtrasado>0?'#991B1B':'#6B7280'};text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">${nAtrasado>0?'⚠ Em atraso':'Em atraso'}</div>
+      <div style="font-size:18px;font-weight:700;color:${nAtrasado>0?'#991B1B':'#6B7280'}">R$ ${fmtMoeda(totalAtrasado)}</div>
+      <div style="font-size:11px;color:${nAtrasado>0?'#991B1B':'#6B7280'};opacity:.7;margin-top:3px">${nAtrasado} título(s) vencido(s)</div>
     </div>
   </div>`;
 
@@ -6501,11 +6512,12 @@ function renderPpFinanceiro(p){
     const nomeOrc=orc.nomeOrc||('Orçamento #'+(orc.num||orcId.slice(-4)));
     const tTotal=tits.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
     const tPago=tits.filter(t=>t.status==='pago').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
-    const tAberto=tTotal-tPago;
+    const tAtrasado=tits.filter(t=>t.status==='atrasado').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+    const tAberto=tits.filter(t=>t.status==='aberto').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
     const uid='fin-orc-'+orcId;
 
     html+=`
-    <div style="border:1px solid var(--border);border-radius:var(--r8);margin-bottom:8px;overflow:hidden">
+    <div style="border:1px solid ${tAtrasado>0?'#FCA5A5':'var(--border)'};border-radius:var(--r8);margin-bottom:8px;overflow:hidden">
 
       <!-- Cabeçalho colapsável -->
       <div onclick="_finToggle('${uid}')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface);cursor:pointer;user-select:none;transition:background .1s"
@@ -6530,9 +6542,15 @@ function renderPpFinanceiro(p){
           </div>
           <div style="width:1px;height:28px;background:var(--border)"></div>
           <div style="text-align:right">
-            <div style="font-size:10px;font-weight:600;color:${tAberto>0?'#7C4A00':'#6B7280'};text-transform:uppercase;letter-spacing:.06em">Em aberto</div>
+            <div style="font-size:10px;font-weight:600;color:${tAberto>0?'#7C4A00':'#6B7280'};text-transform:uppercase;letter-spacing:.06em">A vencer</div>
             <div style="font-size:13px;font-weight:700;color:${tAberto>0?'#7C4A00':'#6B7280'}">R$ ${fmtMoeda(tAberto)}</div>
           </div>
+          ${tAtrasado>0?`
+          <div style="width:1px;height:28px;background:var(--border)"></div>
+          <div style="text-align:right">
+            <div style="font-size:10px;font-weight:600;color:#991B1B;text-transform:uppercase;letter-spacing:.06em">⚠ Atraso</div>
+            <div style="font-size:13px;font-weight:700;color:#991B1B">R$ ${fmtMoeda(tAtrasado)}</div>
+          </div>`:''}
           <div style="font-size:11px;color:var(--tx3);background:var(--s2);border-radius:10px;padding:2px 8px;font-weight:600;flex-shrink:0">${tits.length}x</div>
         </div>
       </div>
@@ -6616,209 +6634,231 @@ function excluirOrcamento(){
   if(p){ renderPpOrcamento(p); renderPpFinanceiro(p); }
 }
 
-// ── APROVAR ORÇAMENTO — modal de confirmação ───────────────────────────────
+// ── APROVAR ORÇAMENTO — MODO MISTO ────────────────────────────────────────
 let _orcAprovarParcelasTemp=[];
+let _aprovEntradas=[];
+
+const _APROV_TIPOS=[
+  {v:'avista_dinheiro',    l:'💵 À vista — Dinheiro'},
+  {v:'avista_pix',         l:'🏦 À vista — Pix / Transferência'},
+  {v:'avista_debito',      l:'💳 À vista — Débito'},
+  {v:'parcelado_credito',  l:'💳 Parcelado — Crédito'},
+  {v:'parcelado_boleto',   l:'📄 Parcelado — Boleto'},
+];
 
 function abrirModalAprovarOrcamento(){
-  // Garante que o orçamento existe (precisa estar salvo)
-  if(!_orcModalId){
-    alert('Salve o orçamento antes de aprovar.');
-    return;
-  }
+  if(!_orcModalId){ alert('Salve o orçamento antes de aprovar.'); return; }
   const orc=_orcamentos().find(o=>o.id===_orcModalId);
   if(!orc){ alert('Orçamento não encontrado.'); return; }
   const total=(_orcItens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
-  const fmtMoeda=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
   _orcAprovarParcelasTemp=[];
-
-  const body=document.getElementById('modal-aprovar-orc-body');
-  body.innerHTML=`
-    <div style="background:var(--sul);border-radius:var(--r8);padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
-      <div style="font-size:20px">✓</div>
-      <div>
-        <div style="font-size:13px;font-weight:600;color:var(--su)">${orc.nomeOrc}</div>
-        <div style="font-size:12px;color:var(--su);opacity:.8">Total: R$ ${fmtMoeda(total)}</div>
-      </div>
-    </div>
-
-    <div style="margin-bottom:14px">
-      <div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">Forma de pagamento escolhida</div>
-      <div class="fl" style="margin-bottom:10px">
-        <label>Tipo</label>
-        <select id="aprov-tipo" onchange="_aprovAtualizarCampos()" style="font-size:13px">
-          <option value="avista_dinheiro">💵 À vista — Dinheiro</option>
-          <option value="avista_transferencia">🏦 À vista — Transferência / Pix</option>
-          <option value="avista_debito">💳 À vista — Débito</option>
-          <option value="parcelado_credito">💳 Parcelado — Cartão de Crédito</option>
-          <option value="parcelado_boleto">📄 Parcelado — Boleto / Personalizado</option>
-        </select>
-      </div>
-      <div id="aprov-campos-extras"></div>
-    </div>
-
-    <div id="aprov-preview-titulos" style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px"></div>
-  `;
-
-  _aprovAtualizarCampos();
+  _aprovEntradas=[{tipo:'avista_pix',valor:total,desconto:0,nParcelas:2,venc1:new Date().toISOString().slice(0,10),parcelasCustom:[]}];
+  _aprovRenderModal(orc,total);
   document.getElementById('modal-aprovar-orc').classList.add('open');
 }
 
-function _aprovAtualizarCampos(){
-  const tipo=(document.getElementById('aprov-tipo')||{}).value||'avista_dinheiro';
-  const extras=document.getElementById('aprov-campos-extras');
-  const orc=_orcamentos().find(o=>o.id===_orcModalId)||{};
-  const total=(_orcItens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
-
-  if(tipo.startsWith('avista')){
-    extras.innerHTML=`
-      <div class="fl" style="margin-bottom:10px">
-        <label>Desconto (%)</label>
-        <input type="number" id="aprov-desconto" min="0" max="100" step="1" value="0" oninput="_aprovGerarPreview()" style="font-size:13px">
+function _aprovRenderModal(orc,totalOrc){
+  if(!orc) orc=_orcamentos().find(o=>o.id===_orcModalId)||{};
+  if(!totalOrc) totalOrc=(_orcItens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+  const fmtMoeda=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+  const body=document.getElementById('modal-aprovar-orc-body');
+  body.innerHTML=`
+    <div style="background:var(--sul);border-radius:var(--r8);padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+      <div style="font-size:18px">✓</div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--su)">${orc.nomeOrc||'Orçamento'}</div>
+        <div style="font-size:12px;color:var(--su);opacity:.8">Total: R$ ${fmtMoeda(totalOrc)}</div>
       </div>
-      <div class="fl" style="margin-bottom:10px">
-        <label>Data de vencimento</label>
-        <input type="date" id="aprov-venc-1" value="${new Date().toISOString().slice(0,10)}" oninput="_aprovGerarPreview()" style="font-size:13px">
-      </div>`;
-  } else if(tipo==='parcelado_credito'){
-    extras.innerHTML=`
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <div class="fl">
-          <label>Número de parcelas</label>
-          <select id="aprov-parcelas" onchange="_aprovGerarPreview()" style="font-size:13px">
-            ${[2,3,4,5,6,7,8,9,10,11,12].map(n=>`<option value="${n}">${n}x</option>`).join('')}
-          </select>
-        </div>
-        <div class="fl">
-          <label>Desconto (%)</label>
-          <input type="number" id="aprov-desconto" min="0" max="100" step="1" value="0" oninput="_aprovGerarPreview()" style="font-size:13px">
-        </div>
-      </div>
-      <div class="fl" style="margin-bottom:10px">
-        <label>Data da 1ª parcela</label>
-        <input type="date" id="aprov-venc-1" value="${new Date().toISOString().slice(0,10)}" oninput="_aprovGerarPreview()" style="font-size:13px">
-      </div>`;
-  } else { // parcelado_boleto — personalizado
-    extras.innerHTML=`
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <div class="fl">
-          <label>Número de parcelas</label>
-          <select id="aprov-parcelas" onchange="_aprovGerarParcelasPersonalizadas()" style="font-size:13px">
-            ${[2,3,4,5,6,7,8,9,10,11,12].map(n=>`<option value="${n}">${n}x</option>`).join('')}
-          </select>
-        </div>
-        <div class="fl">
-          <label>Desconto total (%)</label>
-          <input type="number" id="aprov-desconto" min="0" max="100" step="1" value="0" oninput="_aprovGerarParcelasPersonalizadas()" style="font-size:13px">
-        </div>
-      </div>
-      <div id="aprov-parcelas-custom" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>`;
-    setTimeout(()=>_aprovGerarParcelasPersonalizadas(), 0);
-    return;
-  }
-  setTimeout(()=>_aprovGerarPreview(), 0);
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em">Entradas de pagamento</div>
+      <button class="btn btn-ghost btn-sm" onclick="_aprovAddEntrada()">+ Adicionar entrada</button>
+    </div>
+    <div id="aprov-entradas-wrap" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+    <div id="aprov-saldo-aviso" style="margin-bottom:10px"></div>
+    <div id="aprov-preview-titulos" style="border-top:1px solid var(--border);padding-top:14px"></div>
+  `;
+  setTimeout(()=>_aprovRenderEntradas(),0);
 }
 
-function _aprovGerarParcelasPersonalizadas(){
-  const orc=_orcamentos().find(o=>o.id===_orcModalId)||{};
-  const total=(_orcItens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
-  const nParcelas=parseInt((document.getElementById('aprov-parcelas')||{}).value)||2;
-  const desconto=parseFloat((document.getElementById('aprov-desconto')||{}).value)||0;
-  const totalFinal=total*(1-desconto/100);
-  const valParc=totalFinal/nParcelas;
-  const hoje=new Date();
-
-  const wrap=document.getElementById('aprov-parcelas-custom');
+function _aprovRenderEntradas(){
+  const wrap=document.getElementById('aprov-entradas-wrap');
   if(!wrap) return;
+  const fmtMoeda=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+  const hojeStr=new Date().toISOString().slice(0,10);
+  const tiposOpts=(sel)=>_APROV_TIPOS.map(t=>`<option value="${t.v}"${t.v===sel?' selected':''}>${t.l}</option>`).join('');
 
-  // inicializa temp se necessário
-  if(_orcAprovarParcelasTemp.length!==nParcelas){
-    _orcAprovarParcelasTemp=Array.from({length:nParcelas},(_,i)=>{
-      const d=new Date(hoje);
-      d.setMonth(d.getMonth()+i);
+  wrap.innerHTML=_aprovEntradas.map((e,ei)=>{
+    const isParc=e.tipo.startsWith('parcelado');
+    const isBoleto=e.tipo==='parcelado_boleto';
+    const isCredito=e.tipo==='parcelado_credito';
+    const parcOpts=[2,3,4,5,6,7,8,9,10,11,12].map(n=>`<option value="${n}"${n===e.nParcelas?' selected':''}>${n}x</option>`).join('');
+
+    let boletoHtml='';
+    if(isBoleto && e.parcelasCustom && e.parcelasCustom.length){
+      boletoHtml=`<div style="display:flex;flex-direction:column;gap:4px;margin-top:8px">
+        ${e.parcelasCustom.map((p,pi)=>`
+        <div style="display:grid;grid-template-columns:20px 1fr 1fr;gap:6px;align-items:end;padding:6px 8px;background:var(--bg);border-radius:var(--r6)">
+          <span style="font-size:11px;font-weight:600;color:var(--tx3);padding-bottom:6px">${pi+1}.</span>
+          <div class="fl"><label>Valor (R$)</label>
+            <input type="number" value="${p.valor.toFixed(2)}" min="0" step="0.01"
+              oninput="_aprovUpdateBoleto(${ei},${pi},'valor',this.value)" style="font-size:12px"></div>
+          <div class="fl"><label>Vencimento</label>
+            <input type="date" value="${p.vencimento}"
+              oninput="_aprovUpdateBoleto(${ei},${pi},'vencimento',this.value)" style="font-size:12px"></div>
+        </div>`).join('')}
+      </div>`;
+    }
+
+    return `<div style="border:1px solid var(--border);border-radius:var(--r8);padding:12px 14px;background:var(--surface);position:relative">
+      ${_aprovEntradas.length>1?`<button onclick="_aprovRemoverEntrada(${ei})" title="Remover"
+        style="position:absolute;top:8px;right:8px;border:none;background:none;cursor:pointer;color:var(--tx3);font-size:16px;line-height:1;padding:2px 5px">✕</button>`:''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:${isParc?'10':'0'}px">
+        <div class="fl">
+          <label>Tipo</label>
+          <select onchange="_aprovChangeTipo(${ei},this.value)" style="font-size:13px">${tiposOpts(e.tipo)}</select>
+        </div>
+        <div class="fl">
+          <label>Valor (R$)</label>
+          <input type="number" value="${e.valor.toFixed(2)}" min="0" step="0.01"
+            oninput="_aprovChangeValor(${ei},this.value)" style="font-size:13px">
+        </div>
+      </div>
+      ${e.tipo.startsWith('avista')?`<div class="fl" style="margin-top:4px">
+        <label>Data de vencimento</label>
+        <input type="date" value="${e.venc1||hojeStr}" oninput="_aprovChangeVenc1(${ei},this.value)" style="font-size:13px">
+      </div>`:''}
+      ${isCredito?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="fl"><label>Parcelas</label>
+          <select onchange="_aprovChangeNParc(${ei},this.value)" style="font-size:13px">${parcOpts}</select></div>
+        <div class="fl"><label>Desconto (%)</label>
+          <input type="number" value="${e.desconto}" min="0" max="100" step="1"
+            oninput="_aprovChangeDesconto(${ei},this.value)" style="font-size:13px"></div>
+        <div class="fl"><label>1ª parcela</label>
+          <input type="date" value="${e.venc1||hojeStr}"
+            oninput="_aprovChangeVenc1(${ei},this.value)" style="font-size:13px"></div>
+      </div>`:''}
+      ${isBoleto?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px">
+        <div class="fl"><label>Nº de parcelas</label>
+          <select onchange="_aprovChangeNParc(${ei},this.value)" style="font-size:13px">${parcOpts}</select></div>
+        <div class="fl"><label>Desconto total (%)</label>
+          <input type="number" value="${e.desconto}" min="0" max="100" step="1"
+            oninput="_aprovChangeDesconto(${ei},this.value)" style="font-size:13px"></div>
+      </div>${boletoHtml}`:''}
+    </div>`;
+  }).join('');
+
+  _aprovAtualizarSaldo();
+  _aprovGerarPreview();
+}
+
+function _aprovAtualizarSaldo(){
+  const totalOrc=(_orcItens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+  const fmtMoeda=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+  const totalEntradas=_aprovEntradas.reduce((s,e)=>s+(e.valor*(1-(e.desconto||0)/100)),0);
+  const diff=+(totalOrc-totalEntradas).toFixed(2);
+  const aviso=document.getElementById('aprov-saldo-aviso');
+  if(!aviso) return;
+  if(Math.abs(diff)<0.01){
+    aviso.innerHTML=`<div style="font-size:12px;color:var(--su);padding:6px 10px;background:#ECFDF5;border-radius:var(--r6);border:1px solid #A7F3D0">✓ Entradas cobrem exatamente o total do orçamento</div>`;
+  } else if(diff>0){
+    aviso.innerHTML=`<div style="font-size:12px;color:#7C4A00;padding:6px 10px;background:#FEF9EE;border-radius:var(--r6);border:1px solid #FDE68A">⚠ Faltam R$ ${fmtMoeda(diff)} para cobrir o total do orçamento (R$ ${fmtMoeda(totalOrc)})</div>`;
+  } else {
+    aviso.innerHTML=`<div style="font-size:12px;color:var(--ac);padding:6px 10px;background:var(--acl);border-radius:var(--r6)">ℹ As entradas excedem o total em R$ ${fmtMoeda(-diff)}</div>`;
+  }
+}
+
+function _aprovAddEntrada(){
+  const totalOrc=(_orcItens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+  const usado=_aprovEntradas.reduce((s,e)=>s+e.valor,0);
+  const restante=Math.max(0,+(totalOrc-usado).toFixed(2));
+  _aprovEntradas.push({tipo:'avista_pix',valor:restante,desconto:0,nParcelas:2,venc1:new Date().toISOString().slice(0,10),parcelasCustom:[]});
+  _aprovRenderEntradas();
+}
+function _aprovRemoverEntrada(idx){ _aprovEntradas.splice(idx,1); _aprovRenderEntradas(); }
+function _aprovChangeTipo(idx,val){
+  _aprovEntradas[idx].tipo=val;
+  if(val==='parcelado_boleto') _aprovInicializarBoleto(idx);
+  _aprovRenderEntradas();
+}
+function _aprovChangeValor(idx,val){
+  _aprovEntradas[idx].valor=parseFloat(val)||0;
+  if(_aprovEntradas[idx].tipo==='parcelado_boleto') _aprovInicializarBoleto(idx,true);
+  _aprovAtualizarSaldo(); _aprovGerarPreview();
+}
+function _aprovChangeDesconto(idx,val){
+  _aprovEntradas[idx].desconto=parseFloat(val)||0;
+  if(_aprovEntradas[idx].tipo==='parcelado_boleto') _aprovInicializarBoleto(idx,true);
+  _aprovAtualizarSaldo(); _aprovGerarPreview();
+}
+function _aprovChangeNParc(idx,val){
+  _aprovEntradas[idx].nParcelas=parseInt(val)||2;
+  if(_aprovEntradas[idx].tipo==='parcelado_boleto') _aprovInicializarBoleto(idx,true);
+  _aprovRenderEntradas();
+}
+function _aprovChangeVenc1(idx,val){ _aprovEntradas[idx].venc1=val; _aprovGerarPreview(); }
+function _aprovUpdateBoleto(ei,pi,campo,val){
+  if(!_aprovEntradas[ei]||!_aprovEntradas[ei].parcelasCustom[pi]) return;
+  _aprovEntradas[ei].parcelasCustom[pi][campo]=campo==='valor'?parseFloat(val)||0:val;
+  _aprovAtualizarSaldo(); _aprovGerarPreview();
+}
+function _aprovInicializarBoleto(idx,force){
+  const e=_aprovEntradas[idx];
+  const n=e.nParcelas||2;
+  const totalFinal=e.valor*(1-(e.desconto||0)/100);
+  const valParc=totalFinal/n;
+  if(force||!e.parcelasCustom||e.parcelasCustom.length!==n){
+    const hoje=new Date();
+    e.parcelasCustom=Array.from({length:n},(_,i)=>{
+      const d=new Date(hoje); d.setMonth(d.getMonth()+i);
       return {valor:+(valParc.toFixed(2)),vencimento:d.toISOString().slice(0,10)};
     });
-    // corrige centavos na última
-    const soma=_orcAprovarParcelasTemp.reduce((s,p)=>s+p.valor,0);
-    _orcAprovarParcelasTemp[nParcelas-1].valor+=+(totalFinal-soma).toFixed(2);
+    const soma=e.parcelasCustom.reduce((s,p)=>s+p.valor,0);
+    e.parcelasCustom[n-1].valor+=+(totalFinal-soma).toFixed(2);
   }
-
-  wrap.innerHTML=_orcAprovarParcelasTemp.map((p,i)=>`
-    <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:8px;align-items:center;padding:8px 10px;background:var(--s2);border-radius:var(--r6)">
-      <span style="font-size:12px;font-weight:600;color:var(--tx2);width:20px">${i+1}.</span>
-      <div class="fl">
-        <label>Valor (R$)</label>
-        <input type="number" value="${p.valor.toFixed(2)}" min="0" step="0.01" oninput="_aprovUpdateParcela(${i},'valor',this.value)" style="font-size:12px">
-      </div>
-      <div class="fl">
-        <label>Vencimento</label>
-        <input type="date" value="${p.vencimento}" oninput="_aprovUpdateParcela(${i},'vencimento',this.value)" style="font-size:12px">
-      </div>
-    </div>`).join('');
-
-  _aprovGerarPreview();
-}
-
-function _aprovUpdateParcela(idx,campo,val){
-  if(!_orcAprovarParcelasTemp[idx]) return;
-  _orcAprovarParcelasTemp[idx][campo]=campo==='valor'?parseFloat(val)||0:val;
-  _aprovGerarPreview();
 }
 
 function _aprovGerarPreview(){
-  const tipo=(document.getElementById('aprov-tipo')||{}).value||'avista_dinheiro';
   const orc=_orcamentos().find(o=>o.id===_orcModalId)||{};
-  const total=(_orcItens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
-  const desconto=parseFloat((document.getElementById('aprov-desconto')||{}).value)||0;
-  const totalFinal=total*(1-desconto/100);
   const fmtMoeda=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
-  const fmtData=d=>{ if(!d) return '—'; const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
-
+  const fmtData=d=>{ if(!d) return '—'; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
+  const tipoLabel={avista_dinheiro:'Dinheiro',avista_pix:'Pix/Transferência',avista_debito:'Débito',parcelado_credito:'Crédito',parcelado_boleto:'Boleto'};
   let titulos=[];
-  const tipoLabel={avista_dinheiro:'Dinheiro',avista_transferencia:'Transferência / Pix',avista_debito:'Débito',parcelado_credito:'Crédito',parcelado_boleto:'Boleto'};
-  const tipoStr=tipoLabel[tipo]||tipo;
-
-  if(tipo.startsWith('avista')){
-    const venc=(document.getElementById('aprov-venc-1')||{}).value||new Date().toISOString().slice(0,10);
-    titulos=[{descricao:`${tipoStr} — ${orc.nomeOrc||'Orçamento'}`,valor:totalFinal,vencimento:venc,tipo:tipoStr}];
-  } else if(tipo==='parcelado_credito'){
-    const nParcelas=parseInt((document.getElementById('aprov-parcelas')||{}).value)||2;
-    const venc1=(document.getElementById('aprov-venc-1')||{}).value||new Date().toISOString().slice(0,10);
-    const valParc=totalFinal/nParcelas;
-    titulos=Array.from({length:nParcelas},(_,i)=>{
-      const d=new Date(venc1);
-      d.setMonth(d.getMonth()+i);
-      return {descricao:`Parcela ${i+1}/${nParcelas} — Crédito`,valor:+(valParc.toFixed(2)),vencimento:d.toISOString().slice(0,10),tipo:tipoStr};
-    });
-    // ajusta centavos
-    const soma=titulos.reduce((s,t)=>s+t.valor,0);
-    titulos[nParcelas-1].valor+=+(totalFinal-soma).toFixed(2);
-  } else {
-    titulos=_orcAprovarParcelasTemp.map((p,i)=>({
-      descricao:`Parcela ${i+1}/${_orcAprovarParcelasTemp.length} — Boleto`,
-      valor:p.valor,vencimento:p.vencimento,tipo:tipoStr
-    }));
-  }
-
-  // salva temp para uso no confirmar
+  _aprovEntradas.forEach(e=>{
+    const label=tipoLabel[e.tipo]||e.tipo;
+    const totalFinal=e.valor*(1-(e.desconto||0)/100);
+    if(e.tipo.startsWith('avista')){
+      titulos.push({descricao:label,valor:totalFinal,vencimento:e.venc1||new Date().toISOString().slice(0,10),tipo:label});
+    } else if(e.tipo==='parcelado_credito'){
+      const n=e.nParcelas||2; const valParc=totalFinal/n;
+      const base=new Date(e.venc1||new Date().toISOString().slice(0,10));
+      const parcelas=Array.from({length:n},(_,i)=>{
+        const d=new Date(base); d.setMonth(d.getMonth()+i);
+        return {descricao:`Parcela ${i+1}/${n} — ${label}`,valor:+(valParc.toFixed(2)),vencimento:d.toISOString().slice(0,10),tipo:label};
+      });
+      const soma=parcelas.reduce((s,t)=>s+t.valor,0);
+      parcelas[n-1].valor+=+(totalFinal-soma).toFixed(2);
+      titulos.push(...parcelas);
+    } else if(e.tipo==='parcelado_boleto'){
+      (e.parcelasCustom||[]).forEach((p,pi)=>
+        titulos.push({descricao:`Parcela ${pi+1}/${e.parcelasCustom.length} — Boleto`,valor:p.valor,vencimento:p.vencimento,tipo:label}));
+    }
+  });
   window._aprovTitulosTemp=titulos;
-
   const preview=document.getElementById('aprov-preview-titulos');
   if(!preview) return;
-
   const totalTit=titulos.reduce((s,t)=>s+t.valor,0);
-  preview.innerHTML=`
-    <div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">Títulos que serão gerados (${titulos.length})</div>
-    ${titulos.map((t,i)=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r6);margin-bottom:6px">
-      <div>
-        <div style="font-size:12px;font-weight:600">${t.descricao}</div>
-        <div style="font-size:11px;color:var(--tx3)">Vencimento: ${fmtData(t.vencimento)}</div>
-      </div>
+  preview.innerHTML=titulos.length?`
+    <div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">Títulos a gerar (${titulos.length}) · Total R$ ${fmtMoeda(totalTit)}</div>
+    ${titulos.map(t=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r6);margin-bottom:5px">
+      <div><div style="font-size:12px;font-weight:600">${t.descricao}</div>
+      <div style="font-size:11px;color:var(--tx3)">Vencimento: ${fmtData(t.vencimento)}</div></div>
       <div style="font-size:14px;font-weight:700;color:var(--ac)">R$ ${fmtMoeda(t.valor)}</div>
-    </div>`).join('')}
-    ${desconto>0?`<div style="font-size:11px;color:var(--tx2);margin-top:6px">Desconto de ${desconto}% aplicado: R$ ${fmtMoeda(total)} → <strong>R$ ${fmtMoeda(totalTit)}</strong></div>`:''}
-  `;
+    </div>`).join('')}`
+    :'<div style="font-size:12px;color:var(--tx3)">Configure ao menos uma entrada de pagamento.</div>';
 }
+
 
 function fecharModalAprovarOrcamento(){
   document.getElementById('modal-aprovar-orc').classList.remove('open');
