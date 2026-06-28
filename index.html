@@ -6079,6 +6079,28 @@ function salvarOrcamento(){
   const dataDecisao=dataDecisaoEl&&dataDecisaoEl.closest('#orc-data-decisao-wrap')&&!dataDecisaoEl.closest('#orc-data-decisao-wrap').style.display?dataDecisaoEl.value:'';
   const obs=(document.getElementById('orc-input-obs')||{}).value||'';
   const status=(document.getElementById('orc-sel-status')||{}).value||'aberto';
+
+  // Bloquear mudança de status de orçamento aprovado com títulos vinculados
+  if(_orcModalId){
+    const orcAtual=_orcamentos().find(o=>o.id===_orcModalId);
+    if(orcAtual&&orcAtual.status==='aprovado'&&status!=='aprovado'){
+      const titsVinculados=_titulos().filter(t=>t.orcamentoId===_orcModalId);
+      if(titsVinculados.length>0){
+        const temPago=titsVinculados.some(t=>t.status==='pago');
+        if(temPago){
+          alert('Não é possível alterar o status deste orçamento.\n\nHá título(s) liquidado(s) vinculado(s). Para cancelar, acesse o Financeiro, estorne os pagamentos e cancele os títulos primeiro.');
+        } else {
+          alert('Não é possível alterar o status deste orçamento.\n\nHá título(s) a receber vinculado(s). Para cancelar, acesse o Financeiro e cancele os títulos primeiro.');
+        }
+        // Volta o select para aprovado
+        const sel=document.getElementById('orc-sel-status');
+        if(sel) sel.value='aprovado';
+        _orcToggleDataDecisao('aprovado');
+        return;
+      }
+    }
+  }
+
   _comSalvarImediato(()=>{
     const list=_orcamentos();
     if(_orcModalId){
@@ -7067,16 +7089,17 @@ function _aprovUpdateBoleto(ei,pi,campo,val){
 function _aprovInicializarBoleto(idx,force){
   const e=_aprovEntradas[idx];
   const n=e.nParcelas||2;
-  const totalFinal=e.valor*(1-(e.desconto||0)/100);
-  const valParc=totalFinal/n;
+  // Trabalha em centavos inteiros para evitar erro de ponto flutuante
+  const totalCents=Math.round(e.valor*(1-(e.desconto||0)/100)*100);
+  const parcCents=Math.floor(totalCents/n);
+  const restoCents=totalCents-(parcCents*n); // centavos que sobram vão para a última parcela
   if(force||!e.parcelasCustom||e.parcelasCustom.length!==n){
     const hoje=new Date();
     e.parcelasCustom=Array.from({length:n},(_,i)=>{
       const d=new Date(hoje); d.setMonth(d.getMonth()+i);
-      return {valor:+(valParc.toFixed(2)),vencimento:d.toISOString().slice(0,10)};
+      const cents=i===n-1?parcCents+restoCents:parcCents;
+      return {valor:cents/100,vencimento:d.toISOString().slice(0,10)};
     });
-    const soma=e.parcelasCustom.reduce((s,p)=>s+p.valor,0);
-    e.parcelasCustom[n-1].valor+=+(totalFinal-soma).toFixed(2);
   }
 }
 
