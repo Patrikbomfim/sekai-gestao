@@ -1010,7 +1010,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="pp-area" id="pp-area-financeiro">
         <div class="pp-area-title">Financeiro</div>
         <div class="pp-area-desc">Pagamentos, valores em aberto e forma de cobrança vinculados ao orçamento aprovado.</div>
-        <div class="card" id="pp-financeiro-wrap"></div>
+        <div id="pp-financeiro-wrap"></div>
       </div>
     </div>
   </div>
@@ -6942,6 +6942,18 @@ function _efAtualizarUpload(tipo, dadosAtuais){
   wrap.style.display='block';
   const label=tipo==='recibo'?'Recibo':'Nota Fiscal';
   const jaAnexado=dadosAtuais?.arquivo||null;
+  // Registro salvo (quem/quando)
+  let registroHtml='';
+  if(dadosAtuais?.registradoEm){
+    const d=new Date(dadosAtuais.registradoEm);
+    const pad=n=>String(n).padStart(2,'0');
+    const dataFmt=`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} às ${pad(d.getHours())}h${pad(d.getMinutes())}`;
+    const quem=(typeof usuarios!=='undefined'&&dadosAtuais.registradoPor)
+      ?(usuarios.find(u=>u.id===dadosAtuais.registradoPor)?.nome||'—'):'—';
+    registroHtml=`<div style="margin-top:10px;padding:8px 10px;background:var(--s2);border-radius:var(--r6);font-size:11px;color:var(--tx2)">
+      <span style="font-weight:600;color:var(--tx)">Registrado por:</span> ${quem} · ${dataFmt}
+    </div>`;
+  }
   wrap.innerHTML=`
     <div style="margin-top:12px">
       <label class="lbl">Anexar ${label}</label>
@@ -6950,9 +6962,43 @@ function _efAtualizarUpload(tipo, dadosAtuais){
         <span style="font-size:12px;color:#065F46;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${jaAnexado.nome}</span>
         <button onclick="_efRemoverAnexo()" style="font-size:11px;border:none;background:none;color:#991B1B;cursor:pointer;font-weight:600">Remover</button>
       </div>`:''}
-      <input type="file" id="ef-arquivo" accept=".pdf,.jpg,.jpeg,.png" style="display:block;width:100%;font-size:12px;padding:6px 0">
-      <div style="font-size:11px;color:var(--tx3);margin-top:4px">PDF, JPG ou PNG</div>
+      <div id="ef-dropzone" style="border:2px dashed var(--border-s);border-radius:var(--r8);padding:18px 14px;text-align:center;cursor:pointer;transition:background .12s,border-color .12s;background:var(--s2)"
+        ondragover="event.preventDefault();this.style.background='var(--acl)';this.style.borderColor='var(--ac)'"
+        ondragleave="this.style.background='var(--s2)';this.style.borderColor='var(--border-s)'"
+        ondrop="_efOnDrop(event)"
+        onclick="document.getElementById('ef-arquivo').click()">
+        <div style="font-size:20px;margin-bottom:4px">📂</div>
+        <div style="font-size:12px;font-weight:500;color:var(--tx2)">Arraste o arquivo aqui ou <span style="color:var(--ac);text-decoration:underline">clique para escolher</span></div>
+        <div style="font-size:11px;color:var(--tx3);margin-top:3px">PDF, JPG ou PNG</div>
+      </div>
+      <input type="file" id="ef-arquivo" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="_efOnFileChange(this)">
+      <div id="ef-file-nome" style="display:none;margin-top:8px;padding:7px 10px;background:var(--acl);border-radius:var(--r6);font-size:12px;color:var(--ac);font-weight:500"></div>
+      ${registroHtml}
     </div>`;
+}
+
+function _efOnDrop(ev){
+  ev.preventDefault();
+  const dz=document.getElementById('ef-dropzone');
+  if(dz){ dz.style.background='var(--s2)'; dz.style.borderColor='var(--border-s)'; }
+  const file=ev.dataTransfer?.files[0];
+  if(!file) return;
+  // Injeta no input file via DataTransfer
+  try{
+    const dt=new DataTransfer();
+    dt.items.add(file);
+    document.getElementById('ef-arquivo').files=dt.files;
+  }catch(e){}
+  _efMostrarNomeArquivo(file.name);
+}
+
+function _efOnFileChange(input){
+  if(input.files[0]) _efMostrarNomeArquivo(input.files[0].name);
+}
+
+function _efMostrarNomeArquivo(nome){
+  const el=document.getElementById('ef-file-nome');
+  if(el){ el.style.display='block'; el.textContent='📎 '+nome; }
 }
 
 function _efRemoverAnexo(){
@@ -6962,7 +7008,6 @@ function _efRemoverAnexo(){
   if(list[idx].emissaoFiscal) delete list[idx].emissaoFiscal.arquivo;
   if(list[idx].emissaoFiscal?.status==='concluido') list[idx].emissaoFiscal.status='pendente';
   _comSalvarImediato(()=>_salvarTitulos(list));
-  // re-abre o modal atualizado
   const t=list[idx];
   _efAtualizarUpload(t.emissaoFiscal?.tipo||document.getElementById('ef-tipo').value, t.emissaoFiscal);
 }
@@ -6981,7 +7026,6 @@ async function confirmarEmissaoFiscal(){
   let arquivoData=list[idx].emissaoFiscal?.arquivo||null;
 
   if(file){
-    // Converte para base64
     arquivoData=await new Promise((res,rej)=>{
       const r=new FileReader();
       r.onload=()=>res({nome:file.name,tipo:file.type,b64:r.result.split(',')[1]});
@@ -6993,11 +7037,13 @@ async function confirmarEmissaoFiscal(){
   const precisaArquivo=(tipo==='recibo'||tipo==='nota_fiscal');
   if(precisaArquivo&&!arquivoData){ alert('Anexe o arquivo antes de salvar.'); return; }
 
+  const usuarioId=(typeof usuarioAtualId!=='undefined')?usuarioAtualId:null;
   list[idx].emissaoFiscal={
     tipo,
     arquivo:arquivoData||null,
     status: (!precisaArquivo||arquivoData)?'concluido':'pendente',
-    registradoEm:new Date().toISOString()
+    registradoEm:new Date().toISOString(),
+    registradoPor:usuarioId
   };
   _comSalvarImediato(()=>_salvarTitulos(list));
   fecharModalEmissaoFiscal();
