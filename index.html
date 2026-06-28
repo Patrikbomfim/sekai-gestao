@@ -7329,18 +7329,21 @@ function _renderProntPlano(p){
             <tr style="background:var(--s2)">
               <th style="padding:8px 14px;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;text-align:left">Procedimento</th>
               <th style="padding:8px 10px;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;text-align:left">Dente(s)</th>
+              <th style="padding:8px 10px;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;text-align:right">Valor</th>
               <th style="padding:8px 10px;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;text-align:left">Profissional</th>
               <th style="padding:8px 10px;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;text-align:left">Data</th>
               <th style="padding:8px 10px;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;text-align:center">Status</th>
-              <th style="padding:8px 10px;width:80px"></th>
+              <th style="padding:8px 10px;width:90px"></th>
             </tr>
           </thead>
           <tbody>
           ${itens.map((it,idx)=>{
             const exec=it.executado;
+            const vlr=(parseFloat(it.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
             return `<tr style="border-bottom:1px solid var(--border);background:${exec?'#F0FDF6':'var(--surface)'}">
               <td style="padding:10px 14px;font-size:13px;font-weight:500">${it.proc||'—'}</td>
               <td style="padding:10px 10px;font-size:12px;color:var(--tx2)">${it.dentes&&it.dentes.length?it.dentes.join(', '):'Geral'}</td>
+              <td style="padding:10px 10px;font-size:13px;font-weight:600;color:var(--tx);text-align:right;white-space:nowrap">R$ ${vlr}</td>
               <td style="padding:10px 10px">
                 ${exec?`<span style="font-size:12px;color:var(--tx2)">${it.execProfissional||'—'}</span>`
                   :`<select onchange="_prontUpdateItem('${orc.id}',${idx},'execProfissional',this.value)" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);max-width:130px">
@@ -7354,12 +7357,12 @@ function _renderProntPlano(p){
               </td>
               <td style="padding:10px 10px;text-align:center">
                 ${exec
-                  ?`<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#ECFDF5;color:#065F46">✓ Executado</span>`
-                  :`<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#F3F4F6;color:#6B7280">Em aberto</span>`}
+                  ?`<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#ECFDF5;color:#065F46">✓ Realizado</span>`
+                  :`<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#F3F4F6;color:#6B7280">Não realizado</span>`}
               </td>
               <td style="padding:10px 10px;text-align:center">
                 ${exec?`<button onclick="_prontDesfazerItem('${orc.id}',${idx})" style="font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--tx3)">Desfazer</button>`
-                  :`<button onclick="_prontAprovarItem('${orc.id}',${idx})" style="font-size:11px;padding:3px 10px;border:1px solid #065F46;border-radius:var(--r4);background:#065F46;color:#fff;cursor:pointer;font-weight:600">Aprovar</button>`}
+                  :`<button onclick="_prontAprovarItem('${orc.id}',${idx})" style="font-size:11px;padding:3px 10px;border:1px solid #065F46;border-radius:var(--r4);background:#065F46;color:#fff;cursor:pointer;font-weight:600">Realizar</button>`}
               </td>
             </tr>`;
           }).join('')}
@@ -7394,10 +7397,9 @@ function _prontAprovarItem(orcId,idx){
   const orc=list.find(o=>o.id===orcId);
   if(!orc||!orc.itens||!orc.itens[idx]) return;
   const it=orc.itens[idx];
-  if(!it.execProfissional){ alert('Selecione o profissional antes de aprovar.'); return; }
-  if(!it.execData){ alert('Informe a data de execução antes de aprovar.'); return; }
-  it.executado=true;
-  _salvarOrcamentos(list);
+  if(!it.execProfissional){ alert('Selecione o profissional antes de marcar como realizado.'); return; }
+  if(!it.execData){ alert('Informe a data de execução antes de marcar como realizado.'); return; }
+  _comSalvarImediato(()=>{ it.executado=true; _salvarOrcamentos(list); });
   const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
   if(p) _renderProntPlano(p);
 }
@@ -7406,8 +7408,7 @@ function _prontDesfazerItem(orcId,idx){
   const list=_orcamentos();
   const orc=list.find(o=>o.id===orcId);
   if(!orc||!orc.itens||!orc.itens[idx]) return;
-  orc.itens[idx].executado=false;
-  _salvarOrcamentos(list);
+  _comSalvarImediato(()=>{ orc.itens[idx].executado=false; _salvarOrcamentos(list); });
   const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
   if(p) _renderProntPlano(p);
 }
@@ -7652,14 +7653,16 @@ function salvarAtendimento(){
   const orientacoes=document.getElementById('atd-orientacoes').value.trim();
   const proximaConsulta=document.getElementById('atd-proxima').value.trim();
 
-  const list=_prontuarios();
-  if(_prontFichaEditId){
-    const idx=list.findIndex(f=>f.id===_prontFichaEditId);
-    if(idx>=0) list[idx]={...list[idx],data,avulso,planTratamentoId:planId,planTratamento:planNome,procedimento,profissional,status,descricao,orientacoes,proximaConsulta};
-  } else {
-    list.push({id:'ficha_'+Date.now(),pacienteId:_prontPacId,data,avulso,planTratamentoId:planId,planTratamento:planNome,procedimento,profissional,status,descricao,orientacoes,proximaConsulta});
-  }
-  _salvarProntuarios(list);
+  _comSalvarImediato(()=>{
+    const list=_prontuarios();
+    if(_prontFichaEditId){
+      const idx=list.findIndex(f=>f.id===_prontFichaEditId);
+      if(idx>=0) list[idx]={...list[idx],data,avulso,planTratamentoId:planId,planTratamento:planNome,procedimento,profissional,status,descricao,orientacoes,proximaConsulta};
+    } else {
+      list.push({id:'ficha_'+Date.now(),pacienteId:_prontPacId,data,avulso,planTratamentoId:planId,planTratamento:planNome,procedimento,profissional,status,descricao,orientacoes,proximaConsulta});
+    }
+    _salvarProntuarios(list);
+  });
   fecharModalAtendimento();
   const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
   if(p) _renderProntFicha(p);
