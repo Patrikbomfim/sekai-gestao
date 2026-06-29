@@ -8526,22 +8526,35 @@ const META_CAMPO_CADASTRO = {
 function popularSelectVinculoCadastro(selectedId){
   const sel = document.getElementById('mca-vinculo');
   if(!sel) return;
+  // Coleta os vínculos já em uso por outros campos (exceto o campo sendo editado agora)
+  const vinculosEmUso = new Set(
+    camposAnamnese
+      .filter(c => c.vinculoCadastro && c.vinculoCadastro !== selectedId)
+      .map(c => c.vinculoCadastro)
+  );
   sel.innerHTML = `<option value="">Nenhum — fica só na anamnese</option>` +
-    camposCadastro.map(cc=>`<option value="${cc.id}" ${cc.id===selectedId?'selected':''}>${cc.label}</option>`).join('');
+    camposCadastro
+      .filter(cc => !vinculosEmUso.has(cc.id) || cc.id === selectedId)
+      .map(cc=>`<option value="${cc.id}" ${cc.id===selectedId?'selected':''}>${cc.label}</option>`)
+      .join('');
 }
 
 // Ao escolher vínculo no modal, auto-preenche label e tipo
 function onVinculoCadastroChange(){
   const sel = document.getElementById('mca-vinculo');
   const val = sel ? sel.value : '';
-  if(!val) return;
-  const meta = META_CAMPO_CADASTRO[val];
-  if(!meta) return;
   const labelEl = document.getElementById('mca-label');
   const tipoEl  = document.getElementById('mca-tipo');
-  // Só preenche se o label estiver vazio (não sobrescreve customizações)
-  if(labelEl && !labelEl.value.trim()) labelEl.value = meta.label;
-  // Ajusta o tipo de resposta
+  if(!val){
+    // Selecionou "Nenhum": limpa label e reseta tipo apenas se vieram de um vínculo anterior
+    // (não interfere se o usuário digitou algo manualmente antes de usar o vínculo)
+    atualizarVisibilidadeCamposModalAnamnese();
+    return;
+  }
+  const meta = META_CAMPO_CADASTRO[val];
+  if(!meta) return;
+  // Sempre atualiza label e tipo ao trocar de vínculo
+  if(labelEl) labelEl.value = meta.label;
   if(tipoEl){
     tipoEl.value = meta.tipo === 'data' ? 'data' : 'texto';
     atualizarVisibilidadeCamposModalAnamnese();
