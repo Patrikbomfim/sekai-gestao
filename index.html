@@ -8343,6 +8343,7 @@ function renderAbaAnamnese(p){
   if(preenchido){
     html += `<span style="font-size:13px;color:var(--su)">✓ Preenchida em ${preenchido}</span>`;
     html += `<div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="exportarAnamnesePDF('${p.id}')">📄 Exportar PDF</button>
       <button class="btn btn-ghost btn-sm" onclick="abrirModalLink('${p.id}')">🔗 Ver link</button>
       <button class="btn btn-danger btn-sm" onclick="limparAnamnese('${p.id}')">Limpar respostas</button>
     </div>`;
@@ -8351,9 +8352,11 @@ function renderAbaAnamnese(p){
     html += `<div style="display:flex;gap:8px">`;
     if(token){
       html += `<button class="btn btn-ghost btn-sm" id="an-btn-verificar" onclick="verificarAnamnese('${p.id}')">🔄 Verificar</button>`;
+      html += `<button class="btn btn-ghost btn-sm" onclick="exportarAnamnesePDF('${p.id}')">📄 Imprimir ficha</button>`;
       html += `<button class="btn btn-ghost btn-sm" onclick="gerarNovoLinkAnamnese('${p.id}')">🔁 Novo link</button>`;
       html += `<button class="btn btn-primary btn-sm" onclick="abrirModalLink('${p.id}')">🔗 Ver link</button>`;
     } else {
+      html += `<button class="btn btn-ghost btn-sm" onclick="exportarAnamnesePDF('${p.id}')">📄 Imprimir ficha em branco</button>`;
       html += `<button class="btn btn-primary btn-sm" onclick="abrirModalLink('${p.id}')">🔗 + Gerar link para paciente</button>`;
     }
     html += `</div>`;
@@ -8363,6 +8366,7 @@ function renderAbaAnamnese(p){
   if(preenchido && camposAnamnese.length){
     html += `<div style="display:flex;flex-direction:column;gap:10px">`;
     camposAnamnese.forEach(c=>{
+      if(c.vinculoCadastro) return; // campos vinculados já estão no cadastro, não exibir aqui
       const val = resp[c.id];
       const valCond = resp[c.id + '_cond'];
       if(val === undefined && !valCond) return;
@@ -8378,6 +8382,106 @@ function renderAbaAnamnese(p){
   }
 
   return html;
+}
+
+// ── Exportar/Imprimir anamnese em PDF ─────────────────────────────────
+function exportarAnamnesePDF(pacienteId){
+  const p = pacientes.find(x => x.id === pacienteId);
+  if(!p) return;
+  const resp = respostasAnamnese[pacienteId] || {};
+  const preenchido = resp._preenchidoEm;
+
+  // Cabeçalho da clínica
+  const cabecalho = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #1E3A5F">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:42px;height:42px;background:#1E3A5F;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700;flex-shrink:0">S</div>
+        <div>
+          <div style="font-size:16px;font-weight:700;color:#1E3A5F">Clínica Sekai</div>
+          <div style="font-size:12px;color:#6B7280">Ficha de Anamnese</div>
+        </div>
+      </div>
+      <div style="text-align:right;font-size:12px;color:#6B7280">
+        <div><strong style="color:#111827">${p.nome}</strong></div>
+        ${preenchido ? `<div>Preenchida em ${preenchido}</div>` : `<div>Data: ___/___/______</div>`}
+      </div>
+    </div>`;
+
+  // Campos
+  let camposHtml = '';
+  const campos = preenchido
+    ? camposAnamnese.filter(c => !c.vinculoCadastro) // se preenchida, só exibe não-vinculados
+    : camposAnamnese; // em branco, mostra todos para preenchimento físico
+
+  campos.forEach((c, i) => {
+    const val = resp[c.id];
+    const valCond = resp[c.id + '_cond'];
+
+    if(preenchido){
+      // Modo preenchida: mostra pergunta + resposta
+      let resposta = '—';
+      if(val === 'sim') resposta = '✅ Sim';
+      else if(val === 'nao') resposta = '❌ Não';
+      else if(val) resposta = val;
+
+      camposHtml += `
+        <div style="margin-bottom:14px;padding:10px 12px;background:${i%2===0?'#F8FAFC':'#fff'};border-radius:6px;border:1px solid #EEF0F4">
+          <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">${c.label}${c.obrigatorio?' <span style="color:#DC2626">*</span>':''}</div>
+          <div style="font-size:13px;color:#111827">${resposta}</div>
+          ${valCond ? `<div style="font-size:12px;color:#6B7280;margin-top:4px;font-style:italic">${valCond}</div>` : ''}
+        </div>`;
+    } else {
+      // Modo em branco: área para preenchimento manual
+      let areaResposta = '';
+      if(c.tipo === 'sim_nao'){
+        areaResposta = `<div style="display:flex;gap:16px;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px"><span style="display:inline-block;width:16px;height:16px;border:1.5px solid #374151;border-radius:50%"></span> Sim</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px"><span style="display:inline-block;width:16px;height:16px;border:1.5px solid #374151;border-radius:50%"></span> Não</label>
+        </div>
+        ${c.condicionalLabel ? `<div style="margin-top:8px;font-size:12px;color:#6B7280">${c.condicionalLabel}: <span style="display:inline-block;width:200px;border-bottom:1px solid #aaa;margin-left:4px">&nbsp;</span></div>` : ''}`;
+      } else if(c.tipo === 'selecao' && c.opcoes && c.opcoes.length){
+        areaResposta = `<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px">${c.opcoes.map(o => `<label style="display:flex;align-items:center;gap:5px;font-size:13px"><span style="display:inline-block;width:14px;height:14px;border:1.5px solid #374151;border-radius:3px"></span> ${o}</label>`).join('')}</div>`;
+      } else if(c.tipo === 'multiplo' && c.opcoes && c.opcoes.length){
+        areaResposta = `<div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">${c.opcoes.map(o => `<label style="display:flex;align-items:center;gap:6px;font-size:13px"><span style="display:inline-block;width:14px;height:14px;border:1.5px solid #374151;border-radius:3px"></span> ${o}</label>`).join('')}</div>`;
+      } else {
+        areaResposta = `<div style="border-bottom:1px solid #aaa;min-height:26px;margin-top:6px"></div>`;
+      }
+      camposHtml += `
+        <div style="margin-bottom:18px;padding:10px 12px;background:${i%2===0?'#F8FAFC':'#fff'};border-radius:6px;border:1px solid #EEF0F4">
+          <div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:6px">${c.label}${c.obrigatorio?' <span style="color:#DC2626">*</span>':''}</div>
+          ${areaResposta}
+        </div>`;
+    }
+  });
+
+  const mensagemInicial = preenchido ? '' : `
+    <div style="background:#EBF0F7;border-left:3px solid #1E3A5F;border-radius:8px;padding:12px 14px;margin-bottom:20px;font-size:13px;color:#374151;line-height:1.6">
+      <strong>Sobre esta ficha:</strong> A anamnese é importante para que possamos te conhecer melhor e garantir um tratamento seguro e personalizado. Caso se sinta desconfortável em mencionar alguma situação por escrito, fique à vontade para comentar pessoalmente com a Dra. no momento da consulta.
+    </div>`;
+
+  const rodape = `
+    <div style="margin-top:32px;padding-top:16px;border-top:1px solid #EEF0F4;font-size:11px;color:#9CA3AF;text-align:center">
+      Clínica Sekai &nbsp;·&nbsp; Documento gerado em ${new Date().toLocaleDateString('pt-BR')}
+    </div>`;
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head>
+    <meta charset="UTF-8">
+    <title>Anamnese — ${p.nome}</title>
+    <style>
+      *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:Inter,system-ui,sans-serif;background:#fff;color:#111827;font-size:14px;line-height:1.5;padding:32px 40px;max-width:700px;margin:0 auto}
+      @media print{body{padding:20px 28px}@page{margin:20mm 15mm}}
+    </style>
+  </head><body>
+    ${cabecalho}
+    ${mensagemInicial}
+    ${camposHtml}
+    ${rodape}
+    <script>window.onload=function(){window.print()}<\/script>
+  </body></html>`;
+
+  const win = window.open('', '_blank');
+  if(win){ win.document.write(html); win.document.close(); }
 }
 
 // ── Botão verificar anamnese manualmente ──────────────────────────────
@@ -15408,6 +15512,9 @@ function _montarAnamneseNaPagina(nomeCompleto, token, pacienteId, campos){
     '<div id="an-form-area">' +
     '<div class="an-greeting">' + saudacao + '</div>' +
     '<div class="an-sub">Preencha sua ficha antes da consulta. Leva menos de 2 minutos. ✨</div>' +
+    '<div style="background:#EBF0F7;border-left:3px solid #1E3A5F;border-radius:8px;padding:12px 14px;margin-bottom:18px;font-size:14px;color:#374151;line-height:1.6">' +
+    '📋 <strong>Sobre esta ficha:</strong> A anamnese é importante para que possamos te conhecer melhor e garantir um tratamento seguro e personalizado. Caso se sinta desconfortável em mencionar alguma situação por escrito, fique à vontade para comentar pessoalmente com a Dra. no momento da consulta.' +
+    '</div>' +
     '<hr class="an-divider">' +
     '<div id="an-campos">' + camposHtml + '</div>' +
     '<button class="an-btn-submit" type="button" id="an-btn-enviar">Enviar ficha ✓</button>' +
