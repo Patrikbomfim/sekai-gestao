@@ -15397,7 +15397,7 @@ function _renderFormAnamnese(nomeCompleto, token, pacienteId, campos){
     'var _tk="'+token+'";' +
     'var _campos='+JSON.stringify(campos)+';' +
     'function toggleCondP(id,m){var el=document.getElementById("cond-"+id);if(el)el.classList.toggle("show",m);}' +
-    'function _applyMaskP(el){var m=el.dataset.mask;var v=el.value.replace(/\\D/g,"");if(m==="fone"){v=v.slice(0,11);if(v.length>7)el.value=v.slice(0,2)+" "+v.slice(2,7)+" "+v.slice(7);else if(v.length>2)el.value=v.slice(0,2)+" "+v.slice(2);else el.value=v;}else if(m==="cpf"){v=v.slice(0,11);if(v.length>9)el.value=v.slice(0,3)+"."+v.slice(3,6)+"."+v.slice(6,9)+"-"+v.slice(9);else if(v.length>6)el.value=v.slice(0,3)+"."+v.slice(3,6)+"."+v.slice(6);else if(v.length>3)el.value=v.slice(0,3)+"."+v.slice(3);else el.value=v;}else if(m==="cep"){v=v.slice(0,8);el.value=v.length>5?v.slice(0,5)+"-"+v.slice(5):v;}}' +
+    'function _applyMaskP(el){var m=el.dataset.mask;var v=el.value.replace(/[^0-9]/g,"");if(m==="fone"){v=v.slice(0,11);if(v.length>7)el.value=v.slice(0,2)+" "+v.slice(2,7)+" "+v.slice(7);else if(v.length>2)el.value=v.slice(0,2)+" "+v.slice(2);else el.value=v;}else if(m==="cpf"){v=v.slice(0,11);if(v.length>9)el.value=v.slice(0,3)+"."+v.slice(3,6)+"."+v.slice(6,9)+"-"+v.slice(9);else if(v.length>6)el.value=v.slice(0,3)+"."+v.slice(3,6)+"."+v.slice(6);else if(v.length>3)el.value=v.slice(0,3)+"."+v.slice(3);else el.value=v;}else if(m==="cep"){v=v.slice(0,8);el.value=v.length>5?v.slice(0,5)+"-"+v.slice(5):v;}}' +
     'async function enviarAnamnese(){' +
     '  for(var i=0;i<_campos.length;i++){var c=_campos[i];if(!c.obrigatorio)continue;' +
     '    if(c.tipo==="sim_nao"&&!document.querySelector("input[name=\""+c.id+"\"]:checked")){alert("Por favor, responda: "+c.label);return;}' +
@@ -15420,7 +15420,6 @@ function _renderFormAnamnese(nomeCompleto, token, pacienteId, campos){
     '    document.getElementById("sucesso-area").style.display="block";' +
     '  }catch(e){if(btn){btn.disabled=false;btn.textContent="Enviar ficha ✓";}alert("Erro ao enviar. Verifique sua conexao e tente novamente.");}' +
     '}' +
-    '<\/script>' +
     '<\/script>' +
     '</body></html>'
   );
