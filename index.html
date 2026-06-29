@@ -15319,7 +15319,7 @@ var _MASK_META = {
 function _renderCampoPublico(c){
   if(c.tipo==='sim_nao'){
     var cond=c.condicionalLabel?'<div class="cond-field" id="cond-'+c.id+'"><label style="font-size:13px;color:#6B7280;font-weight:400;margin-bottom:6px">'+c.condicionalLabel+'</label><input type="text" id="cond-input-'+c.id+'" placeholder="Escreva aqui..."></div>':'';
-    return '<div class="radio-group"><label class="radio-opt"><input type="radio" name="'+c.id+'" value="sim" onchange="toggleCondP(this.name,true)"> Sim</label><label class="radio-opt"><input type="radio" name="'+c.id+'" value="nao" onchange="toggleCondP(this.name,false)"> Não</label></div>'+cond;
+    return '<div class="radio-group-row"><label class="radio-opt"><input type="radio" name="'+c.id+'" value="sim" onchange="toggleCondP(this.name,true)"> Sim</label><label class="radio-opt"><input type="radio" name="'+c.id+'" value="nao" onchange="toggleCondP(this.name,false)"> Não</label></div>'+cond;
   }
   if(c.tipo==='data'){
     return '<input type="date" id="'+c.id+'" style="width:100%;padding:10px 12px;border:1.5px solid #DDE0E7;border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:#111827">';
@@ -15348,49 +15348,53 @@ function _montarAnamneseNaPagina(nomeCompleto, token, pacienteId, campos){
   var nome = (nomeCompleto||'').split(' ')[0] || '';
   var saudacao = nome ? 'Olá, ' + nome + '!' : 'Olá!';
 
-  // Injeta CSS da anamnese
+  // CSS mobile-first
   var style = document.createElement('style');
   style.textContent = [
     '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}',
-    'body{font-family:Inter,system-ui,sans-serif;background:#F4F5F7;color:#111827;font-size:15px;line-height:1.5}',
-    '.an-header{background:#1E3A5F;padding:16px 20px;display:flex;align-items:center;gap:12px}',
-    '.an-header-logo{width:32px;height:32px;background:rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700}',
+    'body{font-family:Inter,system-ui,sans-serif;background:#F4F5F7;color:#111827;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}',
+    '.an-header{background:#1E3A5F;padding:14px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}',
+    '.an-header-logo{width:32px;height:32px;background:rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0}',
     '.an-header-title{font-size:15px;font-weight:600;color:#fff}',
-    '.an-container{max-width:540px;margin:0 auto;padding:24px 16px 60px}',
-    '.an-card{background:#fff;border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.08)}',
-    '.an-greeting{font-size:18px;font-weight:700;margin-bottom:4px}',
-    '.an-sub{font-size:14px;color:#6B7280;margin-bottom:24px}',
-    '.an-label{display:block;font-size:14px;font-weight:600;color:#111827;margin-bottom:8px}',
-    '.an-input{width:100%;padding:10px 12px;border:1.5px solid #DDE0E7;border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:#111827;transition:border .15s}',
-    '.an-input:focus{outline:none;border-color:#1E3A5F}',
-    '.an-radio-group,.an-check-group{display:flex;flex-direction:column;gap:10px}',
-    '.an-radio-opt,.an-check-opt{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid #DDE0E7;border-radius:8px;cursor:pointer;transition:border .1s,background .1s}',
+    '.an-container{max-width:560px;margin:0 auto;padding:20px 16px 80px}',
+    '.an-card{background:#fff;border-radius:14px;padding:22px 20px;box-shadow:0 2px 8px rgba(0,0,0,.08)}',
+    '.an-greeting{font-size:20px;font-weight:700;margin-bottom:4px;color:#111827}',
+    '.an-sub{font-size:14px;color:#6B7280;margin-bottom:22px;line-height:1.5}',
+    '.an-label{display:block;font-size:15px;font-weight:600;color:#111827;margin-bottom:10px}',
+    '.an-input{width:100%;padding:13px 14px;border:1.5px solid #DDE0E7;border-radius:10px;font-size:16px;font-family:inherit;background:#fff;color:#111827;transition:border .15s;-webkit-appearance:none;appearance:none}',
+    '.an-input:focus{outline:none;border-color:#1E3A5F;box-shadow:0 0 0 3px rgba(30,58,95,.1)}',
+    '.radio-group-row{display:flex;gap:10px}',
+    '.radio-group-row .an-radio-opt{flex:1;justify-content:center}',
+    '.an-radio-opt,.an-check-opt{display:flex;align-items:center;gap:10px;padding:13px 16px;border:1.5px solid #DDE0E7;border-radius:10px;cursor:pointer;transition:border .1s,background .1s;font-size:15px;font-weight:500}',
     '.an-radio-opt:has(input:checked),.an-check-opt:has(input:checked){border-color:#1E3A5F;background:#EBF0F7}',
-    'input[type=radio],input[type=checkbox]{accent-color:#1E3A5F;width:18px;height:18px;cursor:pointer;flex-shrink:0}',
+    '.an-check-group{display:flex;flex-direction:column;gap:8px}',
+    'input[type=radio],input[type=checkbox]{accent-color:#1E3A5F;width:20px;height:20px;cursor:pointer;flex-shrink:0}',
     '.an-cond-field{margin-top:10px;display:none}.an-cond-field.show{display:block}',
-    '.an-btn-submit{width:100%;padding:14px;background:#1E3A5F;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;margin-top:24px;font-family:inherit}',
+    '.an-btn-submit{width:100%;padding:16px;background:#1E3A5F;color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:600;cursor:pointer;margin-top:24px;font-family:inherit;-webkit-tap-highlight-color:transparent}',
     '.an-btn-submit:disabled{opacity:.5;cursor:not-allowed}',
+    '.an-btn-submit:active:not(:disabled){opacity:.85}',
     '.an-divider{border:none;border-top:1px solid #EEF0F4;margin:20px 0}',
-    '.an-sucesso{text-align:center;padding:32px 0;display:none}',
-    '.an-sucesso-ic{font-size:52px;margin-bottom:16px}',
-    '.an-sucesso-title{font-size:20px;font-weight:700;margin-bottom:8px}',
-    '.an-sucesso-sub{font-size:14px;color:#6B7280}'
+    '.an-campo-wrap{margin-bottom:22px}',
+    '.an-sucesso{text-align:center;padding:40px 0;display:none}',
+    '.an-sucesso-ic{font-size:56px;margin-bottom:16px}',
+    '.an-sucesso-title{font-size:22px;font-weight:700;margin-bottom:8px}',
+    '.an-sucesso-sub{font-size:15px;color:#6B7280;line-height:1.6}',
+    '@media(max-width:480px){.an-container{padding:14px 12px 80px}.an-card{padding:20px 16px;border-radius:12px}.an-greeting{font-size:19px}}'
   ].join('');
   document.head.appendChild(style);
 
-  // Monta HTML do formulário
+  // HTML do formulário
   var camposHtml = '';
   campos.forEach(function(c){
-    var inputHtml = _renderCampoPublico(c);
-    camposHtml += '<div style="margin-bottom:22px"><label class="an-label">' + c.label + (c.obrigatorio ? ' <span style="color:#DC2626">*</span>' : '') + '</label>' + inputHtml + '</div>';
+    camposHtml += '<div class="an-campo-wrap"><label class="an-label">' + c.label + (c.obrigatorio ? ' <span style="color:#DC2626">*</span>' : '') + '</label>' + _renderCampoPublico(c) + '</div>';
   });
 
   document.body.innerHTML =
-    '<div class="an-header"><div class="an-header-logo">S</div><div class="an-header-title">Clinica Sekai</div></div>' +
+    '<div class="an-header"><div class="an-header-logo">S</div><div class="an-header-title">Clínica Sekai</div></div>' +
     '<div class="an-container"><div class="an-card">' +
     '<div id="an-form-area">' +
     '<div class="an-greeting">' + saudacao + '</div>' +
-    '<div class="an-sub">Preencha sua ficha antes da consulta. Leva menos de 2 minutos.</div>' +
+    '<div class="an-sub">Preencha sua ficha antes da consulta. Leva menos de 2 minutos. ✨</div>' +
     '<hr class="an-divider">' +
     '<div id="an-campos">' + camposHtml + '</div>' +
     '<button class="an-btn-submit" type="button" id="an-btn-enviar">Enviar ficha ✓</button>' +
@@ -15398,91 +15402,86 @@ function _montarAnamneseNaPagina(nomeCompleto, token, pacienteId, campos){
     '<div class="an-sucesso" id="an-sucesso-area">' +
     '<div class="an-sucesso-ic">✅</div>' +
     '<div class="an-sucesso-title">Ficha enviada!</div>' +
-    '<div class="an-sucesso-sub">' + (nome ? 'Obrigado, ' + nome + '. Suas' : 'Suas') + ' informações foram recebidas. Até breve!</div>' +
-    '</div>' +
-    '</div></div>';
+    '<div class="an-sucesso-sub">' + (nome ? 'Obrigado, ' + nome + '! Suas' : 'Suas') + ' informações foram recebidas.<br>Até breve!</div>' +
+    '</div></div></div>';
 
-  // Substitui classes dos inputs gerados por _renderCampoPublico para usar an-input
-  document.querySelectorAll('#an-campos input[type=text], #an-campos input[type=tel], #an-campos input[type=date], #an-campos textarea, #an-campos select').forEach(function(el){
-    el.classList.add('an-input');
-  });
-  // Substitui classes de radio/check groups
-  document.querySelectorAll('#an-campos .radio-group').forEach(function(el){ el.className = 'an-radio-group'; });
+  // Aplica classes nos elementos gerados
+  document.querySelectorAll('#an-campos input[type=text],#an-campos input[type=tel],#an-campos input[type=date],#an-campos textarea,#an-campos select').forEach(function(el){ el.classList.add('an-input'); });
   document.querySelectorAll('#an-campos .radio-opt').forEach(function(el){ el.className = 'an-radio-opt'; });
   document.querySelectorAll('#an-campos .check-group').forEach(function(el){ el.className = 'an-check-group'; });
   document.querySelectorAll('#an-campos .check-opt').forEach(function(el){ el.className = 'an-check-opt'; });
-  document.querySelectorAll('#an-campos .cond-field').forEach(function(el){ el.className = el.className.replace('cond-field','an-cond-field'); });
+  document.querySelectorAll('#an-campos .cond-field').forEach(function(el){ el.className = 'an-cond-field'; });
 
-  // Expõe funções necessárias para os onchange/oninput inline do HTML gerado
+  // Funções inline dos campos
   window.toggleCondP = function(id, m){
     var el = document.getElementById('cond-' + id);
-    if(el) el.classList.toggle('an-cond-field', true), el.classList.toggle('show', m);
+    if(el) el.classList.toggle('show', m);
   };
   window._applyMaskP = function(el){
-    var m = el.dataset.mask;
-    var v = el.value.replace(/[^0-9]/g, '');
-    if(m === 'fone'){
-      v = v.slice(0,11);
-      if(v.length > 7) el.value = v.slice(0,2) + ' ' + v.slice(2,7) + ' ' + v.slice(7);
-      else if(v.length > 2) el.value = v.slice(0,2) + ' ' + v.slice(2);
-      else el.value = v;
-    } else if(m === 'cpf'){
-      v = v.slice(0,11);
-      if(v.length > 9) el.value = v.slice(0,3) + '.' + v.slice(3,6) + '.' + v.slice(6,9) + '-' + v.slice(9);
-      else if(v.length > 6) el.value = v.slice(0,3) + '.' + v.slice(3,6) + '.' + v.slice(6);
-      else if(v.length > 3) el.value = v.slice(0,3) + '.' + v.slice(3);
-      else el.value = v;
-    } else if(m === 'cep'){
-      v = v.slice(0,8);
-      el.value = v.length > 5 ? v.slice(0,5) + '-' + v.slice(5) : v;
-    }
+    var m = el.dataset.mask, v = el.value.replace(/[^0-9]/g,'');
+    if(m==='fone'){v=v.slice(0,11);el.value=v.length>7?v.slice(0,2)+' '+v.slice(2,7)+' '+v.slice(7):v.length>2?v.slice(0,2)+' '+v.slice(2):v;}
+    else if(m==='cpf'){v=v.slice(0,11);el.value=v.length>9?v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6,9)+'-'+v.slice(9):v.length>6?v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6):v.length>3?v.slice(0,3)+'.'+v.slice(3):v;}
+    else if(m==='cep'){v=v.slice(0,8);el.value=v.length>5?v.slice(0,5)+'-'+v.slice(5):v;}
   };
 
-  // Botão de envio — usa supa que já existe na página
+  // Mapa vinculoCadastro -> propriedade do paciente
+  var PROP_MAP = { nasc:'nascimento', fone:'fone', cpf:'cpf', nome:'nome' };
+
   document.getElementById('an-btn-enviar').addEventListener('click', async function(){
     var btn = this;
     // Validação
-    for(var i = 0; i < campos.length; i++){
-      var c = campos[i];
-      if(!c.obrigatorio) continue;
-      if(c.tipo === 'sim_nao' && !document.querySelector('input[name="' + c.id + '"]:checked')){
-        alert('Por favor, responda: ' + c.label); return;
-      }
-      if(c.tipo === 'texto' || c.tipo === 'data'){
-        var el = document.getElementById(c.id);
-        if(!el || !el.value.trim()){ alert('Por favor, preencha: ' + c.label); return; }
-      }
-      if(c.tipo === 'selecao'){
-        var el = document.getElementById(c.id);
-        if(!el || !el.value){ alert('Por favor, selecione: ' + c.label); return; }
-      }
+    for(var i=0;i<campos.length;i++){
+      var c=campos[i]; if(!c.obrigatorio) continue;
+      if(c.tipo==='sim_nao'&&!document.querySelector('input[name="'+c.id+'"]:checked')){alert('Por favor, responda: '+c.label);return;}
+      if((c.tipo==='texto'||c.tipo==='data')){var el=document.getElementById(c.id);if(!el||!el.value.trim()){alert('Por favor, preencha: '+c.label);return;}}
+      if(c.tipo==='selecao'){var el=document.getElementById(c.id);if(!el||!el.value){alert('Por favor, selecione: '+c.label);return;}}
     }
-    btn.disabled = true; btn.textContent = 'Enviando...';
+    btn.disabled=true; btn.textContent='Enviando...';
+
     // Coleta respostas
-    var resp = {};
+    var resp={};
     campos.forEach(function(c){
-      if(c.tipo === 'sim_nao'){
-        var ch = document.querySelector('input[name="' + c.id + '"]:checked');
-        resp[c.id] = ch ? ch.value : '';
-        if(c.condicionalLabel){ var ci = document.getElementById('cond-input-' + c.id); resp[c.id + '_cond'] = ci ? ci.value.trim() : ''; }
-      } else if(c.tipo === 'texto' || c.tipo === 'data'){
-        var el = document.getElementById(c.id); resp[c.id] = el ? el.value.trim() : '';
-      } else if(c.tipo === 'selecao'){
-        var el = document.getElementById(c.id); resp[c.id] = el ? el.value : '';
-      } else if(c.tipo === 'multiplo'){
-        resp[c.id] = Array.from(document.querySelectorAll('input[name="' + c.id + '"]:checked')).map(function(x){ return x.value; }).join(', ');
-      }
+      if(c.tipo==='sim_nao'){var ch=document.querySelector('input[name="'+c.id+'"]:checked');resp[c.id]=ch?ch.value:'';if(c.condicionalLabel){var ci=document.getElementById('cond-input-'+c.id);resp[c.id+'_cond']=ci?ci.value.trim():'';}}
+      else if(c.tipo==='texto'||c.tipo==='data'){var el=document.getElementById(c.id);resp[c.id]=el?el.value.trim():'';}
+      else if(c.tipo==='selecao'){var el=document.getElementById(c.id);resp[c.id]=el?el.value:'';}
+      else if(c.tipo==='multiplo'){resp[c.id]=Array.from(document.querySelectorAll('input[name="'+c.id+'"]:checked')).map(function(x){return x.value;}).join(', ');}
     });
-    var agora = new Date();
-    var pem = agora.toLocaleDateString('pt-BR') + ' às ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+
+    var agora=new Date();
+    var pem=agora.toLocaleDateString('pt-BR')+' às '+agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+
+    // Monta patch do cadastro do paciente (campos vinculados — sempre sobrescreve)
+    var patchPaciente={};
+    campos.forEach(function(c){
+      var valor=resp[c.id]; if(!valor) return;
+      if(c.vinculoCadastro){ patchPaciente[PROP_MAP[c.vinculoCadastro]||c.vinculoCadastro]=valor; }
+    });
+
     try {
-      var r = await supa.from('anamneses').update({ respostas: resp, preenchido_em: pem }).eq('token', token);
+      // 1. Salva respostas
+      var r=await supa.from('anamneses').update({respostas:resp,preenchido_em:pem}).eq('token',token);
       if(r.error) throw r.error;
-      document.getElementById('an-form-area').style.display = 'none';
-      document.getElementById('an-sucesso-area').style.display = 'block';
+
+      // 2. Atualiza cadastro do paciente com campos vinculados
+      if(pacienteId && Object.keys(patchPaciente).length>0){
+        var dsRes=await supa.from('dados_sistema').select('valor').eq('chave','sk3-pacientes').single();
+        if(!dsRes.error && dsRes.data){
+          var lista=dsRes.data.valor;
+          if(Array.isArray(lista)){
+            var idx=lista.findIndex(function(p){return String(p.id)===String(pacienteId);});
+            if(idx!==-1){
+              Object.assign(lista[idx],patchPaciente);
+              await supa.from('dados_sistema').upsert({chave:'sk3-pacientes',valor:lista},{onConflict:'chave'});
+            }
+          }
+        }
+      }
+
+      document.getElementById('an-form-area').style.display='none';
+      document.getElementById('an-sucesso-area').style.display='block';
     } catch(e){
-      console.error('Erro ao enviar anamnese:', e);
-      btn.disabled = false; btn.textContent = 'Enviar ficha ✓';
+      console.error('Erro ao enviar anamnese:',e);
+      btn.disabled=false; btn.textContent='Enviar ficha ✓';
       alert('Erro ao enviar. Verifique sua conexão e tente novamente.');
     }
   });
