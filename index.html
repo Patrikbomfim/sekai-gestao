@@ -8552,9 +8552,9 @@ function atualizarVisibilidadeCamposModalAnamnese(){
   const tipo = document.getElementById('mca-tipo').value;
   document.getElementById('mca-opcoes-wrap').style.display = (tipo==='selecao'||tipo==='multiplo') ? '' : 'none';
   document.getElementById('mca-condicional-wrap').style.display = tipo==='sim_nao' ? '' : 'none';
-  // Esconde campo de vínculo para tipos que não são texto ou data (não faz sentido vincular sim/não)
+  // Campo de vínculo sempre visível
   const vinculoWrap = document.getElementById('mca-vinculo-wrap');
-  if(vinculoWrap) vinculoWrap.style.display = (tipo==='sim_nao'||tipo==='selecao'||tipo==='multiplo') ? 'none' : '';
+  if(vinculoWrap) vinculoWrap.style.display = '';
 }
 document.addEventListener('DOMContentLoaded', ()=>{
   const sel = document.getElementById('mca-tipo');
