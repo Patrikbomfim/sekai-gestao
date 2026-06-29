@@ -8478,27 +8478,14 @@ function exportarAnamnesePDF(pacienteId){
     ${camposHtml}
     ${rodape}
 
+  <script>window.onload=()=>window.print();<\/script>
   </body></html>`;
 
-  // Usa iframe oculto para impressão — evita popup blocker e CSP de blob:
-  let ifrPDF = document.getElementById('_iframe_pdf_print');
-  if(ifrPDF) ifrPDF.remove();
-  ifrPDF = document.createElement('iframe');
-  ifrPDF.id = '_iframe_pdf_print';
-  ifrPDF.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;opacity:0;pointer-events:none';
-  document.body.appendChild(ifrPDF);
-  // Usa document.write no contentDocument — mais compatível que srcdoc para HTML longo
-  ifrPDF.contentDocument.open();
-  ifrPDF.contentDocument.write(html);
-  ifrPDF.contentDocument.close();
-  // setTimeout garante que o conteudo renderizou antes de chamar print
-  setTimeout(function(){
-    try{
-      ifrPDF.contentWindow.focus();
-      ifrPDF.contentWindow.print();
-    }catch(e){ console.warn('print error', e); }
-    setTimeout(function(){ if(ifrPDF && ifrPDF.parentNode) ifrPDF.remove(); }, 30000);
-  }, 400);
+  const win = window.open('', '_blank');
+  if(!win){ alert('O navegador bloqueou a abertura da janela. Permita pop-ups para este site e tente novamente.'); return; }
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
 }
 
 // ── Botão verificar anamnese manualmente ──────────────────────────────
