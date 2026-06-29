@@ -1654,7 +1654,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <div class="card-title">Formulário de Anamnese</div>
           <div class="card-sub">Configure os campos que o paciente preencherá antes da consulta. O link gerado não exige login.</div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="abrirModalCampoAnamnese()">+ Novo campo</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-danger btn-sm" onclick="limparTodasAnamnesesBanco()" title="Remove todas as anamneses antigas do banco e do sistema local. Use antes de reconfigurar os campos.">🗑 Limpar todas do banco</button>
+          <button class="btn btn-primary btn-sm" onclick="abrirModalCampoAnamnese()">+ Novo campo</button>
+        </div>
       </div>
       <div id="anamnese-campos-lista" style="margin-top:14px"></div>
     </div>
@@ -8845,6 +8848,35 @@ async function submitAnamnese(token, pacienteId){
   setTimeout(renderCfgAnamnese, 200);
 })();
 
+// ── Limpar TODAS as anamneses do banco e do localStorage ──────────────
+// Usar quando as anamneses foram criadas antes do Supabase e os IDs
+// não correspondem mais aos pacientes reais no banco.
+async function limparTodasAnamnesesBanco(){
+  if(!confirm('⚠️ Isso vai apagar TODAS as anamneses do banco de dados e limpar o histórico local.\n\nUse apenas para resetar o sistema de anamnese antes de reconfigurar.\n\nContinuar?')) return;
+
+  const btn = document.querySelector('button[onclick="limparTodasAnamnesesBanco()"]');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Limpando...'; }
+
+  try {
+    // Apaga tudo da tabela anamneses no Supabase
+    // O Supabase não aceita DELETE sem filtro via client — usamos um filtro que pega tudo
+    const { error } = await supa.from('anamneses').delete().neq('token', '___nenhum___');
+    if(error) throw error;
+
+    // Limpa também o estado local
+    respostasAnamnese = {};
+    tokensAnamnese = {};
+    salvarAnamnese();
+
+    showSaveToast('✅ Todas as anamneses foram removidas do banco e do sistema local.');
+  } catch(e){
+    console.error('Erro ao limpar anamneses:', e);
+    alert('Erro ao limpar: ' + (e.message || JSON.stringify(e)));
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = '🗑 Limpar todas do banco'; }
+  }
+}
+
 // ══════════════════════════════════════════════════════════════════════
 // FIM MÓDULO ANAMNESE
 // ══════════════════════════════════════════════════════════════════════
@@ -15281,7 +15313,8 @@ function _renderCampoPublico(c){
 }
 
 function _renderFormAnamnese(nomeCompleto, token, pacienteId, campos){
-  var nome=(nomeCompleto||'').split(' ')[0]||'paciente';
+  var nome=(nomeCompleto||'').split(' ')[0]||'';
+  var saudacao = nome ? 'Olá, '+nome+'!' : 'Olá!';
   var camposHtml='';
   campos.forEach(function(c){
     camposHtml+='<div style="margin-bottom:22px"><label style="display:block;font-size:14px;font-weight:600;color:#111827;margin-bottom:8px">'+c.label+(c.obrigatorio?' <span style="color:#DC2626">*</span>':'')+'</label>'+_renderCampoPublico(c)+'</div>';
@@ -15320,13 +15353,13 @@ function _renderFormAnamnese(nomeCompleto, token, pacienteId, campos){
     '<div class="header"><div class="header-logo">S</div><div class="header-title">Clinica Sekai</div></div>' +
     '<div class="container"><div class="card">' +
     '<div id="form-area">' +
-    '<div class="greeting">Ola, '+nome+'!</div>' +
+    '<div class="greeting">'+saudacao+'</div>' +
     '<div class="sub">Preencha sua ficha antes da consulta. Leva menos de 2 minutos.</div>' +
     '<hr class="divider">' +
     '<div id="campos-anamnese">'+camposHtml+'</div>' +
     '<button class="btn-submit" type="button" onclick="enviarAnamnese()">Enviar ficha ✓</button>' +
     '</div>' +
-    '<div class="sucesso" id="sucesso-area"><div class="sucesso-ic">✅</div><div class="sucesso-title">Ficha enviada!</div><div class="sucesso-sub">Obrigado, '+nome+'. Suas informacoes foram recebidas. Ate breve!</div></div>' +
+    '<div class="sucesso" id="sucesso-area"><div class="sucesso-ic">✅</div><div class="sucesso-title">Ficha enviada!</div><div class="sucesso-sub">'+(nome?'Obrigado, '+nome+'. Suas':'Suas')+' informacoes foram recebidas. Ate breve!</div></div>' +
     '</div></div>' +
     '<script>' +
     'var _sp=supabase.createClient("'+supaUrl+'","'+supaKey+'");' +
