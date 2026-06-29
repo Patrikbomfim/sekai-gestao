@@ -8386,9 +8386,10 @@ function renderAbaAnamnese(p){
 
 // ── Exportar/Imprimir anamnese em PDF ─────────────────────────────────
 function exportarAnamnesePDF(pacienteId){
-  const p = pacientes.find(x => x.id === pacienteId);
+  // eslint-disable-next-line eqeqeq — id pode ser number no array mas string no onclick
+  const p = pacientes.find(x => x.id == pacienteId);
   if(!p) return;
-  const resp = respostasAnamnese[pacienteId] || {};
+  const resp = respostasAnamnese[p.id] || {};
   const preenchido = resp._preenchidoEm;
 
   // Cabeçalho da clínica
