@@ -23,6 +23,22 @@
 }
 body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:13px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
 
+
+/* GLOBAL SEARCH */
+.hdr-search-wrap{position:relative;flex:0 1 320px}
+.hdr-search{width:100%;height:30px;padding:0 32px 0 30px;font-size:12.5px;border:1px solid var(--border);border-radius:var(--r8);background:var(--s2);color:var(--tx);font-family:var(--font);outline:none;transition:border .15s,background .15s}
+.hdr-search:focus{background:var(--surface);border-color:var(--ac)}
+.hdr-search-ic{position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--tx3);pointer-events:none}
+.hdr-search-clear{position:absolute;right:7px;top:50%;transform:translateY(-50%);border:none;background:none;color:var(--tx3);cursor:pointer;font-size:13px;display:none;padding:0;line-height:1}
+.hdr-search-drop{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r8);box-shadow:var(--shadow-md);z-index:9999;display:none;max-height:300px;overflow-y:auto}
+.hdr-search-drop.open{display:block}
+.hdr-search-item{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s}
+.hdr-search-item:last-child{border-bottom:none}
+.hdr-search-item:hover{background:var(--s2)}
+.hdr-search-item-nome{font-size:13px;font-weight:500;color:var(--tx)}
+.hdr-search-item-meta{font-size:11px;color:var(--tx3);margin-top:1px}
+.hdr-search-avatar{width:28px;height:28px;border-radius:50%;background:var(--acl);color:var(--ac);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hdr-search-empty{padding:12px;font-size:12px;color:var(--tx3);text-align:center}
 /* HEADER */
 .hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:50px;position:sticky;top:0;z-index:100;box-shadow:none}
 .hdr-left{display:flex;align-items:center;gap:14px}
@@ -569,6 +585,13 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="hdr-logo" onclick="goTo('config')" title="Configurações" aria-label="Configurações">⚙</button>
       <span class="hdr-title">Sistema Operacional Sekai</span>
     </div>
+  </div>
+  <div class="hdr-search-wrap" id="hdr-search-wrap">
+    <span class="hdr-search-ic">🔍</span>
+    <input class="hdr-search" id="hdr-search-input" type="text" placeholder="Buscar paciente…" autocomplete="off"
+      oninput="hdrBuscarPaciente(this.value)" onkeydown="hdrBuscarKeydown(event)">
+    <button class="hdr-search-clear" id="hdr-search-clear" onclick="hdrBuscarLimpar()">✕</button>
+    <div class="hdr-search-drop" id="hdr-search-drop"></div>
   </div>
   <div style="display:flex;align-items:center;gap:14px">
     <div class="hdr-alert" id="hdr-alert" onclick="goTo('hoje')"></div>
@@ -8216,6 +8239,101 @@ vincularFechamentoPorClickFora('modal-campo-anamnese');
 vincularFechamentoPorClickFora('modal-link-anamnese');
 
 // ══════════════════════════════════════════════════════════════════════
+// BUSCA GLOBAL DE PACIENTE (header)
+// ══════════════════════════════════════════════════════════════════════
+let _hdrBuscarTimer = null;
+let _hdrItemFocado = -1;
+
+function hdrBuscarPaciente(valor) {
+  const clear = document.getElementById('hdr-search-clear');
+  const drop = document.getElementById('hdr-search-drop');
+  clear.style.display = valor ? 'block' : 'none';
+  _hdrItemFocado = -1;
+  clearTimeout(_hdrBuscarTimer);
+  if (!valor.trim()) { drop.classList.remove('open'); drop.innerHTML = ''; return; }
+  _hdrBuscarTimer = setTimeout(() => {
+    const q = valor.trim().toLowerCase();
+    const resultados = (pacientes || []).filter(p =>
+      (p.nome || '').toLowerCase().includes(q) ||
+      (p.fone || '').toLowerCase().includes(q) ||
+      (p.cpf || '').toLowerCase().includes(q)
+    ).slice(0, 8);
+    if (!resultados.length) {
+      drop.innerHTML = '<div class="hdr-search-empty">Nenhum paciente encontrado</div>';
+      drop.classList.add('open');
+      return;
+    }
+    drop.innerHTML = resultados.map((p, i) => {
+      const iniciais = (p.nome || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      const meta = [p.fone, p.status].filter(Boolean).join(' · ');
+      return `<div class="hdr-search-item" data-idx="${i}" data-pid="${p.id}"
+        onclick="hdrSelecionarPaciente(${p.id})"
+        onmouseenter="hdrFocarItem(${i})">
+        <div class="hdr-search-avatar">${iniciais}</div>
+        <div>
+          <div class="hdr-search-item-nome">${p.nome || '—'}</div>
+          ${meta ? `<div class="hdr-search-item-meta">${meta}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+    drop.classList.add('open');
+  }, 150);
+}
+
+function hdrFocarItem(idx) {
+  _hdrItemFocado = idx;
+  document.querySelectorAll('.hdr-search-item').forEach((el, i) => {
+    el.style.background = i === idx ? 'var(--s2)' : '';
+  });
+}
+
+function hdrBuscarKeydown(e) {
+  const drop = document.getElementById('hdr-search-drop');
+  const items = drop.querySelectorAll('.hdr-search-item');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _hdrItemFocado = Math.min(_hdrItemFocado + 1, items.length - 1);
+    hdrFocarItem(_hdrItemFocado);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _hdrItemFocado = Math.max(_hdrItemFocado - 1, 0);
+    hdrFocarItem(_hdrItemFocado);
+  } else if (e.key === 'Enter' && _hdrItemFocado >= 0) {
+    const pid = items[_hdrItemFocado].dataset.pid;
+    if (pid) hdrSelecionarPaciente(Number(pid));
+  } else if (e.key === 'Escape') {
+    hdrBuscarLimpar();
+  }
+}
+
+function hdrSelecionarPaciente(id) {
+  hdrBuscarLimpar();
+  pacienteOrigemTab = 'pacientes';
+  abrirModalPt(id);
+}
+
+function hdrBuscarLimpar() {
+  const input = document.getElementById('hdr-search-input');
+  const drop = document.getElementById('hdr-search-drop');
+  const clear = document.getElementById('hdr-search-clear');
+  if (input) input.value = '';
+  if (drop) { drop.classList.remove('open'); drop.innerHTML = ''; }
+  if (clear) clear.style.display = 'none';
+  _hdrItemFocado = -1;
+}
+
+// Fechar dropdown ao clicar fora
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('hdr-search-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    const drop = document.getElementById('hdr-search-drop');
+    if (drop) drop.classList.remove('open');
+  }
+});
+
+
+// ══════════════════════════════════════════════════════════════════════
 // MÓDULO ANAMNESE
 // ══════════════════════════════════════════════════════════════════════
 
@@ -8461,20 +8579,28 @@ function exportarAnamnesePDF(pacienteId){
     </div>`;
 
   const blocoAssinatura = `
-    <div style="margin-top:36px;padding-top:20px;border-top:1px solid #D1D5DB">
-      <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:20px">Declaração do paciente</div>
-      <div style="font-size:12px;color:#6B7280;line-height:1.7;margin-bottom:28px">
-        Declaro que as informações acima são verdadeiras e completas, e que fui orientado(a) sobre a importância de informar qualquer alteração em meu estado de saúde ao longo do tratamento.
+    <div style="margin-top:36px;border-top:2px solid #1E3A5F;padding-top:20px;break-inside:avoid;page-break-inside:avoid">
+      <div style="font-size:12px;font-weight:700;color:#1E3A5F;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">Declaração e Assinatura</div>
+      <div style="font-size:12px;color:#4B5563;line-height:1.7;margin-bottom:28px;border-left:3px solid #D1D5DB;padding-left:12px">
+        Declaro que as informações prestadas nesta ficha são verdadeiras e completas. Estou ciente de que devo comunicar qualquer alteração relevante no meu estado de saúde ao longo do tratamento.
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:8px">
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:28px">
         <div>
-          <div style="border-top:1.5px solid #374151;padding-top:8px;font-size:11px;color:#6B7280;text-align:center">Assinatura do paciente</div>
-          <div style="margin-top:12px;border-top:1.5px solid #374151;padding-top:8px;font-size:11px;color:#6B7280;text-align:center">Nome completo (letra de forma)</div>
+          <div style="height:44px;border-bottom:1.5px solid #374151"></div>
+          <div style="padding-top:6px;font-size:10px;color:#6B7280;text-align:center;letter-spacing:.04em">ASSINATURA DO PACIENTE</div>
         </div>
         <div>
-          <div style="border-top:1.5px solid #374151;padding-top:8px;font-size:11px;color:#6B7280;text-align:center">Data &nbsp;&nbsp;&nbsp;&nbsp;___/___/______</div>
-          <div style="margin-top:12px;border-top:1.5px solid #374151;padding-top:8px;font-size:11px;color:#6B7280;text-align:center">Assinatura do responsável (se menor)</div>
+          <div style="height:44px;border-bottom:1.5px solid #374151"></div>
+          <div style="padding-top:6px;font-size:10px;color:#6B7280;text-align:center;letter-spacing:.04em">DATA &nbsp; ___/___/______</div>
         </div>
+      </div>
+      <div style="margin-bottom:28px">
+        <div style="height:44px;border-bottom:1.5px solid #374151"></div>
+        <div style="padding-top:6px;font-size:10px;color:#6B7280;text-align:center;letter-spacing:.04em">NOME DO RESPONSÁVEL — somente quando o paciente for menor de idade (letra de forma)</div>
+      </div>
+      <div>
+        <div style="height:44px;border-bottom:1.5px solid #374151"></div>
+        <div style="padding-top:6px;font-size:10px;color:#6B7280;text-align:center;letter-spacing:.04em">ASSINATURA DO RESPONSÁVEL — somente quando o paciente for menor de idade</div>
       </div>
     </div>`;
 
