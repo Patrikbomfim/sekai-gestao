@@ -15293,7 +15293,8 @@ async function _carregarAnamnesePublica(token){
       document.body.innerHTML = _renderJaPreenchidaAnamnese(data.paciente_nome);
       return;
     }
-    document.body.innerHTML = _renderFormAnamnese(data.paciente_nome, token, data.paciente_id, data.campos || []);
+    const html = _renderFormAnamnese(data.paciente_nome, token, data.paciente_id, data.campos || []);
+    document.open(); document.write(html); document.close();
   } catch(e){
     console.error('Erro anamnese publica:', e);
     document.body.innerHTML = _renderErroAnamnese('Erro ao carregar. Verifique sua conexao e tente novamente.');
