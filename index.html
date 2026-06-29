@@ -1880,6 +1880,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <select id="mca-tipo">
             <option value="sim_nao">Sim / Não</option>
             <option value="texto">Texto livre</option>
+            <option value="data">Data</option>
             <option value="selecao">Seleção (lista)</option>
             <option value="multiplo">Múltipla escolha</option>
           </select>
@@ -1892,7 +1893,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
         <div class="fl fg-full" id="mca-vinculo-wrap">
           <label>Vincular a um campo do cadastro (opcional)</label>
-          <select id="mca-vinculo">
+          <select id="mca-vinculo" onchange="onVinculoCadastroChange()">
             <option value="">Nenhum — fica só na anamnese</option>
           </select>
           <div style="font-size:11px;color:var(--tx3);margin-top:4px">Se vinculado, a resposta do paciente também preenche esse campo no cadastro automaticamente — só se o campo ainda estiver vazio.</div>
@@ -8486,7 +8487,7 @@ function renderCfgAnamnese(){
 }
 
 function tipoAnamneseLabel(tipo){
-  return {sim_nao:'Sim/Não', texto:'Texto livre', selecao:'Seleção', multiplo:'Múltipla escolha'}[tipo] || tipo;
+  return {sim_nao:'Sim/Não', texto:'Texto livre', data:'Data', selecao:'Seleção', multiplo:'Múltipla escolha'}[tipo] || tipo;
 }
 
 function vinculoCadastroLabel(campoId){
@@ -8508,6 +8509,20 @@ function abrirModalCampoAnamnese(idx){
   abrirModal('modal-campo-anamnese');
 }
 
+// Metadados de cada campo de cadastro: como perguntar e como formatar no formulário público
+const META_CAMPO_CADASTRO = {
+  nome:        { label:'Nome completo',          tipo:'texto',  inputType:'text',   placeholder:'Ex: Maria da Silva',      mascara:null },
+  fone:        { label:'Telefone / WhatsApp',    tipo:'texto',  inputType:'tel',    placeholder:'44 99999 9999',           mascara:'fone', maxlength:14 },
+  cpf:         { label:'CPF',                    tipo:'texto',  inputType:'text',   placeholder:'000.000.000-00',          mascara:'cpf',  maxlength:14 },
+  nasc:        { label:'Data de nascimento',     tipo:'data',   inputType:'date',   placeholder:'',                        mascara:null },
+  cep:         { label:'CEP',                    tipo:'texto',  inputType:'text',   placeholder:'00000-000',               mascara:'cep',  maxlength:9  },
+  cidade:      { label:'Cidade',                 tipo:'texto',  inputType:'text',   placeholder:'Ex: Curitiba',            mascara:null },
+  rua:         { label:'Rua / Logradouro',       tipo:'texto',  inputType:'text',   placeholder:'Ex: Rua das Flores',      mascara:null },
+  numero:      { label:'Número',                 tipo:'texto',  inputType:'text',   placeholder:'Ex: 123',                 mascara:null },
+  complemento: { label:'Complemento',            tipo:'texto',  inputType:'text',   placeholder:'Ex: Apto 42',             mascara:null },
+  obs:         { label:'Observações',            tipo:'texto',  inputType:'text',   placeholder:'',                        mascara:null },
+};
+
 function popularSelectVinculoCadastro(selectedId){
   const sel = document.getElementById('mca-vinculo');
   if(!sel) return;
@@ -8515,10 +8530,31 @@ function popularSelectVinculoCadastro(selectedId){
     camposCadastro.map(cc=>`<option value="${cc.id}" ${cc.id===selectedId?'selected':''}>${cc.label}</option>`).join('');
 }
 
+// Ao escolher vínculo no modal, auto-preenche label e tipo
+function onVinculoCadastroChange(){
+  const sel = document.getElementById('mca-vinculo');
+  const val = sel ? sel.value : '';
+  if(!val) return;
+  const meta = META_CAMPO_CADASTRO[val];
+  if(!meta) return;
+  const labelEl = document.getElementById('mca-label');
+  const tipoEl  = document.getElementById('mca-tipo');
+  // Só preenche se o label estiver vazio (não sobrescreve customizações)
+  if(labelEl && !labelEl.value.trim()) labelEl.value = meta.label;
+  // Ajusta o tipo de resposta
+  if(tipoEl){
+    tipoEl.value = meta.tipo === 'data' ? 'data' : 'texto';
+    atualizarVisibilidadeCamposModalAnamnese();
+  }
+}
+
 function atualizarVisibilidadeCamposModalAnamnese(){
   const tipo = document.getElementById('mca-tipo').value;
   document.getElementById('mca-opcoes-wrap').style.display = (tipo==='selecao'||tipo==='multiplo') ? '' : 'none';
   document.getElementById('mca-condicional-wrap').style.display = tipo==='sim_nao' ? '' : 'none';
+  // Esconde campo de vínculo para tipos que não são texto ou data (não faz sentido vincular sim/não)
+  const vinculoWrap = document.getElementById('mca-vinculo-wrap');
+  if(vinculoWrap) vinculoWrap.style.display = (tipo==='sim_nao'||tipo==='selecao'||tipo==='multiplo') ? 'none' : '';
 }
 document.addEventListener('DOMContentLoaded', ()=>{
   const sel = document.getElementById('mca-tipo');
@@ -8574,53 +8610,16 @@ function moverCampoAnamnese(idx, dir){
   renderCfgAnamnese();
 }
 
-// ── Página pública de anamnese (renderizada quando há ?anamnese=token na URL) ──
-// Busca dados no Supabase — funciona em qualquer dispositivo, sem login
+// ── Página pública de anamnese ──────────────────────────────────────────
+// O modo público é tratado pelo bloco Supabase no final do arquivo.
+// verificarModoAnamnese apenas sinaliza que é modo público para parar
+// o iniciarModuloAnamnese — a renderização real fica no bloco Supabase.
 function verificarModoAnamnese(){
   const params = new URLSearchParams(window.location.search);
-  const token = params.get('anamnese');
-  if(!token) return false;
-
-  // Mostra tela de carregamento enquanto busca no Supabase
-  document.body.innerHTML = `<div style="font-family:Inter,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:16px;background:#F4F5F7">
-    <div style="width:36px;height:36px;border:3px solid #E5E7EB;border-top-color:#1E3A5F;border-radius:50%;animation:spin .8s linear infinite"></div>
-    <div style="font-size:14px;color:#6B7280">Carregando sua ficha...</div>
-    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-  </div>`;
-
-  _carregarAnamnesePublica(token);
-  return true;
+  return params.has('anamnese');
 }
 
-async function _carregarAnamnesePublica(token){
-  try {
-    const { data, error } = await supa
-      .from('anamneses')
-      .select('*')
-      .eq('token', token)
-      .single();
-
-    if(error || !data){
-      document.body.innerHTML = renderPaginaAnamneseErro('Link inválido ou expirado. Solicite um novo link à clínica.');
-      return;
-    }
-    if(data.preenchido_em){
-      document.body.innerHTML = renderPaginaAnamneseJaPreenchida({ nome: data.paciente_nome });
-      return;
-    }
-    // Carregar campos configurados da clínica (salvos junto com o token)
-    const campos = data.campos || camposAnamnese;
-    document.body.innerHTML = renderPaginaAnamnesePaciente(
-      { id: data.paciente_id, nome: data.paciente_nome },
-      token,
-      data.paciente_id,
-      campos
-    );
-    bindEventosAnamnese(token, data.paciente_id, campos);
-  } catch(e){
-    document.body.innerHTML = renderPaginaAnamneseErro('Erro ao carregar. Verifique sua conexão e tente novamente.');
-  }
-}
+// _carregarAnamnesePublica é definida abaixo no bloco Supabase (versao correta)
 
 function renderPaginaAnamneseErro(msg){
   return `<div style="font-family:Inter,system-ui,sans-serif;max-width:480px;margin:60px auto;padding:24px;text-align:center">
@@ -15310,12 +15309,31 @@ function _renderJaPreenchidaAnamnese(nomeCompleto){
   return '<div style="font-family:Inter,system-ui,sans-serif;max-width:480px;margin:60px auto;padding:24px;text-align:center"><div style="font-size:40px;margin-bottom:16px">✅</div><div style="font-size:16px;font-weight:600;margin-bottom:8px">Anamnese já enviada!</div><div style="font-size:14px;color:#6B7280">Obrigado, '+nome+'. Suas informações já foram recebidas pela clínica.</div></div>';
 }
 
+// Metadados de mascara por campo de cadastro vinculado
+var _MASK_META = {
+  fone: { inputType:'tel',  placeholder:'44 99999 9999', maxlength:14 },
+  cpf:  { inputType:'text', placeholder:'000.000.000-00', maxlength:14 },
+  cep:  { inputType:'text', placeholder:'00000-000', maxlength:9 },
+};
+
 function _renderCampoPublico(c){
   if(c.tipo==='sim_nao'){
     var cond=c.condicionalLabel?'<div class="cond-field" id="cond-'+c.id+'"><label style="font-size:13px;color:#6B7280;font-weight:400;margin-bottom:6px">'+c.condicionalLabel+'</label><input type="text" id="cond-input-'+c.id+'" placeholder="Escreva aqui..."></div>':'';
-    return '<div class="radio-group"><label class="radio-opt"><input type="radio" name="'+c.id+'" value="sim" onchange="toggleCondP(\''+c.id+'\',true)"> Sim</label><label class="radio-opt"><input type="radio" name="'+c.id+'" value="nao" onchange="toggleCondP(\''+c.id+'\',false)"> Não</label></div>'+cond;
+    return '<div class="radio-group"><label class="radio-opt"><input type="radio" name="'+c.id+'" value="sim" onchange="toggleCondP(''+c.id+'',true)"> Sim</label><label class="radio-opt"><input type="radio" name="'+c.id+'" value="nao" onchange="toggleCondP(''+c.id+'',false)"> Não</label></div>'+cond;
   }
-  if(c.tipo==='texto') return '<textarea id="'+c.id+'" rows="3" placeholder="Escreva aqui..."></textarea>';
+  if(c.tipo==='data'){
+    return '<input type="date" id="'+c.id+'" style="width:100%;padding:10px 12px;border:1.5px solid #DDE0E7;border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:#111827">';
+  }
+  if(c.tipo==='texto'){
+    var meta = c.vinculoCadastro ? (_MASK_META[c.vinculoCadastro] || null) : null;
+    var iType = meta ? meta.inputType : 'text';
+    var ph    = meta ? meta.placeholder : 'Escreva aqui...';
+    var ml    = meta && meta.maxlength ? ' maxlength="'+meta.maxlength+'"' : '';
+    if(!meta){
+      return '<input type="text" id="'+c.id+'" placeholder="'+ph+'">'; 
+    }
+    return '<input type="'+iType+'" id="'+c.id+'" placeholder="'+ph+'"'+ml+' data-mask="'+c.vinculoCadastro+'" oninput="_applyMaskP(this)">';
+  }
   if(c.tipo==='selecao'){
     var opts=(c.opcoes||[]).map(function(o){return '<option value="'+o+'">'+o+'</option>';}).join('');
     return '<select id="'+c.id+'"><option value="">Selecione...</option>'+opts+'</select>';
@@ -15374,23 +15392,23 @@ function _renderFormAnamnese(nomeCompleto, token, pacienteId, campos){
     '<button class="btn-submit" type="button" onclick="enviarAnamnese()">Enviar ficha ✓</button>' +
     '</div>' +
     '<div class="sucesso" id="sucesso-area"><div class="sucesso-ic">✅</div><div class="sucesso-title">Ficha enviada!</div><div class="sucesso-sub">'+(nome?'Obrigado, '+nome+'. Suas':'Suas')+' informacoes foram recebidas. Ate breve!</div></div>' +
-    '</div></div>' +
     '<script>' +
     'var _sp=supabase.createClient("'+supaUrl+'","'+supaKey+'");' +
     'var _tk="'+token+'";' +
     'var _campos='+JSON.stringify(campos)+';' +
     'function toggleCondP(id,m){var el=document.getElementById("cond-"+id);if(el)el.classList.toggle("show",m);}' +
+    'function _applyMaskP(el){var m=el.dataset.mask;var v=el.value.replace(/\\D/g,"");if(m==="fone"){v=v.slice(0,11);if(v.length>7)el.value=v.slice(0,2)+" "+v.slice(2,7)+" "+v.slice(7);else if(v.length>2)el.value=v.slice(0,2)+" "+v.slice(2);else el.value=v;}else if(m==="cpf"){v=v.slice(0,11);if(v.length>9)el.value=v.slice(0,3)+"."+v.slice(3,6)+"."+v.slice(6,9)+"-"+v.slice(9);else if(v.length>6)el.value=v.slice(0,3)+"."+v.slice(3,6)+"."+v.slice(6);else if(v.length>3)el.value=v.slice(0,3)+"."+v.slice(3);else el.value=v;}else if(m==="cep"){v=v.slice(0,8);el.value=v.length>5?v.slice(0,5)+"-"+v.slice(5):v;}}' +
     'async function enviarAnamnese(){' +
     '  for(var i=0;i<_campos.length;i++){var c=_campos[i];if(!c.obrigatorio)continue;' +
     '    if(c.tipo==="sim_nao"&&!document.querySelector("input[name=\""+c.id+"\"]:checked")){alert("Por favor, responda: "+c.label);return;}' +
-    '    if(c.tipo==="texto"){var el=document.getElementById(c.id);if(!el||!el.value.trim()){alert("Por favor, preencha: "+c.label);return;}}' +
+    '    if((c.tipo==="texto"||c.tipo==="data")){var el=document.getElementById(c.id);if(!el||!el.value.trim()){alert("Por favor, preencha: "+c.label);return;}}' +
     '    if(c.tipo==="selecao"){var el=document.getElementById(c.id);if(!el||!el.value){alert("Por favor, selecione: "+c.label);return;}}' +
     '  }' +
     '  var btn=document.querySelector(".btn-submit");if(btn){btn.disabled=true;btn.textContent="Enviando...";}' +
     '  var resp={};' +
     '  _campos.forEach(function(c){' +
     '    if(c.tipo==="sim_nao"){var ch=document.querySelector("input[name=\""+c.id+"\"]:checked");resp[c.id]=ch?ch.value:"";if(c.condicionalLabel){var ci=document.getElementById("cond-input-"+c.id);resp[c.id+"_cond"]=ci?ci.value.trim():"";}}' +
-    '    else if(c.tipo==="texto"){var el=document.getElementById(c.id);resp[c.id]=el?el.value.trim():"";}' +
+    '    else if(c.tipo==="texto"||c.tipo==="data"){var el=document.getElementById(c.id);resp[c.id]=el?el.value.trim():""}' +
     '    else if(c.tipo==="selecao"){var el=document.getElementById(c.id);resp[c.id]=el?el.value:"";}' +
     '    else if(c.tipo==="multiplo"){resp[c.id]=[].slice.call(document.querySelectorAll("input[name=\""+c.id+"\"]:checked")).map(function(x){return x.value;}).join(", ");}' +
     '  });' +
@@ -15402,6 +15420,7 @@ function _renderFormAnamnese(nomeCompleto, token, pacienteId, campos){
     '    document.getElementById("sucesso-area").style.display="block";' +
     '  }catch(e){if(btn){btn.disabled=false;btn.textContent="Enviar ficha ✓";}alert("Erro ao enviar. Verifique sua conexao e tente novamente.");}' +
     '}' +
+    '<\/script>' +
     '<\/script>' +
     '</body></html>'
   );
