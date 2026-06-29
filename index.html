@@ -8460,8 +8460,26 @@ function exportarAnamnesePDF(pacienteId){
       <strong>Sobre esta ficha:</strong> A anamnese é importante para que possamos te conhecer melhor e garantir um tratamento seguro e personalizado. Caso se sinta desconfortável em mencionar alguma situação por escrito, fique à vontade para comentar pessoalmente com a Dra. no momento da consulta.
     </div>`;
 
+  const blocoAssinatura = `
+    <div style="margin-top:36px;padding-top:20px;border-top:1px solid #D1D5DB">
+      <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:20px">Declaração do paciente</div>
+      <div style="font-size:12px;color:#6B7280;line-height:1.7;margin-bottom:28px">
+        Declaro que as informações acima são verdadeiras e completas, e que fui orientado(a) sobre a importância de informar qualquer alteração em meu estado de saúde ao longo do tratamento.
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:8px">
+        <div>
+          <div style="border-top:1.5px solid #374151;padding-top:8px;font-size:11px;color:#6B7280;text-align:center">Assinatura do paciente</div>
+          <div style="margin-top:12px;border-top:1.5px solid #374151;padding-top:8px;font-size:11px;color:#6B7280;text-align:center">Nome completo (letra de forma)</div>
+        </div>
+        <div>
+          <div style="border-top:1.5px solid #374151;padding-top:8px;font-size:11px;color:#6B7280;text-align:center">Data &nbsp;&nbsp;&nbsp;&nbsp;___/___/______</div>
+          <div style="margin-top:12px;border-top:1.5px solid #374151;padding-top:8px;font-size:11px;color:#6B7280;text-align:center">Assinatura do responsável (se menor)</div>
+        </div>
+      </div>
+    </div>`;
+
   const rodape = `
-    <div style="margin-top:32px;padding-top:16px;border-top:1px solid #EEF0F4;font-size:11px;color:#9CA3AF;text-align:center">
+    <div style="margin-top:28px;padding-top:14px;border-top:1px solid #EEF0F4;font-size:11px;color:#9CA3AF;text-align:center">
       Clínica Sekai &nbsp;·&nbsp; Documento gerado em ${new Date().toLocaleDateString('pt-BR')}
     </div>`;
 
@@ -8470,13 +8488,14 @@ function exportarAnamnesePDF(pacienteId){
     <title>Anamnese — ${p.nome}</title>
     <style>
       *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-      body{font-family:Inter,system-ui,sans-serif;background:#fff;color:#111827;font-size:14px;line-height:1.5;padding:32px 40px;max-width:700px;margin:0 auto}
-      @media print{body{padding:20px 28px}@page{margin:20mm 15mm}}
+      body{font-family:Inter,system-ui,sans-serif;background:#fff;color:#111827;font-size:13px;line-height:1.5;padding:28px 36px;max-width:700px;margin:0 auto}
+      @media print{body{padding:16px 24px}@page{margin:16mm 14mm;size:A4 portrait}}
     </style>
   </head><body>
     ${cabecalho}
     ${mensagemInicial}
     ${camposHtml}
+    ${preenchido ? blocoAssinatura : ''}
     ${rodape}
 
   <script>window.onload=()=>window.print();<\/script>
