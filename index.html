@@ -8480,8 +8480,17 @@ function exportarAnamnesePDF(pacienteId){
     <script>window.onload=function(){window.print()}<\/script>
   </body></html>`;
 
-  const win = window.open('', '_blank');
-  if(win){ win.document.write(html); win.document.close(); }
+  // Usa Blob URL para não ser bloqueado por popup blocker
+  const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
 // ── Botão verificar anamnese manualmente ──────────────────────────────
@@ -8874,10 +8883,10 @@ function aplicarVinculosAnamneseNoCadastro(p, resp){
     if(!campoDef) return;
     if(campoDef.locked){
       const prop = CAMPO_CADASTRO_PROP_MAP[campoDef.id] || campoDef.id;
-      if(!p[prop]){ p[prop]=valor; preenchidos.push(campoDef.label); }
+      p[prop] = valor; preenchidos.push(campoDef.label); // sempre sobrescreve
     } else {
       p.customFields = p.customFields || {};
-      if(!p.customFields[campoDef.id]){ p.customFields[campoDef.id]=valor; preenchidos.push(campoDef.label); }
+      p.customFields[campoDef.id] = valor; preenchidos.push(campoDef.label); // sempre sobrescreve
     }
   });
   return preenchidos;
