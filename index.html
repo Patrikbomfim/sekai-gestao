@@ -8850,30 +8850,44 @@ async function submitAnamnese(token, pacienteId){
 
 // ── Limpar TODAS as anamneses do banco e do localStorage ──────────────
 // Usar quando as anamneses foram criadas antes do Supabase e os IDs
-// não correspondem mais aos pacientes reais no banco.
+// nao correspondem mais aos pacientes reais no banco.
 async function limparTodasAnamnesesBanco(){
-  if(!confirm('⚠️ Isso vai apagar TODAS as anamneses do banco de dados e limpar o histórico local.\n\nUse apenas para resetar o sistema de anamnese antes de reconfigurar.\n\nContinuar?')) return;
+  if(!confirm('Isso vai apagar TODAS as anamneses do banco e limpar o historico local.\n\nUse apenas para resetar antes de reconfigurar.\n\nContinuar?')) return;
 
   const btn = document.querySelector('button[onclick="limparTodasAnamnesesBanco()"]');
-  if(btn){ btn.disabled = true; btn.textContent = '⏳ Limpando...'; }
+  if(btn){ btn.disabled = true; btn.textContent = 'Limpando...'; }
 
   try {
-    // Apaga tudo da tabela anamneses no Supabase
-    // O Supabase não aceita DELETE sem filtro via client — usamos um filtro que pega tudo
-    const { error } = await supa.from('anamneses').delete().neq('token', '___nenhum___');
-    if(error) throw error;
+    // Passo 1: buscar todos os tokens existentes (SELECT tem permissao pela RLS)
+    const { data: registros, error: erroBusca } = await supa
+      .from('anamneses')
+      .select('token');
 
-    // Limpa também o estado local
+    if(erroBusca) throw erroBusca;
+
+    // Passo 2: deletar cada registro pelo seu proprio token
+    const tokens = (registros || []).map(function(r){ return r.token; }).filter(Boolean);
+    var erros = 0;
+    for(var i = 0; i < tokens.length; i++){
+      var res = await supa.from('anamneses').delete().eq('token', tokens[i]);
+      if(res.error){ console.warn('Erro ao deletar token', tokens[i], res.error); erros++; }
+    }
+
+    // Passo 3: limpar estado local
     respostasAnamnese = {};
     tokensAnamnese = {};
     salvarAnamnese();
 
-    showSaveToast('✅ Todas as anamneses foram removidas do banco e do sistema local.');
+    if(erros > 0){
+      showSaveToast((tokens.length - erros) + ' removidas, ' + erros + ' com erro (veja console).');
+    } else {
+      showSaveToast(tokens.length + ' anamnese(s) removida(s). Sistema local limpo.');
+    }
   } catch(e){
     console.error('Erro ao limpar anamneses:', e);
     alert('Erro ao limpar: ' + (e.message || JSON.stringify(e)));
   } finally {
-    if(btn){ btn.disabled = false; btn.textContent = '🗑 Limpar todas do banco'; }
+    if(btn){ btn.disabled = false; btn.textContent = 'Limpar todas do banco'; }
   }
 }
 
