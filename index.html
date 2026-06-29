@@ -586,6 +586,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <span class="hdr-title">Sistema Operacional Sekai</span>
     </div>
   </div>
+  <button onclick="goTo('hoje', document.getElementById('navbtn-hoje'))" style="height:30px;padding:0 14px;font-size:12.5px;font-weight:600;border:1px solid var(--border);border-radius:var(--r8);background:var(--surface);color:var(--tx2);cursor:pointer;white-space:nowrap;transition:background .12s,color .12s;font-family:var(--font)" onmouseover="this.style.background='var(--s2)';this.style.color='var(--tx)'" onmouseout="this.style.background='var(--surface)';this.style.color='var(--tx2)'">Início</button>
   <div class="hdr-search-wrap" id="hdr-search-wrap">
     <input class="hdr-search" id="hdr-search-input" type="text" placeholder="Buscar paciente…" autocomplete="off"
       oninput="hdrBuscarPaciente(this.value)" onkeydown="hdrBuscarKeydown(event)">
@@ -8263,10 +8264,11 @@ function hdrBuscarPaciente(valor) {
       return;
     }
     drop.innerHTML = resultados.map((p, i) => {
+      const cod = p.codigo ? ` (${p.codigo})` : '';
       return `<div class="hdr-search-item" data-idx="${i}" data-pid="${p.id}"
         onclick="hdrSelecionarPaciente(${p.id})"
         onmouseenter="hdrFocarItem(${i})">
-        <div class="hdr-search-item-nome">(${p.id}) ${p.nome || '—'}</div>
+        <div class="hdr-search-item-nome">${p.nome || '—'}${cod}</div>
       </div>`;
     }).join('');
     drop.classList.add('open');
