@@ -6379,13 +6379,15 @@ function _nextOrcNum(){
 }
 
 function orcamentoMudarStatus(orcId,novoStatus,pacId){
-  const list=_orcamentos();
-  const idx=list.findIndex(o=>o.id===orcId);
-  if(idx<0) return;
-  list[idx].status=novoStatus;
-  _salvarOrcamentos(list);
+  _comSalvarImediato(()=>{
+    const list=_orcamentos();
+    const idx=list.findIndex(o=>o.id===orcId);
+    if(idx<0) return;
+    list[idx].status=novoStatus;
+    _salvarOrcamentos(list);
+  });
   const p=pacientes.find(x=>String(x.id)===String(pacId));
-  if(p) renderPpOrcamento(p);
+  if(p){ renderPpOrcamento(p); _sincronizarProntuario(p); }
 }
 
 let _orcModalPacId=null;
@@ -6765,7 +6767,7 @@ function salvarOrcamento(){
   });
   fecharModalOrcamento();
   const p=pacientes.find(x=>String(x.id)===String(_orcModalPacId));
-  if(p) renderPpOrcamento(p);
+  if(p){ renderPpOrcamento(p); _sincronizarProntuario(p); }
 }
 
 // ── FORMAS DE PAGAMENTO ────────────────────────────────────────────────────
@@ -7755,11 +7757,13 @@ function excluirOrcamento(){
   }
   if(!confirm('Excluir este orçamento? Esta ação não pode ser desfeita.')) return;
   // Remove orçamento (sem títulos para remover)
-  let list=_orcamentos().filter(o=>o.id!==_orcModalId);
-  _salvarOrcamentos(list);
+  _comSalvarImediato(()=>{
+    const list=_orcamentos().filter(o=>o.id!==_orcModalId);
+    _salvarOrcamentos(list);
+  });
   fecharModalOrcamento();
   const p=pacientes.find(x=>String(x.id)===String(_orcModalPacId));
-  if(p){ renderPpOrcamento(p); renderPpFinanceiro(p); }
+  if(p){ renderPpOrcamento(p); renderPpFinanceiro(p); _sincronizarProntuario(p); }
 }
 
 // ── APROVAR ORÇAMENTO — MODO MISTO ────────────────────────────────────────
