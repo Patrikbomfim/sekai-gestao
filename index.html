@@ -1211,6 +1211,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <button class="btn btn-ghost" id="btn-gerar-pdf-orc" onclick="gerarPdfOrcamento()" style="display:flex;align-items:center;gap:6px">
           <span style="font-size:13px">📄</span> Gerar PDF
         </button>
+        <button class="btn btn-ghost" id="btn-reprovar-orc" onclick="reprovarOrcamento()" style="display:none;background:var(--dal);color:var(--da);border-color:#FCA5A5">✗ Reprovar orçamento</button>
         <button class="btn btn-ghost" id="btn-aprovar-orc" onclick="abrirModalAprovarOrcamento()" style="display:none;background:var(--sul);color:var(--su);border-color:#86efac">✓ Aprovar orçamento</button>
         <button class="btn btn-primary" onclick="salvarOrcamento()">Salvar orçamento</button>
       </div>
@@ -6427,20 +6428,12 @@ function abrirModalOrcamento(pacId, orcId){
         <input type="text" id="orc-input-nome" placeholder="Ex: Tratamento completo — Reabilitação oral" value="${(orcEdit&&orcEdit.nomeOrc)||''}" style="font-size:13px">
       </div>
       <div class="fl">
-        <label>Status</label>
-        <select id="orc-sel-status" onchange="_orcToggleDataDecisao(this.value)" style="font-size:13px">
-          <option value="aberto"   ${statusNorm==='aberto'   ?'selected':''}>Aberto</option>
-          <option value="aprovado" ${statusNorm==='aprovado' ?'selected':''}>Aprovado</option>
-          <option value="reprovado"${statusNorm==='reprovado'?'selected':''}>Reprovado</option>
-        </select>
-      </div>
-      <div class="fl">
         <label>Data de criação</label>
         <input type="date" id="orc-input-data" value="${(orcEdit&&orcEdit.dataCriacao)||(orcEdit&&orcEdit.data)||hojeStr}">
       </div>
       <div class="fl" id="orc-data-decisao-wrap" style="${(statusNorm==='aprovado'||statusNorm==='reprovado')?'':'display:none'}">
         <label id="orc-data-decisao-label">${statusNorm==='reprovado'?'Data de reprovação':'Data de aprovação'}</label>
-        <input type="date" id="orc-input-data-decisao" value="${(orcEdit&&orcEdit.dataDecisao)||hojeStr}">
+        <input type="date" id="orc-input-data-decisao" value="${(orcEdit&&orcEdit.dataDecisao)||hojeStr}" disabled style="background:var(--s2);color:var(--tx2)">
       </div>
       <div class="fl">
         <label>Paciente</label>
@@ -6490,10 +6483,13 @@ function abrirModalOrcamento(pacId, orcId){
   const btnExcluir=document.getElementById('btn-excluir-orc');
   if(btnExcluir) btnExcluir.style.display=orcId?'':'none';
 
-  // Botão aprovar — só para orçamentos em aberto já salvos
+  // Botões aprovar/reprovar — só para orçamentos em aberto já salvos
   const btnAprovar=document.getElementById('btn-aprovar-orc');
+  const btnReprovar=document.getElementById('btn-reprovar-orc');
   const statusAtualBotao=(orcEdit&&orcEdit.status)||'aberto';
-  if(btnAprovar) btnAprovar.style.display=(orcId&&statusAtualBotao==='aberto')?'':'none';
+  const isAberto = orcId && statusAtualBotao==='aberto';
+  if(btnAprovar) btnAprovar.style.display=isAberto?'':'none';
+  if(btnReprovar) btnReprovar.style.display=isAberto?'':'none';
 
   _renderOrcItens();
   _renderOrcTotal();
@@ -6504,6 +6500,23 @@ function abrirModalOrcamento(pacId, orcId){
 function fecharModalOrcamento(){
   document.getElementById('modal-orcamento').classList.remove('open');
   document.getElementById('modal-proc-orc').classList.remove('open');
+}
+
+function reprovarOrcamento(){
+  if(!_orcModalId){ alert('Salve o orçamento antes de reprovar.'); return; }
+  if(!confirm('Confirmar reprovação deste orçamento?')) return;
+  _comSalvarImediato(()=>{
+    const list=_orcamentos();
+    const idx=list.findIndex(o=>o.id===_orcModalId);
+    if(idx>=0){
+      list[idx].status='reprovado';
+      list[idx].dataDecisao=new Date().toISOString().slice(0,10);
+    }
+    _salvarOrcamentos(list);
+  });
+  fecharModalOrcamento();
+  const p=pacientes.find(x=>String(x.id)===String(_orcModalPacId));
+  if(p){ renderPpOrcamento(p); _sincronizarProntuario(p); }
 }
 
 function _orcToggleDataDecisao(status){
@@ -6523,7 +6536,9 @@ function _orcToggleDataDecisao(status){
 function gerarPdfOrcamento(){
   // Coleta dados do formulário atual (pode ainda não ter sido salvo)
   const nomeOrc=(document.getElementById('orc-input-nome')||{}).value||'Orçamento';
-  const status=(document.getElementById('orc-sel-status')||{}).value||'aberto';
+  // Status: for new budgets always 'aberto'; for existing ones, keep current status (changed only via Aprovar/Reprovar buttons)
+  const _orcAtualParaSalvar = _orcModalId ? (_orcamentos().find(o=>o.id===_orcModalId)||{}) : {};
+  const status = _orcAtualParaSalvar.status || 'aberto';
   const dataCriacao=(document.getElementById('orc-input-data')||{}).value||iso(hoje);
   const dataDecisaoEl=document.getElementById('orc-input-data-decisao');
   const dataDecisaoWrap=document.getElementById('orc-data-decisao-wrap');
@@ -6734,28 +6749,9 @@ function salvarOrcamento(){
   const dataDecisaoEl=document.getElementById('orc-input-data-decisao');
   const dataDecisao=dataDecisaoEl&&dataDecisaoEl.closest('#orc-data-decisao-wrap')&&!dataDecisaoEl.closest('#orc-data-decisao-wrap').style.display?dataDecisaoEl.value:'';
   const obs=(document.getElementById('orc-input-obs')||{}).value||'';
-  const status=(document.getElementById('orc-sel-status')||{}).value||'aberto';
-
-  // Bloquear mudança de status de orçamento aprovado com títulos vinculados
-  if(_orcModalId){
-    const orcAtual=_orcamentos().find(o=>o.id===_orcModalId);
-    if(orcAtual&&orcAtual.status==='aprovado'&&status!=='aprovado'){
-      const titsVinculados=_titulos().filter(t=>t.orcamentoId===_orcModalId);
-      if(titsVinculados.length>0){
-        const temPago=titsVinculados.some(t=>t.status==='pago');
-        if(temPago){
-          alert('Não é possível alterar o status deste orçamento.\n\nHá título(s) liquidado(s) vinculado(s). Para cancelar, acesse o Financeiro, estorne os pagamentos e cancele os títulos primeiro.');
-        } else {
-          alert('Não é possível alterar o status deste orçamento.\n\nHá título(s) a receber vinculado(s). Para cancelar, acesse o Financeiro e cancele os títulos primeiro.');
-        }
-        // Volta o select para aprovado
-        const sel=document.getElementById('orc-sel-status');
-        if(sel) sel.value='aprovado';
-        _orcToggleDataDecisao('aprovado');
-        return;
-      }
-    }
-  }
+  // Status: for new budgets always 'aberto'; for existing ones, keep current status (changed only via Aprovar/Reprovar buttons)
+  const _orcAtualParaSalvar = _orcModalId ? (_orcamentos().find(o=>o.id===_orcModalId)||{}) : {};
+  const status = _orcAtualParaSalvar.status || 'aberto';
 
   _comSalvarImediato(()=>{
     const list=_orcamentos();
@@ -7677,7 +7673,7 @@ function cancelarTitulosOrcamento(orcId){
 
   // Re-render
   const p=pacientes.find(x=>String(x.id)===String(pacId||''));
-  if(p){ renderPpOrcamento(p); renderPpFinanceiro(p); }
+  if(p){ renderPpOrcamento(p); renderPpFinanceiro(p); _sincronizarProntuario(p); }
 }
 
 // ── RENEGOCIAÇÃO DE VENCIMENTO ─────────────────────────────────────────────
@@ -8113,7 +8109,7 @@ function confirmarAprovacaoOrcamento(){
   fecharModalOrcamento();
 
   const p=pacientes.find(x=>String(x.id)===String(_orcModalPacId));
-  if(p){ renderPpOrcamento(p); renderPpFinanceiro(p); }
+  if(p){ renderPpOrcamento(p); renderPpFinanceiro(p); _sincronizarProntuario(p); }
 
   // vai direto pro financeiro
   switchPpArea('financeiro');
@@ -8131,6 +8127,16 @@ function switchProntTab(tab){
   const btnF=document.getElementById('pront-tab-btn-ficha');
   if(btnP){ btnP.style.color=tab==='plano'?'var(--ac)':'var(--tx3)'; btnP.style.borderBottomColor=tab==='plano'?'var(--ac)':'transparent'; }
   if(btnF){ btnF.style.color=tab==='ficha'?'var(--ac)':'var(--tx3)'; btnF.style.borderBottomColor=tab==='ficha'?'var(--ac)':'transparent'; }
+}
+
+// Sincroniza prontuário sem mudar de aba — chamado após aprovação/reprovação de orçamento
+function _sincronizarProntuario(p){
+  if(!p) return;
+  // Re-renderiza prontuário se o paciente atual no prontuário é o mesmo
+  if(String(_prontPacId)===String(p.id)){
+    _renderProntPlano(p);
+    _renderProntFicha(p);
+  }
 }
 
 function renderPpProntuario(p){
