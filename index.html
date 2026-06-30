@@ -16463,8 +16463,8 @@ function _finTodosTitulos(){
   const pacientes = carregarLS('sk3-titulos',[]).map(t=>({
     ...t,
     _origem:'paciente',
-    tipo: t.tipo==='receber'?'receber':'pagar',
-    status: t.status==='pago'?'pago': t.status==='recebido'?'recebido': t.status||'aberto',
+    tipo: 'receber', // títulos do financeiro do paciente são sempre contas a receber
+    status: (t.status==='pago'||t.status==='recebido')?'recebido': t.status||'aberto',
     categoria: t.categoria||'',
   }));
   return [...gestao, ...pacientes];
