@@ -3494,6 +3494,7 @@ function aplicarPermissoesNav(){
     pendencias:'pendencias_ver',
     lembretes: 'agenda_ver',
     desmarcados:'agenda_ver',
+    financeiro:'financeiro_ver',
     dashboard: 'dashboard_ver',
     relatorios:'relatorios_ver',
     empresa:   'empresa_ver',
@@ -3505,7 +3506,7 @@ function aplicarPermissoesNav(){
     const m = btn.getAttribute('onclick').match(/goTo\('([^']+)'/);
     if(!m) return;
     const sec = m[1];
-    if(sec==='hoje'||sec==='proximos'||sec==='melhorias') return; // sempre visível
+    if(sec==='hoje'||sec==='proximos'||sec==='melhorias'||sec==='financeiro') return; // sempre visível
 
     let temAcesso;
     if(sec==='config'){
