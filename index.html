@@ -107,6 +107,28 @@
 .fin-modal-body{padding:18px 22px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
 .fin-modal-footer{padding:12px 22px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-shrink:0}
 
+/* Drawer de filtros financeiros */
+.fin-drawer-ov{display:none;position:fixed;inset:0;background:rgba(15,23,42,.32);z-index:410}
+.fin-drawer-ov.open{display:block}
+.fin-drawer{position:fixed;top:0;left:0;height:100vh;width:320px;max-width:90vw;background:var(--surface);box-shadow:6px 0 28px rgba(0,0,0,.14);display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .18s ease}
+.fin-drawer-ov.open .fin-drawer{transform:translateX(0)}
+.fin-drawer-hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.fin-drawer-title{font-size:15px;font-weight:600;color:var(--tx)}
+.fin-drawer-body{flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:18px}
+.fin-drawer-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
+.fin-drawer-sec-label{font-size:10.5px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.fin-cat-list{display:flex;flex-direction:column;gap:2px;max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r8);padding:6px 10px}
+.fin-cat-chip{display:flex;align-items:center;gap:8px;padding:6px 2px;font-size:13px;cursor:pointer;color:var(--tx)}
+.fin-cat-chip input{width:auto}
+.fin-drawer-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fin-filtros-badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--ac);color:#fff;font-size:10px;font-weight:700;margin-left:5px}
+
+/* Modal títulos recorrentes */
+.fin-rec-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r8);background:var(--s2)}
+.fin-rec-item-info{min-width:0}
+.fin-rec-item-desc{font-size:13px;font-weight:600;color:var(--tx)}
+.fin-rec-item-meta{font-size:11px;color:var(--tx3);margin-top:2px}
+
 body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:13px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
 
 
@@ -2015,28 +2037,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <!-- Toolbar -->
     <div class="fin-toolbar" style="margin-top:14px">
       <button class="btn btn-ghost btn-sm fin-atalho-btn" id="fin-pg-btn-recorr" onclick="finToggleFiltroRapido('pagar','recorrente',this)">⟳ Recorrentes</button>
-      <select id="fin-pg-cat" class="fin-select" onchange="renderFinLista('pagar')">
-        <option value="">Todas as categorias</option>
-        <option value="Aluguel">Aluguel</option>
-        <option value="Folha">Folha</option>
-        <option value="Material">Material</option>
-        <option value="Impostos">Impostos</option>
-        <option value="Financiamento">Financiamento</option>
-        <option value="Marketing">Marketing</option>
-        <option value="Serviços">Serviços</option>
-        <option value="Comissão">Comissão</option>
-        <option value="Outros">Outros</option>
-      </select>
-      <select id="fin-pg-status" class="fin-select" onchange="renderFinLista('pagar')">
-        <option value="">Todos os status</option>
-        <option value="aberto">Em aberto</option>
-        <option value="pago">Pago</option>
-        <option value="atrasado">Atrasado</option>
-        <option value="cancelado">Cancelado</option>
-      </select>
-      <input type="date" id="fin-pg-de" class="fin-input-date" onchange="renderFinLista('pagar')" title="Vencimento de">
-      <span style="font-size:11px;color:var(--tx3)">até</span>
-      <input type="date" id="fin-pg-ate" class="fin-input-date" onchange="renderFinLista('pagar')" title="Vencimento até">
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('pagar')">🔁 Títulos recorrentes</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirFiltrosFin('pagar')">▤ Filtros<span class="fin-filtros-badge" id="fin-pg-filtros-badge" style="display:none">0</span></button>
       <button class="btn btn-ghost btn-sm" onclick="finLimparFiltros('pagar')">Limpar</button>
       <div id="fin-pg-sel-bar" style="display:none;margin-left:auto;display:none;align-items:center;gap:8px">
         <span id="fin-pg-sel-count" style="font-size:12px;color:var(--tx2)">0 selecionados</span>
@@ -2102,21 +2104,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <!-- Toolbar -->
     <div class="fin-toolbar" style="margin-top:14px">
       <button class="btn btn-ghost btn-sm fin-atalho-btn" id="fin-rc-btn-recorr" onclick="finToggleFiltroRapido('receber','recorrente',this)">⟳ Recorrentes</button>
-      <select id="fin-rc-origem" class="fin-select" onchange="renderFinLista('receber')">
-        <option value="">Todas as origens</option>
-        <option value="manual">Manual</option>
-        <option value="paciente">Paciente</option>
-      </select>
-      <select id="fin-rc-status" class="fin-select" onchange="renderFinLista('receber')">
-        <option value="">Todos os status</option>
-        <option value="aberto">Em aberto</option>
-        <option value="recebido">Recebido</option>
-        <option value="atrasado">Atrasado</option>
-        <option value="cancelado">Cancelado</option>
-      </select>
-      <input type="date" id="fin-rc-de" class="fin-input-date" onchange="renderFinLista('receber')" title="Vencimento de">
-      <span style="font-size:11px;color:var(--tx3)">até</span>
-      <input type="date" id="fin-rc-ate" class="fin-input-date" onchange="renderFinLista('receber')" title="Vencimento até">
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('receber')">🔁 Títulos recorrentes</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirFiltrosFin('receber')">▤ Filtros<span class="fin-filtros-badge" id="fin-rc-filtros-badge" style="display:none">0</span></button>
       <button class="btn btn-ghost btn-sm" onclick="finLimparFiltros('receber')">Limpar</button>
       <div id="fin-rc-sel-bar" style="display:none;align-items:center;gap:8px;margin-left:auto">
         <span id="fin-rc-sel-count" style="font-size:12px;color:var(--tx2)">0 selecionados</span>
@@ -2169,21 +2158,25 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 <!-- MODAL LANÇAMENTO FINANCEIRO -->
 <div id="modal-fin-lancamento" class="fin-modal-ov" onclick="if(event.target===this)fecharModalFinLancamento()">
-  <div class="modal-box" style="max-width:480px">
-    <div class="modal-header">
-      <div class="modal-title" id="modal-fin-titulo">Novo lançamento</div>
-      <button class="modal-close" onclick="fecharModalFinLancamento()">✕</button>
+  <div class="fin-modal-box" style="max-width:480px">
+    <div class="fin-modal-hdr">
+      <div class="fin-modal-title" id="modal-fin-titulo">Novo lançamento</div>
+      <button class="fin-modal-close" onclick="fecharModalFinLancamento()">✕</button>
     </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;gap:14px">
+    <div class="fin-modal-body">
       <input type="hidden" id="fin-modal-tipo">
       <input type="hidden" id="fin-modal-id">
-      <div class="fg">
-        <label class="fl">Descrição <span class="req">*</span></label>
-        <input type="text" id="fin-modal-desc" class="fi" placeholder="Ex: Aluguel julho, Nota fiscal Bianca...">
+      <div class="fl">
+        <label>Descrição <span class="req">*</span></label>
+        <input type="text" id="fin-modal-desc" placeholder="Ex: Aluguel julho, Nota fiscal Bianca...">
       </div>
-      <div id="fin-modal-row-cat" class="fg">
-        <label class="fl">Categoria</label>
-        <select id="fin-modal-cat" class="fi">
+      <div class="fl">
+        <label id="fin-modal-label-parte">Beneficiário</label>
+        <input type="text" id="fin-modal-parte" placeholder="Ex: Imobiliária, Bianca...">
+      </div>
+      <div id="fin-modal-row-cat" class="fl">
+        <label>Categoria</label>
+        <select id="fin-modal-cat">
           <option value="">Sem categoria</option>
           <option value="Aluguel">Aluguel</option>
           <option value="Folha">Folha</option>
@@ -2196,19 +2189,19 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <option value="Outros">Outros</option>
         </select>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="fg">
-          <label class="fl">Valor <span class="req">*</span></label>
-          <input type="text" id="fin-modal-valor" class="fi" placeholder="R$ 0,00" oninput="finMaskMoeda(this)">
+      <div class="fg">
+        <div class="fl">
+          <label>Valor <span class="req">*</span></label>
+          <input type="text" id="fin-modal-valor" placeholder="R$ 0,00" oninput="finMaskMoeda(this)">
         </div>
-        <div class="fg">
-          <label class="fl">Vencimento <span class="req">*</span></label>
-          <input type="date" id="fin-modal-venc" class="fi">
+        <div class="fl">
+          <label>Vencimento <span class="req">*</span></label>
+          <input type="date" id="fin-modal-venc">
         </div>
       </div>
-      <div class="fg">
-        <label class="fl">Forma de pagamento</label>
-        <select id="fin-modal-forma" class="fi">
+      <div class="fl">
+        <label>Forma de pagamento</label>
+        <select id="fin-modal-forma">
           <option value="">Não informado</option>
           <option value="Dinheiro">Dinheiro</option>
           <option value="Pix">Pix</option>
@@ -2218,29 +2211,29 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <option value="Transferência">Transferência</option>
         </select>
       </div>
-      <div class="fg">
-        <label class="fl">Observação</label>
-        <textarea id="fin-modal-obs" class="fi" rows="2" placeholder="Informações adicionais..."></textarea>
+      <div class="fl">
+        <label>Observação</label>
+        <textarea id="fin-modal-obs" rows="2" placeholder="Informações adicionais..."></textarea>
       </div>
       <!-- Recorrência -->
       <div style="background:var(--s2);border-radius:var(--r8);padding:12px">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500">
           <input type="checkbox" id="fin-modal-recorr" onchange="finToggleRecorr()"> Lançamento recorrente
         </label>
-        <div id="fin-modal-recorr-box" style="display:none;margin-top:10px;display:none;flex-direction:column;gap:10px">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div class="fg">
-              <label class="fl">Frequência</label>
-              <select id="fin-modal-freq" class="fi">
+        <div id="fin-modal-recorr-box" style="display:none;margin-top:10px;flex-direction:column;gap:10px">
+          <div class="fg">
+            <div class="fl">
+              <label>Frequência</label>
+              <select id="fin-modal-freq">
                 <option value="mensal">Mensal</option>
                 <option value="semanal">Semanal</option>
                 <option value="quinzenal">Quinzenal</option>
                 <option value="anual">Anual</option>
               </select>
             </div>
-            <div class="fg">
-              <label class="fl">Repetições</label>
-              <input type="number" id="fin-modal-rep" class="fi" min="1" max="120" placeholder="Ex: 12" value="12">
+            <div class="fl">
+              <label>Repetições</label>
+              <input type="number" id="fin-modal-rep" min="1" max="120" placeholder="Ex: 12" value="12">
             </div>
           </div>
           <div class="card" style="padding:8px 12px;margin:0;background:var(--wal);border-color:#FDE68A">
@@ -2249,7 +2242,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
       </div>
     </div>
-    <div class="modal-footer">
+    <div class="fin-modal-footer">
       <button class="btn btn-ghost btn-sm" id="fin-modal-btn-excluir" style="display:none;margin-right:auto" onclick="finExcluirTitulo()">Excluir</button>
       <button class="btn btn-ghost btn-sm" onclick="fecharModalFinLancamento()">Cancelar</button>
       <button class="btn btn-primary btn-sm" onclick="finSalvarLancamento()">Salvar</button>
@@ -2259,18 +2252,18 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 <!-- MODAL LIQUIDAR -->
 <div id="modal-fin-liquidar" class="fin-modal-ov" onclick="if(event.target===this)fecharModalFinLiquidar()">
-  <div class="modal-box" style="max-width:400px">
-    <div class="modal-header">
-      <div class="modal-title" id="modal-fin-liq-titulo">Liquidar título</div>
-      <button class="modal-close" onclick="fecharModalFinLiquidar()">✕</button>
+  <div class="fin-modal-box" style="max-width:400px">
+    <div class="fin-modal-hdr">
+      <div class="fin-modal-title" id="modal-fin-liq-titulo">Liquidar título</div>
+      <button class="fin-modal-close" onclick="fecharModalFinLiquidar()">✕</button>
     </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;gap:14px">
+    <div class="fin-modal-body">
       <input type="hidden" id="fin-liq-ids">
       <input type="hidden" id="fin-liq-tipo">
       <div id="fin-liq-aviso" style="display:none"></div>
       <p style="font-size:13px;color:var(--tx2)" id="fin-liq-desc"></p>
-      <div class="fg">
-        <label class="fl">Data de liquidação</label>
+      <div class="fl">
+        <label>Data de liquidação</label>
         <div style="display:flex;flex-direction:column;gap:8px">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:10px;border:1px solid var(--border);border-radius:var(--r8);background:var(--s2)">
             <input type="radio" name="liq-modo" value="vencimento" checked onchange="document.getElementById('fin-liq-data-row').style.display='none'">
@@ -2282,13 +2275,13 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           </label>
         </div>
       </div>
-      <div id="fin-liq-data-row" style="display:none" class="fg">
-        <label class="fl">Data</label>
-        <input type="date" id="fin-liq-data" class="fi">
+      <div id="fin-liq-data-row" style="display:none" class="fl">
+        <label>Data</label>
+        <input type="date" id="fin-liq-data">
       </div>
-      <div class="fg">
-        <label class="fl">Forma de pagamento</label>
-        <select id="fin-liq-forma" class="fi">
+      <div class="fl">
+        <label>Forma de pagamento</label>
+        <select id="fin-liq-forma">
           <option value="">Não informado</option>
           <option value="Dinheiro">Dinheiro</option>
           <option value="Pix">Pix</option>
@@ -2299,9 +2292,99 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </select>
       </div>
     </div>
-    <div class="modal-footer">
+    <div class="fin-modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="fecharModalFinLiquidar()">Cancelar</button>
       <button class="btn btn-primary btn-sm" id="fin-liq-btn-confirmar" onclick="finConfirmarLiquidar()">Confirmar liquidação</button>
+    </div>
+  </div>
+</div>
+
+<!-- DRAWER DE FILTROS FINANCEIROS -->
+<div id="fin-drawer-ov" class="fin-drawer-ov" onclick="if(event.target===this)fecharFiltrosFin()">
+  <div class="fin-drawer">
+    <div class="fin-drawer-hdr">
+      <div class="fin-drawer-title">Filtros</div>
+      <button class="fin-modal-close" onclick="fecharFiltrosFin()">✕</button>
+    </div>
+    <div class="fin-drawer-body">
+      <input type="hidden" id="fin-filtro-tipo">
+
+      <div>
+        <div class="fin-drawer-sec-label">Categoria</div>
+        <div class="fin-cat-list" id="fin-filtro-cat-list"></div>
+      </div>
+
+      <div id="fin-filtro-origem-wrap" style="display:none">
+        <div class="fin-drawer-sec-label">Origem</div>
+        <select id="fin-filtro-origem" class="fi">
+          <option value="">Todas as origens</option>
+          <option value="manual">Manual</option>
+          <option value="paciente">Paciente</option>
+        </select>
+      </div>
+
+      <div>
+        <div class="fin-drawer-sec-label">Status</div>
+        <select id="fin-filtro-status" class="fi"></select>
+      </div>
+
+      <div>
+        <div class="fin-drawer-sec-label">Emissão</div>
+        <div class="fin-drawer-row2">
+          <input type="date" id="fin-filtro-emis-de" class="fi" title="Emissão de">
+          <input type="date" id="fin-filtro-emis-ate" class="fi" title="Emissão até">
+        </div>
+      </div>
+
+      <div>
+        <div class="fin-drawer-sec-label">Vencimento</div>
+        <div class="fin-drawer-row2">
+          <input type="date" id="fin-filtro-venc-de" class="fi" title="Vencimento de">
+          <input type="date" id="fin-filtro-venc-ate" class="fi" title="Vencimento até">
+        </div>
+      </div>
+
+      <div>
+        <div class="fin-drawer-sec-label">Liquidação</div>
+        <div class="fin-drawer-row2">
+          <input type="date" id="fin-filtro-liq-de" class="fi" title="Liquidação de">
+          <input type="date" id="fin-filtro-liq-ate" class="fi" title="Liquidação até">
+        </div>
+      </div>
+
+      <div>
+        <div class="fin-drawer-sec-label" id="fin-filtro-parte-label">Beneficiário</div>
+        <input type="text" id="fin-filtro-parte" class="fi" placeholder="Buscar por nome...">
+      </div>
+
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="fin-filtro-recorr" style="width:auto"> Apenas recorrentes
+      </label>
+    </div>
+    <div class="fin-drawer-footer">
+      <button class="btn btn-ghost btn-sm" onclick="finFiltrosLimparTudo()">Limpar</button>
+      <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="finFiltrosAplicar()">Buscar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TÍTULOS RECORRENTES -->
+<div id="modal-fin-recorrentes" class="fin-modal-ov" onclick="if(event.target===this)fecharModalFinRecorrentes()">
+  <div class="fin-modal-box" style="max-width:560px">
+    <div class="fin-modal-hdr">
+      <div class="fin-modal-title" id="modal-fin-rec-titulo">Títulos recorrentes</div>
+      <button class="fin-modal-close" onclick="fecharModalFinRecorrentes()">✕</button>
+    </div>
+    <div class="fin-modal-body">
+      <button class="btn btn-primary btn-sm" id="fin-rec-btn-novo" style="align-self:flex-start" onclick="finNovoRecorrenteDoModal()">+ Nova recorrência</button>
+      <div id="fin-rec-lista" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div id="fin-rec-empty" class="fin-empty" style="display:none">
+        <div style="font-size:24px;margin-bottom:8px">⟳</div>
+        Nenhum título recorrente lançado ainda.
+      </div>
+    </div>
+    <div class="fin-modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModalFinRecorrentes()">Fechar</button>
     </div>
   </div>
 </div>
@@ -16432,6 +16515,10 @@ let _finFiltroRapido = { pagar: null, receber: null };
 let _finLiqPendingIds = [];
 let _finLiqPendingTipo = '';
 
+const FIN_CATEGORIAS = ['Aluguel','Folha','Material','Impostos','Financiamento','Marketing','Serviços','Comissão','Outros'];
+function _finFiltroVazio(){ return { cats:[], origem:'', status:'', emisDe:'', emisAte:'', vencDe:'', vencAte:'', liqDe:'', liqAte:'', parte:'' }; }
+let _finFiltrosAdv = { pagar:_finFiltroVazio(), receber:_finFiltroVazio() };
+
 // ── Utilitários ──────────────────────────────────────────────────────
 function _finFmt(v){ return (parseFloat(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
 function _finFmtData(s){ if(!s)return'—'; const[y,m,d]=s.split('-'); return`${d}/${m}/${y}`; }
@@ -16469,15 +16556,20 @@ function _finParseValor(str){
 // ── Todos os títulos consolidados ────────────────────────────────────
 // Combina títulos manuais de gestão + títulos de pacientes (sk3-titulos)
 function _finTodosTitulos(){
-  const gestao = _finTitulosGestao().map(t=>({...t, _origem: t.origem||'manual'}));
-  const pacientes = carregarLS('sk3-titulos',[]).map(t=>({
-    ...t,
-    _origem:'paciente',
-    tipo: 'receber', // títulos do financeiro do paciente são sempre contas a receber
-    status: (t.status==='pago'||t.status==='recebido')?'recebido': t.status||'aberto',
-    categoria: t.categoria||'',
-  }));
-  return [...gestao, ...pacientes];
+  const gestao = _finTitulosGestao().map(t=>({...t, _origem: t.origem||'manual', _contraparte: t.parte||''}));
+  const pacientes2 = (typeof pacientes!=='undefined'?pacientes:carregarLS('sk3-pacientes',[]));
+  const pacientesList = carregarLS('sk3-titulos',[]).map(t=>{
+    const p = pacientes2.find(x=>String(x.id)===String(t.pacienteId));
+    return {
+      ...t,
+      _origem:'paciente',
+      tipo: 'receber', // títulos do financeiro do paciente são sempre contas a receber
+      status: (t.status==='pago'||t.status==='recebido')?'recebido': t.status||'aberto',
+      categoria: t.categoria||'',
+      _contraparte: p?p.nome:'',
+    };
+  });
+  return [...gestao, ...pacientesList];
 }
 
 // ── Navegação entre submódulos ────────────────────────────────────────
@@ -16504,30 +16596,25 @@ function irFinSub(tipo, grupo){
   // Ativa botão subnav
   const btn = document.getElementById('fin-sub-'+tipo);
   showFinSub(tipo, btn);
+
+  const adv = _finFiltrosAdv[tipo];
   // Aplica filtro de status
-  const statusEl = document.getElementById('fin-'+( tipo==='pagar'?'pg':'rc' )+'-status');
-  if(statusEl){
-    if(grupo==='atrasado') statusEl.value='atrasado';
-    else if(grupo==='hoje'||grupo==='semana') statusEl.value='aberto';
-    else statusEl.value='';
-  }
+  if(grupo==='atrasado') adv.status='atrasado';
+  else if(grupo==='hoje'||grupo==='semana') adv.status='aberto';
+  else adv.status='';
+
   // Aplica filtro de data para hoje/semana
   const hoje = _finHoje();
   const hj = _finIso(hoje);
-  const prefix = tipo==='pagar'?'pg':'rc';
-  const deEl = document.getElementById('fin-'+prefix+'-de');
-  const ateEl = document.getElementById('fin-'+prefix+'-ate');
-  if(deEl) deEl.value='';
-  if(ateEl) ateEl.value='';
+  adv.vencDe=''; adv.vencAte='';
   if(grupo==='hoje'){
-    if(deEl) deEl.value=hj;
-    if(ateEl) ateEl.value=hj;
+    adv.vencDe=hj; adv.vencAte=hj;
   } else if(grupo==='semana'){
     const seg=new Date(hoje); const ds=hoje.getDay(); seg.setDate(hoje.getDate()+(ds===0?1:(8-ds)%7||7));
     const sex=new Date(seg); sex.setDate(seg.getDate()+4);
-    if(deEl) deEl.value=_finIso(seg);
-    if(ateEl) ateEl.value=_finIso(sex);
+    adv.vencDe=_finIso(seg); adv.vencAte=_finIso(sex);
   }
+  _finUpdateFiltrosBadge(tipo);
   renderFinLista(tipo);
 }
 
@@ -16589,25 +16676,26 @@ function renderFinLista(tipo){
   const prefix = isPagar?'pg':'rc';
   const todos = _finTodosTitulos().filter(t=> isPagar ? t.tipo==='pagar' : (t.tipo==='receber'||!t.tipo));
 
-  // Filtros
-  const cat = isPagar?(document.getElementById('fin-pg-cat')||{}).value:'';
-  const origem = !isPagar?(document.getElementById('fin-rc-origem')||{}).value:'';
-  const statusFil = (document.getElementById('fin-'+prefix+'-status')||{}).value||'';
-  const de = (document.getElementById('fin-'+prefix+'-de')||{}).value||'';
-  const ate = (document.getElementById('fin-'+prefix+'-ate')||{}).value||'';
+  // Filtros avançados (drawer)
+  const adv = _finFiltrosAdv[tipo] || _finFiltroVazio();
   const recorrFil = _finFiltroRapido[tipo]==='recorrente';
 
   let lista = todos.filter(t=>{
     const st = _finStatusEfetivo(t);
-    if(statusFil==='atrasado'&&st!=='atrasado') return false;
-    if(statusFil==='aberto'&&st!=='aberto') return false;
-    if(statusFil==='pago'&&t.status!=='pago') return false;
-    if(statusFil==='recebido'&&t.status!=='recebido') return false;
-    if(statusFil==='cancelado'&&t.status!=='cancelado') return false;
-    if(cat&&t.categoria!==cat) return false;
-    if(origem&&t._origem!==origem) return false;
-    if(de&&(t.vencimento||'')<de) return false;
-    if(ate&&(t.vencimento||'')>ate) return false;
+    if(adv.status==='atrasado'&&st!=='atrasado') return false;
+    if(adv.status==='aberto'&&st!=='aberto') return false;
+    if(adv.status==='pago'&&t.status!=='pago') return false;
+    if(adv.status==='recebido'&&t.status!=='recebido') return false;
+    if(adv.status==='cancelado'&&t.status!=='cancelado') return false;
+    if(adv.cats&&adv.cats.length&&!adv.cats.includes(t.categoria||'')) return false;
+    if(!isPagar&&adv.origem&&t._origem!==adv.origem) return false;
+    if(adv.emisDe&&(t.criadoEm||'')<adv.emisDe) return false;
+    if(adv.emisAte&&(t.criadoEm||'')>adv.emisAte) return false;
+    if(adv.vencDe&&(t.vencimento||'')<adv.vencDe) return false;
+    if(adv.vencAte&&(t.vencimento||'')>adv.vencAte) return false;
+    if(adv.liqDe&&(!t.dataBaixa||t.dataBaixa<adv.liqDe)) return false;
+    if(adv.liqAte&&(!t.dataBaixa||t.dataBaixa>adv.liqAte)) return false;
+    if(adv.parte&&!((t._contraparte||'').toLowerCase().includes(adv.parte.toLowerCase()))) return false;
     if(recorrFil&&!t.recorrente) return false;
     return true;
   });
@@ -16660,7 +16748,7 @@ function renderFinLista(tipo){
       <td><input type="checkbox" class="fin-chk fin-chk-${tipo}" data-id="${t.id}" data-origem="${t._origem||'manual'}" onchange="finAtualizarSelecao('${tipo}')"></td>
       <td>
         <div style="font-weight:500;color:var(--tx)">${t.descricao||'—'}${recorrIc}</div>
-        ${isPaciente?`<div style="font-size:11px;color:var(--tx3)">Paciente${pacNome}</div>`:''}
+        ${isPaciente?`<div style="font-size:11px;color:var(--tx3)">Paciente${pacNome}</div>`:(t._contraparte?`<div style="font-size:11px;color:var(--tx3)">${isPagar?'Beneficiário':'Pagador'}: ${t._contraparte}</div>`:'')}
         ${t.obs?`<div style="font-size:11px;color:var(--tx3)">${t.obs}</div>`:''}
       </td>
       ${isPagar?`<td><span style="font-size:12px;color:var(--tx2)">${t.categoria||'—'}</span></td>`:`<td>${origemTag}</td>`}
@@ -16687,19 +16775,192 @@ function finToggleFiltroRapido(tipo, filtro, btn){
     _finFiltroRapido[tipo]=filtro;
     if(btn) btn.classList.add('on');
   }
+  _finUpdateFiltrosBadge(tipo);
   renderFinLista(tipo);
 }
 
 function finLimparFiltros(tipo){
-  const prefix = tipo==='pagar'?'pg':'rc';
-  ['cat','status','de','ate','origem'].forEach(k=>{
-    const el=document.getElementById('fin-'+prefix+'-'+k);
-    if(el) el.value='';
-  });
+  _finFiltrosAdv[tipo] = _finFiltroVazio();
   _finFiltroRapido[tipo]=null;
-  const btn=document.getElementById('fin-'+prefix+'-btn-recorr');
+  const btn=document.getElementById('fin-'+(tipo==='pagar'?'pg':'rc')+'-btn-recorr');
   if(btn) btn.classList.remove('on');
+  _finUpdateFiltrosBadge(tipo);
   renderFinLista(tipo);
+}
+
+// ── DRAWER DE FILTROS ────────────────────────────────────────────────
+function abrirFiltrosFin(tipo){
+  document.getElementById('fin-filtro-tipo').value = tipo;
+  const isPagar = tipo==='pagar';
+  const adv = _finFiltrosAdv[tipo] || _finFiltroVazio();
+
+  // Categorias (checkboxes)
+  const catList = document.getElementById('fin-filtro-cat-list');
+  const opts = [{v:'',l:'Sem categoria'}, ...FIN_CATEGORIAS.map(c=>({v:c,l:c}))];
+  catList.innerHTML = opts.map(o=>`
+    <label class="fin-cat-chip">
+      <input type="checkbox" value="${o.v}" data-fin-cat ${adv.cats.includes(o.v)?'checked':''}> ${o.l}
+    </label>`).join('');
+
+  // Origem (só receber)
+  document.getElementById('fin-filtro-origem-wrap').style.display = isPagar?'none':'';
+  document.getElementById('fin-filtro-origem').value = adv.origem||'';
+
+  // Status (opções dependem do tipo)
+  const statusSel = document.getElementById('fin-filtro-status');
+  statusSel.innerHTML = isPagar
+    ? `<option value="">Todos os status</option><option value="aberto">Em aberto</option><option value="pago">Pago</option><option value="atrasado">Atrasado</option><option value="cancelado">Cancelado</option>`
+    : `<option value="">Todos os status</option><option value="aberto">Em aberto</option><option value="recebido">Recebido</option><option value="atrasado">Atrasado</option><option value="cancelado">Cancelado</option>`;
+  statusSel.value = adv.status||'';
+
+  // Datas
+  document.getElementById('fin-filtro-emis-de').value = adv.emisDe||'';
+  document.getElementById('fin-filtro-emis-ate').value = adv.emisAte||'';
+  document.getElementById('fin-filtro-venc-de').value = adv.vencDe||'';
+  document.getElementById('fin-filtro-venc-ate').value = adv.vencAte||'';
+  document.getElementById('fin-filtro-liq-de').value = adv.liqDe||'';
+  document.getElementById('fin-filtro-liq-ate').value = adv.liqAte||'';
+
+  // Beneficiário / Pagador
+  document.getElementById('fin-filtro-parte-label').textContent = isPagar?'Beneficiário':'Pagador';
+  document.getElementById('fin-filtro-parte').placeholder = isPagar?'Buscar por beneficiário...':'Buscar por pagador / paciente...';
+  document.getElementById('fin-filtro-parte').value = adv.parte||'';
+
+  // Recorrentes
+  document.getElementById('fin-filtro-recorr').checked = _finFiltroRapido[tipo]==='recorrente';
+
+  document.getElementById('fin-drawer-ov').classList.add('open');
+}
+
+function fecharFiltrosFin(){
+  document.getElementById('fin-drawer-ov').classList.remove('open');
+}
+
+function finFiltrosAplicar(){
+  const tipo = document.getElementById('fin-filtro-tipo').value;
+  if(!tipo) return;
+  const cats = Array.from(document.querySelectorAll('#fin-filtro-cat-list input[data-fin-cat]:checked')).map(c=>c.value);
+
+  _finFiltrosAdv[tipo] = {
+    cats,
+    origem: document.getElementById('fin-filtro-origem').value,
+    status: document.getElementById('fin-filtro-status').value,
+    emisDe: document.getElementById('fin-filtro-emis-de').value,
+    emisAte: document.getElementById('fin-filtro-emis-ate').value,
+    vencDe: document.getElementById('fin-filtro-venc-de').value,
+    vencAte: document.getElementById('fin-filtro-venc-ate').value,
+    liqDe: document.getElementById('fin-filtro-liq-de').value,
+    liqAte: document.getElementById('fin-filtro-liq-ate').value,
+    parte: document.getElementById('fin-filtro-parte').value.trim(),
+  };
+
+  // Sincroniza recorrente com o botão rápido da toolbar
+  const recorrChk = document.getElementById('fin-filtro-recorr').checked;
+  _finFiltroRapido[tipo] = recorrChk ? 'recorrente' : null;
+  const btn=document.getElementById('fin-'+(tipo==='pagar'?'pg':'rc')+'-btn-recorr');
+  if(btn) btn.classList.toggle('on', recorrChk);
+
+  _finUpdateFiltrosBadge(tipo);
+  fecharFiltrosFin();
+  renderFinLista(tipo);
+}
+
+function finFiltrosLimparTudo(){
+  const tipo = document.getElementById('fin-filtro-tipo').value;
+  if(!tipo) return;
+  finLimparFiltros(tipo);
+  abrirFiltrosFin(tipo);
+}
+
+function _finUpdateFiltrosBadge(tipo){
+  const adv = _finFiltrosAdv[tipo] || _finFiltroVazio();
+  let n = 0;
+  if(adv.cats&&adv.cats.length) n++;
+  if(adv.origem) n++;
+  if(adv.status) n++;
+  if(adv.emisDe||adv.emisAte) n++;
+  if(adv.vencDe||adv.vencAte) n++;
+  if(adv.liqDe||adv.liqAte) n++;
+  if(adv.parte) n++;
+  if(_finFiltroRapido[tipo]==='recorrente') n++;
+  const badge = document.getElementById('fin-'+(tipo==='pagar'?'pg':'rc')+'-filtros-badge');
+  if(badge){
+    badge.textContent = n;
+    badge.style.display = n>0 ? 'inline-flex' : 'none';
+  }
+}
+
+// ── MODAL TÍTULOS RECORRENTES ───────────────────────────────────────
+let _finRecModalTipo = 'pagar';
+
+function abrirModalFinRecorrentes(tipo){
+  _finRecModalTipo = tipo;
+  const isPagar = tipo==='pagar';
+  document.getElementById('modal-fin-rec-titulo').textContent = 'Títulos recorrentes — '+(isPagar?'a pagar':'a receber');
+
+  const todos = _finTitulosGestao().filter(t=>t.tipo===tipo && t.recorrente);
+  // Agrupa por série (serieId, ou descrição+valor pra títulos antigos sem serieId)
+  const grupos = {};
+  todos.forEach(t=>{
+    const chave = t.serieId || (t.descricao.replace(/\s*\(\d+\/\d+\)\s*$/,'')+'|'+t.valor);
+    if(!grupos[chave]) grupos[chave] = [];
+    grupos[chave].push(t);
+  });
+
+  const lista = document.getElementById('fin-rec-lista');
+  const empty = document.getElementById('fin-rec-empty');
+  const chaves = Object.keys(grupos);
+
+  if(!chaves.length){
+    lista.innerHTML='';
+    empty.style.display='block';
+  } else {
+    empty.style.display='none';
+    lista.innerHTML = chaves.map(chave=>{
+      const itens = grupos[chave].sort((a,b)=>(a.vencimento||'').localeCompare(b.vencimento||''));
+      const primeiro = itens[0];
+      const abertos = itens.filter(t=>_finStatusEfetivo(t)==='aberto'||_finStatusEfetivo(t)==='atrasado');
+      const proximo = abertos[0];
+      const descBase = (primeiro.descricao||'').replace(/\s*\(\d+\/\d+\)\s*$/,'');
+      const freqLabel = {mensal:'Mensal',semanal:'Semanal',quinzenal:'Quinzenal',anual:'Anual'}[primeiro.freq] || '';
+      return `<div class="fin-rec-item">
+        <div class="fin-rec-item-info">
+          <div class="fin-rec-item-desc">${descBase}${primeiro.parte?' — '+primeiro.parte:''}</div>
+          <div class="fin-rec-item-meta">${freqLabel?freqLabel+' · ':''}${itens.length} título${itens.length!==1?'s':''} · ${_finFmt(primeiro.valor)}${proximo?' · próximo vencimento '+_finFmtData(proximo.vencimento):' · todos liquidados/cancelados'}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="color:var(--da);border-color:#FCA5A5" onclick="finExcluirSerieRecorrente('${chave.replace(/'/g,"\\'")}','${tipo}')">Excluir série</button>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('modal-fin-recorrentes').classList.add('open');
+}
+
+function fecharModalFinRecorrentes(){
+  document.getElementById('modal-fin-recorrentes').classList.remove('open');
+}
+
+function finNovoRecorrenteDoModal(){
+  fecharModalFinRecorrentes();
+  abrirModalFinLancamento(_finRecModalTipo);
+  setTimeout(()=>{
+    const chk=document.getElementById('fin-modal-recorr');
+    if(chk){ chk.checked=true; finToggleRecorr(); }
+  },90);
+}
+
+function finExcluirSerieRecorrente(chave, tipo){
+  if(!confirm('Excluir todos os títulos desta série recorrente? Esta ação não pode ser desfeita.')) return;
+  let list = _finTitulosGestao();
+  list = list.filter(t=>{
+    if(t.tipo!==tipo || !t.recorrente) return true;
+    const k = t.serieId || (t.descricao.replace(/\s*\(\d+\/\d+\)\s*$/,'')+'|'+t.valor);
+    return k !== chave;
+  });
+  _finSalvarTitulosGestao(list);
+  abrirModalFinRecorrentes(tipo);
+  renderFinLista(tipo);
+  if(_finSubAtual==='fluxo') renderFinFluxo();
 }
 
 // Seleção em lote
@@ -16744,7 +17005,7 @@ function abrirModalFinLancamento(tipo, id){
   if(!modal) return;
 
   // Reset
-  ['fin-modal-desc','fin-modal-valor','fin-modal-obs'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
+  ['fin-modal-desc','fin-modal-valor','fin-modal-obs','fin-modal-parte'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
   document.getElementById('fin-modal-cat').value='';
   document.getElementById('fin-modal-forma').value='';
   document.getElementById('fin-modal-venc').value='';
@@ -16758,12 +17019,15 @@ function abrirModalFinLancamento(tipo, id){
   const isPagar=tipo==='pagar';
   document.getElementById('modal-fin-titulo').textContent=id?(isPagar?'Editar conta a pagar':'Editar conta a receber'):(isPagar?'Nova conta a pagar':'Nova conta a receber');
   document.getElementById('fin-modal-row-cat').style.display=isPagar?'':'none';
+  document.getElementById('fin-modal-label-parte').textContent=isPagar?'Beneficiário':'Pagador';
+  document.getElementById('fin-modal-parte').placeholder=isPagar?'Ex: Imobiliária, Bianca...':'Ex: Paciente, Maru, locatária...';
   document.getElementById('fin-modal-btn-excluir').style.display=id?'':'none';
 
   if(id){
     const t=_finTitulosGestao().find(x=>String(x.id)===String(id));
     if(t){
       document.getElementById('fin-modal-desc').value=t.descricao||'';
+      document.getElementById('fin-modal-parte').value=t.parte||'';
       document.getElementById('fin-modal-valor').value=t.valor?'R$ '+(parseFloat(t.valor)).toLocaleString('pt-BR',{minimumFractionDigits:2}):'';
       document.getElementById('fin-modal-venc').value=t.vencimento||'';
       document.getElementById('fin-modal-cat').value=t.categoria||'';
@@ -16798,6 +17062,7 @@ function finSalvarLancamento(){
   if(!venc){ alert('Informe o vencimento.'); return; }
 
   const cat=document.getElementById('fin-modal-cat').value;
+  const parte=(document.getElementById('fin-modal-parte').value||'').trim();
   const forma=document.getElementById('fin-modal-forma').value;
   const obs=document.getElementById('fin-modal-obs').value.trim();
   const recorr=document.getElementById('fin-modal-recorr').checked;
@@ -16808,7 +17073,7 @@ function finSalvarLancamento(){
     // Edição
     const idx=list.findIndex(t=>String(t.id)===String(id));
     if(idx>=0){
-      list[idx]={...list[idx],descricao:desc,valor,vencimento:venc,categoria:cat,forma,obs,recorrente:recorr};
+      list[idx]={...list[idx],descricao:desc,parte,valor,vencimento:venc,categoria:cat,forma,obs,recorrente:recorr};
     }
     _finSalvarTitulosGestao(list);
   } else if(recorr){
@@ -16816,6 +17081,7 @@ function finSalvarLancamento(){
     const freq=document.getElementById('fin-modal-freq').value;
     const rep=parseInt(document.getElementById('fin-modal-rep').value)||1;
     const base=new Date(venc+'T12:00:00');
+    const serieId='fserie_'+Date.now();
     for(let i=0;i<rep;i++){
       const d=new Date(base);
       if(freq==='mensal') d.setMonth(d.getMonth()+i);
@@ -16823,12 +17089,12 @@ function finSalvarLancamento(){
       else if(freq==='quinzenal') d.setDate(d.getDate()+15*i);
       else if(freq==='anual') d.setFullYear(d.getFullYear()+i);
       const vencI=_finIso(d);
-      list.push({ id:'fgt_'+Date.now()+'_'+i, tipo, descricao:desc+(rep>1?` (${i+1}/${rep})`:''), valor, vencimento:vencI, categoria:cat, forma, obs, status:'aberto', origem:'manual', recorrente:true, criadoEm:_finIso(new Date()) });
+      list.push({ id:'fgt_'+Date.now()+'_'+i, tipo, descricao:desc+(rep>1?` (${i+1}/${rep})`:''), parte, valor, vencimento:vencI, categoria:cat, forma, obs, status:'aberto', origem:'manual', recorrente:true, serieId, freq, criadoEm:_finIso(new Date()) });
     }
     _finSalvarTitulosGestao(list);
   } else {
     // Novo único
-    list.push({ id:'fgt_'+Date.now(), tipo, descricao:desc, valor, vencimento:venc, categoria:cat, forma, obs, status:'aberto', origem:'manual', recorrente:false, criadoEm:_finIso(new Date()) });
+    list.push({ id:'fgt_'+Date.now(), tipo, descricao:desc, parte, valor, vencimento:venc, categoria:cat, forma, obs, status:'aberto', origem:'manual', recorrente:false, criadoEm:_finIso(new Date()) });
     _finSalvarTitulosGestao(list);
   }
 
