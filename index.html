@@ -2096,6 +2096,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <tr>
             <th style="width:32px"><input type="checkbox" id="fin-pg-chk-all" onchange="finToggleAll('pagar',this)"></th>
             <th>Descrição</th>
+            <th style="width:90px">Parcela</th>
             <th style="width:130px">Categoria</th>
             <th style="width:100px">Vencimento</th>
             <th style="width:110px;text-align:right">Valor</th>
@@ -2163,6 +2164,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <tr>
             <th style="width:32px"><input type="checkbox" id="fin-rc-chk-all" onchange="finToggleAll('receber',this)"></th>
             <th>Descrição</th>
+            <th style="width:90px">Parcela</th>
             <th style="width:90px">Origem</th>
             <th style="width:100px">Vencimento</th>
             <th style="width:110px;text-align:right">Valor</th>
@@ -2224,7 +2226,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
               <button type="button" class="fin-parte-sel-clear" onclick="finLimparParteSelecionada()" title="Desvincular">✕</button>
             </div>
           </div>
-          <button type="button" class="btn btn-ghost btn-sm fin-btn-add-forn" onclick="finAbrirModalFornecedor()">+ cadastrar fornecedor</button>
+          <button type="button" class="btn btn-ghost btn-sm fin-btn-add-forn" onclick="finAbrirModalFornecedor('lancamento')">+ cadastrar fornecedor</button>
         </div>
       </div>
       <div id="fin-modal-row-cat" class="fl">
@@ -2539,6 +2541,124 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div class="fin-modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="fecharModalFinRecorrentes()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVA RECORRÊNCIA (dedicado — semanal/mensal com dia + período início/fim) -->
+<div id="modal-fin-recorrencia-nova" class="fin-modal-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharModalFinRecorrenciaNova)">
+  <div class="fin-modal-box" style="max-width:620px">
+    <div class="fin-modal-hdr">
+      <div class="fin-modal-title">Nova recorrência</div>
+      <button class="fin-modal-close" onclick="fecharModalFinRecorrenciaNova()">✕</button>
+    </div>
+    <div class="fin-modal-body">
+      <div class="fl">
+        <label>Descrição <span class="req">*</span></label>
+        <input type="text" id="fin-recn-desc" placeholder="Ex: Aluguel, Internet, Diária Maru...">
+      </div>
+      <div class="fl">
+        <label id="fin-recn-label-parte">Beneficiário</label>
+        <div class="fin-parte-row">
+          <div class="fin-ac-wrap">
+            <input type="text" id="fin-recn-parte" placeholder="Ex: Imobiliária, Bianca..." autocomplete="off"
+              oninput="finRecBuscarParte(this.value)" onfocus="finRecBuscarParte(this.value)" onblur="setTimeout(()=>{const dd=document.getElementById('fin-recn-parte-dropdown'); if(dd)dd.classList.remove('open')},160)">
+            <div id="fin-recn-parte-dropdown" class="fin-ac-dropdown"></div>
+            <div id="fin-recn-parte-sel" class="fin-parte-sel">
+              <span id="fin-recn-parte-sel-txt"></span>
+              <button type="button" class="fin-parte-sel-clear" onclick="finRecLimparParteSelecionada()" title="Desvincular">✕</button>
+            </div>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm fin-btn-add-forn" onclick="finAbrirModalFornecedor('recorrencia')">+ cadastrar fornecedor</button>
+        </div>
+      </div>
+      <div id="fin-recn-row-cat" class="fl">
+        <label>Categoria</label>
+        <select id="fin-recn-cat">
+          <option value="">Sem categoria</option>
+          <option value="Aluguel">Aluguel</option>
+          <option value="Folha">Folha</option>
+          <option value="Material">Material</option>
+          <option value="Impostos">Impostos</option>
+          <option value="Financiamento">Financiamento</option>
+          <option value="Marketing">Marketing</option>
+          <option value="Serviços">Serviços</option>
+          <option value="Comissão">Comissão</option>
+          <option value="Outros">Outros</option>
+        </select>
+      </div>
+      <div class="fg">
+        <div class="fl">
+          <label>Valor <span class="req">*</span></label>
+          <input type="text" id="fin-recn-valor" placeholder="R$ 0,00" oninput="finMaskMoeda(this)">
+        </div>
+        <div class="fl">
+          <label>Forma de pagamento</label>
+          <select id="fin-recn-forma">
+            <option value="">Não informado</option>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="Pix">Pix</option>
+            <option value="Débito">Débito</option>
+            <option value="Crédito">Crédito</option>
+            <option value="Boleto">Boleto</option>
+            <option value="Transferência">Transferência</option>
+          </select>
+        </div>
+      </div>
+      <div class="fl">
+        <label>Forma da recorrência <span class="req">*</span></label>
+        <select id="fin-recn-freq" onchange="finRecToggleFreq()">
+          <option value="mensal">Mensal</option>
+          <option value="semanal">Semanal</option>
+        </select>
+        <div id="fin-recn-box-semanal" style="display:none;margin-top:10px">
+          <div class="fl">
+            <label>Dia da semana</label>
+            <select id="fin-recn-dia-semana">
+              <option value="0">Domingo</option>
+              <option value="1" selected>Segunda-feira</option>
+              <option value="2">Terça-feira</option>
+              <option value="3">Quarta-feira</option>
+              <option value="4">Quinta-feira</option>
+              <option value="5">Sexta-feira</option>
+              <option value="6">Sábado</option>
+            </select>
+          </div>
+        </div>
+        <div id="fin-recn-box-mensal" style="display:block;margin-top:10px">
+          <div class="fl">
+            <label>Dia do mês</label>
+            <select id="fin-recn-dia-mes"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option></select>
+            <div style="font-size:11px;color:var(--tx3);margin-top:4px">Em meses mais curtos, ajusta automaticamente para o último dia do mês.</div>
+          </div>
+        </div>
+      </div>
+      <div class="fg">
+        <div class="fl">
+          <label>Início <span class="req">*</span></label>
+          <input type="month" id="fin-recn-inicio">
+        </div>
+        <div class="fl">
+          <label>Fim <span class="req">*</span></label>
+          <input type="month" id="fin-recn-fim">
+        </div>
+      </div>
+      <div class="fl">
+        <label>Anexo</label>
+        <div id="fin-recn-drop" class="fin-drop-zone" onclick="document.getElementById('fin-recn-anexo-input').click()"
+          ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')"
+          ondrop="finRecDropAnexo(event)">
+          <div class="fin-drop-zone-ic">📎</div>
+          <div class="fin-drop-zone-txt">Clique para procurar ou arraste o arquivo aqui</div>
+          <div class="fin-drop-zone-sub">Este anexo será aplicado a todos os títulos gerados</div>
+        </div>
+        <input type="file" id="fin-recn-anexo-input" style="display:none" onchange="finRecAnexoSelecionado(this.files)">
+        <div id="fin-recn-anexo-lista"></div>
+      </div>
+    </div>
+    <div class="fin-modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModalFinRecorrenciaNova()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="finSalvarRecorrenciaNova()">Salvar recorrência</button>
     </div>
   </div>
 </div>
@@ -16900,6 +17020,7 @@ function renderFinLista(tipo){
     const recorrIc = t.recorrente ? `<span class="fin-recorr-ic" title="Recorrente">⟳</span>` : '';
     const isPaciente = t._origem==='paciente';
     const pacNome = isPaciente ? (() => { const p=pacientes.find(x=>String(x.id)===String(t.pacienteId)); return p?' — '+p.nome:''; })() : '';
+    const parcelaCol = (t.parcelaInfo&&t.parcelaInfo.numero) ? `${t.parcelaInfo.numero}/${t.parcelaInfo.total}` : (t.recorrente ? 'Recorrente' : '—');
 
     return `<tr>
       <td><input type="checkbox" class="fin-chk fin-chk-${tipo}" data-id="${t.id}" data-origem="${t._origem||'manual'}" onchange="finAtualizarSelecao('${tipo}')"></td>
@@ -16908,6 +17029,7 @@ function renderFinLista(tipo){
         ${isPaciente?`<div style="font-size:11px;color:var(--tx3)">Paciente${pacNome}</div>`:(t._contraparte?`<div style="font-size:11px;color:var(--tx3)">${isPagar?'Beneficiário':'Pagador'}: ${t._contraparte}</div>`:'')}
         ${t.obs?`<div style="font-size:11px;color:var(--tx3)">${t.obs}</div>`:''}
       </td>
+      <td><span style="font-size:12px;color:var(--tx2)">${parcelaCol}</span></td>
       ${isPagar?`<td><span style="font-size:12px;color:var(--tx2)">${t.categoria||'—'}</span></td>`:`<td>${origemTag}</td>`}
       <td style="white-space:nowrap;color:${st==='atrasado'?'var(--da)':'var(--tx2)'}">${_finFmtData(t.vencimento)}</td>
       <td class="fin-td-valor">${_finFmt(t.valor)}</td>
@@ -17099,11 +17221,206 @@ function fecharModalFinRecorrentes(){
 
 function finNovoRecorrenteDoModal(){
   fecharModalFinRecorrentes();
-  abrirModalFinLancamento(_finRecModalTipo);
-  setTimeout(()=>{
-    const chk=document.getElementById('fin-modal-recorr');
-    if(chk){ chk.checked=true; finToggleRecorr(); }
-  },90);
+  abrirModalFinRecorrenciaNova();
+}
+
+// ── MODAL DEDICADO: NOVA RECORRÊNCIA ─────────────────────────────────
+let _finRecParteSelecionada=null;
+let _finRecParteBuscaResultados=[];
+let _finRecAnexosPendentes=[];
+
+function abrirModalFinRecorrenciaNova(){
+  const tipo=_finRecModalTipo;
+  const isPagar=tipo==='pagar';
+
+  ['fin-recn-desc','fin-recn-parte','fin-recn-valor'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('fin-recn-cat').value='';
+  document.getElementById('fin-recn-forma').value='';
+  document.getElementById('fin-recn-freq').value='mensal';
+  document.getElementById('fin-recn-dia-mes').value='1';
+  document.getElementById('fin-recn-dia-semana').value='1';
+  document.getElementById('fin-recn-inicio').value='';
+  document.getElementById('fin-recn-fim').value='';
+  document.getElementById('fin-recn-row-cat').style.display=isPagar?'':'none';
+  document.getElementById('fin-recn-label-parte').textContent=isPagar?'Beneficiário':'Pagador';
+  document.getElementById('fin-recn-parte').placeholder=isPagar?'Ex: Imobiliária, Bianca...':'Ex: Paciente, Maru, locatária...';
+  document.getElementById('fin-recn-parte-sel').classList.remove('on');
+  document.getElementById('fin-recn-parte-dropdown').classList.remove('open');
+  _finRecParteSelecionada=null;
+  _finRecAnexosPendentes=[];
+  finRecRenderAnexos();
+  finRecToggleFreq();
+
+  document.getElementById('modal-fin-recorrencia-nova').classList.add('open');
+  setTimeout(()=>document.getElementById('fin-recn-desc')?.focus(),80);
+}
+
+function fecharModalFinRecorrenciaNova(){
+  document.getElementById('modal-fin-recorrencia-nova').classList.remove('open');
+}
+
+function finRecToggleFreq(){
+  const v=document.getElementById('fin-recn-freq').value;
+  document.getElementById('fin-recn-box-semanal').style.display = v==='semanal'?'block':'none';
+  document.getElementById('fin-recn-box-mensal').style.display = v==='mensal'?'block':'none';
+}
+
+// ── Autocomplete Beneficiário/Pagador do modal de recorrência ───────
+function finRecBuscarParte(termo){
+  const dd=document.getElementById('fin-recn-parte-dropdown');
+  if(!dd) return;
+  if(_finRecParteSelecionada && termo!==_finRecParteSelecionada.nome){
+    _finRecParteSelecionada=null;
+    document.getElementById('fin-recn-parte-sel').classList.remove('on');
+  }
+  const t=(termo||'').trim().toLowerCase();
+  if(!t){ dd.classList.remove('open'); return; }
+  const todos=_finContatosTodos();
+  const filtrados=todos.filter(c=>(c.nome||'').toLowerCase().includes(t)).slice(0,10);
+  _finRecParteBuscaResultados=filtrados;
+  const tagMap={paciente:'Paciente',usuario:'Usuário',fornecedor:'Fornecedor'};
+  if(!filtrados.length){
+    dd.innerHTML='<div class="fin-ac-empty">Nenhum contato encontrado. Use "+ cadastrar fornecedor" para adicionar um novo.</div>';
+  } else {
+    dd.innerHTML=filtrados.map((c,i)=>`
+      <div class="fin-ac-item" onmousedown="finRecSelecionarParteAC(${i})">
+        <span class="fin-ac-item-nome">${esc(c.nome)}</span>
+        <span class="fin-ac-tag fin-ac-tag-${c.tipo}">${tagMap[c.tipo]}</span>
+      </div>`).join('');
+  }
+  dd.classList.add('open');
+}
+
+function finRecSelecionarParteAC(idx){
+  const c=_finRecParteBuscaResultados[idx];
+  if(!c) return;
+  _finRecParteSelecionada={tipo:c.tipo,id:c.id,nome:c.nome};
+  document.getElementById('fin-recn-parte').value=c.nome;
+  document.getElementById('fin-recn-parte-dropdown').classList.remove('open');
+  const tagMap={paciente:'Paciente',usuario:'Usuário',fornecedor:'Fornecedor'};
+  document.getElementById('fin-recn-parte-sel-txt').textContent=`Vinculado a ${tagMap[c.tipo]}: ${c.nome}`;
+  document.getElementById('fin-recn-parte-sel').classList.add('on');
+}
+
+function finRecLimparParteSelecionada(){
+  _finRecParteSelecionada=null;
+  document.getElementById('fin-recn-parte-sel').classList.remove('on');
+}
+
+// ── Anexo do modal de recorrência (o mesmo arquivo é aplicado a todos os títulos gerados) ──
+function finRecDropAnexo(e){
+  e.preventDefault();
+  const dz=document.getElementById('fin-recn-drop');
+  if(dz) dz.classList.remove('drag');
+  const files=e.dataTransfer&&e.dataTransfer.files;
+  if(files&&files.length) finRecAnexoSelecionado(files);
+}
+
+function finRecAnexoSelecionado(files){
+  if(!files||!files.length) return;
+  Array.from(files).forEach(file=>{
+    if(file.size>4*1024*1024){ alert(`"${file.name}" excede 4MB e não pôde ser anexado.`); return; }
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      _finRecAnexosPendentes.push({nome:file.name,tipo:file.type,tamanho:file.size,data:ev.target.result});
+      finRecRenderAnexos();
+    };
+    reader.readAsDataURL(file);
+  });
+  const input=document.getElementById('fin-recn-anexo-input');
+  if(input) input.value='';
+}
+
+function finRecRemoverAnexo(idx){
+  _finRecAnexosPendentes.splice(idx,1);
+  finRecRenderAnexos();
+}
+
+function finRecRenderAnexos(){
+  const wrap=document.getElementById('fin-recn-anexo-lista');
+  if(!wrap) return;
+  wrap.innerHTML=_finRecAnexosPendentes.map((a,i)=>`
+    <div class="fin-anexo-item">
+      <span class="fin-anexo-nome">📄 ${esc(a.nome)}</span>
+      <button type="button" class="fin-anexo-rm" onclick="finRecRemoverAnexo(${i})" title="Remover">✕</button>
+    </div>`).join('');
+}
+
+// ── Geração de datas — semanal (dia da semana) ou mensal (dia do mês), entre início e fim (mês/ano) ──
+function _finRecGerarDatas(freq, diaSemana, diaMes, inicioYM, fimYM){
+  const [yi,mi]=inicioYM.split('-').map(Number);
+  const [yf,mf]=fimYM.split('-').map(Number);
+  const inicio=new Date(yi, mi-1, 1);
+  const fim=new Date(yf, mf, 0); // último dia do mês de fim
+  const datas=[];
+  if(freq==='semanal'){
+    let d=new Date(inicio);
+    let ajuste=0;
+    while(d.getDay()!==diaSemana && ajuste<7){ d.setDate(d.getDate()+1); ajuste++; }
+    while(d<=fim && datas.length<300){
+      datas.push(new Date(d));
+      d.setDate(d.getDate()+7);
+    }
+  } else {
+    let ano=yi, mes=mi;
+    while(datas.length<300){
+      const ultimoDiaDoMes=new Date(ano,mes,0).getDate();
+      const dia=Math.min(diaMes,ultimoDiaDoMes);
+      const d=new Date(ano,mes-1,dia);
+      if(d>fim) break;
+      datas.push(d);
+      mes++; if(mes>12){ mes=1; ano++; }
+    }
+  }
+  return datas;
+}
+
+function finSalvarRecorrenciaNova(){
+  const tipo=_finRecModalTipo;
+  const desc=(document.getElementById('fin-recn-desc').value||'').trim();
+  const valor=_finParseValor(document.getElementById('fin-recn-valor').value);
+  const freq=document.getElementById('fin-recn-freq').value;
+  const diaSemana=parseInt(document.getElementById('fin-recn-dia-semana').value);
+  const diaMes=parseInt(document.getElementById('fin-recn-dia-mes').value);
+  const inicio=document.getElementById('fin-recn-inicio').value;
+  const fim=document.getElementById('fin-recn-fim').value;
+
+  if(!desc){ alert('Informe a descrição.'); return; }
+  if(!valor){ alert('Informe o valor.'); return; }
+  if(!inicio){ alert('Informe o mês/ano de início.'); return; }
+  if(!fim){ alert('Informe o mês/ano de fim.'); return; }
+  if(fim<inicio){ alert('O fim não pode ser anterior ao início.'); return; }
+
+  const cat=document.getElementById('fin-recn-cat').value;
+  const parte=(document.getElementById('fin-recn-parte').value||'').trim();
+  const parteTipo=_finRecParteSelecionada?_finRecParteSelecionada.tipo:'';
+  const parteId=_finRecParteSelecionada?_finRecParteSelecionada.id:'';
+  const forma=document.getElementById('fin-recn-forma').value;
+  const anexos=_finRecAnexosPendentes.slice();
+
+  const datas=_finRecGerarDatas(freq,diaSemana,diaMes,inicio,fim);
+  if(!datas.length){ alert('Não foi possível gerar nenhuma data de vencimento com esses parâmetros. Confira o período de início e fim.'); return; }
+  if(datas.length>240){ alert(`O período gerou ${datas.length} títulos, o que é muito grande. Reduza o intervalo entre início e fim.`); return; }
+
+  let list=_finTitulosGestao();
+  const serieId='fserie_'+Date.now();
+  datas.forEach((d,i)=>{
+    list.push({
+      id:'fgt_'+Date.now()+'_'+i, tipo, descricao:desc, parte, parteTipo, parteId,
+      valor, vencimento:_finIso(d), categoria:cat, forma, obs:'',
+      status:'aberto', origem:'manual', recorrente:true, serieId, freq,
+      diaSemana: freq==='semanal'?diaSemana:undefined,
+      diaMes: freq==='mensal'?diaMes:undefined,
+      anexos, // o mesmo anexo é aplicado a todos os títulos gerados por esta recorrência
+      criadoEm:_finIso(new Date())
+    });
+  });
+  _finSalvarTitulosGestao(list);
+
+  fecharModalFinRecorrenciaNova();
+  renderFinLista(tipo);
+  if(_finSubAtual==='fluxo') renderFinFluxo();
+  abrirModalFinRecorrentes(tipo); // volta pra lista de recorrentes já atualizada
 }
 
 function finExcluirSerieRecorrente(chave, tipo){
@@ -17291,7 +17608,9 @@ function finLimparParteSelecionada(){
 }
 
 // ── Cadastro de fornecedor ─────────────────────────────────────────
-function finAbrirModalFornecedor(){
+let _finFornecedorAlvo='lancamento';
+function finAbrirModalFornecedor(origem){
+  _finFornecedorAlvo = origem || 'lancamento';
   ['fin-forn-nome','fin-forn-doc','fin-forn-tel','fin-forn-pix','fin-forn-pix-fav','fin-forn-email','fin-forn-obs'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
@@ -17320,13 +17639,22 @@ function finSalvarFornecedor(){
   fornecedores.push(novo);
   salvarFornecedores();
   fecharModalFornecedor();
-  // vincula automaticamente o fornecedor recém-criado ao campo Beneficiário/Pagador
-  _finParteSelecionada={tipo:'fornecedor',id:novo.id,nome:novo.nome};
-  const parteInput=document.getElementById('fin-modal-parte');
-  if(parteInput) parteInput.value=novo.nome;
-  const selTxt=document.getElementById('fin-modal-parte-sel-txt');
-  if(selTxt) selTxt.textContent=`Vinculado a Fornecedor: ${novo.nome}`;
-  document.getElementById('fin-modal-parte-sel').classList.add('on');
+  // vincula automaticamente o fornecedor recém-criado ao campo Beneficiário/Pagador do modal que o originou
+  if(_finFornecedorAlvo==='recorrencia'){
+    _finRecParteSelecionada={tipo:'fornecedor',id:novo.id,nome:novo.nome};
+    const parteInput=document.getElementById('fin-recn-parte');
+    if(parteInput) parteInput.value=novo.nome;
+    const selTxt=document.getElementById('fin-recn-parte-sel-txt');
+    if(selTxt) selTxt.textContent=`Vinculado a Fornecedor: ${novo.nome}`;
+    document.getElementById('fin-recn-parte-sel').classList.add('on');
+  } else {
+    _finParteSelecionada={tipo:'fornecedor',id:novo.id,nome:novo.nome};
+    const parteInput=document.getElementById('fin-modal-parte');
+    if(parteInput) parteInput.value=novo.nome;
+    const selTxt=document.getElementById('fin-modal-parte-sel-txt');
+    if(selTxt) selTxt.textContent=`Vinculado a Fornecedor: ${novo.nome}`;
+    document.getElementById('fin-modal-parte-sel').classList.add('on');
+  }
 }
 
 // ── Parcelamento ──────────────────────────────────────────────────
@@ -17525,7 +17853,7 @@ function finSalvarLancamento(){
     // Lançamento parcelado — cada parcela vira um título independente e editável
     const serieId='fparc_'+Date.now();
     _finParcelasPendentes.forEach((p,i)=>{
-      list.push({ id:'fgt_'+Date.now()+'_'+i, tipo, descricao:desc+` (${p.numero}/${p.total})`, parte, parteTipo, parteId, valor:p.valor, vencimento:p.vencimento, categoria:cat, forma, obs, status:'aberto', origem:'manual', recorrente:false, parcelado:true, parcelaInfo:{numero:p.numero,total:p.total}, serieId, anexos:i===0?anexos:[], criadoEm:_finIso(new Date()) });
+      list.push({ id:'fgt_'+Date.now()+'_'+i, tipo, descricao:desc, parte, parteTipo, parteId, valor:p.valor, vencimento:p.vencimento, categoria:cat, forma, obs, status:'aberto', origem:'manual', recorrente:false, parcelado:true, parcelaInfo:{numero:p.numero,total:p.total}, serieId, anexos:i===0?anexos:[], criadoEm:_finIso(new Date()) });
     });
     _finSalvarTitulosGestao(list);
   } else if(recorr){
@@ -17541,7 +17869,7 @@ function finSalvarLancamento(){
       else if(freq==='quinzenal') d.setDate(d.getDate()+15*i);
       else if(freq==='anual') d.setFullYear(d.getFullYear()+i);
       const vencI=_finIso(d);
-      list.push({ id:'fgt_'+Date.now()+'_'+i, tipo, descricao:desc+(rep>1?` (${i+1}/${rep})`:''), parte, parteTipo, parteId, valor, vencimento:vencI, categoria:cat, forma, obs, status:'aberto', origem:'manual', recorrente:true, serieId, freq, anexos:i===0?anexos:[], criadoEm:_finIso(new Date()) });
+      list.push({ id:'fgt_'+Date.now()+'_'+i, tipo, descricao:desc, parte, parteTipo, parteId, valor, vencimento:vencI, categoria:cat, forma, obs, status:'aberto', origem:'manual', recorrente:true, serieId, freq, anexos, criadoEm:_finIso(new Date()) });
     }
     _finSalvarTitulosGestao(list);
   } else {
