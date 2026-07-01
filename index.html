@@ -2226,8 +2226,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
               <button type="button" class="fin-parte-sel-clear" onclick="finLimparParteSelecionada()" title="Desvincular">✕</button>
             </div>
           </div>
-          <button type="button" class="btn btn-ghost btn-sm fin-btn-add-forn" onclick="finAbrirModalFornecedor('lancamento')">+ cadastrar fornecedor</button>
+          <button type="button" class="btn btn-ghost btn-sm fin-btn-add-forn" onclick="finAbrirModalFornecedor('lancamento')">+ cadastrar</button>
         </div>
+        <button type="button" onclick="finAbrirListaFornecedores('lancamento')" style="background:none;border:none;padding:0;margin-top:6px;font-size:11px;color:var(--ac);cursor:pointer;text-decoration:underline">Ver fornecedores cadastrados</button>
       </div>
       <div id="fin-modal-row-cat" class="fl">
         <label>Categoria</label>
@@ -2383,6 +2384,27 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="fin-modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="fecharModalFornecedor()">Cancelar</button>
       <button class="btn btn-primary btn-sm" onclick="finSalvarFornecedor()">Salvar fornecedor</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LISTA DE FORNECEDORES CADASTRADOS -->
+<div id="modal-fin-fornecedores-lista" class="fin-modal-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharListaFornecedores)">
+  <div class="fin-modal-box" style="max-width:560px">
+    <div class="fin-modal-hdr">
+      <div class="fin-modal-title">Fornecedores cadastrados</div>
+      <button class="fin-modal-close" onclick="fecharListaFornecedores()">✕</button>
+    </div>
+    <div class="fin-modal-body">
+      <button class="btn btn-primary btn-sm" style="align-self:flex-start" onclick="finAbrirModalFornecedorDeLista()">+ cadastrar</button>
+      <div id="fin-forn-lista" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div id="fin-forn-lista-empty" class="fin-empty" style="display:none">
+        <div style="font-size:24px;margin-bottom:8px">🏢</div>
+        Nenhum fornecedor cadastrado ainda.
+      </div>
+    </div>
+    <div class="fin-modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharListaFornecedores()">Fechar</button>
     </div>
   </div>
 </div>
@@ -2569,8 +2591,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
               <button type="button" class="fin-parte-sel-clear" onclick="finRecLimparParteSelecionada()" title="Desvincular">✕</button>
             </div>
           </div>
-          <button type="button" class="btn btn-ghost btn-sm fin-btn-add-forn" onclick="finAbrirModalFornecedor('recorrencia')">+ cadastrar fornecedor</button>
+          <button type="button" class="btn btn-ghost btn-sm fin-btn-add-forn" onclick="finAbrirModalFornecedor('recorrencia')">+ cadastrar</button>
         </div>
+        <button type="button" onclick="finAbrirListaFornecedores('recorrencia')" style="background:none;border:none;padding:0;margin-top:6px;font-size:11px;color:var(--ac);cursor:pointer;text-decoration:underline">Ver fornecedores cadastrados</button>
       </div>
       <div id="fin-recn-row-cat" class="fl">
         <label>Categoria</label>
@@ -17280,7 +17303,7 @@ function finRecBuscarParte(termo){
   _finRecParteBuscaResultados=filtrados;
   const tagMap={paciente:'Paciente',usuario:'Usuário',fornecedor:'Fornecedor'};
   if(!filtrados.length){
-    dd.innerHTML='<div class="fin-ac-empty">Nenhum contato encontrado. Use "+ cadastrar fornecedor" para adicionar um novo.</div>';
+    dd.innerHTML='<div class="fin-ac-empty">Nenhum contato encontrado. Use "+ cadastrar" para adicionar um novo.</div>';
   } else {
     dd.innerHTML=filtrados.map((c,i)=>`
       <div class="fin-ac-item" onmousedown="finRecSelecionarParteAC(${i})">
@@ -17580,7 +17603,7 @@ function finBuscarParte(termo){
   _finParteBuscaResultados=filtrados;
   const tagMap={paciente:'Paciente',usuario:'Usuário',fornecedor:'Fornecedor'};
   if(!filtrados.length){
-    dd.innerHTML='<div class="fin-ac-empty">Nenhum contato encontrado. Use "+ cadastrar fornecedor" para adicionar um novo.</div>';
+    dd.innerHTML='<div class="fin-ac-empty">Nenhum contato encontrado. Use "+ cadastrar" para adicionar um novo.</div>';
   } else {
     dd.innerHTML=filtrados.map((c,i)=>`
       <div class="fin-ac-item" onmousedown="finSelecionarParteAC(${i})">
@@ -17655,6 +17678,78 @@ function finSalvarFornecedor(){
     if(selTxt) selTxt.textContent=`Vinculado a Fornecedor: ${novo.nome}`;
     document.getElementById('fin-modal-parte-sel').classList.add('on');
   }
+  // se a lista de fornecedores estava aberta por baixo, mantém atualizada
+  finRenderListaFornecedores();
+}
+
+// ── Lista de fornecedores cadastrados ────────────────────────────
+function finAbrirListaFornecedores(origem){
+  _finFornecedorAlvo = origem || 'lancamento';
+  finRenderListaFornecedores();
+  document.getElementById('modal-fin-fornecedores-lista').classList.add('open');
+}
+
+function fecharListaFornecedores(){
+  document.getElementById('modal-fin-fornecedores-lista').classList.remove('open');
+}
+
+function finAbrirModalFornecedorDeLista(){
+  const alvo=_finFornecedorAlvo;
+  fecharListaFornecedores();
+  finAbrirModalFornecedor(alvo);
+}
+
+function finRenderListaFornecedores(){
+  const wrap=document.getElementById('fin-forn-lista');
+  const empty=document.getElementById('fin-forn-lista-empty');
+  if(!wrap) return;
+  if(!fornecedores.length){
+    wrap.innerHTML='';
+    if(empty) empty.style.display='block';
+    return;
+  }
+  if(empty) empty.style.display='none';
+  wrap.innerHTML = fornecedores.slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).map(f=>{
+    const metaParts=[];
+    if(f.documento) metaParts.push(f.documento);
+    if(f.telefone) metaParts.push(f.telefone);
+    if(f.email) metaParts.push(f.email);
+    if(f.pix) metaParts.push('Pix: '+f.pix);
+    return `<div class="fin-rec-item">
+      <div class="fin-rec-item-info">
+        <div class="fin-rec-item-desc">${esc(f.nome)}</div>
+        <div class="fin-rec-item-meta">${metaParts.length?esc(metaParts.join(' · ')):'Sem dados adicionais'}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn btn-ghost btn-sm" onclick="finUsarFornecedorDaLista('${f.id}')">Usar</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--da);border-color:#FCA5A5" onclick="finExcluirFornecedor('${f.id}')">Excluir</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function finUsarFornecedorDaLista(id){
+  const f=fornecedores.find(x=>x.id===id);
+  if(!f) return;
+  fecharListaFornecedores();
+  if(_finFornecedorAlvo==='recorrencia'){
+    _finRecParteSelecionada={tipo:'fornecedor',id:f.id,nome:f.nome};
+    const input=document.getElementById('fin-recn-parte'); if(input) input.value=f.nome;
+    const txt=document.getElementById('fin-recn-parte-sel-txt'); if(txt) txt.textContent=`Vinculado a Fornecedor: ${f.nome}`;
+    document.getElementById('fin-recn-parte-sel').classList.add('on');
+  } else {
+    _finParteSelecionada={tipo:'fornecedor',id:f.id,nome:f.nome};
+    const input=document.getElementById('fin-modal-parte'); if(input) input.value=f.nome;
+    const txt=document.getElementById('fin-modal-parte-sel-txt'); if(txt) txt.textContent=`Vinculado a Fornecedor: ${f.nome}`;
+    document.getElementById('fin-modal-parte-sel').classList.add('on');
+  }
+}
+
+function finExcluirFornecedor(id){
+  if(!confirm('Excluir este fornecedor? Isso não afeta títulos já lançados com o nome dele.')) return;
+  fornecedores = fornecedores.filter(f=>f.id!==id);
+  salvarFornecedores();
+  finRenderListaFornecedores();
 }
 
 // ── Parcelamento ──────────────────────────────────────────────────
