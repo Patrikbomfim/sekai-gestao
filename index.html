@@ -155,6 +155,10 @@
 .fin-parcela-row{display:grid;grid-template-columns:60px 1fr 1fr;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}
 .fin-parcela-row:last-child{border-bottom:none}
 .fin-parcela-num{font-size:12px;font-weight:600;color:var(--tx2)}
+.fin-parcelas-diverg{margin-top:12px;padding:10px 12px;border-radius:var(--r8);font-size:12.5px;font-weight:500;display:flex;align-items:center;gap:6px}
+.fin-parcelas-diverg.ok{background:var(--sul);color:var(--su)}
+.fin-parcelas-diverg.falta{background:var(--wal);color:var(--wa)}
+.fin-parcelas-diverg.excedente{background:var(--dal);color:var(--da)}
 
 /* Anexo */
 .fin-drop-zone{border:1.5px dashed var(--border-s);border-radius:var(--r10);padding:16px 14px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;background:var(--s2)}
@@ -2195,8 +2199,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 </div><!-- /sec-financeiro -->
 
 <!-- MODAL LANÇAMENTO FINANCEIRO -->
-<div id="modal-fin-lancamento" class="fin-modal-ov" onclick="if(event.target===this)fecharModalFinLancamento()">
-  <div class="fin-modal-box" style="max-width:480px">
+<div id="modal-fin-lancamento" class="fin-modal-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharModalFinLancamento)">
+  <div class="fin-modal-box" style="max-width:620px">
     <div class="fin-modal-hdr">
       <div class="fin-modal-title" id="modal-fin-titulo">Novo lançamento</div>
       <button class="fin-modal-close" onclick="fecharModalFinLancamento()">✕</button>
@@ -2334,8 +2338,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 </div>
 
 <!-- MODAL CADASTRAR FORNECEDOR -->
-<div id="modal-fin-fornecedor" class="fin-modal-ov" onclick="if(event.target===this)fecharModalFornecedor()">
-  <div class="fin-modal-box" style="max-width:440px">
+<div id="modal-fin-fornecedor" class="fin-modal-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharModalFornecedor)">
+  <div class="fin-modal-box" style="max-width:520px">
     <div class="fin-modal-hdr">
       <div class="fin-modal-title">Novo fornecedor</div>
       <button class="fin-modal-close" onclick="fecharModalFornecedor()">✕</button>
@@ -2382,8 +2386,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 </div>
 
 <!-- MODAL PARCELAS (preview/edição antes de salvar) -->
-<div id="modal-fin-parcelas" class="fin-modal-ov" onclick="if(event.target===this)fecharModalParcelas()">
-  <div class="fin-modal-box" style="max-width:480px">
+<div id="modal-fin-parcelas" class="fin-modal-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharModalParcelas)">
+  <div class="fin-modal-box" style="max-width:620px">
     <div class="fin-modal-hdr">
       <div class="fin-modal-title">Parcelas</div>
       <button class="fin-modal-close" onclick="fecharModalParcelas()">✕</button>
@@ -2391,16 +2395,17 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="fin-modal-body">
       <div style="font-size:11.5px;color:var(--tx3)">Ajuste valor e vencimento de cada parcela, se necessário. Após salvo, cada parcela pode ser editada individualmente sem afetar as demais.</div>
       <div id="fin-parcelas-lista"></div>
+      <div id="fin-parcelas-diverg" class="fin-parcelas-diverg"></div>
     </div>
     <div class="fin-modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="fecharModalParcelas()">Cancelar</button>
-      <button class="btn btn-primary btn-sm" onclick="finConfirmarParcelas()">Confirmar parcelas</button>
+      <button class="btn btn-primary btn-sm" id="fin-parcelas-btn-confirmar" onclick="finConfirmarParcelas()">Confirmar parcelas</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL LIQUIDAR -->
-<div id="modal-fin-liquidar" class="fin-modal-ov" onclick="if(event.target===this)fecharModalFinLiquidar()">
+<div id="modal-fin-liquidar" class="fin-modal-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharModalFinLiquidar)">
   <div class="fin-modal-box" style="max-width:400px">
     <div class="fin-modal-hdr">
       <div class="fin-modal-title" id="modal-fin-liq-titulo">Liquidar título</div>
@@ -2449,7 +2454,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 </div>
 
 <!-- DRAWER DE FILTROS FINANCEIROS -->
-<div id="fin-drawer-ov" class="fin-drawer-ov" onclick="if(event.target===this)fecharFiltrosFin()">
+<div id="fin-drawer-ov" class="fin-drawer-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharFiltrosFin)">
   <div class="fin-drawer">
     <div class="fin-drawer-hdr">
       <div class="fin-drawer-title">Filtros</div>
@@ -2518,7 +2523,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 </div>
 
 <!-- MODAL TÍTULOS RECORRENTES -->
-<div id="modal-fin-recorrentes" class="fin-modal-ov" onclick="if(event.target===this)fecharModalFinRecorrentes()">
+<div id="modal-fin-recorrentes" class="fin-modal-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharModalFinRecorrentes)">
   <div class="fin-modal-box" style="max-width:560px">
     <div class="fin-modal-hdr">
       <div class="fin-modal-title" id="modal-fin-rec-titulo">Títulos recorrentes</div>
@@ -4351,7 +4356,7 @@ const USUARIOS_PADRAO = [
 let usuarios = carregarLS('sk3-usuarios', USUARIOS_PADRAO);
 // Fornecedores/Prestadores — contatos financeiros para contas a pagar/receber (imobiliária, contador, concessionárias, autônomos etc.)
 let fornecedores = carregarLS('sk3-fornecedores', []);
-function salvarFornecedores(){ salvarLS('sk3-fornecedores', fornecedores); }
+function salvarFornecedores(){ _comSalvarImediato(()=>salvarLS('sk3-fornecedores', fornecedores)); }
 let cargos = carregarLS('sk3-cargos', CARGOS_PADRAO);
 let pendenciasAvulsas = carregarLS('sk3-pendencias-avulsas', []);
 // melhorias: [{id, texto, data(ISO), criadoPor(usuarioId), resolvido(bool)}] — lembretes de erros/melhorias do sistema
@@ -16659,7 +16664,7 @@ async function _carregarDadosEAtivar(){
 
 // ── Storage helpers ──────────────────────────────────────────────────
 function _finTitulosGestao(){ return carregarLS('sk3-fin-titulos-gestao',[]); }
-function _finSalvarTitulosGestao(list){ salvarLS('sk3-fin-titulos-gestao',list); }
+function _finSalvarTitulosGestao(list){ _comSalvarImediato(()=>salvarLS('sk3-fin-titulos-gestao',list)); }
 
 // ── Estado ───────────────────────────────────────────────────────────
 let _finSubAtual = 'fluxo';
@@ -17214,6 +17219,13 @@ function abrirModalFinLancamento(tipo, id){
   setTimeout(()=>document.getElementById('fin-modal-desc').focus(),80);
 }
 
+// ── Fechar modal ao clicar fora — sem fechar durante seleção de texto ──
+// (evita o bug de: clicar dentro de um campo, arrastar o mouse pra fora
+// pra selecionar texto e soltar o botão — isso não deve fechar o modal)
+let _ovMouseDownAlvo=null;
+function _ovMouseDown(e,el){ _ovMouseDownAlvo=(e.target===el)?el:null; }
+function _ovMouseUp(e,el,fn){ if(e.target===el && _ovMouseDownAlvo===el) fn(); _ovMouseDownAlvo=null; }
+
 function fecharModalFinLancamento(){
   const modal=document.getElementById('modal-fin-lancamento');
   if(modal) modal.classList.remove('open');
@@ -17335,6 +17347,8 @@ function finToggleParcelado(){
   }
 }
 
+let _finParcelasValorTitulo=0;
+
 function finAbrirParcelasPreview(){
   const valorTotal=_finParseValor(document.getElementById('fin-modal-valor').value);
   const vencInicial=document.getElementById('fin-modal-venc').value;
@@ -17342,6 +17356,8 @@ function finAbrirParcelasPreview(){
   if(!valorTotal){ alert('Informe o valor total antes de gerar as parcelas.'); return; }
   if(!vencInicial){ alert('Informe a data de vencimento inicial antes de gerar as parcelas.'); return; }
   if(num<2){ alert('Informe o número de parcelas (mínimo 2).'); return; }
+
+  _finParcelasValorTitulo=valorTotal;
 
   if(!_finParcelasPendentes || _finParcelasPendentes.length!==num){
     const valorParcela=Math.floor((valorTotal/num)*100)/100;
@@ -17366,14 +17382,41 @@ function finRenderParcelasPreview(){
   wrap.innerHTML=_finParcelasPendentes.map((p,i)=>`
     <div class="fin-parcela-row">
       <div class="fin-parcela-num">${p.numero}/${p.total}</div>
-      <input type="text" value="R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}" oninput="finMaskMoeda(this);finAtualizarParcelaValor(${i},this.value)">
+      <input type="text" id="fin-parcela-valor-${i}" value="R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}" oninput="finMaskMoeda(this);finAtualizarParcelaValor(${i},this.value)">
       <input type="date" value="${p.vencimento}" onchange="finAtualizarParcelaVenc(${i},this.value)">
     </div>`).join('');
+  finAtualizarDivergenciaParcelas();
+}
+
+function finAtualizarDivergenciaParcelas(){
+  const el=document.getElementById('fin-parcelas-diverg');
+  const btn=document.getElementById('fin-parcelas-btn-confirmar');
+  if(!el||!_finParcelasPendentes) return;
+  const soma=_finParcelasPendentes.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
+  const diff=Math.round((soma-_finParcelasValorTitulo)*100)/100;
+  const ok=Math.abs(diff)<0.005;
+  el.classList.remove('ok','falta','excedente');
+  if(ok){
+    el.classList.add('ok');
+    el.innerHTML=`✓ Soma das parcelas confere com o valor do título: <strong>${_finFmt(soma)}</strong>`;
+  } else if(diff<0){
+    el.classList.add('falta');
+    el.innerHTML=`⚠ Faltam <strong>${_finFmt(Math.abs(diff))}</strong> para completar o valor do título (soma atual: ${_finFmt(soma)} de ${_finFmt(_finParcelasValorTitulo)})`;
+  } else {
+    el.classList.add('excedente');
+    el.innerHTML=`⚠ Parcelas excedem o valor do título em <strong>${_finFmt(diff)}</strong> (soma atual: ${_finFmt(soma)} de ${_finFmt(_finParcelasValorTitulo)})`;
+  }
+  if(btn){
+    btn.disabled=!ok;
+    btn.style.opacity=ok?'1':'.5';
+    btn.style.cursor=ok?'pointer':'not-allowed';
+  }
 }
 
 function finAtualizarParcelaValor(idx,str){
   if(!_finParcelasPendentes||!_finParcelasPendentes[idx]) return;
   _finParcelasPendentes[idx].valor=_finParseValor(str);
+  finAtualizarDivergenciaParcelas();
 }
 function finAtualizarParcelaVenc(idx,val){
   if(!_finParcelasPendentes||!_finParcelasPendentes[idx]) return;
@@ -17386,8 +17429,15 @@ function fecharModalParcelas(){
 
 function finConfirmarParcelas(){
   if(!_finParcelasPendentes||!_finParcelasPendentes.length){ fecharModalParcelas(); return; }
-  const total=_finParcelasPendentes.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
-  document.getElementById('fin-modal-parcelas-resumo-txt').textContent=`${_finParcelasPendentes.length}x — total ${_finFmt(total)}`;
+  const soma=_finParcelasPendentes.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
+  const diff=Math.round((soma-_finParcelasValorTitulo)*100)/100;
+  if(Math.abs(diff)>=0.005){
+    alert(diff>0
+      ? `A soma das parcelas está ${_finFmt(Math.abs(diff))} acima do valor do título. Ajuste os valores antes de confirmar.`
+      : `A soma das parcelas está ${_finFmt(Math.abs(diff))} abaixo do valor do título. Ajuste os valores antes de confirmar.`);
+    return;
+  }
+  document.getElementById('fin-modal-parcelas-resumo-txt').textContent=`${_finParcelasPendentes.length}x — total ${_finFmt(soma)}`;
   document.getElementById('fin-modal-parcelas-resumo').classList.add('on');
   fecharModalParcelas();
 }
@@ -17452,6 +17502,15 @@ function finSalvarLancamento(){
   const recorr=document.getElementById('fin-modal-recorr').checked;
   const parcelado=!id && document.getElementById('fin-modal-parcelado').value==='sim';
   const anexos=_finAnexosPendentes.slice();
+
+  if(parcelado){
+    if(!_finParcelasPendentes||!_finParcelasPendentes.length){ alert('Clique em "Gerar parcelas" e confirme a divisão antes de salvar.'); return; }
+    const somaParcelas=_finParcelasPendentes.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
+    if(Math.abs(Math.round((somaParcelas-valor)*100)/100)>=0.005){
+      alert('A soma das parcelas não confere com o valor do título. Abra "Revisar parcelas" e ajuste antes de salvar.');
+      return;
+    }
+  }
 
   let list=_finTitulosGestao();
 
