@@ -129,6 +129,44 @@
 .fin-rec-item-desc{font-size:13px;font-weight:600;color:var(--tx)}
 .fin-rec-item-meta{font-size:11px;color:var(--tx3);margin-top:2px}
 
+/* Autocomplete Beneficiário/Pagador */
+.fin-parte-row{display:flex;gap:8px;align-items:flex-start}
+.fin-parte-row .fin-ac-wrap{flex:1;min-width:0}
+.fin-btn-add-forn{flex-shrink:0;white-space:nowrap}
+.fin-ac-wrap{position:relative}
+.fin-ac-dropdown{display:none;position:absolute;top:100%;left:0;right:0;z-index:500;background:var(--surface);border:1px solid var(--border);border-radius:var(--r8);box-shadow:var(--shadow-md);max-height:240px;overflow-y:auto;margin-top:2px}
+.fin-ac-dropdown.open{display:block}
+.fin-ac-item{padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.fin-ac-item:last-child{border-bottom:none}
+.fin-ac-item:hover{background:var(--acl)}
+.fin-ac-item-nome{font-size:12.5px;font-weight:500;color:var(--tx)}
+.fin-ac-tag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:1px 7px;border-radius:999px;white-space:nowrap;flex-shrink:0}
+.fin-ac-tag-paciente{background:var(--pul);color:var(--pu)}
+.fin-ac-tag-usuario{background:var(--inl);color:var(--in)}
+.fin-ac-tag-fornecedor{background:var(--sul);color:var(--su)}
+.fin-ac-empty{padding:10px 12px;font-size:12px;color:var(--tx3)}
+.fin-parte-sel{display:none;margin-top:6px;padding:6px 10px;background:var(--acl);border-radius:var(--r6);border:1px solid var(--ac);font-size:11px;color:var(--ac);align-items:center;justify-content:space-between;gap:8px}
+.fin-parte-sel.on{display:flex}
+.fin-parte-sel-clear{background:none;border:none;color:var(--ac);cursor:pointer;font-size:13px;padding:0;line-height:1}
+
+/* Parcelamento */
+.fin-parcelas-resumo{display:none;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border:1px solid var(--ac);background:var(--acl);border-radius:var(--r8);font-size:12px;color:var(--ac);margin-top:8px}
+.fin-parcelas-resumo.on{display:flex}
+.fin-parcela-row{display:grid;grid-template-columns:60px 1fr 1fr;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}
+.fin-parcela-row:last-child{border-bottom:none}
+.fin-parcela-num{font-size:12px;font-weight:600;color:var(--tx2)}
+
+/* Anexo */
+.fin-drop-zone{border:1.5px dashed var(--border-s);border-radius:var(--r10);padding:16px 14px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;background:var(--s2)}
+.fin-drop-zone:hover,.fin-drop-zone.drag{border-color:var(--ac);background:var(--acl)}
+.fin-drop-zone-ic{font-size:19px;margin-bottom:4px}
+.fin-drop-zone-txt{font-size:12px;color:var(--tx2)}
+.fin-drop-zone-sub{font-size:11px;color:var(--tx3);margin-top:2px}
+.fin-anexo-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r8);background:var(--surface);font-size:12px;margin-top:8px}
+.fin-anexo-nome{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:6px;min-width:0}
+.fin-anexo-rm{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:13px;padding:2px 4px;flex-shrink:0}
+.fin-anexo-rm:hover{color:var(--da)}
+
 body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:13px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
 
 
@@ -2172,7 +2210,18 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
       <div class="fl">
         <label id="fin-modal-label-parte">Beneficiário</label>
-        <input type="text" id="fin-modal-parte" placeholder="Ex: Imobiliária, Bianca...">
+        <div class="fin-parte-row">
+          <div class="fin-ac-wrap">
+            <input type="text" id="fin-modal-parte" placeholder="Ex: Imobiliária, Bianca..." autocomplete="off"
+              oninput="finBuscarParte(this.value)" onfocus="finBuscarParte(this.value)" onblur="setTimeout(()=>{const dd=document.getElementById('fin-modal-parte-dropdown'); if(dd)dd.classList.remove('open')},160)">
+            <div id="fin-modal-parte-dropdown" class="fin-ac-dropdown"></div>
+            <div id="fin-modal-parte-sel" class="fin-parte-sel">
+              <span id="fin-modal-parte-sel-txt"></span>
+              <button type="button" class="fin-parte-sel-clear" onclick="finLimparParteSelecionada()" title="Desvincular">✕</button>
+            </div>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm fin-btn-add-forn" onclick="finAbrirModalFornecedor()">+ cadastrar fornecedor</button>
+        </div>
       </div>
       <div id="fin-modal-row-cat" class="fl">
         <label>Categoria</label>
@@ -2200,6 +2249,28 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
       </div>
       <div class="fl">
+        <label>Parcelado:</label>
+        <select id="fin-modal-parcelado" onchange="finToggleParcelado()">
+          <option value="nao">Não</option>
+          <option value="sim">Sim</option>
+        </select>
+        <div id="fin-modal-parcelado-box" style="display:none;margin-top:10px">
+          <div class="fg">
+            <div class="fl">
+              <label>Número de parcelas</label>
+              <input type="number" id="fin-modal-parcelas-num" min="2" max="60" placeholder="Ex: 6">
+            </div>
+            <div class="fl" style="justify-content:flex-end;display:flex;align-items:flex-end">
+              <button type="button" class="btn btn-ghost btn-sm" style="width:100%" onclick="finAbrirParcelasPreview()">Gerar parcelas</button>
+            </div>
+          </div>
+          <div id="fin-modal-parcelas-resumo" class="fin-parcelas-resumo">
+            <span id="fin-modal-parcelas-resumo-txt"></span>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="finAbrirParcelasPreview()">Revisar parcelas</button>
+          </div>
+        </div>
+      </div>
+      <div class="fl">
         <label>Forma de pagamento</label>
         <select id="fin-modal-forma">
           <option value="">Não informado</option>
@@ -2214,6 +2285,18 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="fl">
         <label>Observação</label>
         <textarea id="fin-modal-obs" rows="2" placeholder="Informações adicionais..."></textarea>
+      </div>
+      <div class="fl">
+        <label>Anexo</label>
+        <div id="fin-modal-drop" class="fin-drop-zone" onclick="document.getElementById('fin-modal-anexo-input').click()"
+          ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')"
+          ondrop="finDropAnexo(event)">
+          <div class="fin-drop-zone-ic">📎</div>
+          <div class="fin-drop-zone-txt">Clique para procurar ou arraste o arquivo aqui</div>
+          <div class="fin-drop-zone-sub">PDF, imagem ou documento</div>
+        </div>
+        <input type="file" id="fin-modal-anexo-input" style="display:none" onchange="finAnexoSelecionado(this.files)">
+        <div id="fin-modal-anexo-lista"></div>
       </div>
       <!-- Recorrência -->
       <div style="background:var(--s2);border-radius:var(--r8);padding:12px">
@@ -2246,6 +2329,72 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="btn btn-ghost btn-sm" id="fin-modal-btn-excluir" style="display:none;margin-right:auto" onclick="finExcluirTitulo()">Excluir</button>
       <button class="btn btn-ghost btn-sm" onclick="fecharModalFinLancamento()">Cancelar</button>
       <button class="btn btn-primary btn-sm" onclick="finSalvarLancamento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CADASTRAR FORNECEDOR -->
+<div id="modal-fin-fornecedor" class="fin-modal-ov" onclick="if(event.target===this)fecharModalFornecedor()">
+  <div class="fin-modal-box" style="max-width:440px">
+    <div class="fin-modal-hdr">
+      <div class="fin-modal-title">Novo fornecedor</div>
+      <button class="fin-modal-close" onclick="fecharModalFornecedor()">✕</button>
+    </div>
+    <div class="fin-modal-body">
+      <div class="fl">
+        <label>Nome <span class="req">*</span></label>
+        <input type="text" id="fin-forn-nome" placeholder="Ex: Imobiliária Sekai, Contador, jardineiro...">
+      </div>
+      <div class="fg">
+        <div class="fl">
+          <label>CPF/CNPJ</label>
+          <input type="text" id="fin-forn-doc" placeholder="Opcional">
+        </div>
+        <div class="fl">
+          <label>Telefone</label>
+          <input type="text" id="fin-forn-tel" placeholder="Opcional">
+        </div>
+      </div>
+      <div class="fg">
+        <div class="fl">
+          <label>Chave Pix</label>
+          <input type="text" id="fin-forn-pix" placeholder="Opcional">
+        </div>
+        <div class="fl">
+          <label>Favorecido Pix</label>
+          <input type="text" id="fin-forn-pix-fav" placeholder="Opcional">
+        </div>
+      </div>
+      <div class="fl">
+        <label>E-mail</label>
+        <input type="text" id="fin-forn-email" placeholder="Opcional">
+      </div>
+      <div class="fl">
+        <label>Observações</label>
+        <textarea id="fin-forn-obs" rows="2" placeholder="Opcional"></textarea>
+      </div>
+    </div>
+    <div class="fin-modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModalFornecedor()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="finSalvarFornecedor()">Salvar fornecedor</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PARCELAS (preview/edição antes de salvar) -->
+<div id="modal-fin-parcelas" class="fin-modal-ov" onclick="if(event.target===this)fecharModalParcelas()">
+  <div class="fin-modal-box" style="max-width:480px">
+    <div class="fin-modal-hdr">
+      <div class="fin-modal-title">Parcelas</div>
+      <button class="fin-modal-close" onclick="fecharModalParcelas()">✕</button>
+    </div>
+    <div class="fin-modal-body">
+      <div style="font-size:11.5px;color:var(--tx3)">Ajuste valor e vencimento de cada parcela, se necessário. Após salvo, cada parcela pode ser editada individualmente sem afetar as demais.</div>
+      <div id="fin-parcelas-lista"></div>
+    </div>
+    <div class="fin-modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModalParcelas()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="finConfirmarParcelas()">Confirmar parcelas</button>
     </div>
   </div>
 </div>
@@ -4200,6 +4349,9 @@ const USUARIOS_PADRAO = [
   {id:'us_leticia',nome:'Leticia',cpf:'',nascimento:'',cep:'',cidade:'',rua:'',numero:'',complemento:'',obs:''},
 ];
 let usuarios = carregarLS('sk3-usuarios', USUARIOS_PADRAO);
+// Fornecedores/Prestadores — contatos financeiros para contas a pagar/receber (imobiliária, contador, concessionárias, autônomos etc.)
+let fornecedores = carregarLS('sk3-fornecedores', []);
+function salvarFornecedores(){ salvarLS('sk3-fornecedores', fornecedores); }
 let cargos = carregarLS('sk3-cargos', CARGOS_PADRAO);
 let pendenciasAvulsas = carregarLS('sk3-pendencias-avulsas', []);
 // melhorias: [{id, texto, data(ISO), criadoPor(usuarioId), resolvido(bool)}] — lembretes de erros/melhorias do sistema
@@ -17015,6 +17167,16 @@ function abrirModalFinLancamento(tipo, id){
   document.getElementById('fin-modal-rep').value='12';
   document.getElementById('fin-modal-tipo').value=tipo;
   document.getElementById('fin-modal-id').value=id||'';
+  document.getElementById('fin-modal-parte-dropdown').classList.remove('open');
+  document.getElementById('fin-modal-parte-sel').classList.remove('on');
+  document.getElementById('fin-modal-parcelado').value='nao';
+  document.getElementById('fin-modal-parcelado-box').style.display='none';
+  document.getElementById('fin-modal-parcelas-num').value='';
+  document.getElementById('fin-modal-parcelas-resumo').classList.remove('on');
+  _finParteSelecionada=null;
+  _finParcelasPendentes=null;
+  _finAnexosPendentes=[];
+  finRenderAnexos();
 
   const isPagar=tipo==='pagar';
   document.getElementById('modal-fin-titulo').textContent=id?(isPagar?'Editar conta a pagar':'Editar conta a receber'):(isPagar?'Nova conta a pagar':'Nova conta a receber');
@@ -17022,6 +17184,8 @@ function abrirModalFinLancamento(tipo, id){
   document.getElementById('fin-modal-label-parte').textContent=isPagar?'Beneficiário':'Pagador';
   document.getElementById('fin-modal-parte').placeholder=isPagar?'Ex: Imobiliária, Bianca...':'Ex: Paciente, Maru, locatária...';
   document.getElementById('fin-modal-btn-excluir').style.display=id?'':'none';
+  // ao editar um título existente, o parcelamento não é reconfigurável aqui (cada parcela já é um título independente)
+  document.getElementById('fin-modal-parcelado').closest('.fl').style.display=id?'none':'';
 
   if(id){
     const t=_finTitulosGestao().find(x=>String(x.id)===String(id));
@@ -17033,6 +17197,16 @@ function abrirModalFinLancamento(tipo, id){
       document.getElementById('fin-modal-cat').value=t.categoria||'';
       document.getElementById('fin-modal-forma').value=t.forma||'';
       document.getElementById('fin-modal-obs').value=t.obs||'';
+      document.getElementById('fin-modal-recorr').checked=!!t.recorrente;
+      document.getElementById('fin-modal-recorr-box').style.display=t.recorrente?'flex':'none';
+      if(t.parteTipo&&t.parteId){
+        _finParteSelecionada={tipo:t.parteTipo,id:t.parteId,nome:t.parte};
+        const tagMap={paciente:'Paciente',usuario:'Usuário',fornecedor:'Fornecedor'};
+        document.getElementById('fin-modal-parte-sel-txt').textContent=`Vinculado a ${tagMap[t.parteTipo]||''}: ${t.parte}`;
+        document.getElementById('fin-modal-parte-sel').classList.add('on');
+      }
+      _finAnexosPendentes=Array.isArray(t.anexos)?t.anexos.slice():[];
+      finRenderAnexos();
     }
   }
 
@@ -17048,7 +17222,215 @@ function fecharModalFinLancamento(){
 function finToggleRecorr(){
   const chk=document.getElementById('fin-modal-recorr');
   const box=document.getElementById('fin-modal-recorr-box');
+  if(chk.checked) document.getElementById('fin-modal-parcelado').value='nao', finToggleParcelado();
   if(box) box.style.display=chk.checked?'flex':'none';
+}
+
+// ── Autocomplete Beneficiário/Pagador (pacientes + usuários + fornecedores) ──
+let _finParteSelecionada=null;
+let _finParteBuscaResultados=[];
+
+function _finContatosTodos(){
+  const p=(typeof pacientes!=='undefined'?pacientes:carregarLS('sk3-pacientes',[])).map(x=>({tipo:'paciente',id:x.id,nome:x.nome}));
+  const u=(typeof usuarios!=='undefined'?usuarios:carregarLS('sk3-usuarios',[])).map(x=>({tipo:'usuario',id:x.id,nome:x.nome}));
+  const f=(typeof fornecedores!=='undefined'?fornecedores:carregarLS('sk3-fornecedores',[])).map(x=>({tipo:'fornecedor',id:x.id,nome:x.nome}));
+  return [...f,...u,...p].filter(c=>c.nome);
+}
+
+function finBuscarParte(termo){
+  const dd=document.getElementById('fin-modal-parte-dropdown');
+  if(!dd) return;
+  if(_finParteSelecionada && termo!==_finParteSelecionada.nome){
+    _finParteSelecionada=null;
+    document.getElementById('fin-modal-parte-sel').classList.remove('on');
+  }
+  const t=(termo||'').trim().toLowerCase();
+  if(!t){ dd.classList.remove('open'); return; }
+  const todos=_finContatosTodos();
+  const filtrados=todos.filter(c=>(c.nome||'').toLowerCase().includes(t)).slice(0,10);
+  _finParteBuscaResultados=filtrados;
+  const tagMap={paciente:'Paciente',usuario:'Usuário',fornecedor:'Fornecedor'};
+  if(!filtrados.length){
+    dd.innerHTML='<div class="fin-ac-empty">Nenhum contato encontrado. Use "+ cadastrar fornecedor" para adicionar um novo.</div>';
+  } else {
+    dd.innerHTML=filtrados.map((c,i)=>`
+      <div class="fin-ac-item" onmousedown="finSelecionarParteAC(${i})">
+        <span class="fin-ac-item-nome">${esc(c.nome)}</span>
+        <span class="fin-ac-tag fin-ac-tag-${c.tipo}">${tagMap[c.tipo]}</span>
+      </div>`).join('');
+  }
+  dd.classList.add('open');
+}
+
+function finSelecionarParteAC(idx){
+  const c=_finParteBuscaResultados[idx];
+  if(!c) return;
+  _finParteSelecionada={tipo:c.tipo,id:c.id,nome:c.nome};
+  document.getElementById('fin-modal-parte').value=c.nome;
+  document.getElementById('fin-modal-parte-dropdown').classList.remove('open');
+  const tagMap={paciente:'Paciente',usuario:'Usuário',fornecedor:'Fornecedor'};
+  document.getElementById('fin-modal-parte-sel-txt').textContent=`Vinculado a ${tagMap[c.tipo]}: ${c.nome}`;
+  document.getElementById('fin-modal-parte-sel').classList.add('on');
+}
+
+function finLimparParteSelecionada(){
+  _finParteSelecionada=null;
+  document.getElementById('fin-modal-parte-sel').classList.remove('on');
+}
+
+// ── Cadastro de fornecedor ─────────────────────────────────────────
+function finAbrirModalFornecedor(){
+  ['fin-forn-nome','fin-forn-doc','fin-forn-tel','fin-forn-pix','fin-forn-pix-fav','fin-forn-email','fin-forn-obs'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('modal-fin-fornecedor').classList.add('open');
+  setTimeout(()=>document.getElementById('fin-forn-nome')?.focus(),80);
+}
+
+function fecharModalFornecedor(){
+  document.getElementById('modal-fin-fornecedor').classList.remove('open');
+}
+
+function finSalvarFornecedor(){
+  const nome=(document.getElementById('fin-forn-nome').value||'').trim();
+  if(!nome){ alert('Informe o nome do fornecedor.'); return; }
+  const novo={
+    id:'forn_'+Date.now(),
+    nome,
+    documento:(document.getElementById('fin-forn-doc').value||'').trim(),
+    telefone:(document.getElementById('fin-forn-tel').value||'').trim(),
+    pix:(document.getElementById('fin-forn-pix').value||'').trim(),
+    pixFavorecido:(document.getElementById('fin-forn-pix-fav').value||'').trim(),
+    email:(document.getElementById('fin-forn-email').value||'').trim(),
+    obs:(document.getElementById('fin-forn-obs').value||'').trim(),
+    criadoEm:_finIso(new Date())
+  };
+  fornecedores.push(novo);
+  salvarFornecedores();
+  fecharModalFornecedor();
+  // vincula automaticamente o fornecedor recém-criado ao campo Beneficiário/Pagador
+  _finParteSelecionada={tipo:'fornecedor',id:novo.id,nome:novo.nome};
+  const parteInput=document.getElementById('fin-modal-parte');
+  if(parteInput) parteInput.value=novo.nome;
+  const selTxt=document.getElementById('fin-modal-parte-sel-txt');
+  if(selTxt) selTxt.textContent=`Vinculado a Fornecedor: ${novo.nome}`;
+  document.getElementById('fin-modal-parte-sel').classList.add('on');
+}
+
+// ── Parcelamento ──────────────────────────────────────────────────
+let _finParcelasPendentes=null;
+
+function finToggleParcelado(){
+  const v=document.getElementById('fin-modal-parcelado').value;
+  const box=document.getElementById('fin-modal-parcelado-box');
+  box.style.display = v==='sim' ? 'block':'none';
+  if(v!=='sim'){
+    _finParcelasPendentes=null;
+    document.getElementById('fin-modal-parcelas-resumo').classList.remove('on');
+    document.getElementById('fin-modal-parcelas-num').value='';
+  } else {
+    // parcelamento e recorrência são mutuamente exclusivos
+    document.getElementById('fin-modal-recorr').checked=false;
+    document.getElementById('fin-modal-recorr-box').style.display='none';
+  }
+}
+
+function finAbrirParcelasPreview(){
+  const valorTotal=_finParseValor(document.getElementById('fin-modal-valor').value);
+  const vencInicial=document.getElementById('fin-modal-venc').value;
+  const num=parseInt(document.getElementById('fin-modal-parcelas-num').value)||0;
+  if(!valorTotal){ alert('Informe o valor total antes de gerar as parcelas.'); return; }
+  if(!vencInicial){ alert('Informe a data de vencimento inicial antes de gerar as parcelas.'); return; }
+  if(num<2){ alert('Informe o número de parcelas (mínimo 2).'); return; }
+
+  if(!_finParcelasPendentes || _finParcelasPendentes.length!==num){
+    const valorParcela=Math.floor((valorTotal/num)*100)/100;
+    const resto=Math.round((valorTotal - valorParcela*num)*100)/100;
+    const base=new Date(vencInicial+'T12:00:00');
+    _finParcelasPendentes=[];
+    for(let i=0;i<num;i++){
+      const d=new Date(base);
+      d.setMonth(d.getMonth()+i);
+      let valor=valorParcela;
+      if(i===num-1) valor=Math.round((valorParcela+resto)*100)/100; // ajusta arredondamento na última parcela
+      _finParcelasPendentes.push({numero:i+1,total:num,valor,vencimento:_finIso(d)});
+    }
+  }
+  finRenderParcelasPreview();
+  document.getElementById('modal-fin-parcelas').classList.add('open');
+}
+
+function finRenderParcelasPreview(){
+  const wrap=document.getElementById('fin-parcelas-lista');
+  if(!wrap||!_finParcelasPendentes) return;
+  wrap.innerHTML=_finParcelasPendentes.map((p,i)=>`
+    <div class="fin-parcela-row">
+      <div class="fin-parcela-num">${p.numero}/${p.total}</div>
+      <input type="text" value="R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}" oninput="finMaskMoeda(this);finAtualizarParcelaValor(${i},this.value)">
+      <input type="date" value="${p.vencimento}" onchange="finAtualizarParcelaVenc(${i},this.value)">
+    </div>`).join('');
+}
+
+function finAtualizarParcelaValor(idx,str){
+  if(!_finParcelasPendentes||!_finParcelasPendentes[idx]) return;
+  _finParcelasPendentes[idx].valor=_finParseValor(str);
+}
+function finAtualizarParcelaVenc(idx,val){
+  if(!_finParcelasPendentes||!_finParcelasPendentes[idx]) return;
+  _finParcelasPendentes[idx].vencimento=val;
+}
+
+function fecharModalParcelas(){
+  document.getElementById('modal-fin-parcelas').classList.remove('open');
+}
+
+function finConfirmarParcelas(){
+  if(!_finParcelasPendentes||!_finParcelasPendentes.length){ fecharModalParcelas(); return; }
+  const total=_finParcelasPendentes.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
+  document.getElementById('fin-modal-parcelas-resumo-txt').textContent=`${_finParcelasPendentes.length}x — total ${_finFmt(total)}`;
+  document.getElementById('fin-modal-parcelas-resumo').classList.add('on');
+  fecharModalParcelas();
+}
+
+// ── Anexo (arquivo por seleção ou arrastar) ──────────────────────
+let _finAnexosPendentes=[];
+
+function finDropAnexo(e){
+  e.preventDefault();
+  const dz=document.getElementById('fin-modal-drop');
+  if(dz) dz.classList.remove('drag');
+  const files=e.dataTransfer&&e.dataTransfer.files;
+  if(files&&files.length) finAnexoSelecionado(files);
+}
+
+function finAnexoSelecionado(files){
+  if(!files||!files.length) return;
+  Array.from(files).forEach(file=>{
+    if(file.size>4*1024*1024){ alert(`"${file.name}" excede 4MB e não pôde ser anexado.`); return; }
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      _finAnexosPendentes.push({nome:file.name,tipo:file.type,tamanho:file.size,data:ev.target.result});
+      finRenderAnexos();
+    };
+    reader.readAsDataURL(file);
+  });
+  const input=document.getElementById('fin-modal-anexo-input');
+  if(input) input.value='';
+}
+
+function finRemoverAnexo(idx){
+  _finAnexosPendentes.splice(idx,1);
+  finRenderAnexos();
+}
+
+function finRenderAnexos(){
+  const wrap=document.getElementById('fin-modal-anexo-lista');
+  if(!wrap) return;
+  wrap.innerHTML=_finAnexosPendentes.map((a,i)=>`
+    <div class="fin-anexo-item">
+      <span class="fin-anexo-nome">📄 ${esc(a.nome)}</span>
+      <button type="button" class="fin-anexo-rm" onclick="finRemoverAnexo(${i})" title="Remover">✕</button>
+    </div>`).join('');
 }
 
 function finSalvarLancamento(){
@@ -17063,18 +17445,29 @@ function finSalvarLancamento(){
 
   const cat=document.getElementById('fin-modal-cat').value;
   const parte=(document.getElementById('fin-modal-parte').value||'').trim();
+  const parteTipo=_finParteSelecionada?_finParteSelecionada.tipo:'';
+  const parteId=_finParteSelecionada?_finParteSelecionada.id:'';
   const forma=document.getElementById('fin-modal-forma').value;
   const obs=document.getElementById('fin-modal-obs').value.trim();
   const recorr=document.getElementById('fin-modal-recorr').checked;
+  const parcelado=!id && document.getElementById('fin-modal-parcelado').value==='sim';
+  const anexos=_finAnexosPendentes.slice();
 
   let list=_finTitulosGestao();
 
   if(id){
-    // Edição
+    // Edição — altera apenas este título (se fizer parte de uma série de parcelas, as demais não são afetadas)
     const idx=list.findIndex(t=>String(t.id)===String(id));
     if(idx>=0){
-      list[idx]={...list[idx],descricao:desc,parte,valor,vencimento:venc,categoria:cat,forma,obs,recorrente:recorr};
+      list[idx]={...list[idx],descricao:desc,parte,parteTipo,parteId,valor,vencimento:venc,categoria:cat,forma,obs,recorrente:recorr,anexos};
     }
+    _finSalvarTitulosGestao(list);
+  } else if(parcelado && _finParcelasPendentes && _finParcelasPendentes.length){
+    // Lançamento parcelado — cada parcela vira um título independente e editável
+    const serieId='fparc_'+Date.now();
+    _finParcelasPendentes.forEach((p,i)=>{
+      list.push({ id:'fgt_'+Date.now()+'_'+i, tipo, descricao:desc+` (${p.numero}/${p.total})`, parte, parteTipo, parteId, valor:p.valor, vencimento:p.vencimento, categoria:cat, forma, obs, status:'aberto', origem:'manual', recorrente:false, parcelado:true, parcelaInfo:{numero:p.numero,total:p.total}, serieId, anexos:i===0?anexos:[], criadoEm:_finIso(new Date()) });
+    });
     _finSalvarTitulosGestao(list);
   } else if(recorr){
     // Lançamentos recorrentes
@@ -17089,12 +17482,12 @@ function finSalvarLancamento(){
       else if(freq==='quinzenal') d.setDate(d.getDate()+15*i);
       else if(freq==='anual') d.setFullYear(d.getFullYear()+i);
       const vencI=_finIso(d);
-      list.push({ id:'fgt_'+Date.now()+'_'+i, tipo, descricao:desc+(rep>1?` (${i+1}/${rep})`:''), parte, valor, vencimento:vencI, categoria:cat, forma, obs, status:'aberto', origem:'manual', recorrente:true, serieId, freq, criadoEm:_finIso(new Date()) });
+      list.push({ id:'fgt_'+Date.now()+'_'+i, tipo, descricao:desc+(rep>1?` (${i+1}/${rep})`:''), parte, parteTipo, parteId, valor, vencimento:vencI, categoria:cat, forma, obs, status:'aberto', origem:'manual', recorrente:true, serieId, freq, anexos:i===0?anexos:[], criadoEm:_finIso(new Date()) });
     }
     _finSalvarTitulosGestao(list);
   } else {
     // Novo único
-    list.push({ id:'fgt_'+Date.now(), tipo, descricao:desc, parte, valor, vencimento:venc, categoria:cat, forma, obs, status:'aberto', origem:'manual', recorrente:false, criadoEm:_finIso(new Date()) });
+    list.push({ id:'fgt_'+Date.now(), tipo, descricao:desc, parte, parteTipo, parteId, valor, vencimento:venc, categoria:cat, forma, obs, status:'aberto', origem:'manual', recorrente:false, anexos, criadoEm:_finIso(new Date()) });
     _finSalvarTitulosGestao(list);
   }
 
