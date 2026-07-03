@@ -2324,7 +2324,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
         <div class="fl">
           <label>Vencimento <span class="req">*</span></label>
-          <input type="date" id="fin-modal-venc">
+          <input type="date" id="fin-modal-venc" onchange="finAjustarDataUtil(this)">
         </div>
       </div>
       <div class="fl">
@@ -17034,6 +17034,29 @@ function _finHoje(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
 function _finIso(d){ return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function _finMesAtual(){ const d=new Date(); return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
 
+// Se a data cair em sábado (6) ou domingo (0), retorna a próxima segunda-feira; caso contrário, retorna a mesma data.
+function _finProximoDiaUtil(d){
+  const nd = new Date(d);
+  const dia = nd.getDay();
+  if(dia===6) nd.setDate(nd.getDate()+2);
+  else if(dia===0) nd.setDate(nd.getDate()+1);
+  return nd;
+}
+
+// Ao sair do campo de vencimento no modal de lançamento: se a data cair em fim de semana, ajusta
+// automaticamente para a próxima segunda-feira. Aplica-se apenas aos módulos "a pagar" (operacional e folha).
+function finAjustarDataUtil(inputEl){
+  const tipo = document.getElementById('fin-modal-tipo').value;
+  if(tipo!=='pagar' && tipo!=='folha') return;
+  if(!inputEl.value) return;
+  const d = new Date(inputEl.value+'T12:00:00');
+  if(isNaN(d)) return;
+  const dia = d.getDay();
+  if(dia===0||dia===6){
+    inputEl.value = _finIso(_finProximoDiaUtil(d));
+  }
+}
+
 function _finStatusEfetivo(t){
   if(t.status==='aberto'){
     const hoje=_finHoje();
@@ -17709,9 +17732,10 @@ function finSalvarRecorrenciaNova(){
   let list=_finTitulosGestao();
   const serieId='fserie_'+Date.now();
   datas.forEach((d,i)=>{
+    const dAjustado = (tipo==='pagar'||tipo==='folha') ? _finProximoDiaUtil(d) : d;
     list.push({
       id:'fgt_'+Date.now()+'_'+i, tipo, descricao:desc, parte, parteTipo, parteId,
-      valor, vencimento:_finIso(d), categoria:cat, forma, obs:'',
+      valor, vencimento:_finIso(dAjustado), categoria:cat, forma, obs:'',
       status:'aberto', origem:'manual', recorrente:true, serieId, freq,
       diaSemana: freq==='semanal'?diaSemana:undefined,
       diaMes: freq==='mensal'?diaMes:undefined,
@@ -18254,7 +18278,8 @@ function finSalvarLancamento(){
       else if(freq==='semanal') d.setDate(d.getDate()+7*i);
       else if(freq==='quinzenal') d.setDate(d.getDate()+15*i);
       else if(freq==='anual') d.setFullYear(d.getFullYear()+i);
-      const vencI=_finIso(d);
+      const dAjustado = (tipo==='pagar'||tipo==='folha') ? _finProximoDiaUtil(d) : d;
+      const vencI=_finIso(dAjustado);
       list.push({ id:'fgt_'+Date.now()+'_'+i, tipo, descricao:desc, parte, parteTipo, parteId, valor, vencimento:vencI, categoria:cat, forma, conta, obs, status:'aberto', origem:'manual', recorrente:true, serieId, freq, anexos, criadoEm:_finIso(new Date()) });
     }
     _finSalvarTitulosGestao(list);
