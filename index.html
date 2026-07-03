@@ -2546,6 +2546,47 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
+<!-- MODAL PAGAMENTO INDIVIDUAL (Pago/Recebido) -->
+<div id="modal-fin-pagar" class="fin-modal-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharModalFinPagar)">
+  <div class="fin-modal-box" style="max-width:400px">
+    <div class="fin-modal-hdr">
+      <div class="fin-modal-title" id="fin-pagar-titulo">Confirmar pagamento</div>
+      <button class="fin-modal-close" onclick="fecharModalFinPagar()">✕</button>
+    </div>
+    <div class="fin-modal-body">
+      <input type="hidden" id="fin-pagar-id">
+      <input type="hidden" id="fin-pagar-tipo">
+      <p style="font-size:13px;color:var(--tx2)" id="fin-pagar-desc"></p>
+      <div class="fl">
+        <label id="fin-pagar-label-data">Data de pagamento</label>
+        <input type="date" id="fin-pagar-data">
+      </div>
+      <div class="fl">
+        <label id="fin-pagar-label-valor">Valor pago</label>
+        <input type="text" id="fin-pagar-valor" placeholder="R$ 0,00">
+        <div style="font-size:11px;color:var(--tx3);margin-top:4px">Valor do título: <span id="fin-pagar-valor-original"></span></div>
+      </div>
+      <div class="fl">
+        <label>Forma de pagamento</label>
+        <select id="fin-pagar-forma">
+          <option value="">Não informado</option>
+          <option value="Dinheiro">Dinheiro</option>
+          <option value="Pix">Pix</option>
+          <option value="Débito">Débito</option>
+          <option value="Crédito">Crédito</option>
+          <option value="Boleto">Boleto</option>
+          <option value="Transferência">Transferência</option>
+        </select>
+      </div>
+      <div id="fin-pagar-aviso-parcial" style="display:none;background:var(--wal);color:var(--wa);border-radius:var(--r8);padding:10px 12px;font-size:12px"></div>
+    </div>
+    <div class="fin-modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModalFinPagar()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="finConfirmarPagamento()" id="fin-pagar-btn-confirmar">Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL ESCOLHA DE SUBMÓDULO PARA MEDIÇÃO DE COMISSÃO -->
 <div id="modal-fin-medicao-escolha" class="fin-modal-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharModalFinMedicaoEscolha)">
   <div class="fin-modal-box" style="max-width:420px">
@@ -17216,9 +17257,12 @@ function renderFinLista(tipo){
     const isPaciente = t._origem==='paciente';
     const pacNome = isPaciente ? (() => { const p=pacientes.find(x=>String(x.id)===String(t.pacienteId)); return p?' — '+p.nome:''; })() : '';
     const parcelaCol = (t.parcelaInfo&&t.parcelaInfo.numero) ? `${t.parcelaInfo.numero}/${t.parcelaInfo.total}` : (t.recorrente ? 'Recorrente' : '—');
+    const liquidado = st==='pago'||st==='recebido';
+    const labelLiquidado = isPagar||isFolha?'Pago':'Recebido';
+    const rowClick = !isPaciente?`onclick="abrirModalFinLancamento('${tipo}','${t.id}')"`:'';
 
-    return `<tr>
-      <td><input type="checkbox" class="fin-chk fin-chk-${tipo}" data-id="${t.id}" data-origem="${t._origem||'manual'}" onchange="finAtualizarSelecao('${tipo}')"></td>
+    return `<tr style="${!isPaciente?'cursor:pointer':''}" ${rowClick}>
+      <td onclick="event.stopPropagation()"><input type="checkbox" class="fin-chk fin-chk-${tipo}" data-id="${t.id}" data-origem="${t._origem||'manual'}" onchange="finAtualizarSelecao('${tipo}')"></td>
       <td>
         <div style="font-weight:500;color:var(--tx)">${t.descricao||'—'}${recorrIc}</div>
         ${isPaciente?`<div style="font-size:11px;color:var(--tx3)">Paciente${pacNome}</div>`:(t._contraparte?`<div style="font-size:11px;color:var(--tx3)">${isPagar?'Beneficiário':'Pagador'}: ${t._contraparte}</div>`:'')}
@@ -17229,11 +17273,8 @@ function renderFinLista(tipo){
       <td style="white-space:nowrap;color:${st==='atrasado'?'var(--da)':'var(--tx2)'}">${_finFmtData(t.vencimento)}</td>
       <td class="fin-td-valor">${_finFmt(t.valor)}</td>
       <td>${_finBadge(st)}</td>
-      <td>
-        <div style="display:flex;gap:2px">
-          ${!isPaciente&&(st==='aberto'||st==='atrasado')?`<button class="fin-btn-acao" onclick="abrirModalFinLiquidar(['${t.id}'],'${tipo}')" title="${isPagar?'Marcar como pago':'Marcar como recebido'}">✓</button>`:''}
-          ${!isPaciente?`<button class="fin-btn-acao" onclick="abrirModalFinLancamento('${tipo}','${t.id}')" title="Editar">✎</button>`:''}
-        </div>
+      <td onclick="event.stopPropagation()">
+        ${!isPaciente?`<button class="btn btn-sm ${liquidado?'btn-ghost':''}" style="${liquidado?'':'background:var(--sul);color:var(--su);border-color:var(--su)'}" onclick="${liquidado?`finDesfazerPagamento('${t.id}','${tipo}')`:`abrirModalFinPagar('${t.id}','${tipo}')`}">${liquidado?'Desfazer pagamento':labelLiquidado}</button>`:''}
       </td>
     </tr>`;
   }).join('');
@@ -18236,6 +18277,119 @@ function finConfirmarLiquidar(){
   fecharModalFinLiquidar();
   renderFinLista(tipo);
   if(_finSubAtual==='fluxo') renderFinFluxo();
+}
+
+// ── PAGAMENTO INDIVIDUAL (botão "Pago"/"Recebido" da linha) ──────────
+// Substitui o antigo ícone de liquidar por um fluxo com data e valor editáveis.
+// Se o valor pago for menor que o valor do título, um novo título é criado
+// automaticamente com o saldo restante, em aberto, para cobrança futura.
+function abrirModalFinPagar(id, tipo){
+  const t=_finTitulosGestao().find(x=>String(x.id)===String(id));
+  if(!t) return;
+  const isPagar=tipo==='pagar'||tipo==='folha';
+
+  document.getElementById('fin-pagar-id').value=id;
+  document.getElementById('fin-pagar-tipo').value=tipo;
+  document.getElementById('fin-pagar-titulo').textContent=isPagar?'Confirmar pagamento':'Confirmar recebimento';
+  document.getElementById('fin-pagar-desc').textContent=t.descricao||'';
+  document.getElementById('fin-pagar-label-data').textContent=isPagar?'Data de pagamento':'Data de recebimento';
+  document.getElementById('fin-pagar-label-valor').textContent=isPagar?'Valor pago':'Valor recebido';
+  document.getElementById('fin-pagar-data').value=_finIso(new Date());
+  document.getElementById('fin-pagar-valor').value='R$ '+(parseFloat(t.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+  document.getElementById('fin-pagar-valor-original').textContent=_finFmt(t.valor);
+  document.getElementById('fin-pagar-forma').value=t.forma||'';
+  document.getElementById('fin-pagar-btn-confirmar').textContent=isPagar?'Confirmar pagamento':'Confirmar recebimento';
+  document.getElementById('fin-pagar-aviso-parcial').style.display='none';
+
+  // Atualiza o aviso de pagamento parcial em tempo real conforme o valor digitado muda
+  const valorInput=document.getElementById('fin-pagar-valor');
+  valorInput.oninput=()=>{
+    const digitado=_finParseValor(valorInput.value);
+    const original=parseFloat(t.valor)||0;
+    const aviso=document.getElementById('fin-pagar-aviso-parcial');
+    if(digitado>0&&digitado<original-0.004){
+      const saldo=+(original-digitado).toFixed(2);
+      aviso.style.display='block';
+      aviso.textContent=`Pagamento parcial: será gerado um novo título de ${_finFmt(saldo)} em aberto com o saldo restante, para você definir data e forma de pagamento depois.`;
+    } else {
+      aviso.style.display='none';
+    }
+  };
+
+  document.getElementById('modal-fin-pagar').classList.add('open');
+}
+
+function fecharModalFinPagar(){
+  const modal=document.getElementById('modal-fin-pagar');
+  if(modal) modal.classList.remove('open');
+}
+
+function finConfirmarPagamento(){
+  const id=document.getElementById('fin-pagar-id').value;
+  const tipo=document.getElementById('fin-pagar-tipo').value;
+  const data=document.getElementById('fin-pagar-data').value;
+  const valorPago=_finParseValor(document.getElementById('fin-pagar-valor').value);
+  const forma=document.getElementById('fin-pagar-forma').value;
+
+  if(!data){ alert('Informe a data.'); return; }
+  if(!valorPago||valorPago<=0){ alert('Informe o valor pago.'); return; }
+
+  const statusNovo=(tipo==='pagar'||tipo==='folha')?'pago':'recebido';
+  let list=_finTitulosGestao();
+  const idx=list.findIndex(t=>String(t.id)===String(id));
+  if(idx<0){ fecharModalFinPagar(); return; }
+
+  const original=list[idx];
+  const valorOriginal=parseFloat(original.valor)||0;
+  const ehParcial = valorPago < (valorOriginal-0.004);
+
+  if(ehParcial){
+    const saldo=+(valorOriginal-valorPago).toFixed(2);
+    // Título original é liquidado com o valor efetivamente pago
+    list[idx]={...original,valor:valorPago,status:statusNovo,dataBaixa:data,forma:forma||original.forma};
+    // Novo título é criado com o saldo restante, em aberto, sem data/forma definidas
+    list.push({
+      ...original,
+      id:'fgt_'+Date.now(),
+      valor:saldo,
+      status:'aberto',
+      vencimento:'',
+      forma:'',
+      dataBaixa:undefined,
+      obs:(original.obs?original.obs+' — ':'')+`Saldo remanescente de "${original.descricao}".`,
+      criadoEm:_finIso(new Date())
+    });
+  } else {
+    list[idx]={...original,status:statusNovo,dataBaixa:data,forma:forma||original.forma};
+  }
+
+  _finSalvarTitulosGestao(list);
+  fecharModalFinPagar();
+  renderFinLista(tipo);
+  if(_finSubAtual==='fluxo') renderFinFluxo();
+  if(_finSubAtual==='comissao'&&_finComProfAtual){
+    renderFinComissao();
+    const btn=[...document.querySelectorAll('.fin-prof-btn')].find(b=>b.dataset.nome===_finComProfAtual);
+    if(btn) finSelecionarProf(btn,_finComProfAtual);
+  }
+}
+
+// Volta o título para "aberto", permitindo editar novamente (o clique na linha abre a edição).
+function finDesfazerPagamento(id, tipo){
+  if(!confirm('Desfazer este pagamento e voltar o título para "Em aberto"?')) return;
+  let list=_finTitulosGestao();
+  const idx=list.findIndex(t=>String(t.id)===String(id));
+  if(idx<0) return;
+  const {dataBaixa, ...resto}=list[idx];
+  list[idx]={...resto,status:'aberto'};
+  _finSalvarTitulosGestao(list);
+  renderFinLista(tipo);
+  if(_finSubAtual==='fluxo') renderFinFluxo();
+  if(_finSubAtual==='comissao'&&_finComProfAtual){
+    renderFinComissao();
+    const btn=[...document.querySelectorAll('.fin-prof-btn')].find(b=>b.dataset.nome===_finComProfAtual);
+    if(btn) finSelecionarProf(btn,_finComProfAtual);
+  }
 }
 
 // ── COMISSÃO DENTISTAS ───────────────────────────────────────────────
