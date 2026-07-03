@@ -792,11 +792,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 <nav class="subnav" id="financeiro-subnav">
   <div class="subnav-title">Financeiro</div>
-  <button class="subnav-btn on" id="fin-sub-fluxo" onclick="showFinSub('fluxo',this)"><span class="nav-ic">◈</span>Fluxo de Caixa</button>
-  <button class="subnav-btn" id="fin-sub-pagar" onclick="showFinSub('pagar',this)"><span class="nav-ic">↑</span>A pagar operacional</button>
-  <button class="subnav-btn" id="fin-sub-folha" onclick="showFinSub('folha',this)" style="display:none"><span class="nav-ic">👥</span>A pagar folha</button>
-  <button class="subnav-btn" id="fin-sub-receber" onclick="showFinSub('receber',this)"><span class="nav-ic">↓</span>Contas a Receber</button>
-  <button class="subnav-btn" id="fin-sub-comissao" onclick="showFinSub('comissao',this)"><span class="nav-ic">◎</span>Comissão Dentistas</button>
+  <button class="subnav-btn on" id="fin-sub-fluxo" onclick="showFinSub('fluxo',this)">Fluxo de Caixa</button>
+  <button class="subnav-btn" id="fin-sub-pagar" onclick="showFinSub('pagar',this)">A pagar operacional</button>
+  <button class="subnav-btn" id="fin-sub-folha" onclick="showFinSub('folha',this)" style="display:none">A pagar folha</button>
+  <button class="subnav-btn" id="fin-sub-receber" onclick="showFinSub('receber',this)">Contas a Receber</button>
+  <button class="subnav-btn" id="fin-sub-comissao" onclick="showFinSub('comissao',this)">Comissão Dentistas</button>
 </nav>
 
 <nav class="subnav" id="config-subnav">
@@ -2080,10 +2080,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
     <!-- Toolbar -->
     <div class="fin-toolbar" style="margin-top:14px">
-      <button class="btn btn-ghost btn-sm fin-atalho-btn" id="fin-pg-btn-recorr" onclick="finToggleFiltroRapido('pagar','recorrente',this)">⟳ Recorrentes</button>
-      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('pagar')">🔁 Títulos recorrentes</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('pagar')">🔁 Recorrentes cadastrados</button>
       <button class="btn btn-ghost btn-sm" onclick="abrirFiltrosFin('pagar')">▤ Filtros<span class="fin-filtros-badge" id="fin-pg-filtros-badge" style="display:none">0</span></button>
       <button class="btn btn-ghost btn-sm" onclick="finLimparFiltros('pagar')">Limpar</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportarFinPDF('pagar')">📄 Exportar em PDF</button>
       <div id="fin-pg-sel-bar" style="display:none;margin-left:auto;display:none;align-items:center;gap:8px">
         <span id="fin-pg-sel-count" style="font-size:12px;color:var(--tx2)">0 selecionados</span>
         <button class="btn btn-sm" style="background:var(--sul);color:var(--su);border-color:var(--su)" onclick="finLiquidarSelecionados('pagar')">✓ Liquidar</button>
@@ -2149,8 +2149,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
     <!-- Toolbar -->
     <div class="fin-toolbar" style="margin-top:14px">
-      <button class="btn btn-ghost btn-sm fin-atalho-btn" id="fin-fl-btn-recorr" onclick="finToggleFiltroRapido('folha','recorrente',this)">⟳ Recorrentes</button>
-      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('folha')">🔁 Títulos recorrentes</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('folha')">🔁 Recorrentes cadastrados</button>
       <button class="btn btn-ghost btn-sm" onclick="abrirFiltrosFin('folha')">▤ Filtros<span class="fin-filtros-badge" id="fin-fl-filtros-badge" style="display:none">0</span></button>
       <button class="btn btn-ghost btn-sm" onclick="finLimparFiltros('folha')">Limpar</button>
       <div id="fin-fl-sel-bar" style="display:none;align-items:center;gap:8px;margin-left:auto">
@@ -2218,10 +2217,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
     <!-- Toolbar -->
     <div class="fin-toolbar" style="margin-top:14px">
-      <button class="btn btn-ghost btn-sm fin-atalho-btn" id="fin-rc-btn-recorr" onclick="finToggleFiltroRapido('receber','recorrente',this)">⟳ Recorrentes</button>
-      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('receber')">🔁 Títulos recorrentes</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('receber')">🔁 Recorrentes cadastrados</button>
       <button class="btn btn-ghost btn-sm" onclick="abrirFiltrosFin('receber')">▤ Filtros<span class="fin-filtros-badge" id="fin-rc-filtros-badge" style="display:none">0</span></button>
       <button class="btn btn-ghost btn-sm" onclick="finLimparFiltros('receber')">Limpar</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportarFinPDF('receber')">📄 Exportar em PDF</button>
       <div id="fin-rc-sel-bar" style="display:none;align-items:center;gap:8px;margin-left:auto">
         <span id="fin-rc-sel-count" style="font-size:12px;color:var(--tx2)">0 selecionados</span>
         <button class="btn btn-sm" style="background:var(--sul);color:var(--su);border-color:var(--su)" onclick="finLiquidarSelecionados('receber')">✓ Liquidar</button>
@@ -17021,6 +17020,7 @@ let _finSubAtual = 'fluxo';
 let _finFiltroRapido = { pagar: null, receber: null };
 let _finLiqPendingIds = [];
 let _finLiqPendingTipo = '';
+let _finListaAtual = { pagar: [], folha: [], receber: [] };
 
 const FIN_CATEGORIAS = ['Aluguel','Material','Impostos','Financiamento','Marketing','Serviços','Manutenção','Outros']; // Operacional (Sicoob)
 const FIN_CATEGORIAS_FOLHA = ['Salário Fixo','Repasse Dentista','Transferência C6','Outros']; // Folha (C6)
@@ -17222,12 +17222,15 @@ function renderFinLista(tipo){
   // Ordena por vencimento
   lista.sort((a,b)=>(a.vencimento||'').localeCompare(b.vencimento||''));
 
-  // Cards de resumo
-  const todosStatus = todos.map(t=>({...t,_st:_finStatusEfetivo(t)}));
-  const sumAll = todos.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
-  const sumAberto = todosStatus.filter(t=>t._st==='aberto').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
-  const sumAtrasado = todosStatus.filter(t=>t._st==='atrasado').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
-  const sumLiq = todosStatus.filter(t=>t._st==='pago'||t._st==='recebido'||t.status==='pago'||t.status==='recebido').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  // Guarda a lista filtrada atual (usada, por exemplo, na exportação em PDF)
+  _finListaAtual[tipo] = lista;
+
+  // Cards de resumo — refletem apenas o que está filtrado na tela
+  const listaStatus = lista.map(t=>({...t,_st:_finStatusEfetivo(t)}));
+  const sumAll = lista.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  const sumAberto = listaStatus.filter(t=>t._st==='aberto').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  const sumAtrasado = listaStatus.filter(t=>t._st==='atrasado').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  const sumLiq = listaStatus.filter(t=>t._st==='pago'||t._st==='recebido'||t.status==='pago'||t.status==='recebido').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
 
   const setEl=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
   if(isPagar){
@@ -17292,25 +17295,9 @@ function renderFinLista(tipo){
   }).join('');
 }
 
-function finToggleFiltroRapido(tipo, filtro, btn){
-  const prefix = tipo==='pagar'?'pg':(tipo==='folha'?'fl':'rc');
-  const btnId = 'fin-'+prefix+'-btn-'+filtro.replace(/[A-Z]/g,c=>'-'+c.toLowerCase());
-  if(_finFiltroRapido[tipo]===filtro){
-    _finFiltroRapido[tipo]=null;
-    if(btn) btn.classList.remove('on');
-  } else {
-    _finFiltroRapido[tipo]=filtro;
-    if(btn) btn.classList.add('on');
-  }
-  _finUpdateFiltrosBadge(tipo);
-  renderFinLista(tipo);
-}
-
 function finLimparFiltros(tipo){
   _finFiltrosAdv[tipo] = _finFiltroVazio();
   _finFiltroRapido[tipo]=null;
-  const btn=document.getElementById('fin-'+(tipo==='pagar'?'pg':(tipo==='folha'?'fl':'rc'))+'-btn-recorr');
-  if(btn) btn.classList.remove('on');
   _finUpdateFiltrosBadge(tipo);
   renderFinLista(tipo);
 }
@@ -17382,11 +17369,9 @@ function finFiltrosAplicar(){
     parte: document.getElementById('fin-filtro-parte').value.trim(),
   };
 
-  // Sincroniza recorrente com o botão rápido da toolbar
+  // Recorrente agora é apenas uma opção dentro do próprio drawer de filtros
   const recorrChk = document.getElementById('fin-filtro-recorr').checked;
   _finFiltroRapido[tipo] = recorrChk ? 'recorrente' : null;
-  const btn=document.getElementById('fin-'+(tipo==='pagar'?'pg':'rc')+'-btn-recorr');
-  if(btn) btn.classList.toggle('on', recorrChk);
 
   _finUpdateFiltrosBadge(tipo);
   fecharFiltrosFin();
@@ -17411,11 +17396,80 @@ function _finUpdateFiltrosBadge(tipo){
   if(adv.liqDe||adv.liqAte) n++;
   if(adv.parte) n++;
   if(_finFiltroRapido[tipo]==='recorrente') n++;
-  const badge = document.getElementById('fin-'+(tipo==='pagar'?'pg':'rc')+'-filtros-badge');
+  const badge = document.getElementById('fin-'+(tipo==='pagar'?'pg':(tipo==='folha'?'fl':'rc'))+'-filtros-badge');
   if(badge){
     badge.textContent = n;
     badge.style.display = n>0 ? 'inline-flex' : 'none';
   }
+}
+
+// ── EXPORTAR EM PDF (respeita os filtros aplicados na tela) ─────────
+function exportarFinPDF(tipo){
+  const isPagar = tipo==='pagar';
+  const isFolha = tipo==='folha';
+  const lista = (_finListaAtual[tipo]||[]).slice().sort((a,b)=>(a.vencimento||'').localeCompare(b.vencimento||''));
+
+  if(!lista.length){ alert('Não há títulos no filtro atual para exportar.'); return; }
+
+  const tituloTela = {pagar:'A pagar operacional', folha:'A pagar folha', receber:'Contas a Receber'}[tipo] || tipo;
+  const statusLabels = {aberto:'Em aberto', atrasado:'Atrasado', pago:'Pago', recebido:'Recebido', cancelado:'Cancelado'};
+
+  const total = lista.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  const totalAberto = lista.filter(t=>_finStatusEfetivo(t)==='aberto').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  const totalAtrasado = lista.filter(t=>_finStatusEfetivo(t)==='atrasado').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  const totalLiq = lista.filter(t=>{const st=_finStatusEfetivo(t); return st==='pago'||st==='recebido';}).reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+
+  const rows = lista.map(t=>{
+    const st = _finStatusEfetivo(t);
+    const isPaciente = t._origem==='paciente';
+    const pac = isPaciente ? pacientes.find(x=>String(x.id)===String(t.pacienteId)) : null;
+    const beneficiario = isPaciente ? (pac?pac.nome:'—') : (t._contraparte||'—');
+    const parcela = (t.parcelaInfo&&t.parcelaInfo.numero) ? `${t.parcelaInfo.numero}/${t.parcelaInfo.total}` : (t.recorrente?'Recorrente':'—');
+    const catOuOrigem = (isPagar||isFolha) ? (t.categoria||'—') : (isPaciente?'Paciente':'Manual');
+    return `<tr>
+      <td>${t.descricao||'—'}</td>
+      <td>${beneficiario}</td>
+      <td>${parcela}</td>
+      <td>${catOuOrigem}</td>
+      <td>${_finFmtData(t.vencimento)}</td>
+      <td style="text-align:right">${_finFmt(t.valor)}</td>
+      <td>${statusLabels[st]||st}</td>
+    </tr>`;
+  }).join('');
+
+  const win = window.open('','_blank');
+  const html = `<html><head><meta charset="utf-8"><title>${tituloTela} — Sekai</title>
+  <style>
+    body{font-family:Arial,sans-serif;color:#111;padding:32px;font-size:13px}
+    h1{font-size:18px;margin-bottom:4px}
+    .sub{color:#666;font-size:12px;margin-bottom:20px}
+    .cards{display:flex;gap:14px;margin-bottom:22px;flex-wrap:wrap}
+    .card{border:1px solid #ddd;border-radius:8px;padding:10px 14px;min-width:120px}
+    .card .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:4px}
+    .card .val{font-size:16px;font-weight:700}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #eee;font-size:12px}
+    th{color:#888;text-transform:uppercase;font-size:10px;letter-spacing:.05em}
+  </style></head><body>
+  <h1>${tituloTela} — Sekai</h1>
+  <div class="sub">Gerado em ${_finFmtData(_finIso(new Date()))} · ${lista.length} título${lista.length!==1?'s':''} filtrado${lista.length!==1?'s':''}</div>
+  <div class="cards">
+    <div class="card"><div class="lbl">Total</div><div class="val">${_finFmt(total)}</div></div>
+    <div class="card"><div class="lbl">Em aberto</div><div class="val">${_finFmt(totalAberto)}</div></div>
+    <div class="card"><div class="lbl">${isPagar||isFolha?'Pago':'Recebido'}</div><div class="val">${_finFmt(totalLiq)}</div></div>
+    <div class="card"><div class="lbl">Atrasado</div><div class="val">${_finFmt(totalAtrasado)}</div></div>
+  </div>
+  <table>
+    <thead><tr>
+      <th>Descrição</th><th>${isPagar||isFolha?'Beneficiário':'Pagador'}</th><th>Parcela</th>
+      <th>${isPagar||isFolha?'Categoria':'Origem'}</th><th>Vencimento</th><th style="text-align:right">Valor</th><th>Status</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <script>window.onload=()=>window.print();<\/script>
+  </body></html>`;
+  win.document.write(html);
+  win.document.close();
 }
 
 // ── MODAL TÍTULOS RECORRENTES ───────────────────────────────────────
