@@ -8760,14 +8760,28 @@ function _prontUpdateItem(orcId,idx,field,val){
 function _calcComissaoItem(it){
   let comFixo=parseFloat(it.comissaoFixo)||0;
   let comPct=parseFloat(it.comissaoPct)||0;
-  if(!comFixo&&!comPct&&it.procId){
+  if(!comFixo&&!comPct){
     const tabelas=_tbTabelas();
     const tab=it.tabelaId?tabelas.find(t=>t.id===it.tabelaId):null;
     const listaBusca=tab?[tab]:tabelas;
-    for(const t of listaBusca){
-      const p=(t.procedimentos||[]).find(x=>x.id===it.procId);
-      if(p){ comFixo=parseFloat(p.comissaoFixo)||0; comPct=parseFloat(p.comissaoPct)||0; break; }
+    let achou=null;
+    // 1ª tentativa: casa pelo procId gravado no item
+    if(it.procId){
+      for(const t of listaBusca){
+        const p=(t.procedimentos||[]).find(x=>x.id===it.procId);
+        if(p){ achou=p; break; }
+      }
     }
+    // 2ª tentativa (fallback): casa pelo nome do procedimento — cobre itens antigos
+    // criados antes do vínculo procId/tabelaId, ou digitados manualmente no orçamento.
+    if(!achou&&it.proc){
+      const nomeNorm=String(it.proc).trim().toLowerCase();
+      for(const t of listaBusca){
+        const p=(t.procedimentos||[]).find(x=>String(x.nome||'').trim().toLowerCase()===nomeNorm);
+        if(p){ achou=p; break; }
+      }
+    }
+    if(achou){ comFixo=parseFloat(achou.comissaoFixo)||0; comPct=parseFloat(achou.comissaoPct)||0; }
   }
   const valor=parseFloat(it.valor)||0;
   if(comFixo>0) return comFixo;
@@ -18234,9 +18248,18 @@ function finConfirmarLiquidar(){
 function _finItensExecutados(){
   const orcs=_orcamentos().filter(o=>o.status==='aprovado');
   const out=[];
+  let precisaSalvar=false;
   orcs.forEach(orc=>{
     (orc.itens||[]).forEach((it,idx)=>{
       if(!it.executado) return;
+      // Auto-correção: itens executados e ainda não medidos que ficaram com comissão
+      // zerada/ausente (ex.: itens antigos sem procId/tabelaId gravado na criação)
+      // são recalculados aqui. Itens já medidos/pagos nunca são recalculados —
+      // o valor pago já está lançado no financeiro e não pode mudar retroativamente.
+      if(!it.comissaoMedida && !(parseFloat(it.valorComissao)>0)){
+        const recalc=_calcComissaoItem(it);
+        if(recalc>0){ it.valorComissao=recalc; precisaSalvar=true; }
+      }
       const pac=pacientes.find(x=>String(x.id)===String(orc.pacienteId));
       out.push({
         ...it,
@@ -18248,6 +18271,14 @@ function _finItensExecutados(){
       });
     });
   });
+  if(precisaSalvar){
+    const todos=_orcamentos();
+    orcs.forEach(orcRecalc=>{
+      const alvo=todos.find(o=>o.id===orcRecalc.id);
+      if(alvo) alvo.itens=orcRecalc.itens;
+    });
+    _salvarOrcamentos(todos);
+  }
   return out;
 }
 
