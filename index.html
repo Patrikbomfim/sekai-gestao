@@ -2546,6 +2546,44 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
+<!-- MODAL MEDIÇÃO DE COMISSÃO -->
+<div id="modal-fin-medicao" class="fin-modal-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharModalFinMedicao)">
+  <div class="fin-modal-box" style="max-width:460px">
+    <div class="fin-modal-hdr">
+      <div class="fin-modal-title">Nova medição — <span id="fin-med-nome-prof"></span></div>
+      <button class="fin-modal-close" onclick="fecharModalFinMedicao()">✕</button>
+    </div>
+    <div class="fin-modal-body">
+      <input type="hidden" id="fin-med-nome">
+      <p style="font-size:12.5px;color:var(--tx2)">
+        Os itens selecionados serão marcados como <strong>medidos</strong> e um título a pagar será lançado no financeiro para esta profissional.
+      </p>
+      <div id="fin-med-resumo" style="background:var(--s2);border-radius:var(--r8);padding:12px 14px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:12px;color:var(--tx2)"><span id="fin-med-qtd">0</span> procedimento(s) selecionado(s)</div>
+        <div style="font-size:16px;font-weight:700;color:var(--su)" id="fin-med-total">R$ 0,00</div>
+      </div>
+      <div class="fl">
+        <label>Descrição do título</label>
+        <input type="text" id="fin-med-desc" placeholder="Ex: Comissão Dra. Leticia — medição jul/2026">
+      </div>
+      <div class="fin-drawer-row2">
+        <div class="fl">
+          <label>Vencimento</label>
+          <input type="date" id="fin-med-venc">
+        </div>
+        <div class="fl">
+          <label>Categoria</label>
+          <input type="text" id="fin-med-categoria" value="Comissão de procedimento" readonly style="background:var(--s2);color:var(--tx2)">
+        </div>
+      </div>
+    </div>
+    <div class="fin-modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModalFinMedicao()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="finConfirmarMedicao()">Lançar título a pagar</button>
+    </div>
+  </div>
+</div>
+
 <!-- DRAWER DE FILTROS FINANCEIROS -->
 <div id="fin-drawer-ov" class="fin-drawer-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharFiltrosFin)">
   <div class="fin-drawer">
@@ -7647,11 +7685,16 @@ function confirmarProcOrc(){
   if(!nome||!nome.trim()){ alert('Selecione ou informe o nome do procedimento.'); return; }
   const dentista=(document.getElementById('proc-orc-dentista')||{}).value||'';
   const valor=_parseMoeda((document.getElementById('proc-orc-valor')||{}).value);
+  const tabelaSelEl=document.getElementById('proc-orc-tabela');
+  const tabelaIdSel=tabelaSelEl?tabelaSelEl.value:(_tbTabelas()[0]||{}).id;
   _orcItens.push({
     id:'item_'+Date.now(),
     proc:nome.trim(),
     procId:_orcProcSelecionado?_orcProcSelecionado.id:null,
+    tabelaId:tabelaIdSel||null,
     especialidade:_orcProcSelecionado?_orcProcSelecionado.especialidade:'',
+    comissaoFixo:_orcProcSelecionado?(parseFloat(_orcProcSelecionado.comissaoFixo)||0):0,
+    comissaoPct:_orcProcSelecionado?(parseFloat(_orcProcSelecionado.comissaoPct)||0):0,
     dentista,
     dentes:[..._orcDentesSel],
     valor
@@ -8711,6 +8754,27 @@ function _prontUpdateItem(orcId,idx,field,val){
   });
 }
 
+// Calcula o valor de comissão de um item do plano de tratamento.
+// Prioriza os campos comissaoFixo/comissaoPct já congelados no item (gravados na criação do orçamento).
+// Fallback para itens antigos: busca o procedimento na tabela de precificação via procId/tabelaId.
+function _calcComissaoItem(it){
+  let comFixo=parseFloat(it.comissaoFixo)||0;
+  let comPct=parseFloat(it.comissaoPct)||0;
+  if(!comFixo&&!comPct&&it.procId){
+    const tabelas=_tbTabelas();
+    const tab=it.tabelaId?tabelas.find(t=>t.id===it.tabelaId):null;
+    const listaBusca=tab?[tab]:tabelas;
+    for(const t of listaBusca){
+      const p=(t.procedimentos||[]).find(x=>x.id===it.procId);
+      if(p){ comFixo=parseFloat(p.comissaoFixo)||0; comPct=parseFloat(p.comissaoPct)||0; break; }
+    }
+  }
+  const valor=parseFloat(it.valor)||0;
+  if(comFixo>0) return comFixo;
+  if(comPct>0) return +(valor*comPct/100).toFixed(2);
+  return 0;
+}
+
 function _prontAprovarItem(orcId,idx){
   _comSalvarImediato(()=>{
     const list=_orcamentos();
@@ -8726,6 +8790,9 @@ function _prontAprovarItem(orcId,idx){
     it.executado=true;
     it.realizadoPor=uNome;
     it.realizadoEm=`${dataHoje} às ${horaStr}`;
+    // Congela o valor de comissão no momento da execução, com base na tabela de precificação usada no orçamento
+    it.valorComissao=_calcComissaoItem(it);
+    it.comissaoMedida=it.comissaoMedida||false;
     _salvarOrcamentos(list);
   });
   const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
@@ -8733,15 +8800,23 @@ function _prontAprovarItem(orcId,idx){
 }
 
 function _prontDesfazerItem(orcId,idx){
+  let bloqueado=false;
   _comSalvarImediato(()=>{
     const list=_orcamentos();
     const orc=list.find(o=>o.id===orcId);
     if(!orc||!orc.itens||!orc.itens[idx]) return;
-    orc.itens[idx].executado=false;
-    orc.itens[idx].realizadoPor=null;
-    orc.itens[idx].realizadoEm=null;
+    const it=orc.itens[idx];
+    if(it.comissaoMedida){ bloqueado=true; return; }
+    it.executado=false;
+    it.realizadoPor=null;
+    it.realizadoEm=null;
+    it.valorComissao=0;
     _salvarOrcamentos(list);
   });
+  if(bloqueado){
+    alert('Este procedimento já teve a comissão medida e paga no financeiro. Não é possível desfazer a execução.\n\nSe necessário, ajuste diretamente no módulo Financeiro › Comissão Dentistas.');
+    return;
+  }
   const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
   if(p) _renderProntPlano(p);
 }
@@ -18148,23 +18223,65 @@ function finConfirmarLiquidar(){
   if(_finSubAtual==='fluxo') renderFinFluxo();
 }
 
-// ── COMISSÃO DENTISTAS (placeholder) ────────────────────────────────
+// ── COMISSÃO DENTISTAS ───────────────────────────────────────────────
+// Fonte real dos procedimentos executados: sk3-orcamentos → orc.itens[]
+// (orçamentos aprovados = "Plano de tratamento" no prontuário do paciente).
+// Cada item executado (executado:true) carrega valorComissao (congelado na
+// execução, ver _calcComissaoItem) e comissaoMedida (true após lançar o título).
+
+// Retorna todos os itens executados de todos os orçamentos aprovados,
+// já enriquecidos com dados do paciente e do orçamento de origem.
+function _finItensExecutados(){
+  const orcs=_orcamentos().filter(o=>o.status==='aprovado');
+  const out=[];
+  orcs.forEach(orc=>{
+    (orc.itens||[]).forEach((it,idx)=>{
+      if(!it.executado) return;
+      const pac=pacientes.find(x=>String(x.id)===String(orc.pacienteId));
+      out.push({
+        ...it,
+        orcId:orc.id,
+        itemIdx:idx,
+        chave:orc.id+'::'+idx,
+        pacNome:pac?pac.nome:'Paciente',
+        pacId:orc.pacienteId
+      });
+    });
+  });
+  return out;
+}
+
+// Localiza o usuário do sistema correspondente ao nome do profissional que executou
+// (via sk3-equipe, que guarda usuarioId), para vincular corretamente o título a pagar.
+function _finUsuarioPorNomeProf(nome){
+  const eq=(carregarLS('sk3-equipe',[])||[]).find(e=>e.nome===nome);
+  if(eq&&eq.usuarioId){
+    const u=(typeof usuarios!=='undefined'?usuarios:carregarLS('sk3-usuarios',[])).find(x=>x.id===eq.usuarioId);
+    if(u) return u;
+  }
+  // fallback: bate por nome direto na lista de usuários
+  return (typeof usuarios!=='undefined'?usuarios:carregarLS('sk3-usuarios',[])).find(u=>u.nome===nome)||null;
+}
+
 function renderFinComissao(){
   const wrap=document.getElementById('fin-com-wrap');
   if(!wrap) return;
 
-  // Monta lista de profissionais da equipe
-  const equipe=carregarLS('sk3-equipe',[]);
-  const profs=equipe.filter(e=>e.nome);
+  // Lista de profissionais = quem já tem ao menos um item executado no plano de tratamento
+  const execs=_finItensExecutados();
+  const nomes=[...new Set(execs.map(i=>i.execProfissional).filter(Boolean))].sort();
 
-  if(!profs.length){
-    wrap.innerHTML=`<div class="fin-empty" style="margin-top:40px"><div style="font-size:24px;margin-bottom:8px">🦷</div>Nenhuma profissional cadastrada na equipe.</div>`;
+  if(!nomes.length){
+    wrap.innerHTML=`<div class="fin-empty" style="margin-top:40px"><div style="font-size:24px;margin-bottom:8px">🦷</div>Nenhum procedimento executado ainda no plano de tratamento dos pacientes.</div>`;
     return;
   }
 
   wrap.innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-      ${profs.map((p,i)=>`<button class="btn btn-ghost btn-sm fin-prof-btn" data-nome="${p.nome}" onclick="finSelecionarProf(this,'${p.nome}')">${p.nome}</button>`).join('')}
+      ${nomes.map(n=>{
+        const pend=execs.filter(i=>i.execProfissional===n&&!i.comissaoMedida).length;
+        return `<button class="btn btn-ghost btn-sm fin-prof-btn" data-nome="${esc(n)}" onclick="finSelecionarProf(this,'${esc(n)}')">${esc(n)}${pend?` <span class="fin-filtros-badge">${pend}</span>`:''}</button>`;
+      }).join('')}
     </div>
     <div id="fin-com-conteudo">
       <div class="fin-empty">
@@ -18177,19 +18294,9 @@ function renderFinComissao(){
 function finSelecionarProf(btn, nome){
   document.querySelectorAll('.fin-prof-btn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
+  _finComProfAtual=nome;
 
-  // Busca procedimentos executados por esta profissional no plano de tratamento
-  const prontuarios=carregarLS('sk3-prontuarios',[]);
-  const procedimentosExec=[];
-  prontuarios.forEach(pr=>{
-    (pr.plano||[]).forEach(item=>{
-      if((item.executadaPor||'')===nome&&item.executado){
-        const p=pacientes.find(x=>String(x.id)===String(pr.pacienteId));
-        procedimentosExec.push({...item, pacNome:p?p.nome:'Paciente', pacId:pr.pacienteId});
-      }
-    });
-  });
-
+  const procedimentosExec=_finItensExecutados().filter(i=>i.execProfissional===nome);
   const pendentes=procedimentosExec.filter(i=>!i.comissaoMedida);
   const medidos=procedimentosExec.filter(i=>i.comissaoMedida);
 
@@ -18197,28 +18304,33 @@ function finSelecionarProf(btn, nome){
   if(!conteudo) return;
 
   if(!procedimentosExec.length){
-    conteudo.innerHTML=`<div class="fin-empty"><div style="font-size:24px;margin-bottom:8px">✅</div>Nenhum procedimento executado por <strong>${nome}</strong> encontrado.</div>`;
+    conteudo.innerHTML=`<div class="fin-empty"><div style="font-size:24px;margin-bottom:8px">✅</div>Nenhum procedimento executado por <strong>${esc(nome)}</strong> encontrado.</div>`;
     return;
   }
 
+  const totalPend=pendentes.reduce((s,i)=>s+(parseFloat(i.valorComissao)||0),0);
+
   conteudo.innerHTML=`
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div style="font-size:13px;font-weight:600;color:var(--tx)">${pendentes.length} procedimento${pendentes.length!==1?'s':''} aguardando medição</div>
-      ${pendentes.length?`<button class="btn btn-primary btn-sm" onclick="finAbrirMedicao('${nome}')">Nova medição →</button>`:''}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:13px;font-weight:600;color:var(--tx)">
+        ${pendentes.length} procedimento${pendentes.length!==1?'s':''} aguardando medição
+        ${pendentes.length?` — <span style="color:var(--su)">${_finFmt(totalPend)}</span>`:''}
+      </div>
+      ${pendentes.length?`<button class="btn btn-primary btn-sm" onclick="finAbrirMedicao('${esc(nome)}')">Nova medição →</button>`:''}
     </div>
     ${pendentes.length?`
     <div class="fin-table-wrap" style="margin-bottom:20px">
       <table class="fin-table">
         <thead><tr>
-          <th style="width:32px"><input type="checkbox" onchange="this.closest('table').querySelectorAll('.fin-chk-com').forEach(c=>c.checked=this.checked)"></th>
+          <th style="width:32px"><input type="checkbox" onchange="this.closest('table').querySelectorAll('.fin-chk-com').forEach(c=>c.checked=this.checked); finAtualizarResumoSelecao();"></th>
           <th>Procedimento</th><th>Paciente</th><th>Data execução</th><th style="text-align:right">Comissão</th>
         </tr></thead>
         <tbody>
           ${pendentes.map(i=>`<tr>
-            <td><input type="checkbox" class="fin-chk-com" data-id="${i.id||i.proc}" checked></td>
-            <td>${i.proc||i.nome||'—'}</td>
-            <td style="color:var(--tx2)">${i.pacNome}</td>
-            <td style="color:var(--tx2)">${_finFmtData(i.dataExecucao||i.data||'')}</td>
+            <td><input type="checkbox" class="fin-chk-com" data-chave="${i.chave}" data-valor="${parseFloat(i.valorComissao)||0}" checked onchange="finAtualizarResumoSelecao()"></td>
+            <td>${esc(i.proc||'—')}</td>
+            <td style="color:var(--tx2)">${esc(i.pacNome)}</td>
+            <td style="color:var(--tx2)">${_finFmtData(i.execData||'')}</td>
             <td class="fin-td-valor">${_finFmt(i.valorComissao||0)}</td>
           </tr>`).join('')}
         </tbody>
@@ -18232,9 +18344,9 @@ function finSelecionarProf(btn, nome){
           <thead><tr><th>Procedimento</th><th>Paciente</th><th>Data execução</th><th style="text-align:right">Comissão</th><th>Status</th></tr></thead>
           <tbody>
             ${medidos.map(i=>`<tr>
-              <td>${i.proc||i.nome||'—'}</td>
-              <td style="color:var(--tx2)">${i.pacNome}</td>
-              <td style="color:var(--tx2)">${_finFmtData(i.dataExecucao||i.data||'')}</td>
+              <td>${esc(i.proc||'—')}</td>
+              <td style="color:var(--tx2)">${esc(i.pacNome)}</td>
+              <td style="color:var(--tx2)">${_finFmtData(i.execData||'')}</td>
               <td class="fin-td-valor">${_finFmt(i.valorComissao||0)}</td>
               <td>${_finBadge('pago')}</td>
             </tr>`).join('')}
@@ -18244,8 +18356,90 @@ function finSelecionarProf(btn, nome){
     </div>`:''}`;
 }
 
+let _finComProfAtual=null;
+
+function finAtualizarResumoSelecao(){
+  // usado apenas se quisermos refletir a seleção em tempo real na própria tela (reservado)
+}
+
 function finAbrirMedicao(nome){
-  alert('Módulo de medição será desenvolvido em breve. Aqui você aprovará os procedimentos e gerará o título a pagar para '+nome+'.');
+  const chks=[...document.querySelectorAll('.fin-chk-com:checked')];
+  if(!chks.length){ alert('Selecione ao menos um procedimento para medir.'); return; }
+
+  const chaves=chks.map(c=>c.dataset.chave);
+  const total=chks.reduce((s,c)=>s+(parseFloat(c.dataset.valor)||0),0);
+
+  document.getElementById('fin-med-nome-prof').textContent=nome;
+  document.getElementById('fin-med-nome').value=nome;
+  document.getElementById('fin-med-nome').dataset.chaves=JSON.stringify(chaves);
+  document.getElementById('fin-med-qtd').textContent=chaves.length;
+  document.getElementById('fin-med-total').textContent=_finFmt(total);
+  document.getElementById('fin-med-desc').value=`Comissão ${nome} — medição ${new Date().toLocaleDateString('pt-BR',{month:'2-digit',year:'numeric'}).replace('/','/')}`;
+  document.getElementById('fin-med-venc').value=_finIso(new Date());
+
+  document.getElementById('modal-fin-medicao').classList.add('open');
+}
+
+function fecharModalFinMedicao(){
+  document.getElementById('modal-fin-medicao').classList.remove('open');
+}
+
+function finConfirmarMedicao(){
+  const nomeEl=document.getElementById('fin-med-nome');
+  const nome=nomeEl.value;
+  const chaves=JSON.parse(nomeEl.dataset.chaves||'[]');
+  if(!chaves.length){ fecharModalFinMedicao(); return; }
+
+  const desc=(document.getElementById('fin-med-desc')||{}).value||`Comissão ${nome}`;
+  const venc=(document.getElementById('fin-med-venc')||{}).value||_finIso(new Date());
+
+  // 1. Marca os itens do(s) orçamento(s) como comissaoMedida:true
+  const orcamentos=_orcamentos();
+  let total=0;
+  chaves.forEach(chave=>{
+    const [orcId,idxStr]=chave.split('::');
+    const idx=parseInt(idxStr,10);
+    const orc=orcamentos.find(o=>o.id===orcId);
+    if(orc&&orc.itens&&orc.itens[idx]&&orc.itens[idx].executado){
+      orc.itens[idx].comissaoMedida=true;
+      orc.itens[idx].medidoEm=_finIso(new Date());
+      total+=parseFloat(orc.itens[idx].valorComissao)||0;
+    }
+  });
+  _salvarOrcamentos(orcamentos);
+
+  // 2. Lança o título a pagar no financeiro geral, vinculado à profissional (usuário) quando encontrado
+  const uProf=_finUsuarioPorNomeProf(nome);
+  const novoTitulo={
+    id:'fgt_'+Date.now(),
+    tipo:'pagar',
+    descricao:desc,
+    parte:nome,
+    parteTipo:uProf?'usuario':'',
+    parteId:uProf?uProf.id:null,
+    valor:+total.toFixed(2),
+    vencimento:venc,
+    categoria:'Comissão de procedimento',
+    forma:'',
+    obs:`Medição de comissão referente a ${chaves.length} procedimento(s) executado(s).`,
+    status:'aberto',
+    origem:'comissao',
+    recorrente:false,
+    anexos:[],
+    criadoEm:_finIso(new Date())
+  };
+  const listaGestao=_finTitulosGestao();
+  listaGestao.push(novoTitulo);
+  _finSalvarTitulosGestao(listaGestao);
+
+  fecharModalFinMedicao();
+
+  // Re-renderiza a tela de comissão mantendo a profissional selecionada
+  renderFinComissao();
+  const btn=[...document.querySelectorAll('.fin-prof-btn')].find(b=>b.dataset.nome===nome);
+  if(btn) finSelecionarProf(btn,nome);
+
+  alert(`Medição lançada com sucesso.\n\nTítulo a pagar de ${_finFmt(total)} criado para ${nome} em Financeiro › Contas a Pagar.`);
 }
 
 // ── Adicionar permissão financeiro ao grupo de permissões ───────────
