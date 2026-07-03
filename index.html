@@ -793,7 +793,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="subnav-title">Financeiro</div>
   <button class="subnav-btn on" id="fin-sub-fluxo" onclick="showFinSub('fluxo',this)"><span class="nav-ic">◈</span>Fluxo de Caixa</button>
   <button class="subnav-btn" id="fin-sub-pagar" onclick="showFinSub('pagar',this)"><span class="nav-ic">↑</span>Contas a Pagar Operacional</button>
-  <button class="subnav-btn" id="fin-sub-folha" onclick="showFinSub('folha',this)"><span class="nav-ic">👥</span>Folha</button>
+  <button class="subnav-btn" id="fin-sub-folha" onclick="showFinSub('folha',this)" style="display:none"><span class="nav-ic">👥</span>Folha</button>
   <button class="subnav-btn" id="fin-sub-receber" onclick="showFinSub('receber',this)"><span class="nav-ic">↓</span>Contas a Receber</button>
   <button class="subnav-btn" id="fin-sub-comissao" onclick="showFinSub('comissao',this)"><span class="nav-ic">◎</span>Comissão Dentistas</button>
 </nav>
@@ -16963,7 +16963,8 @@ function renderFinanceiro(){
   // Controla visibilidade da aba Folha conforme permissão do usuário logado
   const btnFolha = document.getElementById('fin-sub-folha');
   if(btnFolha){
-    const podeFolha = temPerm('financeiro_folha_ver');
+    // Administrador sempre vê a aba Folha; demais cargos precisam da permissão explícita
+    const podeFolha = souAdministradorReal() || temPerm('financeiro_folha_ver');
     btnFolha.style.display = podeFolha ? '' : 'none';
     // Se estava na aba folha sem permissão, redireciona para fluxo
     if(!podeFolha && _finSubAtual==='folha') _finSubAtual='fluxo';
