@@ -18659,8 +18659,8 @@ function finSelecionarProf(btn, nome){
         <table class="fin-table">
           <thead><tr>
             <th style="width:24px"></th>
-            <th>Nº de procedimentos</th><th style="text-align:right">Valor da medição</th>
-            <th>Data da medição</th><th>Data do pagamento</th><th>Status</th>
+            <th>Nº de procedimentos</th><th style="text-align:right">Valor dos tratamentos</th><th style="text-align:right">Valor da medição</th>
+            <th>Data da medição</th><th>Data do pagamento</th><th>Status</th><th style="width:130px"></th>
           </tr></thead>
           <tbody>
             ${medicoes.map(m=>{
@@ -18669,23 +18669,29 @@ function finSelecionarProf(btn, nome){
               const stEfetivo=tit?_finStatusEfetivo(tit):null;
               const pago=tit&&(stEfetivo==='pago'||tit.status==='pago');
               const dataPagamento=pago?(tit.dataBaixa||''):'';
+              const totalTrat=(m.totalTratamentos!==undefined)?m.totalTratamentos:(m.itens||[]).reduce((s,it)=>s+(parseFloat(it.valor)||0),0);
               return `<tr style="cursor:pointer" onclick="_finToggleHistMedicao('${uid}')">
                 <td><span id="${uid}-caret" style="font-size:10px;color:var(--tx3);display:inline-block;transition:transform .15s">▶</span></td>
                 <td>${m.chaves.length}</td>
+                <td class="fin-td-valor" style="color:var(--tx2)">${_finFmt(totalTrat)}</td>
                 <td class="fin-td-valor">${_finFmt(m.total)}</td>
                 <td style="color:var(--tx2)">${_finFmtData(m.dataMedicao)}</td>
                 <td style="color:var(--tx2)">${dataPagamento?_finFmtData(dataPagamento):'—'}</td>
                 <td>${tit?_finBadge(pago?'pago':(stEfetivo||'aberto')):'<span style="font-size:11px;color:var(--tx3)">Título não encontrado</span>'}</td>
+                <td onclick="event.stopPropagation()">${pago
+                  ? `<button class="btn btn-ghost btn-sm" disabled title="Desfaça o pagamento do título antes de desfazer a medição" style="white-space:nowrap;opacity:.5;cursor:not-allowed">Desfazer medição</button>`
+                  : `<button class="btn btn-ghost btn-sm" style="white-space:nowrap;color:var(--da);border-color:#FCA5A5" onclick="finDesfazerMedicao('${m.id}')">Desfazer medição</button>`}</td>
               </tr>
               <tr id="${uid}-row" style="display:none">
                 <td></td>
-                <td colspan="5" style="padding:0">
+                <td colspan="7" style="padding:0">
                   <div style="background:var(--s2);margin:4px 10px 10px;border-radius:var(--r8);overflow:hidden">
                     <table style="width:100%;border-collapse:collapse">
                       <thead><tr>
                         <th style="padding:7px 12px;font-size:10.5px;text-align:left;color:var(--tx3);text-transform:uppercase">Procedimento</th>
                         <th style="padding:7px 12px;font-size:10.5px;text-align:left;color:var(--tx3);text-transform:uppercase">Paciente</th>
                         <th style="padding:7px 12px;font-size:10.5px;text-align:left;color:var(--tx3);text-transform:uppercase">Data execução</th>
+                        <th style="padding:7px 12px;font-size:10.5px;text-align:right;color:var(--tx3);text-transform:uppercase">Valor procedimento</th>
                         <th style="padding:7px 12px;font-size:10.5px;text-align:right;color:var(--tx3);text-transform:uppercase">Comissão</th>
                       </tr></thead>
                       <tbody>
@@ -18693,6 +18699,7 @@ function finSelecionarProf(btn, nome){
                           <td style="padding:7px 12px;font-size:12px">${esc(it.proc||'—')}</td>
                           <td style="padding:7px 12px;font-size:12px;color:var(--tx2)">${esc(it.pacNome||'—')}</td>
                           <td style="padding:7px 12px;font-size:12px;color:var(--tx2)">${_finFmtData(it.execData||'')}</td>
+                          <td style="padding:7px 12px;font-size:12px;text-align:right;color:var(--tx2)">${it.valor!==undefined?_finFmt(it.valor||0):'—'}</td>
                           <td style="padding:7px 12px;font-size:12px;text-align:right;font-weight:600">${_finFmt(it.valorComissao||0)}</td>
                         </tr>`).join('')}
                       </tbody>
@@ -18845,6 +18852,7 @@ function _finConcluirMedicaoAposLancamento(tituloId){
   const orcamentos=_orcamentos();
   const itensDaMedicao=[];
   let total=0;
+  let totalTratamentos=0;
   _comSalvarImediato(()=>{
     chaves.forEach(chave=>{
       const [orcId,idxStr]=chave.split('::');
@@ -18858,9 +18866,11 @@ function _finConcluirMedicaoAposLancamento(tituloId){
           proc:orc.itens[idx].proc,
           pacNome:pac?pac.nome:'Paciente',
           execData:orc.itens[idx].execData,
+          valor:orc.itens[idx].valor,
           valorComissao:orc.itens[idx].valorComissao
         });
         total+=parseFloat(orc.itens[idx].valorComissao)||0;
+        totalTratamentos+=parseFloat(orc.itens[idx].valor)||0;
       }
     });
     _salvarOrcamentos(orcamentos);
@@ -18873,6 +18883,7 @@ function _finConcluirMedicaoAposLancamento(tituloId){
     chaves,
     itens:itensDaMedicao,
     total:+total.toFixed(2),
+    totalTratamentos:+totalTratamentos.toFixed(2),
     dataMedicao:_finIso(new Date()),
     tituloId
   });
@@ -18884,6 +18895,54 @@ function _finConcluirMedicaoAposLancamento(tituloId){
   renderFinComissao();
   const btn=[...document.querySelectorAll('.fin-prof-btn')].find(b=>b.dataset.nome===nome);
   if(btn) finSelecionarProf(btn,nome);
+}
+
+// Desfaz uma medição já lançada: só é permitido se o título gerado ainda estiver em aberto
+// (não pago). Os procedimentos voltam a aparecer como "a medir" e o título é removido.
+function finDesfazerMedicao(medicaoId){
+  const medicoes=_finMedicoesGestao();
+  const idx=medicoes.findIndex(m=>m.id===medicaoId);
+  if(idx<0) return;
+  const m=medicoes[idx];
+
+  const tit=m.tituloId?_finTitulosGestao().find(t=>String(t.id)===String(m.tituloId)):null;
+  if(tit){
+    const stEfetivo=_finStatusEfetivo(tit);
+    if(stEfetivo==='pago'||tit.status==='pago'||stEfetivo==='recebido'||tit.status==='recebido'){
+      alert('Este título já está pago. Desfaça o pagamento no módulo financeiro antes de desfazer a medição.');
+      return;
+    }
+  }
+
+  if(!confirm('Desfazer esta medição? Os procedimentos voltam a ficar "a medir" e o título gerado será removido.')) return;
+
+  _comSalvarImediato(()=>{
+    const orcamentos=_orcamentos();
+    (m.chaves||[]).forEach(chave=>{
+      const [orcId,idxStr]=chave.split('::');
+      const i2=parseInt(idxStr,10);
+      const orc=orcamentos.find(o=>o.id===orcId);
+      if(orc&&orc.itens&&orc.itens[i2]){
+        orc.itens[i2].comissaoMedida=false;
+        orc.itens[i2].medidoEm=null;
+      }
+    });
+    _salvarOrcamentos(orcamentos);
+  });
+
+  if(m.tituloId){
+    const list=_finTitulosGestao().filter(t=>String(t.id)!==String(m.tituloId));
+    _finSalvarTitulosGestao(list);
+  }
+
+  medicoes.splice(idx,1);
+  _finSalvarMedicoesGestao(medicoes);
+
+  renderFinComissao();
+  if(_finComProfAtual){
+    const btn=[...document.querySelectorAll('.fin-prof-btn')].find(b=>b.dataset.nome===_finComProfAtual);
+    if(btn) finSelecionarProf(btn,_finComProfAtual);
+  }
 }
 
 
