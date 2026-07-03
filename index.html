@@ -1966,22 +1966,35 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="pg-title">Fluxo de Caixa</div>
     <div class="pg-desc">Visão geral financeira — entradas, saídas e posição do caixa</div>
 
-    <!-- Cards realizados no mês -->
-    <div class="fin-cards-row" style="margin-top:16px">
+    <!-- Filtro de período -->
+    <div class="fin-toolbar" style="margin-top:16px">
+      <button class="btn btn-ghost btn-sm fin-atalho-btn" id="flx-per-btn-semana_atual" onclick="finFluxoSetPeriodo('semana_atual')">Essa semana</button>
+      <button class="btn btn-ghost btn-sm fin-atalho-btn" id="flx-per-btn-semana_proxima" onclick="finFluxoSetPeriodo('semana_proxima')">Próxima semana</button>
+      <button class="btn btn-ghost btn-sm fin-atalho-btn" id="flx-per-btn-mes_atual" onclick="finFluxoSetPeriodo('mes_atual')">Esse mês</button>
+      <button class="btn btn-ghost btn-sm fin-atalho-btn" id="flx-per-btn-mes_proximo" onclick="finFluxoSetPeriodo('mes_proximo')">Próximo mês</button>
+      <input type="date" id="flx-filtro-de" class="fin-input-date" title="Data inicial" onchange="finFluxoDataCustomChange()">
+      <span style="font-size:12px;color:var(--tx3)">até</span>
+      <input type="date" id="flx-filtro-ate" class="fin-input-date" title="Data final" onchange="finFluxoDataCustomChange()">
+      <button class="btn btn-ghost btn-sm" onclick="finFluxoLimparFiltro()">Limpar filtro</button>
+    </div>
+    <div style="font-size:11.5px;color:var(--tx3);margin-top:8px" id="flx-periodo-label"></div>
+
+    <!-- Cards realizados no período selecionado -->
+    <div class="fin-cards-row" style="margin-top:12px">
       <div class="fin-card fin-card-green" id="flx-card-recebido">
-        <div class="fin-card-label">Recebido no mês</div>
+        <div class="fin-card-label">Recebido no período</div>
         <div class="fin-card-value" id="flx-val-recebido">R$ 0,00</div>
         <div class="fin-card-sub" id="flx-sub-recebido">0 títulos liquidados</div>
       </div>
       <div class="fin-card fin-card-red" id="flx-card-pago">
-        <div class="fin-card-label">Pago no mês</div>
+        <div class="fin-card-label">Pago no período</div>
         <div class="fin-card-value" id="flx-val-pago">R$ 0,00</div>
         <div class="fin-card-sub" id="flx-sub-pago">0 títulos liquidados</div>
       </div>
       <div class="fin-card fin-card-blue" id="flx-card-saldo">
-        <div class="fin-card-label">Saldo realizado</div>
+        <div class="fin-card-label">Saldo do período</div>
         <div class="fin-card-value" id="flx-val-saldo">R$ 0,00</div>
-        <div class="fin-card-sub">entradas − saídas no mês</div>
+        <div class="fin-card-sub">entradas − saídas no período</div>
       </div>
     </div>
 
@@ -17049,6 +17062,8 @@ function _finSalvarTitulosGestao(list){ _comSalvarImediato(()=>salvarLS('sk3-fin
 
 // ── Estado ───────────────────────────────────────────────────────────
 let _finSubAtual = 'fluxo';
+// Período selecionado no Fluxo de Caixa — padrão: semana atual (segunda a domingo)
+let _finFluxoPeriodo = { tipo:'semana_atual', de:'', ate:'' };
 let _finFiltroRapido = { pagar: null, receber: null };
 let _finLiqPendingIds = [];
 let _finLiqPendingTipo = '';
@@ -17191,35 +17206,106 @@ function irFinSub(tipo, grupo){
   renderFinLista(tipo);
 }
 
+// Retorna a segunda-feira da semana da data informada (padrão: semana começa segunda, termina domingo)
+function _finSegundaSemana(d){
+  const nd=new Date(d);
+  const dia=nd.getDay(); // 0=domingo..6=sábado
+  const diff = dia===0 ? -6 : 1-dia;
+  nd.setDate(nd.getDate()+diff);
+  return nd;
+}
+
+// Calcula a data inicial/final (ISO) do período selecionado no Fluxo de Caixa
+function _finPeriodoFluxoBounds(){
+  const hoje=_finHoje();
+  const tipo=_finFluxoPeriodo.tipo;
+  if(tipo==='custom'){
+    return { de:_finFluxoPeriodo.de||_finIso(hoje), ate:_finFluxoPeriodo.ate||_finIso(hoje) };
+  }
+  if(tipo==='semana_proxima'){
+    const seg=_finSegundaSemana(hoje); seg.setDate(seg.getDate()+7);
+    const dom=new Date(seg); dom.setDate(seg.getDate()+6);
+    return { de:_finIso(seg), ate:_finIso(dom) };
+  }
+  if(tipo==='mes_atual'){
+    const ini=new Date(hoje.getFullYear(),hoje.getMonth(),1);
+    const fim=new Date(hoje.getFullYear(),hoje.getMonth()+1,0);
+    return { de:_finIso(ini), ate:_finIso(fim) };
+  }
+  if(tipo==='mes_proximo'){
+    const ini=new Date(hoje.getFullYear(),hoje.getMonth()+1,1);
+    const fim=new Date(hoje.getFullYear(),hoje.getMonth()+2,0);
+    return { de:_finIso(ini), ate:_finIso(fim) };
+  }
+  // 'semana_atual' (padrão)
+  const seg=_finSegundaSemana(hoje);
+  const dom=new Date(seg); dom.setDate(seg.getDate()+6);
+  return { de:_finIso(seg), ate:_finIso(dom) };
+}
+
+function finFluxoSetPeriodo(tipo){
+  _finFluxoPeriodo={tipo, de:'', ate:''};
+  const elDe=document.getElementById('flx-filtro-de'), elAte=document.getElementById('flx-filtro-ate');
+  if(elDe) elDe.value='';
+  if(elAte) elAte.value='';
+  renderFinFluxo();
+}
+
+function finFluxoDataCustomChange(){
+  const de=document.getElementById('flx-filtro-de').value;
+  const ate=document.getElementById('flx-filtro-ate').value;
+  if(de&&ate){
+    _finFluxoPeriodo={tipo:'custom', de, ate};
+    renderFinFluxo();
+  }
+}
+
+function finFluxoLimparFiltro(){
+  finFluxoSetPeriodo('semana_atual');
+}
+
+function _finFluxoAtualizarBotoes(){
+  ['semana_atual','semana_proxima','mes_atual','mes_proximo'].forEach(t=>{
+    const b=document.getElementById('flx-per-btn-'+t);
+    if(b) b.classList.toggle('on', _finFluxoPeriodo.tipo===t);
+  });
+}
+
 // ── FLUXO DE CAIXA ───────────────────────────────────────────────────
 function renderFinFluxo(){
   const todos = _finTodosTitulos();
-  const mesAtual = _finMesAtual();
   const hoje = _finHoje();
   const hj = _finIso(hoje);
   const seg=new Date(hoje); const ds=hoje.getDay(); seg.setDate(hoje.getDate()+(ds===0?1:(8-ds)%7||7));
   const sex=new Date(seg); sex.setDate(seg.getDate()+4);
   const segIso=_finIso(seg); const sexIso=_finIso(sex);
 
-  const pagar = todos.filter(t=>t.tipo==='pagar');
+  // Inclui os dois módulos "a pagar" (operacional e folha) na visão consolidada
+  const pagar = todos.filter(t=>t.tipo==='pagar'||t.tipo==='folha');
   const receber = todos.filter(t=>t.tipo==='receber'||!t.tipo);
 
-  // Realizados no mês
-  const pagosNoMes = pagar.filter(t=>{ const st=t.status; return (st==='pago')&&(t.dataBaixa||t.vencimento||'').startsWith(mesAtual); });
-  const recebidosNoMes = receber.filter(t=>{ const st=t.status; return (st==='recebido'||st==='pago')&&(t.dataBaixa||t.vencimento||'').startsWith(mesAtual); });
-  const totalPago = pagosNoMes.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
-  const totalRecebido = recebidosNoMes.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  // Período selecionado (padrão: essa semana, segunda a domingo)
+  _finFluxoAtualizarBotoes();
+  const {de:pDe, ate:pAte} = _finPeriodoFluxoBounds();
+
+  const pagosNoPeriodo = pagar.filter(t=>{ const st=t.status; const d=t.dataBaixa||t.vencimento||''; return (st==='pago')&&d>=pDe&&d<=pAte; });
+  const recebidosNoPeriodo = receber.filter(t=>{ const st=t.status; const d=t.dataBaixa||t.vencimento||''; return (st==='recebido'||st==='pago')&&d>=pDe&&d<=pAte; });
+  const totalPago = pagosNoPeriodo.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  const totalRecebido = recebidosNoPeriodo.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
 
   const setEl=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  const periodoLbl=document.getElementById('flx-periodo-label');
+  if(periodoLbl) periodoLbl.textContent=`Período selecionado: ${_finFmtData(pDe)} a ${_finFmtData(pAte)}`;
+
   setEl('flx-val-recebido', _finFmt(totalRecebido));
-  setEl('flx-sub-recebido', recebidosNoMes.length+' título'+(recebidosNoMes.length!==1?'s':'')+' liquidados');
+  setEl('flx-sub-recebido', recebidosNoPeriodo.length+' título'+(recebidosNoPeriodo.length!==1?'s':'')+' liquidados');
   setEl('flx-val-pago', _finFmt(totalPago));
-  setEl('flx-sub-pago', pagosNoMes.length+' título'+(pagosNoMes.length!==1?'s':'')+' liquidados');
+  setEl('flx-sub-pago', pagosNoPeriodo.length+' título'+(pagosNoPeriodo.length!==1?'s':'')+' liquidados');
   const saldo=totalRecebido-totalPago;
   const elSaldo=document.getElementById('flx-val-saldo');
   if(elSaldo){ elSaldo.textContent=_finFmt(saldo); elSaldo.style.color=saldo>=0?'var(--su)':'var(--da)'; }
 
-  // Grupos A Pagar / A Receber
+  // Grupos A Pagar / A Receber (indicadores de vencimento futuro, independentes do período selecionado acima)
   function grupo(lista, tipo){
     const abertos = lista.filter(t=>_finStatusEfetivo(t)==='aberto'||_finStatusEfetivo(t)==='atrasado');
     const atrasados = abertos.filter(t=>{ const v=t.vencimento||''; return v&&v<hj; });
@@ -17242,6 +17328,7 @@ function renderFinFluxo(){
   preencherGrupo('pagar', gPag);
   preencherGrupo('receber', gRec);
 }
+
 
 // ── LISTAS A PAGAR / A RECEBER / FOLHA ───────────────────────────────
 function renderFinLista(tipo){
