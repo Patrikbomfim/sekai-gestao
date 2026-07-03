@@ -2630,6 +2630,38 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
+<!-- MODAL EDITAR COMISSÃO DE UM PROCEDIMENTO (edição pontual — não altera a tabela de precificação) -->
+<div id="modal-fin-editar-comissao" class="fin-modal-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharModalFinEditarComissao)">
+  <div class="fin-modal-box" style="max-width:420px">
+    <div class="fin-modal-hdr">
+      <div class="fin-modal-title">Editar comissão</div>
+      <button class="fin-modal-close" onclick="fecharModalFinEditarComissao()">✕</button>
+    </div>
+    <div class="fin-modal-body">
+      <input type="hidden" id="fin-ed-com-chave">
+      <div style="background:var(--s2);border-radius:var(--r8);padding:10px 12px">
+        <div style="font-size:13px;font-weight:600;color:var(--tx)" id="fin-ed-com-proc">—</div>
+        <div style="font-size:11.5px;color:var(--tx3);margin-top:2px" id="fin-ed-com-meta">—</div>
+      </div>
+      <div class="fl">
+        <label>Valor do procedimento</label>
+        <input type="text" id="fin-ed-com-valor-proc" disabled style="background:var(--s2);color:var(--tx2)">
+      </div>
+      <div class="fl">
+        <label>Valor da comissão <span class="req">*</span></label>
+        <input type="text" id="fin-ed-com-valor" placeholder="R$ 0,00" oninput="finMaskMoeda(this)">
+      </div>
+      <p style="font-size:11.5px;color:var(--tx3)">
+        Esta edição vale apenas para este procedimento específico. Ela não altera a tabela de precificação — próximas execuções, dessa ou de outra profissional, continuam usando o valor padrão da tabela.
+      </p>
+    </div>
+    <div class="fin-modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModalFinEditarComissao()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="finSalvarComissaoEditada()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- DRAWER DE FILTROS FINANCEIROS -->
 <div id="fin-drawer-ov" class="fin-drawer-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharFiltrosFin)">
   <div class="fin-drawer">
@@ -18605,7 +18637,7 @@ function finSelecionarProf(btn, nome){
       <table class="fin-table">
         <thead><tr>
           <th style="width:32px"><input type="checkbox" onchange="this.closest('table').querySelectorAll('.fin-chk-com').forEach(c=>c.checked=this.checked); finAtualizarResumoSelecao();"></th>
-          <th>Procedimento</th><th>Paciente</th><th>Data execução</th><th style="text-align:right">Comissão</th>
+          <th>Procedimento</th><th>Paciente</th><th>Data execução</th><th style="text-align:right">Valor procedimento</th><th style="text-align:right">Comissão</th><th style="width:110px"></th>
         </tr></thead>
         <tbody>
           ${pendentes.map(i=>`<tr>
@@ -18613,7 +18645,9 @@ function finSelecionarProf(btn, nome){
             <td>${esc(i.proc||'—')}</td>
             <td style="color:var(--tx2)">${esc(i.pacNome)}</td>
             <td style="color:var(--tx2)">${_finFmtData(i.execData||'')}</td>
+            <td class="fin-td-valor" style="color:var(--tx2)">${_finFmt(i.valor||0)}</td>
             <td class="fin-td-valor">${_finFmt(i.valorComissao||0)}</td>
+            <td onclick="event.stopPropagation()"><button class="btn btn-ghost btn-sm" style="white-space:nowrap" onclick="finAbrirEditarComissao('${i.chave}')">Editar comissão</button></td>
           </tr>`).join('')}
         </tbody>
       </table>
@@ -18686,6 +18720,59 @@ let _finComProfAtual=null;
 
 function finAtualizarResumoSelecao(){
   // usado apenas se quisermos refletir a seleção em tempo real na própria tela (reservado)
+}
+
+// ── EDIÇÃO PONTUAL DE COMISSÃO (não altera a tabela de precificação) ────
+// A edição é gravada apenas no item do orçamento (via chave orcId::idx),
+// então não afeta execuções futuras do mesmo procedimento — nem da mesma
+// profissional, nem de outra — que continuam usando _calcComissaoItem/tabela.
+function finAbrirEditarComissao(chave){
+  const [orcId, idxStr] = chave.split('::');
+  const idx = parseInt(idxStr,10);
+  const orc = _orcamentos().find(o=>o.id===orcId);
+  const it = orc && orc.itens ? orc.itens[idx] : null;
+  if(!it){ alert('Procedimento não encontrado.'); return; }
+  if(it.comissaoMedida){ alert('Este procedimento já teve a comissão medida e não pode mais ser editado aqui.'); return; }
+
+  const pac = pacientes.find(x=>String(x.id)===String(orc.pacienteId));
+  document.getElementById('fin-ed-com-chave').value = chave;
+  document.getElementById('fin-ed-com-proc').textContent = it.proc||'—';
+  document.getElementById('fin-ed-com-meta').textContent = `${pac?pac.nome:'Paciente'} · ${_finFmtData(it.execData||'')}`;
+  document.getElementById('fin-ed-com-valor-proc').value = _finFmt(it.valor||0);
+  document.getElementById('fin-ed-com-valor').value = 'R$ '+(parseFloat(it.valorComissao)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+
+  document.getElementById('modal-fin-editar-comissao').classList.add('open');
+}
+
+function fecharModalFinEditarComissao(){
+  document.getElementById('modal-fin-editar-comissao').classList.remove('open');
+}
+
+function finSalvarComissaoEditada(){
+  const chave = document.getElementById('fin-ed-com-chave').value;
+  const novoValor = _finParseValor(document.getElementById('fin-ed-com-valor').value);
+  if(!(novoValor>=0)){ alert('Informe um valor válido.'); return; }
+
+  const [orcId, idxStr] = chave.split('::');
+  const idx = parseInt(idxStr,10);
+
+  _comSalvarImediato(()=>{
+    const list = _orcamentos();
+    const orc = list.find(o=>o.id===orcId);
+    if(orc && orc.itens && orc.itens[idx] && !orc.itens[idx].comissaoMedida){
+      orc.itens[idx].valorComissao = novoValor;
+    }
+    _salvarOrcamentos(list);
+  });
+
+  fecharModalFinEditarComissao();
+
+  // Re-renderiza mantendo a profissional selecionada
+  renderFinComissao();
+  if(_finComProfAtual){
+    const btn=[...document.querySelectorAll('.fin-prof-btn')].find(b=>b.dataset.nome===_finComProfAtual);
+    if(btn) finSelecionarProf(btn,_finComProfAtual);
+  }
 }
 
 // Storage de medições — cada registro agrupa os itens medidos de uma vez só (linha mãe do histórico)
