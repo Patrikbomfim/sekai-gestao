@@ -72,7 +72,8 @@
 .fin-table tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
 .fin-table tbody tr:last-child{border-bottom:none}
 .fin-table tbody tr:hover{background:var(--s2)}
-.fin-table td{padding:10px 12px;vertical-align:middle}
+.fin-table td{padding:6px 12px;vertical-align:middle;white-space:nowrap}
+.fin-table td.fin-td-desc{white-space:normal}
 .fin-table td.fin-td-valor{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
 .fin-empty{text-align:center;padding:48px 24px;color:var(--tx3);font-size:13px}
 
@@ -792,8 +793,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <nav class="subnav" id="financeiro-subnav">
   <div class="subnav-title">Financeiro</div>
   <button class="subnav-btn on" id="fin-sub-fluxo" onclick="showFinSub('fluxo',this)"><span class="nav-ic">◈</span>Fluxo de Caixa</button>
-  <button class="subnav-btn" id="fin-sub-pagar" onclick="showFinSub('pagar',this)"><span class="nav-ic">↑</span>Contas a Pagar Operacional</button>
-  <button class="subnav-btn" id="fin-sub-folha" onclick="showFinSub('folha',this)" style="display:none"><span class="nav-ic">👥</span>Folha</button>
+  <button class="subnav-btn" id="fin-sub-pagar" onclick="showFinSub('pagar',this)"><span class="nav-ic">↑</span>A pagar operacional</button>
+  <button class="subnav-btn" id="fin-sub-folha" onclick="showFinSub('folha',this)" style="display:none"><span class="nav-ic">👥</span>A pagar folha</button>
   <button class="subnav-btn" id="fin-sub-receber" onclick="showFinSub('receber',this)"><span class="nav-ic">↓</span>Contas a Receber</button>
   <button class="subnav-btn" id="fin-sub-comissao" onclick="showFinSub('comissao',this)"><span class="nav-ic">◎</span>Comissão Dentistas</button>
 </nav>
@@ -2051,7 +2052,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div id="fin-area-pagar" class="fin-area">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:10px">
       <div>
-        <div class="pg-title">Contas a Pagar Operacional</div>
+        <div class="pg-title">A pagar operacional</div>
         <div class="pg-desc">Despesas da clínica: aluguel, material, serviços, impostos e demais custos operacionais (Sicoob)</div>
       </div>
       <button class="btn btn-primary btn-sm" onclick="abrirModalFinLancamento('pagar')">+ Novo lançamento</button>
@@ -2097,6 +2098,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <tr>
             <th style="width:32px"><input type="checkbox" id="fin-pg-chk-all" onchange="finToggleAll('pagar',this)"></th>
             <th>Descrição</th>
+            <th style="width:140px">Beneficiário</th>
             <th style="width:90px">Parcela</th>
             <th style="width:130px">Categoria</th>
             <th style="width:100px">Vencimento</th>
@@ -2119,7 +2121,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div id="fin-area-folha" class="fin-area">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:10px">
       <div>
-        <div class="pg-title">Folha</div>
+        <div class="pg-title">A pagar folha</div>
         <div class="pg-desc">Pagamentos a pessoas: salários, repasses de dentistas e transferência mensal para o C6</div>
       </div>
       <button class="btn btn-primary btn-sm" onclick="abrirModalFinLancamento('folha')">+ Novo lançamento</button>
@@ -2165,6 +2167,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <tr>
             <th style="width:32px"><input type="checkbox" id="fin-fl-chk-all" onchange="finToggleAll('folha',this)"></th>
             <th>Descrição</th>
+            <th style="width:140px">Beneficiário</th>
             <th style="width:90px">Parcela</th>
             <th style="width:130px">Categoria</th>
             <th style="width:100px">Vencimento</th>
@@ -2233,6 +2236,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <tr>
             <th style="width:32px"><input type="checkbox" id="fin-rc-chk-all" onchange="finToggleAll('receber',this)"></th>
             <th>Descrição</th>
+            <th style="width:140px">Beneficiário</th>
             <th style="width:90px">Parcela</th>
             <th style="width:90px">Origem</th>
             <th style="width:100px">Vencimento</th>
@@ -2359,6 +2363,13 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </select>
       </div>
       <div class="fl">
+        <label>Conta corrente</label>
+        <select id="fin-modal-conta">
+          <option value="Conta Sicoob">Conta Sicoob</option>
+          <option value="Conta C6bank">Conta C6bank</option>
+        </select>
+      </div>
+      <div class="fl">
         <label>Observação</label>
         <textarea id="fin-modal-obs" rows="2" placeholder="Informações adicionais..."></textarea>
       </div>
@@ -2374,8 +2385,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <input type="file" id="fin-modal-anexo-input" style="display:none" onchange="finAnexoSelecionado(this.files)">
         <div id="fin-modal-anexo-lista"></div>
       </div>
-      <!-- Recorrência -->
-      <div style="background:var(--s2);border-radius:var(--r8);padding:12px">
+      <!-- Recorrência (removido da UI: cadastro de recorrência agora é feito via botão "Títulos recorrentes") -->
+      <div style="display:none">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500">
           <input type="checkbox" id="fin-modal-recorr" onchange="finToggleRecorr()"> Lançamento recorrente
         </label>
@@ -2605,13 +2616,13 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div style="display:flex;flex-direction:column;gap:8px">
         <button class="btn btn-ghost" style="justify-content:flex-start;text-align:left;padding:12px 14px;height:auto" onclick="finEscolherSubmoduloMedicao('pagar')">
           <div>
-            <div style="font-weight:600;font-size:13px">Contas a Pagar Operacional</div>
+            <div style="font-weight:600;font-size:13px">A pagar operacional</div>
             <div style="font-size:11.5px;color:var(--tx3);font-weight:400">Lançamento avulso de comissão</div>
           </div>
         </button>
         <button class="btn btn-ghost" style="justify-content:flex-start;text-align:left;padding:12px 14px;height:auto" onclick="finEscolherSubmoduloMedicao('folha')">
           <div>
-            <div style="font-weight:600;font-size:13px">Folha</div>
+            <div style="font-weight:600;font-size:13px">A pagar folha</div>
             <div style="font-size:11.5px;color:var(--tx3);font-weight:400">Comissão como parte da remuneração da profissional</div>
           </div>
         </button>
@@ -17258,23 +17269,24 @@ function renderFinLista(tipo){
     const pacNome = isPaciente ? (() => { const p=pacientes.find(x=>String(x.id)===String(t.pacienteId)); return p?' — '+p.nome:''; })() : '';
     const parcelaCol = (t.parcelaInfo&&t.parcelaInfo.numero) ? `${t.parcelaInfo.numero}/${t.parcelaInfo.total}` : (t.recorrente ? 'Recorrente' : '—');
     const liquidado = st==='pago'||st==='recebido';
-    const labelLiquidado = isPagar||isFolha?'Pago':'Recebido';
+    const labelAcao = isPagar||isFolha?'Pagar':'Receber';
     const rowClick = !isPaciente?`onclick="abrirModalFinLancamento('${tipo}','${t.id}')"`:'';
+
+    const beneficiario = isPaciente ? (pacNome ? pacNome.replace(' — ','') : '—') : (t._contraparte || '—');
 
     return `<tr style="${!isPaciente?'cursor:pointer':''}" ${rowClick}>
       <td onclick="event.stopPropagation()"><input type="checkbox" class="fin-chk fin-chk-${tipo}" data-id="${t.id}" data-origem="${t._origem||'manual'}" onchange="finAtualizarSelecao('${tipo}')"></td>
-      <td>
+      <td class="fin-td-desc">
         <div style="font-weight:500;color:var(--tx)">${t.descricao||'—'}${recorrIc}</div>
-        ${isPaciente?`<div style="font-size:11px;color:var(--tx3)">Paciente${pacNome}</div>`:(t._contraparte?`<div style="font-size:11px;color:var(--tx3)">${isPagar?'Beneficiário':'Pagador'}: ${t._contraparte}</div>`:'')}
-        ${t.obs?`<div style="font-size:11px;color:var(--tx3)">${t.obs}</div>`:''}
       </td>
+      <td><span style="font-size:12px;color:var(--tx2)">${beneficiario}</span></td>
       <td><span style="font-size:12px;color:var(--tx2)">${parcelaCol}</span></td>
       ${(isPagar||isFolha)?`<td><span style="font-size:12px;color:var(--tx2)">${t.categoria||'—'}</span></td>`:`<td>${origemTag}</td>`}
       <td style="white-space:nowrap;color:${st==='atrasado'?'var(--da)':'var(--tx2)'}">${_finFmtData(t.vencimento)}</td>
       <td class="fin-td-valor">${_finFmt(t.valor)}</td>
       <td>${_finBadge(st)}</td>
       <td onclick="event.stopPropagation()">
-        ${!isPaciente?`<button class="btn btn-sm ${liquidado?'btn-ghost':''}" style="${liquidado?'':'background:var(--sul);color:var(--su);border-color:var(--su)'}" onclick="${liquidado?`finDesfazerPagamento('${t.id}','${tipo}')`:`abrirModalFinPagar('${t.id}','${tipo}')`}">${liquidado?'Desfazer pagamento':labelLiquidado}</button>`:''}
+        ${!isPaciente?`<button class="btn btn-sm ${liquidado?'btn-ghost':''}" style="white-space:nowrap;${liquidado?'':'background:var(--sul);color:var(--su);border-color:var(--su)'}" onclick="${liquidado?`finDesfazerPagamento('${t.id}','${tipo}')`:`abrirModalFinPagar('${t.id}','${tipo}')`}">${liquidado?'Desfazer pagamento':labelAcao}</button>`:''}
       </td>
     </tr>`;
   }).join('');
@@ -17720,6 +17732,7 @@ function abrirModalFinLancamento(tipo, id){
   ['fin-modal-desc','fin-modal-valor','fin-modal-obs','fin-modal-parte'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
   document.getElementById('fin-modal-cat').value='';
   document.getElementById('fin-modal-forma').value='';
+  document.getElementById('fin-modal-conta').value = tipo==='folha' ? 'Conta C6bank' : 'Conta Sicoob';
   document.getElementById('fin-modal-venc').value='';
   document.getElementById('fin-modal-recorr').checked=false;
   document.getElementById('fin-modal-recorr-box').style.display='none';
@@ -17740,8 +17753,8 @@ function abrirModalFinLancamento(tipo, id){
 
   const isPagar=tipo==='pagar';
   const isFolha=tipo==='folha';
-  const tituloMap = {pagar:'conta a pagar', folha:'lançamento de folha', receber:'conta a receber'};
-  document.getElementById('modal-fin-titulo').textContent=id?('Editar '+tituloMap[tipo]):('Novo '+(isFolha?'lançamento de folha':(isPagar?'conta a pagar':'conta a receber')));
+  const tituloMap = {pagar:'título — a pagar operacional', folha:'título — a pagar folha', receber:'conta a receber'};
+  document.getElementById('modal-fin-titulo').textContent=id?('Editar '+tituloMap[tipo]):('Novo '+(isFolha?'título — a pagar folha':(isPagar?'título — a pagar operacional':'conta a receber')));
   document.getElementById('fin-modal-row-cat').style.display=(isPagar||isFolha)?'':'none';
   // Popular categorias conforme o tipo
   const catSel=document.getElementById('fin-modal-cat');
@@ -17762,6 +17775,7 @@ function abrirModalFinLancamento(tipo, id){
       document.getElementById('fin-modal-venc').value=t.vencimento||'';
       document.getElementById('fin-modal-cat').value=t.categoria||'';
       document.getElementById('fin-modal-forma').value=t.forma||'';
+      document.getElementById('fin-modal-conta').value = t.conta || (tipo==='folha' ? 'Conta C6bank' : 'Conta Sicoob');
       document.getElementById('fin-modal-obs').value=t.obs||'';
       document.getElementById('fin-modal-recorr').checked=!!t.recorrente;
       document.getElementById('fin-modal-recorr-box').style.display=t.recorrente?'flex':'none';
@@ -18143,6 +18157,7 @@ function finSalvarLancamento(){
   const parteTipo=_finParteSelecionada?_finParteSelecionada.tipo:'';
   const parteId=_finParteSelecionada?_finParteSelecionada.id:'';
   const forma=document.getElementById('fin-modal-forma').value;
+  const conta=document.getElementById('fin-modal-conta').value;
   const obs=document.getElementById('fin-modal-obs').value.trim();
   const recorr=document.getElementById('fin-modal-recorr').checked;
   const parcelado=!id && document.getElementById('fin-modal-parcelado').value==='sim';
@@ -18163,14 +18178,14 @@ function finSalvarLancamento(){
     // Edição — altera apenas este título (se fizer parte de uma série de parcelas, as demais não são afetadas)
     const idx=list.findIndex(t=>String(t.id)===String(id));
     if(idx>=0){
-      list[idx]={...list[idx],descricao:desc,parte,parteTipo,parteId,valor,vencimento:venc,categoria:cat,forma,obs,recorrente:recorr,anexos};
+      list[idx]={...list[idx],descricao:desc,parte,parteTipo,parteId,valor,vencimento:venc,categoria:cat,forma,conta,obs,recorrente:recorr,anexos};
     }
     _finSalvarTitulosGestao(list);
   } else if(parcelado && _finParcelasPendentes && _finParcelasPendentes.length){
     // Lançamento parcelado — cada parcela vira um título independente e editável
     const serieId='fparc_'+Date.now();
     _finParcelasPendentes.forEach((p,i)=>{
-      list.push({ id:'fgt_'+Date.now()+'_'+i, tipo, descricao:desc, parte, parteTipo, parteId, valor:p.valor, vencimento:p.vencimento, categoria:cat, forma, obs, status:'aberto', origem:'manual', recorrente:false, parcelado:true, parcelaInfo:{numero:p.numero,total:p.total}, serieId, anexos:i===0?anexos:[], criadoEm:_finIso(new Date()) });
+      list.push({ id:'fgt_'+Date.now()+'_'+i, tipo, descricao:desc, parte, parteTipo, parteId, valor:p.valor, vencimento:p.vencimento, categoria:cat, forma, conta, obs, status:'aberto', origem:'manual', recorrente:false, parcelado:true, parcelaInfo:{numero:p.numero,total:p.total}, serieId, anexos:i===0?anexos:[], criadoEm:_finIso(new Date()) });
     });
     _finSalvarTitulosGestao(list);
   } else if(recorr){
@@ -18186,14 +18201,14 @@ function finSalvarLancamento(){
       else if(freq==='quinzenal') d.setDate(d.getDate()+15*i);
       else if(freq==='anual') d.setFullYear(d.getFullYear()+i);
       const vencI=_finIso(d);
-      list.push({ id:'fgt_'+Date.now()+'_'+i, tipo, descricao:desc, parte, parteTipo, parteId, valor, vencimento:vencI, categoria:cat, forma, obs, status:'aberto', origem:'manual', recorrente:true, serieId, freq, anexos, criadoEm:_finIso(new Date()) });
+      list.push({ id:'fgt_'+Date.now()+'_'+i, tipo, descricao:desc, parte, parteTipo, parteId, valor, vencimento:vencI, categoria:cat, forma, conta, obs, status:'aberto', origem:'manual', recorrente:true, serieId, freq, anexos, criadoEm:_finIso(new Date()) });
     }
     _finSalvarTitulosGestao(list);
   } else {
     // Novo único
     const novoId='fgt_'+Date.now();
     const origemLancamento=_finMedPendente?'comissao':'manual';
-    list.push({ id:novoId, tipo, descricao:desc, parte, parteTipo, parteId, valor, vencimento:venc, categoria:cat, forma, obs, status:'aberto', origem:origemLancamento, recorrente:false, anexos, criadoEm:_finIso(new Date()) });
+    list.push({ id:novoId, tipo, descricao:desc, parte, parteTipo, parteId, valor, vencimento:venc, categoria:cat, forma, conta, obs, status:'aberto', origem:origemLancamento, recorrente:false, anexos, criadoEm:_finIso(new Date()) });
     _finSalvarTitulosGestao(list);
     if(_finMedPendente){
       _finConcluirMedicaoAposLancamento(novoId);
