@@ -724,37 +724,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <input type="password" id="login-senha" required autocomplete="current-password">
       <div class="login-erro" id="login-erro"></div>
       <button type="submit" id="login-btn">Entrar</button>
-      <div style="text-align:center;margin-top:14px">
-        <a href="#" onclick="return abrirEsqueciSenha(event)" style="font-size:12.5px;color:var(--tx2);text-decoration:none;border-bottom:1px solid var(--border)">Esqueci minha senha</a>
-      </div>
-    </form>
-
-    <form id="form-esqueci-senha" style="display:none" onsubmit="return enviarLinkRecuperacao(event)">
-      <p style="margin-top:-10px">Informe o e-mail de acesso cadastrado. Enviaremos um link para você criar uma nova senha.</p>
-      <label>E-mail</label>
-      <input type="email" id="esq-email" required autocomplete="username">
-      <div class="login-erro" id="esq-erro"></div>
-      <div id="esq-sucesso" style="display:none;color:#166534;font-size:12px;margin:-8px 0 14px;line-height:1.5"></div>
-      <button type="submit" id="esq-btn">Enviar link de redefinição</button>
-      <div style="text-align:center;margin-top:14px">
-        <a href="#" onclick="return fecharEsqueciSenha(event)" style="font-size:12.5px;color:var(--tx2);text-decoration:none;border-bottom:1px solid var(--border)">Voltar para o login</a>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Tela exibida quando o usuário clica no link de redefinição recebido por e-mail -->
-<div id="tela-nova-senha" style="display:none;position:fixed;inset:0;z-index:99999;background:var(--bg);align-items:center;justify-content:center">
-  <div class="login-card">
-    <h1>Definir nova senha</h1>
-    <p>Crie uma nova senha de acesso para sua conta.</p>
-    <form id="form-nova-senha" onsubmit="return salvarNovaSenhaRecuperacao(event)">
-      <label>Nova senha</label>
-      <input type="password" id="ns-nova" required autocomplete="new-password" placeholder="Mínimo 6 caracteres">
-      <label>Confirmar nova senha</label>
-      <input type="password" id="ns-confirma" required autocomplete="new-password">
-      <div class="login-erro" id="ns-erro"></div>
-      <button type="submit" id="ns-btn">Salvar nova senha</button>
     </form>
   </div>
 </div>
@@ -783,7 +752,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button id="hdr-voltar-eu" onclick="voltarParaUsuarioPrincipal()" title="Voltar a ser você mesmo" style="display:none;font-size:11px;padding:4px 8px;border-radius:var(--r6);border:1px solid var(--border);background:var(--s2);color:var(--tx2);cursor:pointer">↩ Voltar</button>
     </div>
     <span id="hdr-usuario-logado" style="font-size:12px;color:var(--tx2)"></span>
-    <button onclick="abrirModalTrocarSenha()" title="Trocar senha" style="font-size:12px;padding:5px 10px;border-radius:var(--r6);border:1px solid var(--border);background:var(--surface);color:var(--tx2);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--surface)'">Trocar senha</button>
     <button onclick="fazerLogout()" style="font-size:12px;padding:5px 10px;border-radius:var(--r6);border:1px solid var(--border);background:var(--surface);color:var(--tx2);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--surface)'">Sair</button>
     <span class="hdr-date" id="hdr-date"></span>
   </div>
@@ -3258,37 +3226,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
-<!-- MODAL TROCAR SENHA (self-service, usuário logado) -->
-<div class="modal-ov" id="modal-trocar-senha">
-  <div class="modal" style="width:420px;height:auto;max-height:none">
-    <div class="modal-header">
-      <div class="modal-title">Trocar senha</div>
-    </div>
-    <div class="modal-body">
-      <div id="ts-erro" style="display:none;background:#FEF2F2;border:1px solid #FCA5A5;color:#991B1B;font-size:12.5px;line-height:1.5;padding:10px 12px;border-radius:var(--r8);margin-bottom:14px"></div>
-      <div id="ts-sucesso" style="display:none;background:#F0FDF4;border:1px solid #86EFAC;color:#166534;font-size:12.5px;line-height:1.5;padding:10px 12px;border-radius:var(--r8);margin-bottom:14px"></div>
-      <div class="fg">
-        <div class="fl fg-full">
-          <label>Senha atual *</label>
-          <input type="password" id="ts-atual" placeholder="Sua senha atual" autocomplete="current-password">
-        </div>
-        <div class="fl fg-full">
-          <label>Nova senha *</label>
-          <input type="password" id="ts-nova" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
-        </div>
-        <div class="fl fg-full">
-          <label>Confirmar nova senha *</label>
-          <input type="password" id="ts-confirma" placeholder="Repita a nova senha" autocomplete="new-password">
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="fecharModal('modal-trocar-senha')">Cancelar</button>
-      <button class="btn btn-primary" id="ts-salvar-btn" onclick="salvarTrocarSenha()">Salvar →</button>
-    </div>
-  </div>
-</div>
-
 <!-- MODAL CARGO -->
 <div class="modal-ov" id="modal-cargo">
   <div class="modal" style="width:620px">
@@ -3296,7 +3233,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="modal-title" id="mc-titulo">Novo cargo</div>
     </div>
     <div class="modal-body" style="max-height:70vh;overflow-y:auto">
-      <div id="mc-erro" style="display:none;background:#FEF2F2;border:1px solid #FCA5A5;color:#991B1B;font-size:12.5px;line-height:1.5;padding:10px 12px;border-radius:var(--r8);margin-bottom:14px"></div>
       <div class="fl fg-full" style="margin-bottom:14px"><label>Nome do cargo *</label><input type="text" id="mc-nome" placeholder="Ex: Dentista, Recepção, Gestor..."></div>
       <div class="sl">Permissões</div>
       <div id="mc-permissoes" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-top:8px"></div>
@@ -3304,7 +3240,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="modal-footer">
       <button class="btn btn-danger btn-sm" id="mc-excluir" style="display:none" onclick="excluirCargo()">Excluir</button>
       <button class="btn btn-ghost" onclick="fecharModal('modal-cargo')">Cancelar</button>
-      <button class="btn btn-primary" id="mc-salvar-btn" onclick="salvarCargo()">Salvar →</button>
+      <button class="btn btn-primary" onclick="salvarCargo()">Salvar →</button>
     </div>
   </div>
 </div>
@@ -4097,7 +4033,10 @@ function onChangeUsuarioAtual(id){
 // ── CONTROLE DE PERMISSÕES ────────────────────────────────────────────
 function getPermissoesUsuarioAtual(){
   const membroEquipe = equipe.find(e=>typeof e!=='string' && e.usuarioId===usuarioAtualId);
-  if(!membroEquipe) return new Set(PERMISSOES_DISPONIVEIS.map(p=>p.id)); // sem equipe = admin total
+  // Sem vínculo de equipe/cargo = nenhuma permissão (fail-closed).
+  // Antes retornava acesso total nesse caso, o que é perigoso: qualquer usuário
+  // sem vínculo correto em "equipe" virava admin por padrão.
+  if(!membroEquipe) return new Set();
   const cargo = cargos.find(c=>c.id===membroEquipe.cargoId);
   return new Set(cargo?.permissoes || []);
 }
@@ -11008,47 +10947,52 @@ function abrirModalCargo(id){
     </label>`).join('')}
   `).join('');
   document.getElementById('mc-excluir').style.display=c?'':'none';
-  document.getElementById('mc-erro').style.display='none';
-  const mcBtn=document.getElementById('mc-salvar-btn');
-  mcBtn.disabled=false; mcBtn.textContent='Salvar →';
   document.getElementById('modal-cargo').classList.add('open');
 }
 
 async function salvarCargo(){
   const nome=document.getElementById('mc-nome').value.trim();
-  const erroEl=document.getElementById('mc-erro');
-  const btn=document.getElementById('mc-salvar-btn');
-  erroEl.style.display='none';
   if(!nome){alert('Informe o nome do cargo.');return;}
   const permissoes=[...document.querySelectorAll('#mc-permissoes input[type=checkbox]:checked')].map(el=>el.value);
 
-  btn.disabled=true; btn.textContent='Salvando…';
+  const btn=document.querySelector('#modal-cargo .btn-primary');
+  if(btn){ btn.disabled=true; btn.textContent='Salvando…'; }
 
-  const ehNovo=!modalCargoId;
-  const cargoId = modalCargoId || ('cg_'+Date.now());
+  let cargoSalvo;
+  const novo = !modalCargoId;
+  if(!novo){
+    cargoSalvo = cargos.find(x=>x.id===modalCargoId);
+  } else {
+    cargoSalvo = {id:'cg_'+Date.now(), nome, permissoes};
+  }
 
-  // Grava primeiro na tabela real do banco (é ela que é recarregada a cada login —
-  // gravar só no localStorage/dados_sistema fazia as permissões "voltarem" depois).
-  const { error } = await supa.from('cargos')
-    .upsert({ id: cargoId, nome, permissoes }, { onConflict: 'id' });
-
-  if(error){
-    console.error('Erro ao salvar cargo:', error);
-    erroEl.textContent = 'Não foi possível salvar as permissões no servidor. Verifique sua internet e tente novamente. (' + (error.message||'erro desconhecido') + ')';
-    erroEl.style.display='block';
-    btn.disabled=false; btn.textContent='Salvar →';
+  // Grava direto na tabela "cargos" do Supabase — fonte de verdade lida no login
+  // (_carregarDadosEAtivar). Sem isso, a edição só ficava em dados_sistema/localStorage
+  // e era sobrescrita pela versão antiga assim que alguém relogava.
+  try{
+    const { error } = await supa.from('cargos').upsert(
+      { id: cargoSalvo.id, nome, permissoes },
+      { onConflict:'id' }
+    );
+    if(error){
+      if(btn){ btn.disabled=false; btn.textContent='Salvar →'; }
+      alert('Não foi possível salvar o cargo no banco: '+error.message+'\n\nAs permissões NÃO foram alteradas para os usuários.');
+      return;
+    }
+  }catch(e){
+    if(btn){ btn.disabled=false; btn.textContent='Salvar →'; }
+    alert('Erro de conexão ao salvar o cargo. Verifique sua internet e tente novamente.');
     return;
   }
 
-  if(ehNovo){
-    cargos.push({id:cargoId, nome, permissoes});
-  } else {
-    const c=cargos.find(x=>x.id===cargoId);
-    c.nome=nome;
-    c.permissoes=permissoes;
-  }
+  // Só atualiza o estado local depois de confirmar sucesso no banco
+  cargoSalvo.nome = nome;
+  cargoSalvo.permissoes = permissoes;
+  if(novo) cargos.push(cargoSalvo);
+
+  _bypassQueue=true;
   salvarLS('sk3-cargos',cargos);
-  btn.disabled=false; btn.textContent='Salvar →';
+  if(btn){ btn.disabled=false; btn.textContent='Salvar →'; }
   fecharModal('modal-cargo');
   renderCargos();
   renderEquipe();
@@ -11062,13 +11006,14 @@ async function excluirCargo(){
     return;
   }
   if(!confirm('Excluir este cargo? Não pode ser desfeito.'))return;
-  _bypassQueue=true;
+
   const { error } = await supa.from('cargos').delete().eq('id', modalCargoId);
   if(error){
-    console.error('Erro ao excluir cargo:', error);
-    alert('Não foi possível excluir o cargo no servidor. Tente novamente. ('+(error.message||'erro desconhecido')+')');
+    alert('Não foi possível excluir o cargo no banco: '+error.message);
     return;
   }
+
+  _bypassQueue=true;
   cargos=cargos.filter(c=>c.id!==modalCargoId);
   salvarLS('sk3-cargos',cargos);
   fecharModal('modal-cargo');
@@ -17075,67 +17020,6 @@ async function fazerLogout(){
   location.reload();
 }
 
-// ── TROCAR SENHA (usuário já logado troca a própria senha) ─────────────
-function abrirModalTrocarSenha(){
-  document.getElementById('ts-atual').value='';
-  document.getElementById('ts-nova').value='';
-  document.getElementById('ts-confirma').value='';
-  document.getElementById('ts-erro').style.display='none';
-  document.getElementById('ts-sucesso').style.display='none';
-  const btn=document.getElementById('ts-salvar-btn');
-  btn.disabled=false; btn.textContent='Salvar →';
-  abrirModal('modal-trocar-senha');
-}
-
-async function salvarTrocarSenha(){
-  const atual=document.getElementById('ts-atual').value;
-  const nova=document.getElementById('ts-nova').value;
-  const confirma=document.getElementById('ts-confirma').value;
-  const erroEl=document.getElementById('ts-erro');
-  const sucessoEl=document.getElementById('ts-sucesso');
-  const btn=document.getElementById('ts-salvar-btn');
-  erroEl.style.display='none';
-  sucessoEl.style.display='none';
-
-  function mostrarErroTS(msg){
-    erroEl.textContent=msg;
-    erroEl.style.display='block';
-    btn.disabled=false; btn.textContent='Salvar →';
-  }
-
-  if(!atual){ mostrarErroTS('Informe sua senha atual.'); return; }
-  if(!nova || nova.length<6){ mostrarErroTS('A nova senha deve ter pelo menos 6 caracteres.'); return; }
-  if(nova!==confirma){ mostrarErroTS('A confirmação não confere com a nova senha.'); return; }
-
-  btn.disabled=true; btn.textContent='Salvando…';
-
-  // Descobre o e-mail de quem realmente está autenticado (não quem está "sendo visualizado")
-  const { data: userData, error: userErr } = await supa.auth.getUser();
-  const emailAtual = userData?.user?.email;
-  if(userErr || !emailAtual){
-    mostrarErroTS('Não foi possível confirmar sua sessão. Recarregue a página e tente novamente.');
-    return;
-  }
-
-  // Confirma a senha atual re-autenticando (não usa nenhuma função administrativa)
-  const { error: erroSenhaAtual } = await supa.auth.signInWithPassword({ email: emailAtual, password: atual });
-  if(erroSenhaAtual){
-    mostrarErroTS('A senha atual informada está incorreta.');
-    return;
-  }
-
-  const { error: erroUpdate } = await supa.auth.updateUser({ password: nova });
-  if(erroUpdate){
-    mostrarErroTS('Não foi possível trocar a senha: ' + (erroUpdate.message || 'erro desconhecido') + '.');
-    return;
-  }
-
-  sucessoEl.textContent='Senha alterada com sucesso!';
-  sucessoEl.style.display='block';
-  btn.disabled=false; btn.textContent='Salvar →';
-  setTimeout(()=>{ fecharModal('modal-trocar-senha'); }, 1200);
-}
-
 // ── LOGIN ────────────────────────────────────────────────────────────
 async function fazerLogin(ev){
   ev.preventDefault();
@@ -17151,89 +17035,6 @@ async function fazerLogin(ev){
     btn.disabled = false; btn.textContent = 'Entrar';
     return false;
   }
-  await _carregarDadosEAtivar();
-  return false;
-}
-
-// ── ESQUECI A SENHA ──────────────────────────────────────────────────
-function abrirEsqueciSenha(ev){
-  if(ev) ev.preventDefault();
-  document.getElementById('esq-erro').textContent='';
-  document.getElementById('esq-sucesso').style.display='none';
-  document.getElementById('esq-email').value=document.getElementById('login-email').value||'';
-  document.getElementById('form-login').style.display='none';
-  document.getElementById('form-esqueci-senha').style.display='';
-  return false;
-}
-function fecharEsqueciSenha(ev){
-  if(ev) ev.preventDefault();
-  document.getElementById('form-esqueci-senha').style.display='none';
-  document.getElementById('form-login').style.display='';
-  return false;
-}
-
-async function enviarLinkRecuperacao(ev){
-  ev.preventDefault();
-  const email = document.getElementById('esq-email').value.trim();
-  const btn = document.getElementById('esq-btn');
-  const erro = document.getElementById('esq-erro');
-  const sucesso = document.getElementById('esq-sucesso');
-  erro.textContent = '';
-  sucesso.style.display='none';
-  if(!email){ erro.textContent='Informe o e-mail cadastrado.'; return false; }
-
-  btn.disabled = true; btn.textContent = 'Enviando…';
-
-  // O link volta para a própria página (sem query/hash), onde o Supabase detecta
-  // o token de recuperação e dispara o evento PASSWORD_RECOVERY.
-  const redirectTo = window.location.origin + window.location.pathname;
-  const { error } = await supa.auth.resetPasswordForEmail(email, { redirectTo });
-
-  btn.disabled = false; btn.textContent = 'Enviar link de redefinição';
-
-  // Mensagem sempre genérica (não revela se o e-mail existe ou não no sistema)
-  if(error){ console.error('resetPasswordForEmail:', error); }
-  sucesso.textContent = 'Se este e-mail estiver cadastrado, você receberá um link para redefinir sua senha em instantes. Verifique também a caixa de spam.';
-  sucesso.style.display='block';
-  return false;
-}
-
-// ── DEFINIR NOVA SENHA (a partir do link recebido por e-mail) ──────────
-// O Supabase, ao detectar o token de recuperação na URL, autentica uma sessão
-// temporária e dispara este evento — é o gatilho para mostrar a tela de nova senha.
-supa.auth.onAuthStateChange((event, session) => {
-  if(event === 'PASSWORD_RECOVERY'){
-    document.getElementById('tela-login').style.display = 'none';
-    document.getElementById('tela-carregando').style.display = 'none';
-    document.getElementById('ns-erro').textContent = '';
-    document.getElementById('ns-nova').value = '';
-    document.getElementById('ns-confirma').value = '';
-    document.getElementById('tela-nova-senha').style.display = 'flex';
-    // Limpa o token da URL para não reabrir esta tela se a página for recarregada
-    history.replaceState(null, '', window.location.pathname + window.location.search);
-  }
-});
-
-async function salvarNovaSenhaRecuperacao(ev){
-  ev.preventDefault();
-  const nova = document.getElementById('ns-nova').value;
-  const confirma = document.getElementById('ns-confirma').value;
-  const erro = document.getElementById('ns-erro');
-  const btn = document.getElementById('ns-btn');
-  erro.textContent = '';
-
-  if(!nova || nova.length<6){ erro.textContent='A nova senha deve ter pelo menos 6 caracteres.'; return false; }
-  if(nova!==confirma){ erro.textContent='A confirmação não confere com a nova senha.'; return false; }
-
-  btn.disabled = true; btn.textContent = 'Salvando…';
-  const { error } = await supa.auth.updateUser({ password: nova });
-  if(error){
-    erro.textContent = 'Não foi possível salvar a nova senha: ' + (error.message || 'erro desconhecido') + '.';
-    btn.disabled = false; btn.textContent = 'Salvar nova senha';
-    return false;
-  }
-
-  document.getElementById('tela-nova-senha').style.display = 'none';
   await _carregarDadosEAtivar();
   return false;
 }
@@ -19287,12 +19088,6 @@ function finDesfazerMedicao(medicaoId){
     const params = new URLSearchParams(window.location.search);
     const token = params.get('anamnese');
     await _carregarAnamnesePublica(token);
-    return;
-  }
-  // Link de recuperação de senha: não carrega o app ainda — espera o evento
-  // PASSWORD_RECOVERY (disparado pelo próprio Supabase) mostrar a tela de nova senha.
-  if(window.location.hash.includes('type=recovery')){
-    document.getElementById('tela-login').style.display = 'none';
     return;
   }
   const { data: sessao } = await supa.auth.getSession();
