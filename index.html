@@ -3296,6 +3296,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="modal-title" id="mc-titulo">Novo cargo</div>
     </div>
     <div class="modal-body" style="max-height:70vh;overflow-y:auto">
+      <div id="mc-erro" style="display:none;background:#FEF2F2;border:1px solid #FCA5A5;color:#991B1B;font-size:12.5px;line-height:1.5;padding:10px 12px;border-radius:var(--r8);margin-bottom:14px"></div>
       <div class="fl fg-full" style="margin-bottom:14px"><label>Nome do cargo *</label><input type="text" id="mc-nome" placeholder="Ex: Dentista, Recepção, Gestor..."></div>
       <div class="sl">Permissões</div>
       <div id="mc-permissoes" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-top:8px"></div>
@@ -3303,7 +3304,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="modal-footer">
       <button class="btn btn-danger btn-sm" id="mc-excluir" style="display:none" onclick="excluirCargo()">Excluir</button>
       <button class="btn btn-ghost" onclick="fecharModal('modal-cargo')">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarCargo()">Salvar →</button>
+      <button class="btn btn-primary" id="mc-salvar-btn" onclick="salvarCargo()">Salvar →</button>
     </div>
   </div>
 </div>
@@ -11007,28 +11008,54 @@ function abrirModalCargo(id){
     </label>`).join('')}
   `).join('');
   document.getElementById('mc-excluir').style.display=c?'':'none';
+  document.getElementById('mc-erro').style.display='none';
+  const mcBtn=document.getElementById('mc-salvar-btn');
+  mcBtn.disabled=false; mcBtn.textContent='Salvar →';
   document.getElementById('modal-cargo').classList.add('open');
 }
 
-function salvarCargo(){
+async function salvarCargo(){
   const nome=document.getElementById('mc-nome').value.trim();
+  const erroEl=document.getElementById('mc-erro');
+  const btn=document.getElementById('mc-salvar-btn');
+  erroEl.style.display='none';
   if(!nome){alert('Informe o nome do cargo.');return;}
   const permissoes=[...document.querySelectorAll('#mc-permissoes input[type=checkbox]:checked')].map(el=>el.value);
-  if(modalCargoId){
-    const c=cargos.find(x=>x.id===modalCargoId);
+
+  btn.disabled=true; btn.textContent='Salvando…';
+
+  const ehNovo=!modalCargoId;
+  const cargoId = modalCargoId || ('cg_'+Date.now());
+
+  // Grava primeiro na tabela real do banco (é ela que é recarregada a cada login —
+  // gravar só no localStorage/dados_sistema fazia as permissões "voltarem" depois).
+  const { error } = await supa.from('cargos')
+    .upsert({ id: cargoId, nome, permissoes }, { onConflict: 'id' });
+
+  if(error){
+    console.error('Erro ao salvar cargo:', error);
+    erroEl.textContent = 'Não foi possível salvar as permissões no servidor. Verifique sua internet e tente novamente. (' + (error.message||'erro desconhecido') + ')';
+    erroEl.style.display='block';
+    btn.disabled=false; btn.textContent='Salvar →';
+    return;
+  }
+
+  if(ehNovo){
+    cargos.push({id:cargoId, nome, permissoes});
+  } else {
+    const c=cargos.find(x=>x.id===cargoId);
     c.nome=nome;
     c.permissoes=permissoes;
-  } else {
-    cargos.push({id:'cg_'+Date.now(),nome,permissoes});
   }
   salvarLS('sk3-cargos',cargos);
+  btn.disabled=false; btn.textContent='Salvar →';
   fecharModal('modal-cargo');
   renderCargos();
   renderEquipe();
   showSaveToast('Cargo salvo');
 }
 
-function excluirCargo(){
+async function excluirCargo(){
   if(!modalCargoId)return;
   if(equipe.some(e=>typeof e!=='string'&&e.cargoId===modalCargoId)){
     alert('Este cargo está atribuído a alguém na Equipe. Altere o cargo dessa pessoa antes de excluir.');
@@ -11036,6 +11063,12 @@ function excluirCargo(){
   }
   if(!confirm('Excluir este cargo? Não pode ser desfeito.'))return;
   _bypassQueue=true;
+  const { error } = await supa.from('cargos').delete().eq('id', modalCargoId);
+  if(error){
+    console.error('Erro ao excluir cargo:', error);
+    alert('Não foi possível excluir o cargo no servidor. Tente novamente. ('+(error.message||'erro desconhecido')+')');
+    return;
+  }
   cargos=cargos.filter(c=>c.id!==modalCargoId);
   salvarLS('sk3-cargos',cargos);
   fecharModal('modal-cargo');
