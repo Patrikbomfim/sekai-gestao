@@ -4057,6 +4057,7 @@ const PERM_SECAO = {
   pendencias:'pendencias_ver',
   lembretes: 'agenda_ver',
   desmarcados:'agenda_ver',
+  financeiro:'financeiro_ver',
   dashboard: 'dashboard_ver',
   relatorios:'relatorios_ver',
   empresa:   'empresa_ver',
@@ -4088,7 +4089,7 @@ function aplicarPermissoesNav(){
     const m = btn.getAttribute('onclick').match(/goTo\('([^']+)'/);
     if(!m) return;
     const sec = m[1];
-    if(sec==='hoje'||sec==='proximos'||sec==='melhorias'||sec==='financeiro') return; // sempre visível
+    if(sec==='hoje'||sec==='proximos'||sec==='melhorias') return; // sempre visível
 
     let temAcesso;
     if(sec==='config'){
@@ -10950,6 +10951,35 @@ function abrirModalCargo(id){
   document.getElementById('modal-cargo').classList.add('open');
 }
 
+// Chama a função administrativa segura para criar/editar/excluir CARGOS.
+// Mesmo padrão de chamarAdminUsuarios: valida quem está chamando no servidor
+// e só então grava na tabela `cargos` com privilégio de service role.
+async function chamarAdminCargos(payload){
+  const { data: sessao } = await supa.auth.getSession();
+  const token = sessao?.session?.access_token;
+  let resp;
+  try{
+    resp = await fetch(SUPABASE_URL + '/functions/v1/admin-cargos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(payload),
+    });
+  }catch(e){
+    console.error('admin-cargos: falha de rede', e);
+    return { error: 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.' };
+  }
+  let corpo;
+  try{ corpo = await resp.json(); }
+  catch(e){
+    console.error('admin-cargos: resposta inesperada (status '+resp.status+')', e);
+    return { error: `O servidor respondeu de forma inesperada (status ${resp.status}). Tente novamente.` };
+  }
+  if(!resp.ok && !corpo.error){
+    return { error: `Erro no servidor (status ${resp.status}).` };
+  }
+  return corpo;
+}
+
 async function salvarCargo(){
   const nome=document.getElementById('mc-nome').value.trim();
   if(!nome){alert('Informe o nome do cargo.');return;}
@@ -10958,37 +10988,27 @@ async function salvarCargo(){
   const btn=document.querySelector('#modal-cargo .btn-primary');
   if(btn){ btn.disabled=true; btn.textContent='Salvando…'; }
 
-  let cargoSalvo;
   const novo = !modalCargoId;
-  if(!novo){
-    cargoSalvo = cargos.find(x=>x.id===modalCargoId);
-  } else {
-    cargoSalvo = {id:'cg_'+Date.now(), nome, permissoes};
-  }
+  const id = novo ? ('cg_'+Date.now()) : modalCargoId;
 
-  // Grava direto na tabela "cargos" do Supabase — fonte de verdade lida no login
-  // (_carregarDadosEAtivar). Sem isso, a edição só ficava em dados_sistema/localStorage
-  // e era sobrescrita pela versão antiga assim que alguém relogava.
-  try{
-    const { error } = await supa.from('cargos').upsert(
-      { id: cargoSalvo.id, nome, permissoes },
-      { onConflict:'id' }
-    );
-    if(error){
-      if(btn){ btn.disabled=false; btn.textContent='Salvar →'; }
-      alert('Não foi possível salvar o cargo no banco: '+error.message+'\n\nAs permissões NÃO foram alteradas para os usuários.');
-      return;
-    }
-  }catch(e){
+  // Grava via edge function (valida permissão no servidor e usa service role) —
+  // fonte de verdade lida no login (_carregarDadosEAtivar). Sem isso, a edição
+  // só ficava em dados_sistema/localStorage e era sobrescrita pela versão antiga
+  // assim que alguém relogava.
+  const r = await chamarAdminCargos({ action:'salvar', id, nome, permissoes });
+  if(r.error){
     if(btn){ btn.disabled=false; btn.textContent='Salvar →'; }
-    alert('Erro de conexão ao salvar o cargo. Verifique sua internet e tente novamente.');
+    alert('Não foi possível salvar o cargo: '+r.error+'\n\nAs permissões NÃO foram alteradas para os usuários.');
     return;
   }
 
   // Só atualiza o estado local depois de confirmar sucesso no banco
-  cargoSalvo.nome = nome;
-  cargoSalvo.permissoes = permissoes;
-  if(novo) cargos.push(cargoSalvo);
+  if(novo){
+    cargos.push({id, nome, permissoes});
+  } else {
+    const c=cargos.find(x=>x.id===modalCargoId);
+    c.nome=nome; c.permissoes=permissoes;
+  }
 
   _bypassQueue=true;
   salvarLS('sk3-cargos',cargos);
@@ -11007,9 +11027,9 @@ async function excluirCargo(){
   }
   if(!confirm('Excluir este cargo? Não pode ser desfeito.'))return;
 
-  const { error } = await supa.from('cargos').delete().eq('id', modalCargoId);
-  if(error){
-    alert('Não foi possível excluir o cargo no banco: '+error.message);
+  const r = await chamarAdminCargos({ action:'excluir', id: modalCargoId });
+  if(r.error){
+    alert('Não foi possível excluir o cargo: '+r.error);
     return;
   }
 
