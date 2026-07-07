@@ -718,8 +718,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <h1>Sekai Gestão</h1>
     <p>Entre com seu usuário da clínica</p>
     <form id="form-login" onsubmit="return fazerLogin(event)">
-      <label>E-mail</label>
-      <input type="email" id="login-email" required autocomplete="username">
+      <label>Login</label>
+      <input type="text" id="login-email" required autocomplete="username">
       <label>Senha</label>
       <input type="password" id="login-senha" required autocomplete="current-password">
       <div class="login-erro" id="login-erro"></div>
@@ -3186,16 +3186,17 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="fg">
         <div class="fl fg-full"><label>Nome completo *</label><input type="text" id="mu-nome" placeholder="Ex: Fernanda Souza"></div>
         <div class="fl">
-          <label>E-mail de acesso *</label>
-          <input type="email" id="mu-email" placeholder="nome@clinicasekai.com.br">
+          <label>Login *</label>
+          <input type="text" id="mu-login" placeholder="Ex: fernanda.gestao">
         </div>
         <div class="fl">
           <label id="mu-senha-label">Senha de acesso *</label>
           <input type="text" id="mu-senha" placeholder="Defina uma senha">
         </div>
         <div class="fl fg-full">
-          <label>Cargo *</label>
-          <select id="mu-cargo"></select>
+          <label>E-mail</label>
+          <input type="email" id="mu-email" placeholder="nome@clinicasekai.com.br">
+          <span class="input-hint">Usado para recuperação de senha e envio de informações — não é o login.</span>
         </div>
         <div class="fl">
           <label>CPF</label>
@@ -10695,18 +10696,27 @@ function renderEquipe(){
   }
 }
 
-function addEquipe(){
+async function addEquipe(){
   const usuarioId=document.getElementById('eq-usuario').value;
   const cargoId=document.getElementById('eq-cargo').value;
   if(!usuarioId){alert('Selecione um usuário.');return;}
   const u=usuarios.find(x=>x.id===usuarioId);
   if(!u)return;
   if(equipe.some(e=>typeof e!=='string'&&e.usuarioId===usuarioId)){alert('Este usuário já está na equipe.');return;}
+  const r = await chamarAdminUsuarios({ action:'editar_cargo', user_id:usuarioId, cargo_id:cargoId||null, nome:u.nome });
+  if(r.error){ alert('Erro ao definir o cargo: '+r.error); return; }
   equipe.push({nome:u.nome,usuarioId,cargoId:cargoId||null});
   salvarLS('sk3-equipe',equipe);
   renderEquipe();
 }
-function updateCargoEquipe(i,cargoId){
+async function updateCargoEquipe(i,cargoId){
+  const item=equipe[i];
+  const usuarioId=(typeof item!=='string')?item.usuarioId:null;
+  if(usuarioId){
+    const u=usuarios.find(x=>x.id===usuarioId);
+    const r = await chamarAdminUsuarios({ action:'editar_cargo', user_id:usuarioId, cargo_id:cargoId||null, nome:u?.nome||item.nome });
+    if(r.error){ alert('Erro ao atualizar o cargo: '+r.error); renderEquipe(); return; }
+  }
   if(typeof equipe[i]==='string'){
     equipe[i]={nome:equipe[i],usuarioId:null,cargoId:cargoId||null};
   } else {
@@ -10752,11 +10762,11 @@ function renderUsuarios(){
 function abrirModalUsuario(id){
   modalUsuarioId=id||null;
   const u=id?usuarios.find(x=>x.id===id):null;
-  const membroEquipe=id?equipe.find(e=>typeof e!=='string'&&e.usuarioId===id):null;
   document.getElementById('mu-titulo').textContent=u?'Editar usuário':'Novo usuário';
   document.getElementById('mu-nome').value=u?.nome||'';
+  document.getElementById('mu-login').value=u?.login||u?.email||'';
+  document.getElementById('mu-login').disabled=false;
   document.getElementById('mu-email').value=u?.email||'';
-  document.getElementById('mu-email').disabled=false;
   document.getElementById('mu-senha').value='';
   document.getElementById('mu-senha').placeholder=u?'Deixe em branco para manter a senha atual':'Defina uma senha';
   document.getElementById('mu-senha-label').textContent=u?'Nova senha (opcional)':'Senha de acesso *';
@@ -10770,11 +10780,20 @@ function abrirModalUsuario(id){
   document.getElementById('mu-obs').value=u?.obs||'';
   document.getElementById('mu-cep-hint').textContent='';
   document.getElementById('mu-erro').style.display='none';
-  const selCargo=document.getElementById('mu-cargo');
-  selCargo.innerHTML=cargos.map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join('');
-  selCargo.value=membroEquipe?.cargoId||cargos[0]?.id||'';
   document.getElementById('mu-excluir').style.display=u?'':'none';
   document.getElementById('modal-usuario').classList.add('open');
+}
+
+// O Supabase Auth exige um endereço em formato de e-mail para autenticar,
+// mas queremos que o usuário possa digitar qualquer texto como "Login".
+// Esta função converte o login digitado num e-mail técnico interno, usado
+// apenas para autenticação — nunca exibido ao usuário.
+function gerarEmailAuth(login){
+  const base=(login||'').toString().trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9._-]/g,'-')
+    .replace(/-+/g,'-').replace(/^-|-$/g,'');
+  return (base||'usuario')+'@login.clinicasekai.internal';
 }
 
 // Chama a função administrativa segura (criar/editar login, senha, e-mail, cargo)
@@ -10821,9 +10840,9 @@ async function buscarCEPUsuario(){
 
 async function salvarUsuario(){
   const nome=document.getElementById('mu-nome').value.trim();
+  const login=document.getElementById('mu-login').value.trim();
   const email=document.getElementById('mu-email').value.trim();
   const senha=document.getElementById('mu-senha').value;
-  const cargoId=document.getElementById('mu-cargo').value;
   const erroEl=document.getElementById('mu-erro');
   const btn=document.getElementById('mu-salvar-btn');
   erroEl.style.display='none';
@@ -10836,16 +10855,17 @@ async function salvarUsuario(){
   }
 
   if(!nome){alert('Informe o nome do usuário.');return;}
-  if(!email){alert('Informe o e-mail de acesso.');return;}
+  if(!login){alert('Informe o login de acesso.');return;}
   if(!modalUsuarioId && !senha){alert('Defina uma senha de acesso.');return;}
-  if(!cargoId){alert('Selecione um cargo.');return;}
   const cpfEl=document.getElementById('mu-cpf');
   if(cpfEl.value.trim()&&!validarCPF(cpfEl)){alert('O CPF informado é inválido.');return;}
 
   btn.disabled=true; btn.textContent='Salvando…';
 
+  const emailAuth=gerarEmailAuth(login);
+
   const dadosLocais={
-    nome, email,
+    nome, login, email,
     cpf:cpfEl.value.trim(),
     nascimento:document.getElementById('mu-nasc').value,
     cep:document.getElementById('mu-cep').value.trim(),
@@ -10858,20 +10878,20 @@ async function salvarUsuario(){
 
   try{
     if(!modalUsuarioId){
-      // ── NOVO USUÁRIO: cria login real + perfil + cargo, tudo de uma vez ──
-      const r = await chamarAdminUsuarios({ action:'criar', email, senha, nome, cargo_id:cargoId });
+      // ── NOVO USUÁRIO: cria login real + perfil, sem cargo ──
+      // O cargo (e a entrada na equipe) é atribuído depois, no módulo "Equipe".
+      const r = await chamarAdminUsuarios({ action:'criar', email:emailAuth, senha, nome, cargo_id:null });
       if(r.error){ mostrarErroUsuario(r.error); return; }
       usuarios.push({id:r.id, ...dadosLocais});
-      equipe.push({nome, usuarioId:r.id, cargoId, principal:false});
       salvarLS('sk3-usuarios',usuarios);
-      salvarLS('sk3-equipe',equipe);
     } else {
       // ── EDITAR USUÁRIO EXISTENTE ──
       const u=usuarios.find(x=>x.id===modalUsuarioId);
       if(!u){ mostrarErroUsuario('Não foi possível localizar este usuário. Feche e abra o cadastro novamente.'); return; }
-      const emailMudou = email !== u.email;
-      if(emailMudou){
-        const r = await chamarAdminUsuarios({ action:'trocar_email', user_id:modalUsuarioId, novo_email:email });
+      const emailAuthAnterior=gerarEmailAuth(u.login||u.email||'');
+      const loginMudou = emailAuth !== emailAuthAnterior;
+      if(loginMudou){
+        const r = await chamarAdminUsuarios({ action:'trocar_email', user_id:modalUsuarioId, novo_email:emailAuth });
         if(r.error){ mostrarErroUsuario(r.error); return; }
       }
       if(senha){
@@ -10879,14 +10899,14 @@ async function salvarUsuario(){
         if(r.error){ mostrarErroUsuario(r.error); return; }
       }
       const membroEquipe=equipe.find(e=>typeof e!=='string'&&e.usuarioId===modalUsuarioId);
-      if(!membroEquipe || membroEquipe.cargoId!==cargoId || u.nome!==nome){
-        const r = await chamarAdminUsuarios({ action:'editar_cargo', user_id:modalUsuarioId, cargo_id:cargoId, nome });
+      if(u.nome!==nome){
+        // Mantém o cargo atual (definido no módulo Equipe) — aqui só atualizamos o nome.
+        const cargoAtual = membroEquipe?.cargoId ?? null;
+        const r = await chamarAdminUsuarios({ action:'editar_cargo', user_id:modalUsuarioId, cargo_id:cargoAtual, nome });
         if(r.error){ mostrarErroUsuario(r.error); return; }
       }
       Object.assign(u,dadosLocais);
-      if(membroEquipe){ membroEquipe.cargoId=cargoId; membroEquipe.nome=nome; }
-      else { equipe.push({nome, usuarioId:modalUsuarioId, cargoId, principal:false}); }
-      salvarLS('sk3-equipe',equipe);
+      if(membroEquipe){ membroEquipe.nome=nome; salvarLS('sk3-equipe',equipe); }
       salvarLS('sk3-usuarios',usuarios);
     }
   }catch(e){
@@ -17043,7 +17063,8 @@ async function fazerLogout(){
 // ── LOGIN ────────────────────────────────────────────────────────────
 async function fazerLogin(ev){
   ev.preventDefault();
-  const email = document.getElementById('login-email').value.trim();
+  const login = document.getElementById('login-email').value.trim();
+  const email = gerarEmailAuth(login);
   const senha = document.getElementById('login-senha').value;
   const btn = document.getElementById('login-btn');
   const erro = document.getElementById('login-erro');
@@ -17051,7 +17072,7 @@ async function fazerLogin(ev){
   btn.disabled = true; btn.textContent = 'Entrando…';
   const { error } = await supa.auth.signInWithPassword({ email, password: senha });
   if(error){
-    erro.textContent = 'E-mail ou senha incorretos.';
+    erro.textContent = 'Login ou senha incorretos.';
     btn.disabled = false; btn.textContent = 'Entrar';
     return false;
   }
