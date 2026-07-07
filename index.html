@@ -2068,7 +2068,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="pg-title">A pagar operacional</div>
         <div class="pg-desc">Despesas da clínica: aluguel, material, serviços, impostos e demais custos operacionais (Sicoob)</div>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="abrirModalFinLancamento('pagar')">+ Novo lançamento</button>
+      <button class="btn btn-primary btn-sm" onclick="abrirModalFinLancamento('pagar')" data-perm="fin_pagar_criar">+ Novo lançamento</button>
     </div>
 
     <!-- Cards resumo -->
@@ -2099,8 +2099,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="btn btn-ghost btn-sm" onclick="exportarFinPDF('pagar')">📄 Exportar em PDF</button>
       <div id="fin-pg-sel-bar" style="display:none;margin-left:auto;display:none;align-items:center;gap:8px">
         <span id="fin-pg-sel-count" style="font-size:12px;color:var(--tx2)">0 selecionados</span>
-        <button class="btn btn-sm" style="background:var(--sul);color:var(--su);border-color:var(--su)" onclick="finLiquidarSelecionados('pagar')">✓ Liquidar</button>
-        <button class="btn btn-sm" style="background:var(--dal);color:var(--da);border-color:var(--da)" onclick="finExcluirSelecionados('pagar')">✕ Excluir</button>
+        <button class="btn btn-sm" style="background:var(--sul);color:var(--su);border-color:var(--su)" onclick="finLiquidarSelecionados('pagar')" data-perm="fin_pagar_editar">✓ Liquidar</button>
+        <button class="btn btn-sm" style="background:var(--dal);color:var(--da);border-color:var(--da)" onclick="finExcluirSelecionados('pagar')" data-perm="fin_pagar_excluir">✕ Excluir</button>
       </div>
     </div>
 
@@ -2125,7 +2125,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div id="fin-pg-empty" class="fin-empty" style="display:none">
         <div style="font-size:24px;margin-bottom:8px">💸</div>
         Nenhum título encontrado.
-        <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="abrirModalFinLancamento('pagar')">+ Novo lançamento</button>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="abrirModalFinLancamento('pagar')" data-perm="fin_pagar_criar">+ Novo lançamento</button>
       </div>
     </div>
   </div>
@@ -2137,7 +2137,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="pg-title">A pagar folha</div>
         <div class="pg-desc">Pagamentos a pessoas: salários, repasses de dentistas e transferência mensal para o C6</div>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="abrirModalFinLancamento('folha')">+ Novo lançamento</button>
+      <button class="btn btn-primary btn-sm" onclick="abrirModalFinLancamento('folha')" data-perm="fin_folha_criar">+ Novo lançamento</button>
     </div>
 
     <!-- Cards resumo -->
@@ -2167,8 +2167,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="btn btn-ghost btn-sm" onclick="finLimparFiltros('folha')">Limpar</button>
       <div id="fin-fl-sel-bar" style="display:none;align-items:center;gap:8px;margin-left:auto">
         <span id="fin-fl-sel-count" style="font-size:12px;color:var(--tx2)">0 selecionados</span>
-        <button class="btn btn-sm" style="background:var(--sul);color:var(--su);border-color:var(--su)" onclick="finLiquidarSelecionados('folha')">✓ Liquidar</button>
-        <button class="btn btn-sm" style="background:var(--dal);color:var(--da);border-color:var(--da)" onclick="finExcluirSelecionados('folha')">✕ Excluir</button>
+        <button class="btn btn-sm" style="background:var(--sul);color:var(--su);border-color:var(--su)" onclick="finLiquidarSelecionados('folha')" data-perm="fin_folha_editar">✓ Liquidar</button>
+        <button class="btn btn-sm" style="background:var(--dal);color:var(--da);border-color:var(--da)" onclick="finExcluirSelecionados('folha')" data-perm="fin_folha_excluir">✕ Excluir</button>
       </div>
     </div>
 
@@ -2193,7 +2193,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div id="fin-fl-empty" class="fin-empty" style="display:none">
         <div style="font-size:24px;margin-bottom:8px">👥</div>
         Nenhum título encontrado.
-        <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="abrirModalFinLancamento('folha')">+ Novo lançamento</button>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="abrirModalFinLancamento('folha')" data-perm="fin_folha_criar">+ Novo lançamento</button>
       </div>
     </div>
   </div>
@@ -2205,7 +2205,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="pg-title">Contas a Receber</div>
         <div class="pg-desc">Títulos manuais e recebíveis gerados por orçamentos aprovados</div>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="abrirModalFinLancamento('receber')">+ Novo lançamento</button>
+      <button class="btn btn-primary btn-sm" onclick="abrirModalFinLancamento('receber')" data-perm="fin_receber_criar">+ Novo lançamento</button>
     </div>
 
     <!-- Cards resumo -->
@@ -2236,8 +2236,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="btn btn-ghost btn-sm" onclick="exportarFinPDF('receber')">📄 Exportar em PDF</button>
       <div id="fin-rc-sel-bar" style="display:none;align-items:center;gap:8px;margin-left:auto">
         <span id="fin-rc-sel-count" style="font-size:12px;color:var(--tx2)">0 selecionados</span>
-        <button class="btn btn-sm" style="background:var(--sul);color:var(--su);border-color:var(--su)" onclick="finLiquidarSelecionados('receber')">✓ Liquidar</button>
-        <button class="btn btn-sm" style="background:var(--dal);color:var(--da);border-color:var(--da)" onclick="finExcluirSelecionados('receber')">✕ Excluir</button>
+        <button class="btn btn-sm" style="background:var(--sul);color:var(--su);border-color:var(--su)" onclick="finLiquidarSelecionados('receber')" data-perm="fin_receber_editar">✓ Liquidar</button>
+        <button class="btn btn-sm" style="background:var(--dal);color:var(--da);border-color:var(--da)" onclick="finExcluirSelecionados('receber')" data-perm="fin_receber_excluir">✕ Excluir</button>
       </div>
     </div>
 
@@ -2262,7 +2262,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div id="fin-rc-empty" class="fin-empty" style="display:none">
         <div style="font-size:24px;margin-bottom:8px">💰</div>
         Nenhum título encontrado.
-        <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="abrirModalFinLancamento('receber')">+ Novo lançamento</button>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="abrirModalFinLancamento('receber')" data-perm="fin_receber_criar">+ Novo lançamento</button>
       </div>
     </div>
   </div>
@@ -2942,7 +2942,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 
   <div id="emp-vazio" class="card" style="display:none">
-    <div class="empty"><div class="empty-ic">🏢</div>Nenhuma empresa cadastrada ainda.<br><button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="addEmpresaNova()">+ Nova empresa</button></div>
+    <div class="empty"><div class="empty-ic">🏢</div>Nenhuma empresa cadastrada ainda.<br><button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="addEmpresaNova()" data-perm="empresa_dados_editar">+ Nova empresa</button></div>
   </div>
 
   <!-- DADOS CADASTRAIS -->
@@ -2951,7 +2951,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="card" style="flex:1;min-width:340px;max-width:620px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
           <div><div class="card-title">Dados cadastrais</div><div class="card-sub">Informações que aparecem em cartões e contratos</div></div>
-          <button class="btn btn-danger btn-sm" onclick="removerEmpresaAtual()">Remover empresa</button>
+          <button class="btn btn-danger btn-sm" onclick="removerEmpresaAtual()" data-perm="empresa_dados_editar">Remover empresa</button>
         </div>
         <div class="fg emp-fg" id="emp-campos-form" style="margin-top:10px"></div>
       </div>
@@ -4058,16 +4058,39 @@ const PERM_SECAO = {
   pendencias:'pendencias_ver',
   lembretes: 'agenda_ver',
   desmarcados:'agenda_ver',
-  financeiro:'financeiro_ver',
+  financeiro:['fin_fluxo_ver','fin_pagar_ver','fin_folha_ver','fin_receber_ver','fin_comissao_ver'],
   dashboard: 'dashboard_ver',
   relatorios:'relatorios_ver',
-  empresa:   'empresa_ver',
+  empresa:   ['empresa_dados_ver','empresa_anexos_ver'],
 };
+
+// Gate dos sub-itens do subnav Financeiro (Fluxo, A pagar, Folha, Receber, Comissão).
+// Compartilhada entre aplicarPermissoesNav() (roda no login/troca de usuário) e
+// renderFinanceiro() (roda toda vez que a pessoa entra na seção, para redirecionar
+// se a aba atual deixou de estar disponível).
+const FIN_SUBNAV_MAPA = {
+  fluxo:    'fin_fluxo_ver',
+  pagar:    'fin_pagar_ver',
+  folha:    'fin_folha_ver',
+  receber:  'fin_receber_ver',
+  comissao: 'fin_comissao_ver',
+};
+function aplicarPermissoesFinanceiroSubnav(){
+  const admin = souAdministradorReal();
+  document.querySelectorAll('#financeiro-subnav .subnav-btn[onclick]').forEach(btn=>{
+    const m = btn.getAttribute('onclick').match(/showFinSub\('([^']+)'/);
+    if(!m) return;
+    const sub = m[1];
+    const perm = FIN_SUBNAV_MAPA[sub];
+    const pode = admin || !perm || temPerm(perm);
+    btn.style.display = pode ? '' : 'none';
+  });
+}
 
 function aplicarPermissoesNav(){
   const perms = getPermissoesUsuarioAtual();
 
-  // Mapeamento botão → permissão
+  // Mapeamento botão → permissão (aceita um id único ou uma lista — lista = "qualquer uma libera")
   const mapa = {
     agenda:    'agenda_ver',
     pacientes: 'pacientes_ver',
@@ -4078,10 +4101,10 @@ function aplicarPermissoesNav(){
     pendencias:'pendencias_ver',
     lembretes: 'agenda_ver',
     desmarcados:'agenda_ver',
-    financeiro:'financeiro_ver',
+    financeiro:['fin_fluxo_ver','fin_pagar_ver','fin_folha_ver','fin_receber_ver','fin_comissao_ver'],
     dashboard: 'dashboard_ver',
     relatorios:'relatorios_ver',
-    empresa:   'empresa_ver',
+    empresa:   ['empresa_dados_ver','empresa_anexos_ver'],
     config: ['cfg_usuarios_ver','cfg_cargos_ver','cfg_equipe_ver','cfg_reunioes_ver',
              'cfg_protocolo_ver','cfg_cadpaciente_ver','cfg_empresa_ver'],
   };
@@ -4092,13 +4115,8 @@ function aplicarPermissoesNav(){
     const sec = m[1];
     if(sec==='hoje'||sec==='proximos'||sec==='melhorias') return; // sempre visível
 
-    let temAcesso;
-    if(sec==='config'){
-      const cfgPerms = mapa.config;
-      temAcesso = cfgPerms.some(p=>perms.has(p));
-    } else {
-      temAcesso = perms.has(mapa[sec]||'');
-    }
+    const regra = mapa[sec];
+    const temAcesso = Array.isArray(regra) ? regra.some(p=>perms.has(p)) : perms.has(regra||'');
     btn.style.display = temAcesso ? '' : 'none';
   });
 
@@ -4126,6 +4144,37 @@ function aplicarPermissoesNav(){
     const sub = m[1];
     const perm = cfgSubMapa[sub] || 'cfg_usuarios_ver';
     btn.style.display = perms.has(perm) ? '' : 'none';
+  });
+
+  // Filtrar sub-itens do Financeiro (Fluxo de Caixa / A pagar / Folha / A receber / Comissão)
+  aplicarPermissoesFinanceiroSubnav();
+
+  // Filtrar abas de Empresa (Dados Cadastrais / Anexos)
+  const empSubMapa = { dados:'empresa_dados_ver', anexos:'empresa_anexos_ver' };
+  document.querySelectorAll('#emp-tabs .tab[onclick]').forEach(btn=>{
+    const m = btn.getAttribute('onclick').match(/switchEmpresaTab\('([^']+)'/);
+    if(!m) return;
+    const sub = m[1];
+    const perm = empSubMapa[sub];
+    btn.style.display = (!perm || perms.has(perm)) ? '' : 'none';
+  });
+
+  // Filtrar abas sensíveis da ficha do paciente (Orçamento, Financeiro, Prontuário, Documentos, Fotos)
+  // — as demais abas (Dados, Agenda, Anamnese, Termo, Contrato, Histórico, Ações, Lembretes, Pendências)
+  // seguem cobertas pela permissão geral "pacientes_ver" que já controla o acesso à ficha do paciente.
+  const ppMenuMapa = {
+    orcamento:  'pacientes_orcamento_ver',
+    financeiro: 'pacientes_financeiro_ver',
+    prontuario: 'pacientes_prontuario_ver',
+    documentos: 'pacientes_documentos_ver',
+    fotos:      'pacientes_fotos_ver',
+  };
+  document.querySelectorAll('#pp-menu .pp-menu-btn[onclick]').forEach(btn=>{
+    const m = btn.getAttribute('onclick').match(/switchPpArea\('([^']+)'/);
+    if(!m) return;
+    const sub = m[1];
+    const perm = ppMenuMapa[sub];
+    btn.style.display = (!perm || perms.has(perm)) ? '' : 'none';
   });
 
   // Filtrar botões de ação marcados com data-perm
@@ -4462,6 +4511,36 @@ const PERMISSOES_GRUPOS = [
     ]
   },
   {
+    grupo:'Pacientes — Aba Orçamento',
+    itens:[
+      {id:'pacientes_orcamento_ver',label:'Visualizar esta aba na ficha do paciente'},
+    ]
+  },
+  {
+    grupo:'Pacientes — Aba Financeiro',
+    itens:[
+      {id:'pacientes_financeiro_ver',label:'Visualizar esta aba na ficha do paciente'},
+    ]
+  },
+  {
+    grupo:'Pacientes — Aba Prontuário',
+    itens:[
+      {id:'pacientes_prontuario_ver',label:'Visualizar esta aba na ficha do paciente'},
+    ]
+  },
+  {
+    grupo:'Pacientes — Aba Documentos',
+    itens:[
+      {id:'pacientes_documentos_ver',label:'Visualizar esta aba na ficha do paciente'},
+    ]
+  },
+  {
+    grupo:'Pacientes — Aba Fotos',
+    itens:[
+      {id:'pacientes_fotos_ver',label:'Visualizar esta aba na ficha do paciente'},
+    ]
+  },
+  {
     grupo:'Agenda',
     itens:[
       {id:'agenda_ver',label:'Visualizar'},
@@ -4469,13 +4548,43 @@ const PERMISSOES_GRUPOS = [
     ]
   },
   {
-    grupo:'Financeiro',
+    grupo:'Financeiro — Fluxo de Caixa',
     itens:[
-      {id:'financeiro_ver',label:'Visualizar'},
-      {id:'financeiro_editar',label:'Lançar/editar'},
-      {id:'financeiro_excluir',label:'Excluir lançamentos'},
-      {id:'financeiro_folha_ver',label:'Visualizar aba Folha (salários e repasses — restrito)'},
-      {id:'financeiro_folha_editar',label:'Lançar/editar na aba Folha'},
+      {id:'fin_fluxo_ver',label:'Visualizar'},
+    ]
+  },
+  {
+    grupo:'Financeiro — A pagar operacional',
+    itens:[
+      {id:'fin_pagar_ver',label:'Visualizar'},
+      {id:'fin_pagar_criar',label:'Criar/lançar'},
+      {id:'fin_pagar_editar',label:'Editar/liquidar'},
+      {id:'fin_pagar_excluir',label:'Excluir'},
+    ]
+  },
+  {
+    grupo:'Financeiro — A pagar folha (restrito)',
+    itens:[
+      {id:'fin_folha_ver',label:'Visualizar (salários e repasses)'},
+      {id:'fin_folha_criar',label:'Criar/lançar'},
+      {id:'fin_folha_editar',label:'Editar/liquidar'},
+      {id:'fin_folha_excluir',label:'Excluir'},
+    ]
+  },
+  {
+    grupo:'Financeiro — Contas a Receber',
+    itens:[
+      {id:'fin_receber_ver',label:'Visualizar'},
+      {id:'fin_receber_criar',label:'Criar/lançar'},
+      {id:'fin_receber_editar',label:'Editar/liquidar'},
+      {id:'fin_receber_excluir',label:'Excluir'},
+    ]
+  },
+  {
+    grupo:'Financeiro — Comissão Dentistas',
+    itens:[
+      {id:'fin_comissao_ver',label:'Visualizar'},
+      {id:'fin_comissao_editar',label:'Editar medição/pagamento'},
     ]
   },
   {
@@ -4537,10 +4646,18 @@ const PERMISSOES_GRUPOS = [
     ]
   },
   {
-    grupo:'Empresa',
+    grupo:'Empresa — Dados Cadastrais',
     itens:[
-      {id:'empresa_ver',label:'Visualizar'},
-      {id:'empresa_editar',label:'Editar dados e anexos'},
+      {id:'empresa_dados_ver',label:'Visualizar'},
+      {id:'empresa_dados_editar',label:'Editar dados / criar e remover empresa'},
+    ]
+  },
+  {
+    grupo:'Empresa — Anexos',
+    itens:[
+      {id:'empresa_anexos_ver',label:'Visualizar'},
+      {id:'empresa_anexos_criar',label:'Enviar/criar pastas e arquivos'},
+      {id:'empresa_anexos_excluir',label:'Excluir'},
     ]
   },
   {
@@ -4616,8 +4733,13 @@ const CARGOS_PADRAO = [
     nome:'Gestor',
     permissoes:[
       'pacientes_ver','pacientes_criar','pacientes_editar','pacientes_excluir',
+      'pacientes_orcamento_ver','pacientes_financeiro_ver','pacientes_prontuario_ver','pacientes_documentos_ver','pacientes_fotos_ver',
       'agenda_ver','agenda_gerenciar',
-      'financeiro_ver','financeiro_editar','financeiro_excluir','financeiro_folha_ver','financeiro_folha_editar',
+      'fin_fluxo_ver',
+      'fin_pagar_ver','fin_pagar_criar','fin_pagar_editar','fin_pagar_excluir',
+      'fin_folha_ver','fin_folha_criar','fin_folha_editar','fin_folha_excluir',
+      'fin_receber_ver','fin_receber_criar','fin_receber_editar','fin_receber_excluir',
+      'fin_comissao_ver','fin_comissao_editar',
       'reunioes_ver','reunioes_participar','reunioes_criar','reunioes_editar','reunioes_excluir',
       'pendencias_ver','pendencias_criar','pendencias_editar','pendencias_concluir','pendencias_reabrir','pendencias_excluir',
       'rituais_ver','rituais_criar','rituais_editar','rituais_excluir',
@@ -4630,7 +4752,7 @@ const CARGOS_PADRAO = [
       'cfg_reunioes_ver','cfg_reunioes_criar','cfg_reunioes_editar','cfg_reunioes_excluir',
       'cfg_protocolo_ver','cfg_protocolo_editar',
       'cfg_cadpaciente_ver','cfg_cadpaciente_editar',
-      'empresa_ver','empresa_editar',
+      'empresa_dados_ver','empresa_dados_editar','empresa_anexos_ver','empresa_anexos_criar','empresa_anexos_excluir',
       'cfg_empresa_ver','cfg_empresa_editar',
     ]
   },
@@ -4639,6 +4761,7 @@ const CARGOS_PADRAO = [
     nome:'Dentista',
     permissoes:[
       'pacientes_ver','pacientes_criar','pacientes_editar',
+      'pacientes_orcamento_ver','pacientes_financeiro_ver','pacientes_prontuario_ver','pacientes_documentos_ver','pacientes_fotos_ver',
       'agenda_ver','agenda_gerenciar',
       'reunioes_ver','reunioes_participar',
       'pendencias_ver','pendencias_criar','pendencias_editar','pendencias_concluir','pendencias_reabrir',
@@ -4651,6 +4774,7 @@ const CARGOS_PADRAO = [
     nome:'Secretária',
     permissoes:[
       'pacientes_ver','pacientes_criar','pacientes_editar',
+      'pacientes_financeiro_ver','pacientes_documentos_ver',
       'agenda_ver','agenda_gerenciar',
       'pendencias_ver','pendencias_criar','pendencias_concluir',
       'reunioes_ver',
@@ -4661,6 +4785,7 @@ const CARGOS_PADRAO = [
     nome:'Auxiliar',
     permissoes:[
       'pacientes_ver',
+      'pacientes_prontuario_ver','pacientes_documentos_ver',
       'agenda_ver',
       'pendencias_ver','pendencias_criar',
     ]
@@ -5086,7 +5211,7 @@ function goTo(id, btn){
       semAcesso = !cfgPerms.some(p=>temPerm(p));
     } else {
       const permNecessaria = PERM_SECAO[id];
-      semAcesso = permNecessaria && !temPerm(permNecessaria);
+      semAcesso = permNecessaria && (Array.isArray(permNecessaria) ? !permNecessaria.some(p=>temPerm(p)) : !temPerm(permNecessaria));
     }
     if(semAcesso){
       const nomeUsuario = usuarios.find(u=>u.id===usuarioAtualId)?.nome || 'este usuário';
@@ -6294,6 +6419,9 @@ function voltarParaPacientes(){
 }
 
 function switchPpArea(area){
+  const permMapa = {orcamento:'pacientes_orcamento_ver',financeiro:'pacientes_financeiro_ver',prontuario:'pacientes_prontuario_ver',documentos:'pacientes_documentos_ver',fotos:'pacientes_fotos_ver'};
+  const permNec = permMapa[area];
+  if(permNec && !souAdministradorReal() && !temPerm(permNec)) area='dados';
   const areas=['dados','agenda','anamnese','orcamento','termo','contrato','prontuario','documentos','fotos','historico','acoes','lembretes','pendencias','financeiro'];
   const menuAreas=['dados','agenda','anamnese','orcamento','termo','contrato','prontuario','documentos','fotos','historico','acoes','lembretes','pendencias','financeiro'];
   areas.forEach(a=>{
@@ -12878,7 +13006,7 @@ function renderEmpresaCards(){
       </div>
       ${on?'<span class="emp-card-dot"></span>':''}
     </div>`;
-  }).join('') + `<button class="emp-card-add" onclick="addEmpresaNova()">+ Nova empresa</button>`;
+  }).join('') + (temPerm('empresa_dados_editar')||souAdministradorReal() ? `<button class="emp-card-add" onclick="addEmpresaNova()">+ Nova empresa</button>` : '');
 }
 
 function selecionarEmpresa(id){
@@ -12888,6 +13016,7 @@ function selecionarEmpresa(id){
 }
 
 function addEmpresaNova(){
+  if(!souAdministradorReal() && !temPerm('empresa_dados_editar')){ alert('Você não tem permissão para esta ação.'); return; }
   const nova={id:uid('emp'),dados:{},anexos:{}};
   empresas.push(nova);
   empresaAtualId=nova.id;
@@ -12898,6 +13027,7 @@ function addEmpresaNova(){
 }
 
 function removerEmpresaAtual(){
+  if(!souAdministradorReal() && !temPerm('empresa_dados_editar')){ alert('Você não tem permissão para esta ação.'); return; }
   const e=getEmpresaAtual();
   if(!e) return;
   const nome=(e.dados['razaoSocial']||'').trim()||'esta empresa';
@@ -12911,6 +13041,8 @@ function removerEmpresaAtual(){
 }
 
 function switchEmpresaTab(tab){
+  const permNec = {dados:'empresa_dados_ver',anexos:'empresa_anexos_ver'}[tab];
+  if(permNec && !souAdministradorReal() && !temPerm(permNec)) return;
   empresaTabAtual=tab;
   document.getElementById('emp-tab-dados').classList.toggle('on',tab==='dados');
   document.getElementById('emp-tab-anexos').classList.toggle('on',tab==='anexos');
@@ -13008,22 +13140,26 @@ function renderEmpresaAnexosTab(){
   const wrap=document.getElementById('emp-pastas-lista');
   if(!wrap || !e) return;
   if(!e.anexos) e.anexos={};
+  const admin=souAdministradorReal();
+  const podeCriar = admin || temPerm('empresa_anexos_criar');
+  const podeExcluir = admin || temPerm('empresa_anexos_excluir');
   wrap.innerHTML=pastasEmpresa.map(p=>{
     const arquivos=e.anexos[p.id]||[];
     return `<div class="card">
       <div class="emp-pasta-head">
         <div><span style="font-weight:700;font-size:13px">📁 ${esc(p.nome)}</span> <span style="font-size:11px;color:var(--tx3)">${arquivos.length} doc${arquivos.length===1?'':'s'}</span></div>
-        <button class="btn btn-primary btn-sm" onclick="document.getElementById('emp-file-${p.id}').click()">+ Documento</button>
-        <input type="file" id="emp-file-${p.id}" multiple style="display:none" onchange="handleEmpresaAnexo('${p.id}',this.files)">
+        ${podeCriar?`<button class="btn btn-primary btn-sm" onclick="document.getElementById('emp-file-${p.id}').click()">+ Documento</button>
+        <input type="file" id="emp-file-${p.id}" multiple style="display:none" onchange="handleEmpresaAnexo('${p.id}',this.files)">`:''}
       </div>
       <div style="margin-top:10px">
-        ${arquivos.length?arquivos.map((f,j)=>`<div class="fa-anexo-item"><span>📎</span><a class="nome" href="${f.dados}" download="${esc(f.nome)}" style="color:var(--tx);text-decoration:none" title="Baixar">${esc(f.nome)}</a><span class="tam">${fmtTamanho(f.tamanho)}</span><button type="button" class="fa-anexo-remove" onclick="removeEmpresaAnexoArquivo('${p.id}',${j})" title="Remover">✕</button></div>`).join(''):'<div style="font-size:12px;color:var(--tx3);padding:6px 0">Nenhum documento nesta pasta.</div>'}
+        ${arquivos.length?arquivos.map((f,j)=>`<div class="fa-anexo-item"><span>📎</span><a class="nome" href="${f.dados}" download="${esc(f.nome)}" style="color:var(--tx);text-decoration:none" title="Baixar">${esc(f.nome)}</a><span class="tam">${fmtTamanho(f.tamanho)}</span>${podeExcluir?`<button type="button" class="fa-anexo-remove" onclick="removeEmpresaAnexoArquivo('${p.id}',${j})" title="Remover">✕</button>`:''}</div>`).join(''):'<div style="font-size:12px;color:var(--tx3);padding:6px 0">Nenhum documento nesta pasta.</div>'}
       </div>
     </div>`;
   }).join('');
 }
 
 function handleEmpresaAnexo(pastaId,fileList){
+  if(!souAdministradorReal() && !temPerm('empresa_anexos_criar')){ alert('Você não tem permissão para esta ação.'); return; }
   const e=getEmpresaAtual();
   if(!e) return;
   if(!e.anexos) e.anexos={};
@@ -13055,6 +13191,7 @@ function handleEmpresaAnexo(pastaId,fileList){
 }
 
 function removeEmpresaAnexoArquivo(pastaId,j){
+  if(!souAdministradorReal() && !temPerm('empresa_anexos_excluir')){ alert('Você não tem permissão para esta ação.'); return; }
   const e=getEmpresaAtual();
   if(!e || !e.anexos || !e.anexos[pastaId]) return;
   e.anexos[pastaId].splice(j,1);
@@ -17234,6 +17371,18 @@ function _finTodosTitulos(){
 
 // ── Navegação entre submódulos ────────────────────────────────────────
 function showFinSub(sub, btn){
+  const permNec = FIN_SUBNAV_MAPA[sub];
+  if(permNec && !souAdministradorReal() && !temPerm(permNec)){
+    const aviso = document.getElementById('perm-aviso');
+    if(aviso){
+      const nome = usuarios.find(u=>u.id===usuarioAtualId)?.nome || 'este usuário';
+      aviso.textContent = `⚠ ${nome} não tem permissão para acessar esta aba.`;
+      aviso.style.display='block';
+      clearTimeout(aviso._t);
+      aviso._t = setTimeout(()=>aviso.style.display='none', 3000);
+    }
+    return;
+  }
   _finSubAtual = sub;
   document.querySelectorAll('.fin-area').forEach(el=>el.classList.remove('on'));
   const area = document.getElementById('fin-area-'+sub);
@@ -17248,14 +17397,13 @@ function showFinSub(sub, btn){
 }
 
 function renderFinanceiro(){
-  // Controla visibilidade da aba Folha conforme permissão do usuário logado
-  const btnFolha = document.getElementById('fin-sub-folha');
-  if(btnFolha){
-    // Administrador sempre vê a aba Folha; demais cargos precisam da permissão explícita
-    const podeFolha = souAdministradorReal() || temPerm('financeiro_folha_ver');
-    btnFolha.style.display = podeFolha ? '' : 'none';
-    // Se estava na aba folha sem permissão, redireciona para fluxo
-    if(!podeFolha && _finSubAtual==='folha') _finSubAtual='fluxo';
+  // Controla visibilidade de cada aba do Financeiro conforme permissão do usuário logado
+  aplicarPermissoesFinanceiroSubnav();
+  const admin = souAdministradorReal();
+  const podeAtual = admin || !FIN_SUBNAV_MAPA[_finSubAtual] || temPerm(FIN_SUBNAV_MAPA[_finSubAtual]);
+  if(!podeAtual){
+    // Se a aba atual deixou de estar disponível, cai na primeira aba permitida
+    _finSubAtual = Object.keys(FIN_SUBNAV_MAPA).find(sub=>admin||temPerm(FIN_SUBNAV_MAPA[sub])) || 'fluxo';
   }
   showFinSub(_finSubAtual, document.getElementById('fin-sub-'+_finSubAtual));
 }
@@ -17983,6 +18131,8 @@ function finAtualizarSelecao(tipo){
 }
 
 function finLiquidarSelecionados(tipo){
+  const permNec = {pagar:'fin_pagar_editar',folha:'fin_folha_editar',receber:'fin_receber_editar'}[tipo];
+  if(permNec && !souAdministradorReal() && !temPerm(permNec)){ alert('Você não tem permissão para esta ação.'); return; }
   const checks=document.querySelectorAll('.fin-chk-'+tipo+':checked');
   const ids=Array.from(checks).map(c=>c.dataset.id);
   if(!ids.length) return;
@@ -17990,6 +18140,8 @@ function finLiquidarSelecionados(tipo){
 }
 
 function finExcluirSelecionados(tipo){
+  const permNec = {pagar:'fin_pagar_excluir',folha:'fin_folha_excluir',receber:'fin_receber_excluir'}[tipo];
+  if(permNec && !souAdministradorReal() && !temPerm(permNec)){ alert('Você não tem permissão para esta ação.'); return; }
   const checks=document.querySelectorAll('.fin-chk-'+tipo+':checked');
   const ids=Array.from(checks).map(c=>c.dataset.id);
   if(!ids.length) return;
@@ -18003,6 +18155,13 @@ function finExcluirSelecionados(tipo){
 let _finModalEditId = null;
 
 function abrirModalFinLancamento(tipo, id){
+  // Checa permissão de verdade (não só esconder botão) — criar quando é lançamento
+  // novo, editar quando é um título existente clicado direto na linha da tabela.
+  if(!souAdministradorReal()){
+    const permNec = id ? {pagar:'fin_pagar_editar',folha:'fin_folha_editar',receber:'fin_receber_editar'}[tipo]
+                        : {pagar:'fin_pagar_criar',folha:'fin_folha_criar',receber:'fin_receber_criar'}[tipo];
+    if(permNec && !temPerm(permNec)){ alert('Você não tem permissão para esta ação.'); return; }
+  }
   _finModalEditId = id||null;
   const modal=document.getElementById('modal-fin-lancamento');
   if(!modal) return;
