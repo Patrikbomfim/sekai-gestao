@@ -76,13 +76,36 @@
 
 /* Linha de atalhos de período acima dos cards de resumo (este mês / esta semana / próxima semana) */
 .fin-periodo-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.fin-periodo-btn{height:30px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx2);font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;transition:all .12s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;line-height:1.3;min-height:30px;padding-top:4px;padding-bottom:4px}
+.fin-periodo-btn{height:48px;padding:0 20px;border:1px solid var(--border);border-radius:var(--r8);background:var(--surface);color:var(--tx2);font-size:13.5px;font-family:var(--font);font-weight:500;cursor:pointer;transition:all .12s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;line-height:1.3;min-height:48px;padding-top:6px;padding-bottom:6px}
 .fin-periodo-btn:hover{background:var(--s2);border-color:var(--border-s)}
-.fin-periodo-btn .fin-periodo-lbl{font-weight:600}
-.fin-periodo-btn .fin-periodo-datas{font-size:9.5px;color:var(--tx3);font-weight:400;letter-spacing:.01em}
+.fin-periodo-btn .fin-periodo-lbl{font-weight:600;font-size:14px}
+.fin-periodo-btn .fin-periodo-datas{font-size:10.5px;color:var(--tx3);font-weight:400;letter-spacing:.01em}
 .fin-periodo-btn.on{background:var(--acl);border-color:var(--ac)}
 .fin-periodo-btn.on .fin-periodo-lbl{color:var(--ac)}
 .fin-periodo-btn.on .fin-periodo-datas{color:var(--ac)}
+
+/* Cards de resumo clicáveis (pagar/folha) — clicar filtra a lista pelo status do card */
+.fin-card-clickable{cursor:pointer;transition:box-shadow .14s,transform .1s,border-color .12s,background .12s}
+.fin-card-clickable:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.fin-card-clickable.on{border-width:1.5px}
+.fin-card-blue.fin-card-clickable.on{border-color:var(--ac);background:var(--acl)}
+.fin-card-amber.fin-card-clickable.on{border-color:var(--wa);background:var(--wal)}
+.fin-card-green.fin-card-clickable.on{border-color:var(--su);background:var(--sul)}
+.fin-card-red.fin-card-clickable.on{border-color:var(--da);background:var(--dal)}
+
+/* Botões maiores nas telas de a pagar / folha (atalhos, toolbar e ação principal) */
+#fin-area-pagar .fin-toolbar .btn,#fin-area-folha .fin-toolbar .btn,
+#fin-area-pagar>div>.btn-primary,#fin-area-folha>div>.btn-primary{padding:9px 18px;font-size:13.5px;border-radius:var(--r8)}
+
+/* Controles de ordenar/agrupar no cabeçalho da tabela */
+.fin-th-wrap{display:flex;align-items:center;gap:6px;justify-content:space-between}
+.fin-th-sort{cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none;color:inherit}
+.fin-th-sort:hover{color:var(--tx)}
+.fin-th-sort-ic{font-size:9px;opacity:.75;min-width:8px;display:inline-block}
+.fin-th-group-btn{background:none;border:1px solid transparent;cursor:pointer;font-size:12px;color:var(--tx3);padding:2px 4px;border-radius:var(--r4);line-height:1;flex-shrink:0}
+.fin-th-group-btn:hover{background:var(--surface);border-color:var(--border-s);color:var(--tx)}
+.fin-th-group-btn.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.fin-grupo-row td{background:var(--s2);font-weight:700;font-size:11.5px;color:var(--tx2);padding:8px 12px;white-space:normal}
 
 /* Tabela */
 .fin-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r10)}
@@ -2148,19 +2171,19 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
     <!-- Cards resumo -->
     <div class="fin-cards-row">
-      <div class="fin-card fin-card-blue">
+      <div class="fin-card fin-card-blue fin-card-clickable" data-status="" onclick="finFiltrarPorStatusCard('pagar','')">
         <div class="fin-card-label">Total</div>
         <div class="fin-card-value" id="pg-val-total">R$ 0,00</div>
       </div>
-      <div class="fin-card fin-card-amber">
+      <div class="fin-card fin-card-amber fin-card-clickable" data-status="aberto" onclick="finFiltrarPorStatusCard('pagar','aberto')">
         <div class="fin-card-label">Em aberto</div>
         <div class="fin-card-value" id="pg-val-aberto">R$ 0,00</div>
       </div>
-      <div class="fin-card fin-card-green">
+      <div class="fin-card fin-card-green fin-card-clickable" data-status="pago" onclick="finFiltrarPorStatusCard('pagar','pago')">
         <div class="fin-card-label">Pago</div>
         <div class="fin-card-value" id="pg-val-pago">R$ 0,00</div>
       </div>
-      <div class="fin-card fin-card-red">
+      <div class="fin-card fin-card-red fin-card-clickable" data-status="atrasado" onclick="finFiltrarPorStatusCard('pagar','atrasado')">
         <div class="fin-card-label">Atrasado</div>
         <div class="fin-card-value" id="pg-val-atrasado">R$ 0,00</div>
       </div>
@@ -2185,13 +2208,13 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <thead>
           <tr>
             <th style="width:32px"><input type="checkbox" id="fin-pg-chk-all" onchange="finToggleAll('pagar',this)"></th>
-            <th>Descrição</th>
-            <th style="width:140px">Beneficiário</th>
-            <th style="width:90px">Parcela</th>
-            <th style="width:130px">Categoria</th>
-            <th style="width:100px">Vencimento</th>
-            <th style="width:110px;text-align:right">Valor</th>
-            <th style="width:90px">Status</th>
+            <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('pagar','descricao')" title="Ordenar por descrição">Descrição <span class="fin-th-sort-ic" id="pg-sort-ic-descricao"></span></span><button type="button" class="fin-th-group-btn" id="pg-group-btn-descricao" onclick="finAgruparColuna('pagar','descricao')" title="Agrupar por descrição">⊞</button></div></th>
+            <th style="width:140px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('pagar','beneficiario')" title="Ordenar por beneficiário">Beneficiário <span class="fin-th-sort-ic" id="pg-sort-ic-beneficiario"></span></span><button type="button" class="fin-th-group-btn" id="pg-group-btn-beneficiario" onclick="finAgruparColuna('pagar','beneficiario')" title="Agrupar por beneficiário">⊞</button></div></th>
+            <th style="width:90px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('pagar','parcela')" title="Ordenar por parcela">Parcela <span class="fin-th-sort-ic" id="pg-sort-ic-parcela"></span></span><button type="button" class="fin-th-group-btn" id="pg-group-btn-parcela" onclick="finAgruparColuna('pagar','parcela')" title="Agrupar por parcela">⊞</button></div></th>
+            <th style="width:130px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('pagar','categoria')" title="Ordenar por categoria">Categoria <span class="fin-th-sort-ic" id="pg-sort-ic-categoria"></span></span><button type="button" class="fin-th-group-btn" id="pg-group-btn-categoria" onclick="finAgruparColuna('pagar','categoria')" title="Agrupar por categoria">⊞</button></div></th>
+            <th style="width:100px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('pagar','vencimento')" title="Ordenar por vencimento">Vencimento <span class="fin-th-sort-ic" id="pg-sort-ic-vencimento"></span></span><button type="button" class="fin-th-group-btn" id="pg-group-btn-vencimento" onclick="finAgruparColuna('pagar','vencimento')" title="Agrupar por vencimento">⊞</button></div></th>
+            <th style="width:110px"><div class="fin-th-wrap" style="justify-content:flex-end"><span class="fin-th-sort" onclick="finOrdenarColuna('pagar','valor')" title="Ordenar por valor">Valor <span class="fin-th-sort-ic" id="pg-sort-ic-valor"></span></span></div></th>
+            <th style="width:90px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('pagar','status')" title="Ordenar por status">Status <span class="fin-th-sort-ic" id="pg-sort-ic-status"></span></span><button type="button" class="fin-th-group-btn" id="pg-group-btn-status" onclick="finAgruparColuna('pagar','status')" title="Agrupar por status">⊞</button></div></th>
             <th style="width:80px"></th>
           </tr>
         </thead>
@@ -2233,19 +2256,19 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
     <!-- Cards resumo -->
     <div class="fin-cards-row">
-      <div class="fin-card fin-card-blue">
+      <div class="fin-card fin-card-blue fin-card-clickable" data-status="" onclick="finFiltrarPorStatusCard('folha','')">
         <div class="fin-card-label">Total</div>
         <div class="fin-card-value" id="fl-val-total">R$ 0,00</div>
       </div>
-      <div class="fin-card fin-card-amber">
+      <div class="fin-card fin-card-amber fin-card-clickable" data-status="aberto" onclick="finFiltrarPorStatusCard('folha','aberto')">
         <div class="fin-card-label">Em aberto</div>
         <div class="fin-card-value" id="fl-val-aberto">R$ 0,00</div>
       </div>
-      <div class="fin-card fin-card-green">
+      <div class="fin-card fin-card-green fin-card-clickable" data-status="pago" onclick="finFiltrarPorStatusCard('folha','pago')">
         <div class="fin-card-label">Pago</div>
         <div class="fin-card-value" id="fl-val-pago">R$ 0,00</div>
       </div>
-      <div class="fin-card fin-card-red">
+      <div class="fin-card fin-card-red fin-card-clickable" data-status="atrasado" onclick="finFiltrarPorStatusCard('folha','atrasado')">
         <div class="fin-card-label">Atrasado</div>
         <div class="fin-card-value" id="fl-val-atrasado">R$ 0,00</div>
       </div>
@@ -2269,13 +2292,13 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <thead>
           <tr>
             <th style="width:32px"><input type="checkbox" id="fin-fl-chk-all" onchange="finToggleAll('folha',this)"></th>
-            <th>Descrição</th>
-            <th style="width:140px">Beneficiário</th>
-            <th style="width:90px">Parcela</th>
-            <th style="width:130px">Categoria</th>
-            <th style="width:100px">Vencimento</th>
-            <th style="width:110px;text-align:right">Valor</th>
-            <th style="width:90px">Status</th>
+            <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('folha','descricao')" title="Ordenar por descrição">Descrição <span class="fin-th-sort-ic" id="fl-sort-ic-descricao"></span></span><button type="button" class="fin-th-group-btn" id="fl-group-btn-descricao" onclick="finAgruparColuna('folha','descricao')" title="Agrupar por descrição">⊞</button></div></th>
+            <th style="width:140px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('folha','beneficiario')" title="Ordenar por beneficiário">Beneficiário <span class="fin-th-sort-ic" id="fl-sort-ic-beneficiario"></span></span><button type="button" class="fin-th-group-btn" id="fl-group-btn-beneficiario" onclick="finAgruparColuna('folha','beneficiario')" title="Agrupar por beneficiário">⊞</button></div></th>
+            <th style="width:90px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('folha','parcela')" title="Ordenar por parcela">Parcela <span class="fin-th-sort-ic" id="fl-sort-ic-parcela"></span></span><button type="button" class="fin-th-group-btn" id="fl-group-btn-parcela" onclick="finAgruparColuna('folha','parcela')" title="Agrupar por parcela">⊞</button></div></th>
+            <th style="width:130px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('folha','categoria')" title="Ordenar por categoria">Categoria <span class="fin-th-sort-ic" id="fl-sort-ic-categoria"></span></span><button type="button" class="fin-th-group-btn" id="fl-group-btn-categoria" onclick="finAgruparColuna('folha','categoria')" title="Agrupar por categoria">⊞</button></div></th>
+            <th style="width:100px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('folha','vencimento')" title="Ordenar por vencimento">Vencimento <span class="fin-th-sort-ic" id="fl-sort-ic-vencimento"></span></span><button type="button" class="fin-th-group-btn" id="fl-group-btn-vencimento" onclick="finAgruparColuna('folha','vencimento')" title="Agrupar por vencimento">⊞</button></div></th>
+            <th style="width:110px"><div class="fin-th-wrap" style="justify-content:flex-end"><span class="fin-th-sort" onclick="finOrdenarColuna('folha','valor')" title="Ordenar por valor">Valor <span class="fin-th-sort-ic" id="fl-sort-ic-valor"></span></span></div></th>
+            <th style="width:90px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('folha','status')" title="Ordenar por status">Status <span class="fin-th-sort-ic" id="fl-sort-ic-status"></span></span><button type="button" class="fin-th-group-btn" id="fl-group-btn-status" onclick="finAgruparColuna('folha','status')" title="Agrupar por status">⊞</button></div></th>
             <th style="width:80px"></th>
           </tr>
         </thead>
@@ -2841,7 +2864,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 <!-- MODAL TÍTULOS RECORRENTES -->
 <div id="modal-fin-recorrentes" class="fin-modal-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharModalFinRecorrentes)">
-  <div class="fin-modal-box" style="max-width:560px">
+  <div class="fin-modal-box" style="max-width:860px">
     <div class="fin-modal-hdr">
       <div class="fin-modal-title" id="modal-fin-rec-titulo">Títulos recorrentes</div>
       <button class="fin-modal-close" onclick="fecharModalFinRecorrentes()">✕</button>
@@ -17574,6 +17597,122 @@ let _finFiltrosAdv = { pagar:_finFiltroVazio(), folha:_finFiltroVazio(), receber
 // Atalho de período ativo nas listas "a pagar" (operacional e folha) — padrão: mês atual
 let _finPeriodoAtivoLista = { pagar:'mes', folha:'mes' };
 
+// Ordenação e agrupamento por coluna nas listas "a pagar" (operacional e folha)
+let _finOrdemColuna = { pagar:{campo:'vencimento',dir:'asc'}, folha:{campo:'vencimento',dir:'asc'}, receber:{campo:'vencimento',dir:'asc'} };
+let _finAgruparColuna = { pagar:null, folha:null, receber:null };
+
+// Extrai o valor de um título usado para ordenar/agrupar por uma determinada coluna
+function _finValorColuna(t, campo){
+  switch(campo){
+    case 'descricao': return (t.descricao||'').toLowerCase();
+    case 'beneficiario': {
+      if(t._contraparte) return t._contraparte.toLowerCase();
+      if(t._origem==='paciente'){ const p=pacientes.find(x=>String(x.id)===String(t.pacienteId)); return p?p.nome.toLowerCase():''; }
+      return '';
+    }
+    case 'parcela': return (t.parcelaInfo&&t.parcelaInfo.numero)?t.parcelaInfo.numero:(t.recorrente?9999:-1);
+    case 'categoria': return (t.categoria||'').toLowerCase();
+    case 'vencimento': return t.vencimento||'';
+    case 'valor': return parseFloat(t.valor)||0;
+    case 'status': return _finStatusEfetivo(t);
+    default: return '';
+  }
+}
+
+// Rótulo de exibição do grupo, para as colunas cujo valor bruto não é já um texto amigável
+function _finRotuloGrupo(t, campo){
+  if(campo==='status'){
+    const labels={aberto:'Em aberto',atrasado:'Atrasado',pago:'Pago',recebido:'Recebido',cancelado:'Cancelado'};
+    return labels[_finStatusEfetivo(t)]||'—';
+  }
+  if(campo==='parcela'){
+    if(t.parcelaInfo&&t.parcelaInfo.numero) return `Parcela ${t.parcelaInfo.numero}/${t.parcelaInfo.total}`;
+    return t.recorrente?'Recorrente':'Sem parcelamento';
+  }
+  if(campo==='descricao') return t.descricao||'—';
+  if(campo==='beneficiario'){
+    if(t._contraparte) return t._contraparte;
+    if(t._origem==='paciente'){ const p=pacientes.find(x=>String(x.id)===String(t.pacienteId)); return p?p.nome:'—'; }
+    return '—';
+  }
+  if(campo==='categoria') return t.categoria||'Sem categoria';
+  if(campo==='vencimento') return _finFmtData(t.vencimento);
+  return '—';
+}
+
+// Ordena a lista de títulos conforme a coluna/direção selecionada para o tipo (pagar/folha/receber)
+function _finOrdenarLista(lista, tipo){
+  const ord = _finOrdemColuna[tipo] || {campo:'vencimento',dir:'asc'};
+  lista.sort((a,b)=>{
+    const va=_finValorColuna(a,ord.campo), vb=_finValorColuna(b,ord.campo);
+    let cmp;
+    if(typeof va==='number'&&typeof vb==='number') cmp=va-vb;
+    else cmp=String(va).localeCompare(String(vb),'pt-BR');
+    return ord.dir==='desc'?-cmp:cmp;
+  });
+  return lista;
+}
+
+// Clique no texto do cabeçalho da coluna: alterna asc → desc, sempre reordenando pela coluna clicada
+function finOrdenarColuna(tipo, campo){
+  const ord = _finOrdemColuna[tipo] || (_finOrdemColuna[tipo]={campo:'vencimento',dir:'asc'});
+  if(ord.campo===campo) ord.dir = ord.dir==='asc'?'desc':'asc';
+  else { ord.campo=campo; ord.dir='asc'; }
+  renderFinLista(tipo);
+}
+
+// Clique no ícone de agrupar do cabeçalho da coluna: liga/desliga o agrupamento por essa coluna
+// (apenas uma coluna pode estar agrupando por vez)
+function finAgruparColuna(tipo, campo){
+  _finAgruparColuna[tipo] = _finAgruparColuna[tipo]===campo ? null : campo;
+  renderFinLista(tipo);
+}
+
+// Atualiza as setinhas de ordenação e o destaque do botão de agrupar em cada cabeçalho de coluna
+function _finAtualizarHeadersOrdenacao(tipo){
+  const prefix = tipo==='pagar'?'pg':(tipo==='folha'?'fl':'rc');
+  const ord = _finOrdemColuna[tipo] || {campo:'vencimento',dir:'asc'};
+  const grp = _finAgruparColuna[tipo];
+  ['descricao','beneficiario','parcela','categoria','vencimento','valor','status'].forEach(campo=>{
+    const ic=document.getElementById(`${prefix}-sort-ic-${campo}`);
+    if(ic) ic.textContent = ord.campo===campo ? (ord.dir==='asc'?'▲':'▼') : '';
+    const gb=document.getElementById(`${prefix}-group-btn-${campo}`);
+    if(gb) gb.classList.toggle('on', grp===campo);
+  });
+}
+
+// Agrupa a lista já ordenada em blocos, na ordem em que os grupos aparecem
+function _finAgruparLista(lista, tipo){
+  const campo = _finAgruparColuna[tipo];
+  if(!campo) return null;
+  const grupos = {};
+  const ordem = [];
+  lista.forEach(t=>{
+    const chave = _finRotuloGrupo(t,campo) || '—';
+    if(!grupos[chave]){ grupos[chave]=[]; ordem.push(chave); }
+    grupos[chave].push(t);
+  });
+  return ordem.map(k=>({label:k, itens:grupos[k]}));
+}
+
+// Clique num card de resumo (Total/Em aberto/Pago/Atrasado): filtra a lista pelo status do card
+function finFiltrarPorStatusCard(tipo, status){
+  const adv = _finFiltrosAdv[tipo] || (_finFiltrosAdv[tipo]=_finFiltroVazio());
+  adv.status = status;
+  _finUpdateFiltrosBadge(tipo);
+  renderFinLista(tipo);
+}
+
+// Marca visualmente qual card de resumo está ativo, conforme o status filtrado atualmente
+function _finAtualizarCardsAtivos(tipo){
+  const area = document.getElementById('fin-area-'+tipo);
+  if(!area) return;
+  const adv = _finFiltrosAdv[tipo] || _finFiltroVazio();
+  area.querySelectorAll('.fin-card-clickable').forEach(card=>{
+    card.classList.toggle('on', (card.dataset.status||'')===(adv.status||''));
+  });
+}
+
 // ── Utilitários ──────────────────────────────────────────────────────
 function _finFmt(v){ return (parseFloat(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
 function _finFmtData(s){ if(!s)return'—'; const[y,m,d]=s.split('-'); return`${d}/${m}/${y}`; }
@@ -17955,23 +18094,21 @@ function renderFinFluxo(){
 
 
 // ── LISTAS A PAGAR / A RECEBER / FOLHA ───────────────────────────────
-function renderFinLista(tipo){
-  const isPagar = tipo==='pagar';
-  const isFolha = tipo==='folha';
-  const prefix = isPagar?'pg':(isFolha?'fl':'rc');
-  const todos = _finTodosTitulos().filter(t=> (isPagar||isFolha) ? t.tipo===tipo : (t.tipo==='receber'||!t.tipo));
-
-  // Filtros avançados (drawer)
-  const adv = _finFiltrosAdv[tipo] || _finFiltroVazio();
+// Aplica os filtros avançados (drawer + atalhos) a uma lista de títulos.
+// Quando ignorarStatus=true, o filtro de status é propositalmente ignorado — usado para calcular
+// os cards de resumo (pagar/folha), que devem sempre mostrar a composição completa por status
+// dentro do período, independentemente de qual card esteja selecionado no momento.
+function _finAplicarFiltrosAdv(todos, adv, tipo, isPagar, ignorarStatus){
   const recorrFil = _finFiltroRapido[tipo]==='recorrente';
-
-  let lista = todos.filter(t=>{
+  return todos.filter(t=>{
     const st = _finStatusEfetivo(t);
-    if(adv.status==='atrasado'&&st!=='atrasado') return false;
-    if(adv.status==='aberto'&&st!=='aberto') return false;
-    if(adv.status==='pago'&&t.status!=='pago') return false;
-    if(adv.status==='recebido'&&t.status!=='recebido') return false;
-    if(adv.status==='cancelado'&&t.status!=='cancelado') return false;
+    if(!ignorarStatus){
+      if(adv.status==='atrasado'&&st!=='atrasado') return false;
+      if(adv.status==='aberto'&&st!=='aberto') return false;
+      if(adv.status==='pago'&&t.status!=='pago') return false;
+      if(adv.status==='recebido'&&t.status!=='recebido') return false;
+      if(adv.status==='cancelado'&&t.status!=='cancelado') return false;
+    }
     if(adv.cats&&adv.cats.length&&!adv.cats.includes(t.categoria||'')) return false;
     if(!isPagar&&adv.origem&&t._origem!==adv.origem) return false;
     if(adv.emisDe&&(t.criadoEm||'')<adv.emisDe) return false;
@@ -17984,16 +18121,29 @@ function renderFinLista(tipo){
     if(recorrFil&&!t.recorrente) return false;
     return true;
   });
+}
 
-  // Ordena por vencimento
-  lista.sort((a,b)=>(a.vencimento||'').localeCompare(b.vencimento||''));
+function renderFinLista(tipo){
+  const isPagar = tipo==='pagar';
+  const isFolha = tipo==='folha';
+  const prefix = isPagar?'pg':(isFolha?'fl':'rc');
+  const todos = _finTodosTitulos().filter(t=> (isPagar||isFolha) ? t.tipo===tipo : (t.tipo==='receber'||!t.tipo));
+
+  // Filtros avançados (drawer)
+  const adv = _finFiltrosAdv[tipo] || _finFiltroVazio();
+
+  // Lista da tabela: respeita o filtro de status (inclusive o aplicado pelos cards clicáveis)
+  let lista = _finAplicarFiltrosAdv(todos, adv, tipo, isPagar, false);
+  _finOrdenarLista(lista, tipo);
 
   // Guarda a lista filtrada atual (usada, por exemplo, na exportação em PDF)
   _finListaAtual[tipo] = lista;
 
-  // Cards de resumo — refletem apenas o que está filtrado na tela
-  const listaStatus = lista.map(t=>({...t,_st:_finStatusEfetivo(t)}));
-  const sumAll = lista.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  // Cards de resumo — em pagar/folha, ignoram o filtro de status para sempre mostrar a composição
+  // completa do período (Total/Em aberto/Pago/Atrasado lado a lado, mesmo com um card selecionado)
+  const listaCards = (isPagar||isFolha) ? _finAplicarFiltrosAdv(todos, adv, tipo, isPagar, true) : lista;
+  const listaStatus = listaCards.map(t=>({...t,_st:_finStatusEfetivo(t)}));
+  const sumAll = listaCards.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
   const sumAberto = listaStatus.filter(t=>t._st==='aberto').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
   const sumAtrasado = listaStatus.filter(t=>t._st==='atrasado').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
   const sumLiq = listaStatus.filter(t=>t._st==='pago'||t._st==='recebido'||t.status==='pago'||t.status==='recebido').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
@@ -18016,6 +18166,11 @@ function renderFinLista(tipo){
     setEl('rc-val-atrasado',_finFmt(sumAtrasado));
   }
 
+  if(isPagar||isFolha){
+    _finAtualizarCardsAtivos(tipo);
+    _finAtualizarHeadersOrdenacao(tipo);
+  }
+
   // Tbody
   const tbody = document.getElementById('fin-'+prefix+'-tbody');
   const emptyEl = document.getElementById('fin-'+prefix+'-empty');
@@ -18028,7 +18183,7 @@ function renderFinLista(tipo){
   }
   if(emptyEl) emptyEl.style.display='none';
 
-  tbody.innerHTML = lista.map(t=>{
+  const renderLinhaTitulo = (t)=>{
     const st = _finStatusEfetivo(t);
     const origemTag = !isPagar
       ? `<span class="fin-origem fin-origem-${t._origem||'manual'}">${t._origem==='paciente'?'Paciente':'Manual'}</span>`
@@ -18058,7 +18213,19 @@ function renderFinLista(tipo){
         ${!isPaciente?`<button class="btn btn-sm ${liquidado?'btn-ghost':''}" style="white-space:nowrap;${liquidado?'':'background:var(--sul);color:var(--su);border-color:var(--su)'}" onclick="${liquidado?`finDesfazerPagamento('${t.id}','${tipo}')`:`abrirModalFinPagar('${t.id}','${tipo}')`}">${liquidado?'Desfazer pagamento':labelAcao}</button>`:''}
       </td>
     </tr>`;
-  }).join('');
+  };
+
+  const grupoCampo = (isPagar||isFolha) ? _finAgruparColuna[tipo] : null;
+  if(grupoCampo){
+    const grupos = _finAgruparLista(lista, tipo);
+    tbody.innerHTML = grupos.map(g=>{
+      const subtotal = g.itens.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+      return `<tr class="fin-grupo-row"><td colspan="9">${esc(String(g.label))} <span style="font-weight:400;color:var(--tx3)">· ${g.itens.length} título${g.itens.length!==1?'s':''} · ${_finFmt(subtotal)}</span></td></tr>`
+        + g.itens.map(renderLinhaTitulo).join('');
+    }).join('');
+  } else {
+    tbody.innerHTML = lista.map(renderLinhaTitulo).join('');
+  }
 }
 
 function finLimparFiltros(tipo){
@@ -18288,13 +18455,22 @@ function abrirModalFinRecorrentes(tipo){
       const abertos = itens.filter(t=>_finStatusEfetivo(t)==='aberto'||_finStatusEfetivo(t)==='atrasado');
       const proximo = abertos[0];
       const descBase = (primeiro.descricao||'').replace(/\s*\(\d+\/\d+\)\s*$/,'');
-      const freqLabel = {mensal:'Mensal',semanal:'Semanal',quinzenal:'Quinzenal',anual:'Anual'}[primeiro.freq] || '';
-      return `<div class="fin-rec-item">
-        <div class="fin-rec-item-info">
+      const freqLabel = {mensal:'Mensal',semanal:'Semanal',quinzenal:'Quinzenal',anual:'Anual'}[primeiro.freq] || '—';
+      const inicio = itens[0];
+      const fim = itens[itens.length-1];
+      return `<div class="fin-rec-item" style="align-items:flex-start">
+        <div class="fin-rec-item-info" style="flex:1">
           <div class="fin-rec-item-desc">${descBase}${primeiro.parte?' — '+primeiro.parte:''}</div>
-          <div class="fin-rec-item-meta">${freqLabel?freqLabel+' · ':''}${itens.length} título${itens.length!==1?'s':''} · ${_finFmt(primeiro.valor)}${proximo?' · próximo vencimento '+_finFmtData(proximo.vencimento):' · todos liquidados/cancelados'}</div>
+          <div class="fin-rec-item-meta" style="display:flex;flex-wrap:wrap;gap:5px 16px;margin-top:5px">
+            <span>Frequência: <strong style="color:var(--tx2);font-weight:600">${freqLabel}</strong></span>
+            <span>Início: <strong style="color:var(--tx2);font-weight:600">${_finFmtData(inicio.vencimento)}</strong></span>
+            <span>Fim: <strong style="color:var(--tx2);font-weight:600">${_finFmtData(fim.vencimento)}</strong></span>
+            <span>Qtd. títulos: <strong style="color:var(--tx2);font-weight:600">${itens.length}</strong></span>
+            <span>Valor: <strong style="color:var(--tx2);font-weight:600">${_finFmt(primeiro.valor)}</strong> cada</span>
+            <span>${proximo?'Próximo vencimento: <strong style="color:var(--tx2);font-weight:600">'+_finFmtData(proximo.vencimento)+'</strong>':'Todos liquidados/cancelados'}</span>
+          </div>
         </div>
-        <button class="btn btn-ghost btn-sm" style="color:var(--da);border-color:#FCA5A5" onclick="finExcluirSerieRecorrente('${chave.replace(/'/g,"\\'")}','${tipo}')">Excluir série</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--da);border-color:#FCA5A5;flex-shrink:0" onclick="finExcluirSerieRecorrente('${chave.replace(/'/g,"\\'")}','${tipo}')">Excluir série</button>
       </div>`;
     }).join('');
   }
