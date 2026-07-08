@@ -62,8 +62,13 @@
 .fin-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .fin-select{height:30px;padding:0 8px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);font-size:12px;font-family:var(--font);outline:none;cursor:pointer}
 .fin-select:focus{border-color:var(--ac)}
-.fin-input-date{height:30px;padding:0 8px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);font-size:12px;font-family:var(--font);outline:none}
+.fin-input-date{height:30px;padding:0 8px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);font-size:12px;font-family:var(--font);outline:none;width:145px;flex-shrink:0}
 .fin-atalho-btn.on{background:var(--acl);color:var(--ac);border-color:var(--ac)}
+
+/* Filtro de período customizado do Fluxo de Caixa — tudo numa linha, botão "Limpar filtro" abaixo */
+.fin-flx-custom-datas{margin-top:14px;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.fin-flx-custom-datas-linha{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fin-flx-custom-lbl{font-size:12px;color:var(--tx3);white-space:nowrap}
 
 /* Campo de data mascarado (dd/mm/aaaa) — substitui o input type=date nativo para digitação,
    mantendo um input type=date oculto só para abrir o calendário (contorna bug do navegador
@@ -2048,99 +2053,52 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <!-- FLUXO DE CAIXA -->
   <div id="fin-area-fluxo" class="fin-area on">
     <div class="pg-title">Fluxo de Caixa</div>
-    <div class="pg-desc">Visão geral financeira — entradas, saídas e posição do caixa</div>
+    <div class="pg-desc">Visão geral financeira — entradas, saídas e posição do caixa (a pagar operacional + folha + a receber)</div>
 
-    <!-- Filtro de período -->
-    <div class="fin-toolbar" style="margin-top:16px">
-      <button class="btn btn-ghost btn-sm fin-atalho-btn" id="flx-per-btn-semana_atual" onclick="finFluxoSetPeriodo('semana_atual')">Essa semana</button>
-      <button class="btn btn-ghost btn-sm fin-atalho-btn" id="flx-per-btn-semana_proxima" onclick="finFluxoSetPeriodo('semana_proxima')">Próxima semana</button>
-      <button class="btn btn-ghost btn-sm fin-atalho-btn" id="flx-per-btn-mes_atual" onclick="finFluxoSetPeriodo('mes_atual')">Esse mês</button>
-      <button class="btn btn-ghost btn-sm fin-atalho-btn" id="flx-per-btn-mes_proximo" onclick="finFluxoSetPeriodo('mes_proximo')">Próximo mês</button>
-      <input type="date" id="flx-filtro-de" class="fin-input-date" title="Data inicial" onchange="finFluxoDataCustomChange()">
-      <span style="font-size:12px;color:var(--tx3)">até</span>
-      <input type="date" id="flx-filtro-ate" class="fin-input-date" title="Data final" onchange="finFluxoDataCustomChange()">
+    <!-- Atalhos de período -->
+    <div class="fin-periodo-row" style="margin-top:16px">
+      <button type="button" class="fin-periodo-btn" id="flx-periodo-btn-mes_atual" onclick="finFluxoSetPeriodo('mes_atual')">
+        <span class="fin-periodo-lbl">Este mês</span>
+        <span class="fin-periodo-datas"></span>
+      </button>
+      <button type="button" class="fin-periodo-btn" id="flx-periodo-btn-semana_atual" onclick="finFluxoSetPeriodo('semana_atual')">
+        <span class="fin-periodo-lbl">Esta semana</span>
+        <span class="fin-periodo-datas"></span>
+      </button>
+      <button type="button" class="fin-periodo-btn" id="flx-periodo-btn-semana_proxima" onclick="finFluxoSetPeriodo('semana_proxima')">
+        <span class="fin-periodo-lbl">Próxima semana</span>
+        <span class="fin-periodo-datas"></span>
+      </button>
+    </div>
+
+    <!-- Filtro por período customizado -->
+    <div class="fin-flx-custom-datas">
+      <div class="fin-flx-custom-datas-linha">
+        <span class="fin-flx-custom-lbl">De</span>
+        <input type="date" id="flx-filtro-de" class="fin-input-date" title="Data inicial" onchange="finFluxoDataCustomChange()">
+        <span class="fin-flx-custom-lbl">até</span>
+        <input type="date" id="flx-filtro-ate" class="fin-input-date" title="Data final" onchange="finFluxoDataCustomChange()">
+      </div>
       <button class="btn btn-ghost btn-sm" onclick="finFluxoLimparFiltro()">Limpar filtro</button>
     </div>
     <div style="font-size:11.5px;color:var(--tx3);margin-top:8px" id="flx-periodo-label"></div>
 
-    <!-- Cards realizados no período selecionado -->
+    <!-- Cards realizados no período selecionado (unificam a pagar operacional + folha + a receber) -->
     <div class="fin-cards-row" style="margin-top:12px">
       <div class="fin-card fin-card-green" id="flx-card-recebido">
-        <div class="fin-card-label">Recebido no período</div>
+        <div class="fin-card-label">A receber</div>
         <div class="fin-card-value" id="flx-val-recebido">R$ 0,00</div>
         <div class="fin-card-sub" id="flx-sub-recebido">0 títulos liquidados</div>
       </div>
       <div class="fin-card fin-card-red" id="flx-card-pago">
-        <div class="fin-card-label">Pago no período</div>
+        <div class="fin-card-label">A pagar</div>
         <div class="fin-card-value" id="flx-val-pago">R$ 0,00</div>
         <div class="fin-card-sub" id="flx-sub-pago">0 títulos liquidados</div>
       </div>
       <div class="fin-card fin-card-blue" id="flx-card-saldo">
-        <div class="fin-card-label">Saldo do período</div>
+        <div class="fin-card-label">Saldo no período</div>
         <div class="fin-card-value" id="flx-val-saldo">R$ 0,00</div>
         <div class="fin-card-sub">entradas − saídas no período</div>
-      </div>
-    </div>
-
-    <!-- Painéis A Pagar / A Receber -->
-    <div class="fin-fluxo-grid" style="margin-top:20px">
-      <!-- A PAGAR -->
-      <div>
-        <div class="fin-fluxo-titulo">
-          <span class="fin-ic-pagar">↑</span> A Pagar
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div class="fin-fluxo-card fin-fc-red" onclick="irFinSub('pagar','atrasado')">
-            <div class="fin-fc-header">
-              <span class="fin-fc-label">Vencido</span>
-              <span class="fin-fc-count" id="flx-pagar-atrasado-count">0 títulos</span>
-            </div>
-            <div class="fin-fc-value" id="flx-pagar-atrasado-val">R$ 0,00</div>
-          </div>
-          <div class="fin-fluxo-card fin-fc-amber" onclick="irFinSub('pagar','hoje')">
-            <div class="fin-fc-header">
-              <span class="fin-fc-label">Hoje</span>
-              <span class="fin-fc-count" id="flx-pagar-hoje-count">0 títulos</span>
-            </div>
-            <div class="fin-fc-value" id="flx-pagar-hoje-val">R$ 0,00</div>
-          </div>
-          <div class="fin-fluxo-card fin-fc-blue" onclick="irFinSub('pagar','semana')">
-            <div class="fin-fc-header">
-              <span class="fin-fc-label">Próxima semana</span>
-              <span class="fin-fc-count" id="flx-pagar-semana-count">0 títulos</span>
-            </div>
-            <div class="fin-fc-value" id="flx-pagar-semana-val">R$ 0,00</div>
-          </div>
-        </div>
-      </div>
-      <!-- A RECEBER -->
-      <div>
-        <div class="fin-fluxo-titulo">
-          <span class="fin-ic-receber">↓</span> A Receber
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div class="fin-fluxo-card fin-fc-red" onclick="irFinSub('receber','atrasado')">
-            <div class="fin-fc-header">
-              <span class="fin-fc-label">Vencido</span>
-              <span class="fin-fc-count" id="flx-receber-atrasado-count">0 títulos</span>
-            </div>
-            <div class="fin-fc-value" id="flx-receber-atrasado-val">R$ 0,00</div>
-          </div>
-          <div class="fin-fluxo-card fin-fc-amber" onclick="irFinSub('receber','hoje')">
-            <div class="fin-fc-header">
-              <span class="fin-fc-label">Hoje</span>
-              <span class="fin-fc-count" id="flx-receber-hoje-count">0 títulos</span>
-            </div>
-            <div class="fin-fc-value" id="flx-receber-hoje-val">R$ 0,00</div>
-          </div>
-          <div class="fin-fluxo-card fin-fc-green" onclick="irFinSub('receber','semana')">
-            <div class="fin-fc-header">
-              <span class="fin-fc-label">Próxima semana</span>
-              <span class="fin-fc-count" id="flx-receber-semana-count">0 títulos</span>
-            </div>
-            <div class="fin-fc-value" id="flx-receber-semana-val">R$ 0,00</div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -17601,7 +17559,7 @@ function _finSalvarTitulosGestao(list){ _comSalvarImediato(()=>salvarLS('sk3-fin
 // ── Estado ───────────────────────────────────────────────────────────
 let _finSubAtual = 'fluxo';
 // Período selecionado no Fluxo de Caixa — padrão: semana atual (segunda a domingo)
-let _finFluxoPeriodo = { tipo:'semana_atual', de:'', ate:'' };
+let _finFluxoPeriodo = { tipo:'mes_atual', de:'', ate:'' };
 let _finFiltroRapido = { pagar: null, receber: null };
 let _finLiqPendingIds = [];
 let _finLiqPendingTipo = '';
@@ -17997,9 +17955,9 @@ function finSetPeriodoLista(tipo, periodo){
 }
 
 // Calcula a data inicial/final (ISO) do período selecionado no Fluxo de Caixa
-function _finPeriodoFluxoBounds(){
+function _finPeriodoFluxoBounds(tipoParam){
   const hoje=_finHoje();
-  const tipo=_finFluxoPeriodo.tipo;
+  const tipo=tipoParam||_finFluxoPeriodo.tipo;
   if(tipo==='custom'){
     return { de:_finFluxoPeriodo.de||_finIso(hoje), ate:_finFluxoPeriodo.ate||_finIso(hoje) };
   }
@@ -18042,30 +18000,29 @@ function finFluxoDataCustomChange(){
 }
 
 function finFluxoLimparFiltro(){
-  finFluxoSetPeriodo('semana_atual');
+  finFluxoSetPeriodo('mes_atual');
 }
 
 function _finFluxoAtualizarBotoes(){
-  ['semana_atual','semana_proxima','mes_atual','mes_proximo'].forEach(t=>{
-    const b=document.getElementById('flx-per-btn-'+t);
-    if(b) b.classList.toggle('on', _finFluxoPeriodo.tipo===t);
+  ['mes_atual','semana_atual','semana_proxima'].forEach(t=>{
+    const b=document.getElementById('flx-periodo-btn-'+t);
+    if(!b) return;
+    b.classList.toggle('on', _finFluxoPeriodo.tipo===t);
+    const {de,ate}=_finPeriodoFluxoBounds(t);
+    const datasEl=b.querySelector('.fin-periodo-datas');
+    if(datasEl) datasEl.textContent = `${_finFmtDataCurta(de)} – ${_finFmtDataCurta(ate)}`;
   });
 }
 
 // ── FLUXO DE CAIXA ───────────────────────────────────────────────────
 function renderFinFluxo(){
   const todos = _finTodosTitulos();
-  const hoje = _finHoje();
-  const hj = _finIso(hoje);
-  const seg=new Date(hoje); const ds=hoje.getDay(); seg.setDate(hoje.getDate()+(ds===0?1:(8-ds)%7||7));
-  const sex=new Date(seg); sex.setDate(seg.getDate()+4);
-  const segIso=_finIso(seg); const sexIso=_finIso(sex);
 
   // Inclui os dois módulos "a pagar" (operacional e folha) na visão consolidada
   const pagar = todos.filter(t=>t.tipo==='pagar'||t.tipo==='folha');
   const receber = todos.filter(t=>t.tipo==='receber'||!t.tipo);
 
-  // Período selecionado (padrão: essa semana, segunda a domingo)
+  // Período selecionado (padrão: mês atual)
   _finFluxoAtualizarBotoes();
   const {de:pDe, ate:pAte} = _finPeriodoFluxoBounds();
 
@@ -18085,29 +18042,6 @@ function renderFinFluxo(){
   const saldo=totalRecebido-totalPago;
   const elSaldo=document.getElementById('flx-val-saldo');
   if(elSaldo){ elSaldo.textContent=_finFmt(saldo); elSaldo.style.color=saldo>=0?'var(--su)':'var(--da)'; }
-
-  // Grupos A Pagar / A Receber (indicadores de vencimento futuro, independentes do período selecionado acima)
-  function grupo(lista, tipo){
-    const abertos = lista.filter(t=>_finStatusEfetivo(t)==='aberto'||_finStatusEfetivo(t)==='atrasado');
-    const atrasados = abertos.filter(t=>{ const v=t.vencimento||''; return v&&v<hj; });
-    const hojeList = abertos.filter(t=>t.vencimento===hj);
-    const semanaList = abertos.filter(t=>{ const v=t.vencimento||''; return v>=segIso&&v<=sexIso; });
-    return { atrasados, hojeList, semanaList };
-  }
-
-  const gPag = grupo(pagar,'pagar');
-  const gRec = grupo(receber,'receber');
-
-  function preencherGrupo(pref, g){
-    ['atrasado','hoje','semana'].forEach((k,i)=>{
-      const lista = [g.atrasados,g.hojeList,g.semanaList][i];
-      const soma = lista.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
-      setEl(`flx-${pref}-${k}-val`, _finFmt(soma));
-      setEl(`flx-${pref}-${k}-count`, lista.length+' título'+(lista.length!==1?'s':''));
-    });
-  }
-  preencherGrupo('pagar', gPag);
-  preencherGrupo('receber', gRec);
 }
 
 
