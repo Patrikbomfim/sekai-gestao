@@ -764,23 +764,25 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <button id="floating-save-btn" onclick="commitPendingSaves()">Salvar</button>
 <div class="layout">
 <nav class="sidebar">
-  <div class="slb-label">Hoje</div>
+  <div class="slb-label">Início</div>
   <button class="nav-btn on" onclick="goTo('hoje',this)"><span class="nav-ic">▣</span>Meu dia<span class="nav-badge" id="bdg-hoje" style="display:none">0</span></button>
   <button class="nav-btn" onclick="goTo('proximos',this)">Próximos 7 dias</button>
   <div class="slb-label">Pacientes</div>
   <button class="nav-btn" id="navbtn-agenda" onclick="goTo('agenda',this)">Agenda</button>
   <button class="nav-btn" id="navbtn-pacientes" onclick="goTo('pacientes',this)">Pacientes</button>
-  <button class="nav-btn" onclick="goTo('fluxos',this)">Fluxo de ação</button>
+  <button class="nav-btn" onclick="goTo('acoes',this)">Ações</button>
   <button class="nav-btn" onclick="goTo('lembretes',this)">Lembretes<span class="nav-badge" id="bdg-lembretes" style="display:none">0</span></button>
-  <div class="slb-label">Gestão</div>
-  <button class="nav-btn" onclick="goTo('financeiro',this)">Financeiro</button>
-  <button class="nav-btn" onclick="goTo('dashboard',this)">Dashboard</button>
-  <button class="nav-btn" onclick="goTo('relatorios',this)">Relatórios</button>
-  <button class="nav-btn" onclick="goTo('rituais',this)">Rituais</button>
-  <button class="nav-btn" onclick="goTo('reuniao',this)">Reuniões</button>
   <button class="nav-btn" onclick="goTo('pendencias',this)">Pendências<span class="nav-badge" id="bdg-pend" style="display:none">0</span></button>
-  <button class="nav-btn" id="navbtn-desmarcados" onclick="goTo('desmarcados',this)">Pacientes desmarcados<span class="nav-badge" id="bdg-desmarcados" style="display:none">0</span></button>
+  <div class="slb-label">Administrativo</div>
   <button class="nav-btn" onclick="goTo('empresa',this)"><span class="nav-ic">🏢</span>Empresa</button>
+  <button class="nav-btn" onclick="goTo('financeiro',this)">Financeiro</button>
+  <button class="nav-btn" onclick="goTo('reuniao',this)">Reuniões</button>
+  <div class="slb-label">Gestão</div>
+  <button class="nav-btn" onclick="goTo('dashboard',this)">Dashboard</button>
+  <button class="nav-btn" onclick="goTo('rituais',this)">Rituais</button>
+  <button class="nav-btn" onclick="goTo('relatorios',this)">Relatórios</button>
+  <button class="nav-btn" id="navbtn-desmarcados" onclick="goTo('desmarcados',this)">Pacientes desmarcados<span class="nav-badge" id="bdg-desmarcados" style="display:none">0</span></button>
+  <button class="nav-btn" onclick="goTo('fluxos',this)">Fluxo de ação</button>
   <div class="slb-label">Sistema</div>
   <button class="nav-btn" onclick="goTo('melhorias',this)"><span class="nav-ic">🛠</span>Melhorias para o sistema</button>
 </nav>
@@ -788,8 +790,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <nav class="subnav" id="fluxo-subnav">
   <div class="subnav-title">Fluxo de ação</div>
   <div id="fluxo-subnav-situacoes"></div>
-  <div style="height:1px;background:var(--border);margin:10px 16px"></div>
-  <button class="subnav-btn" id="fluxo-subnav-historico" onclick="selectFluxoSubnav('historico',this)"><span class="nav-ic">📋</span>Histórico</button>
 </nav>
 
 <nav class="subnav" id="financeiro-subnav">
@@ -1445,15 +1445,35 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="btn btn-primary" id="btn-add-flow-action" onclick="addFlowAction()" data-perm="fluxos_criar">+ Nova ação nesta situação</button>
     </div>
   </div>
+</div>
 
-  <!-- subpágina: histórico -->
-  <div id="fluxo-area-historico" style="display:none">
-    <div style="margin-bottom:16px">
-      <div class="pg-title">Histórico de ações</div>
-      <div class="pg-desc">Registro de todas as ações concluídas ou não realizadas</div>
-    </div>
+<!-- AÇÕES (instâncias geradas pelo Fluxo de ação — pendentes e histórico) -->
+<div id="sec-acoes" class="sec">
+  <div class="pg-title">Ações</div>
+  <div class="pg-desc">Ações geradas pelo Fluxo de ação para todos os pacientes — pendentes e histórico</div>
+  <div style="display:flex;gap:6px;margin-bottom:14px">
+    <button class="btn btn-sm" id="acoes-tab-pendentes" onclick="acoesSetAba('pendentes')">Pendentes</button>
+    <button class="btn btn-sm" id="acoes-tab-historico" onclick="acoesSetAba('historico')">Histórico</button>
+  </div>
+
+  <div id="acoes-area-pendentes">
     <div class="card" style="padding:14px 16px">
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <input type="text" id="acp-busca-paciente" placeholder="Buscar por paciente..." oninput="renderAcoesPendentesLista()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r6);min-width:180px">
+        <select id="acp-filtro-responsavel" onchange="renderAcoesPendentesLista()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
+          <option value="">Todos responsáveis</option>
+        </select>
+        <input type="date" id="acp-filtro-de" onchange="renderAcoesPendentesLista()" title="De" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
+        <input type="date" id="acp-filtro-ate" onchange="renderAcoesPendentesLista()" title="Até" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
+      </div>
+      <div id="acp-lista"></div>
+    </div>
+  </div>
+
+  <div id="acoes-area-historico" style="display:none">
+    <div class="card" style="padding:14px 16px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <input type="text" id="hac-busca-paciente" placeholder="Buscar por paciente..." oninput="renderHistoricoAcoes()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r6);min-width:180px">
         <select id="hac-filtro-situacao" onchange="renderHistoricoAcoes()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
           <option value="">Todas as situações</option>
         </select>
@@ -1465,13 +1485,14 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <select id="hac-filtro-responsavel" onchange="renderHistoricoAcoes()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
           <option value="">Todos responsáveis</option>
         </select>
+        <input type="date" id="hac-filtro-de" onchange="renderHistoricoAcoes()" title="De" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
+        <input type="date" id="hac-filtro-ate" onchange="renderHistoricoAcoes()" title="Até" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
       </div>
       <div id="hac-lista"></div>
     </div>
   </div>
 </div>
 
-<!-- modal-historico-acoes removido: virou subpágina inline -->
 
 <!-- MODAL CONCLUIR AÇÃO (realizada / não realizada + motivo) -->
 <div class="modal-ov" id="modal-concluir-acao">
@@ -1510,7 +1531,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
   <div class="pg-desc">Lembretes gerados automaticamente pelas regras configuradas em Config. de agenda</div>
   <div id="lemb-modo-visao"></div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="lemb-filtros"></div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="lemb-filtros"></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <input type="text" id="lemb-busca-paciente" placeholder="Buscar por paciente..." oninput="renderLembretes()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r6);min-width:180px">
+    <input type="date" id="lemb-filtro-de" onchange="renderLembretes()" title="De" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
+    <input type="date" id="lemb-filtro-ate" onchange="renderLembretes()" title="Até" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
+  </div>
   <div id="lemb-lista-wrap"></div>
 </div>
 
@@ -1547,7 +1573,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="pg-desc">Itens definidos em "até a próxima reunião" — centralizados por responsável</div>
   <div id="pend-modo-visao"></div>
   <div id="pend-resumo-equipe"></div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="pend-filtros"></div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="pend-filtros"></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <input type="text" id="pend-busca-paciente" placeholder="Buscar por paciente..." oninput="renderPendencias()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r6);min-width:180px">
+    <input type="date" id="pend-filtro-de" onchange="renderPendencias()" title="De" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
+    <input type="date" id="pend-filtro-ate" onchange="renderPendencias()" title="Até" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
+  </div>
   <div class="card" id="pend-lista-wrap"></div>
 </div>
 
@@ -4061,6 +4092,7 @@ const PERM_SECAO = {
   agenda:    'agenda_ver',
   pacientes: 'pacientes_ver',
   fluxos:    'fluxos_ver',
+  acoes:     'fluxos_ver',
   rituais:   'fluxos_ver',
   reuniao:   'reunioes_ver',
   rituais:   'rituais_ver',
@@ -4104,6 +4136,7 @@ function aplicarPermissoesNav(){
     agenda:    'agenda_ver',
     pacientes: 'pacientes_ver',
     fluxos:    'fluxos_ver',
+    acoes:     'fluxos_ver',
     rituais:   'fluxos_ver',
     reuniao:   'reunioes_ver',
     rituais:   'rituais_ver',
@@ -5045,7 +5078,7 @@ function gerarAcoes(paciente){
   const fl = fluxos[paciente.situacao] || [];
   fl.filter(a=>a.ativo).forEach(a=>{
     const data = calcDataAcao(a, paciente.situacaoData || paciente.dataEvento);
-    if(data) lista.push({...a, data, pacienteId:paciente.id, pacienteNome:paciente.nome, modalidade:'fluxo'});
+    if(data) lista.push({...a, data, pacienteId:paciente.id, pacienteNome:paciente.nome, modalidade:'fluxo', situacaoId:paciente.situacao});
   });
   // aniversário
   if(paciente.aniversario){
@@ -5053,7 +5086,7 @@ function gerarAcoes(paciente){
     if(aniv){
       const proxAniv = new Date(hoje.getFullYear(), aniv.getMonth(), aniv.getDate());
       if(proxAniv < hoje) proxAniv.setFullYear(proxAniv.getFullYear()+1);
-      lista.push({id:'aniv_'+paciente.id, titulo:'Aniversário — mensagem pessoal', tipo:'mensagem', responsavel:'Leticia', script:'[Nome], feliz aniversário! Espero que seja um ano muito especial para você.', icone:'🎂', data:proxAniv, pacienteId:paciente.id, pacienteNome:paciente.nome, modalidade:'fluxo'});
+      lista.push({id:'aniv_'+paciente.id, titulo:'Aniversário — mensagem pessoal', tipo:'mensagem', responsavel:'Leticia', script:'[Nome], feliz aniversário! Espero que seja um ano muito especial para você.', icone:'🎂', data:proxAniv, pacienteId:paciente.id, pacienteNome:paciente.nome, modalidade:'fluxo', situacaoId:paciente.situacao});
     }
   }
   return lista;
@@ -5299,6 +5332,7 @@ function goTo(id, btn){
   if(id==='agenda') renderAgenda();
   if(id==='pacientes'){ptSortColId='nome';ptSortDir='asc';filtroAtual='';pacientesPaginaAtual=1;const buscaEl=document.getElementById('pt-busca-nome');if(buscaEl)buscaEl.value='';renderFiltros();renderPacientes('');renderKanban();renderAcoesTab();}
   if(id==='fluxos') renderFluxos();
+  if(id==='acoes') renderAcoesModulo();
   if(id==='rituais') renderRituais();
   if(id==='reuniao') renderReunioes();
   if(id==='pendencias') renderPendencias();
@@ -5514,13 +5548,19 @@ function abrirHistoricoAcoes(){
 }
 
 function renderHistoricoAcoes(){
+  const buscaPac = (document.getElementById('hac-busca-paciente')?.value||'').toLowerCase().trim();
   const filtroSit = document.getElementById('hac-filtro-situacao')?.value||'';
   const filtroRes = document.getElementById('hac-filtro-resultado')?.value||'';
   const filtroResp = document.getElementById('hac-filtro-responsavel')?.value||'';
+  const filtroDe = document.getElementById('hac-filtro-de')?.value||'';
+  const filtroAte = document.getElementById('hac-filtro-ate')?.value||'';
   let lista = historicoAcoes.slice();
+  if(buscaPac) lista = lista.filter(h=>(h.pacienteNome||'').toLowerCase().includes(buscaPac));
   if(filtroSit) lista = lista.filter(h=>h.situacaoId===filtroSit);
   if(filtroRes) lista = lista.filter(h=>h.resultado===filtroRes);
   if(filtroResp) lista = lista.filter(h=>h.responsavel===filtroResp);
+  if(filtroDe) lista = lista.filter(h=>h.concluidaEm>=filtroDe);
+  if(filtroAte) lista = lista.filter(h=>h.concluidaEm<=filtroAte);
   const el = document.getElementById('hac-lista');
   if(!el) return;
   if(!lista.length){
@@ -5553,7 +5593,74 @@ function renderHistoricoAcoes(){
   }).join('');
 }
 
-// ── LEMBRETES — GERAÇÃO ───────────────────────────────────────────────
+// ── MÓDULO "AÇÕES" (instâncias do Fluxo de ação — pendentes + histórico) ────
+let _acoesAbaAtual = 'pendentes';
+function renderAcoesModulo(){
+  // popula filtro de responsável da aba Pendentes
+  const pendentesTodas = pacientes.flatMap(p=>gerarAcoes(p)).filter(a=>!isConcluida(a));
+  const respsPend = [...new Set(pendentesTodas.map(a=>a.responsavel).filter(Boolean))];
+  const selRespPend = document.getElementById('acp-filtro-responsavel');
+  if(selRespPend){
+    const atual = selRespPend.value;
+    selRespPend.innerHTML = '<option value="">Todos responsáveis</option>' +
+      respsPend.map(r=>`<option value="${esc(r)}" ${r===atual?'selected':''}>${esc(r)}</option>`).join('');
+  }
+  abrirHistoricoAcoes();
+  acoesSetAba(_acoesAbaAtual);
+}
+function acoesSetAba(aba){
+  _acoesAbaAtual = aba;
+  const elP=document.getElementById('acoes-area-pendentes'), elH=document.getElementById('acoes-area-historico');
+  const btnP=document.getElementById('acoes-tab-pendentes'), btnH=document.getElementById('acoes-tab-historico');
+  if(elP) elP.style.display = aba==='pendentes' ? '' : 'none';
+  if(elH) elH.style.display = aba==='historico' ? '' : 'none';
+  if(btnP) btnP.className = 'btn btn-sm ' + (aba==='pendentes'?'btn-primary':'btn-ghost');
+  if(btnH) btnH.className = 'btn btn-sm ' + (aba==='historico'?'btn-primary':'btn-ghost');
+  if(aba==='pendentes') renderAcoesPendentesLista(); else renderHistoricoAcoes();
+}
+function renderAcoesPendentesLista(){
+  const buscaPac = (document.getElementById('acp-busca-paciente')?.value||'').toLowerCase().trim();
+  const filtroResp = document.getElementById('acp-filtro-responsavel')?.value||'';
+  const filtroDe = document.getElementById('acp-filtro-de')?.value||'';
+  const filtroAte = document.getElementById('acp-filtro-ate')?.value||'';
+  let lista = pacientes.flatMap(p=>gerarAcoes(p)).filter(a=>!isConcluida(a));
+  if(buscaPac) lista = lista.filter(a=>(a.pacienteNome||'').toLowerCase().includes(buscaPac));
+  if(filtroResp) lista = lista.filter(a=>a.responsavel===filtroResp);
+  if(filtroDe) lista = lista.filter(a=>iso(a.data)>=filtroDe);
+  if(filtroAte) lista = lista.filter(a=>iso(a.data)<=filtroAte);
+  lista.sort((a,b)=>a.data-b.data);
+  const el = document.getElementById('acp-lista');
+  if(!el) return;
+  if(!lista.length){
+    el.innerHTML = `<div class="empty"><div class="empty-ic">✅</div>Nenhuma ação pendente encontrada.</div>`;
+    return;
+  }
+  const hojeStr = iso(hoje);
+  const gridCols = '90px 1fr 130px 130px 100px';
+  el.innerHTML = `<div style="display:grid;grid-template-columns:${gridCols};gap:10px;padding:0 0 8px;border-bottom:1px solid var(--border);margin-bottom:4px">
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Data</div>
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Ação / Paciente</div>
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Situação</div>
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Responsável</div>
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em"></div>
+  </div>` + lista.map(a=>{
+    const atrasado = iso(a.data)<hojeStr;
+    const k = acaoKey(a).replace(/[^a-z0-9_]/gi,'_');
+    const aStr = JSON.stringify(a).replace(/"/g,'&quot;');
+    const sitLabel = a.situacaoId ? getSituacaoLabel(a.situacaoId) : '—';
+    return `<div style="display:grid;grid-template-columns:${gridCols};gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:center">
+      <div style="font-size:12px;color:${atrasado?'var(--da)':'var(--tx2)'}">${fmtDate(a.data)}${atrasado?' ⚠':''}</div>
+      <div>
+        <div style="font-size:13px;font-weight:500">${esc(a.titulo)}</div>
+        <div style="font-size:12px;color:var(--tx2)">👤 ${esc(a.pacienteNome||'—')}</div>
+      </div>
+      <div style="font-size:12px;color:var(--tx2)">${esc(sitLabel)}</div>
+      <div style="font-size:12px;color:var(--tx2)">${esc(a.responsavel||'—')}</div>
+      <div><button class="btn btn-ghost btn-sm" onclick="marcarFeito('${k}',${aStr})">✓ Concluir</button></div>
+    </div>`;
+  }).join('');
+}
+
 function gerarLembretesParaAgendamento(ag){
   // Chamado ao salvar um agendamento. Percorre regrasLembretes e cria instâncias.
   if(!regrasLembretes || !regrasLembretes.length) return;
@@ -5633,6 +5740,12 @@ function renderLembretes(){
   `;
   if(lembFiltroStatus) lista = lista.filter(l=>l.status===lembFiltroStatus);
   if(lembFiltroResp) lista = lista.filter(l=>l.responsavel===lembFiltroResp);
+  const buscaPac = (document.getElementById('lemb-busca-paciente')?.value||'').toLowerCase().trim();
+  if(buscaPac) lista = lista.filter(l=>(l.pacienteNome||'').toLowerCase().includes(buscaPac));
+  const filtroDe = document.getElementById('lemb-filtro-de')?.value||'';
+  const filtroAte = document.getElementById('lemb-filtro-ate')?.value||'';
+  if(filtroDe) lista = lista.filter(l=>l.dataLembrete>=filtroDe);
+  if(filtroAte) lista = lista.filter(l=>l.dataLembrete<=filtroAte);
   lista = lista.slice().sort((a,b)=>a.dataLembrete>b.dataLembrete?1:-1);
   const wrap = document.getElementById('lemb-lista-wrap');
   if(!wrap) return;
@@ -5656,6 +5769,7 @@ function renderLembretes(){
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
           <span class="pill ${pillCls}" style="font-size:11px">${pillLbl}</span>
           <span class="pill p-neutral" style="font-size:11px">📅 ${fmtDate(parseIso(l.dataLembrete))}</span>
+          ${l.status==='concluido'&&l.concluidoPorNome?`<span style="font-size:11px;color:var(--tx3)">por ${esc(l.concluidoPorNome)}${l.concluidoEm?' em '+fmtDate(parseIso(l.concluidoEm)):''}</span>`:''}
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
@@ -5671,7 +5785,8 @@ function setLembFiltroResp(r){lembFiltroResp=r;renderLembretes();}
 function concluirLembrete(id){
   const l=lembretesGerados.find(x=>x.id===id);
   if(!l)return;
-  l.status='concluido';l.concluidoEm=iso(hoje);l.concluidoPorId=usuarioAtualId;
+  const u = usuarios.find(x=>x.id===usuarioAtualId);
+  l.status='concluido';l.concluidoEm=iso(hoje);l.concluidoPorId=usuarioAtualId;l.concluidoPorNome=u?.nome||'';
   salvarLS('sk3-lembretes-gerados',lembretesGerados);
   renderLembretes();
 }
@@ -10624,51 +10739,33 @@ function excluirPt(){
 // ── FLUXOS EDITOR ────────────────────────────────────────────────────
 const SITUACAO_ORDER=['lead','avaliacao','encaminhar','orcamento','tratamento','alta'];
 let fluxoSituacaoAtual='lead';
-let fluxoSubnavAtual='lead'; // 'historico' ou um id de status
 
 function renderFluxos(){
   // Monta os botões no subnav lateral
   const subnav = document.getElementById('fluxo-subnav-situacoes');
   if(subnav){
     subnav.innerHTML = situacaoList.map(s=>{
-      const on = s.id===fluxoSituacaoAtual && fluxoSubnavAtual!=='historico';
+      const on = s.id===fluxoSituacaoAtual;
       const icone = s.icone ? s.icone+' ' : '';
       return `<button class="subnav-btn${on?' on':''}" onclick="selectFluxoSubnav('${s.id}',this)">${icone}${esc(s.label)}</button>`;
     }).join('');
   }
-  // Atualiza ativo no botão histórico
-  const btnHist = document.getElementById('fluxo-subnav-historico');
-  if(btnHist) btnHist.classList.toggle('on', fluxoSubnavAtual==='historico');
-
-  if(fluxoSubnavAtual==='historico'){
-    document.getElementById('fluxo-area-situacao').style.display='none';
-    document.getElementById('fluxo-area-historico').style.display='';
-    abrirHistoricoAcoes();
-  } else {
-    document.getElementById('fluxo-area-situacao').style.display='';
-    document.getElementById('fluxo-area-historico').style.display='none';
-    // Atualiza título da subpágina
-    const st = situacaoList.find(s=>s.id===fluxoSituacaoAtual);
-    const tituloEl = document.getElementById('fluxo-area-titulo');
-    if(tituloEl && st) tituloEl.textContent = (st.icone?st.icone+' ':'')+st.label;
-    renderFluxoContent();
-  }
+  // Atualiza título da subpágina
+  const st = situacaoList.find(s=>s.id===fluxoSituacaoAtual);
+  const tituloEl = document.getElementById('fluxo-area-titulo');
+  if(tituloEl && st) tituloEl.textContent = (st.icone?st.icone+' ':'')+st.label;
+  renderFluxoContent();
 }
 
 function selectFluxoSubnav(id, btn){
   // Remove .on de todos os botões do subnav
   document.querySelectorAll('#fluxo-subnav .subnav-btn').forEach(b=>b.classList.remove('on'));
   if(btn) btn.classList.add('on');
-  if(id==='historico'){
-    fluxoSubnavAtual='historico';
-  } else {
-    fluxoSituacaoAtual=id;
-    fluxoSubnavAtual=id;
-  }
+  fluxoSituacaoAtual=id;
   renderFluxos();
 }
 
-function selectFluxoSituacao(s){fluxoSituacaoAtual=s;fluxoSubnavAtual=s;renderFluxos();}
+function selectFluxoSituacao(s){fluxoSituacaoAtual=s;renderFluxos();}
 function renderFluxoContent(){
   const c=document.getElementById('fst-content');
   const acoes=fluxos[fluxoSituacaoAtual]||[];
@@ -11958,6 +12055,12 @@ function renderPendencias(){
   let lista=base;
   if(pendFiltroResp) lista=lista.filter(p=>p.responsavel===pendFiltroResp);
   if(pendFiltroStatus) lista=lista.filter(p=>p.status===pendFiltroStatus);
+  const buscaPac = (document.getElementById('pend-busca-paciente')?.value||'').toLowerCase().trim();
+  if(buscaPac) lista=lista.filter(p=>(p.pacienteNome||'').toLowerCase().includes(buscaPac));
+  const filtroDe = document.getElementById('pend-filtro-de')?.value||'';
+  const filtroAte = document.getElementById('pend-filtro-ate')?.value||'';
+  if(filtroDe) lista=lista.filter(p=>p.prazo && p.prazo>=filtroDe);
+  if(filtroAte) lista=lista.filter(p=>p.prazo && p.prazo<=filtroAte);
 
   // Enriquecer com nome do criador e de quem concluiu
   lista=lista.map(p=>{
@@ -11999,7 +12102,7 @@ function renderPendencias(){
     const urgPill=urg==='alta'?'p-danger':urg==='media'?'p-warn':'p-green';
     return `<div class="pend-row" style="display:grid;grid-template-columns:${gridCols};gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:center;${podeEditar?'cursor:pointer':''};${p.status==='concluida'?'opacity:.5':''}" ${podeEditar?`onclick="abrirModalEditarPendencia('${p.ocorrenciaId}','${p.id}',${p.avulsa})"`:''}">
     <div style="font-size:12px;color:var(--tx2)">${fmtDate(parseIso(p.reuniaoData))}</div>
-    <div style="font-size:13px;${p.status==='concluida'?'text-decoration:line-through':''}">${p.texto}</div>
+    <div style="font-size:13px;${p.status==='concluida'?'text-decoration:line-through':''}">${p.texto}${p.pacienteNome?`<div style="font-size:11px;color:var(--tx3);font-weight:400">👤 ${esc(p.pacienteNome)}</div>`:''}</div>
     <div style="font-size:12px;color:var(--tx2)">${p.avulsa?'<span class="pill p-neutral">Avulsa</span>':p.reuniaoNome}</div>
     <div><span class="pill ${urgPill}" style="font-size:10px">${urgenciaLabel[urg]}</span></div>
     <div style="font-size:12px;color:var(--tx2)">${p.criadoPorNome||'—'}</div>
