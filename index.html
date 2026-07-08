@@ -275,6 +275,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:13px
 /* GRID */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+@media (max-width:900px){.g5{grid-template-columns:repeat(2,1fr)}}
 
 /* METRIC */
 .metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);padding:16px 18px;box-shadow:var(--shadow)}
@@ -822,11 +824,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="pg-title" id="hoje-title">Bom dia, Dra. Leticia</div>
   <div class="pg-desc" id="hoje-desc"></div>
   <div id="hoje-modo-visao"></div>
-  <div class="g4" style="margin-bottom:18px">
+  <div class="g5" style="margin-bottom:18px">
     <div class="metric"><div class="metric-lbl">Para hoje</div><div class="metric-val" id="m-hoje" style="color:var(--ac)">0</div><div class="metric-note">ações pendentes</div></div>
     <div class="metric"><div class="metric-lbl">Atrasadas</div><div class="metric-val" id="m-atras" style="color:var(--da)">0</div><div class="metric-note">precisam atenção</div></div>
-    <div class="metric"><div class="metric-lbl">Pacientes ativos</div><div class="metric-val" id="m-ativos">0</div><div class="metric-note">no fluxo</div></div>
-    <div class="metric"><div class="metric-lbl">Indicações (mês)</div><div class="metric-val" id="m-indic" style="color:var(--pu)">0</div><div class="metric-note">recebidas</div></div>
+    <div class="metric"><div class="metric-lbl">🔔 Lembretes</div><div class="metric-val" id="m-mod-lembrete" style="color:var(--ac)">0</div><div class="metric-note">hoje + atrasados</div></div>
+    <div class="metric"><div class="metric-lbl">🔄 Fluxo de ação</div><div class="metric-val" id="m-mod-fluxo" style="color:var(--ac)">0</div><div class="metric-note">hoje + atrasados</div></div>
+    <div class="metric"><div class="metric-lbl">📌 Pendências</div><div class="metric-val" id="m-mod-pendencia" style="color:var(--ac)">0</div><div class="metric-note">hoje + atrasadas</div></div>
   </div>
   <div id="hoje-resumo-equipe"></div>
   <div id="hoje-container"></div>
@@ -840,6 +843,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="pg-title">Próximos 7 dias</div>
   <div class="pg-desc">Planeje com antecedência — ações futuras organizadas por data</div>
   <div id="proximos-modo-visao"></div>
+  <div class="g4" style="margin-bottom:18px">
+    <div class="metric"><div class="metric-lbl">Total no período</div><div class="metric-val" id="p-mod-total" style="color:var(--ac)">0</div><div class="metric-note">próximos 7 dias</div></div>
+    <div class="metric"><div class="metric-lbl">🔔 Lembretes</div><div class="metric-val" id="p-mod-lembrete" style="color:var(--ac)">0</div><div class="metric-note">próximos 7 dias</div></div>
+    <div class="metric"><div class="metric-lbl">🔄 Fluxo de ação</div><div class="metric-val" id="p-mod-fluxo" style="color:var(--ac)">0</div><div class="metric-note">próximos 7 dias</div></div>
+    <div class="metric"><div class="metric-lbl">📌 Pendências</div><div class="metric-val" id="p-mod-pendencia" style="color:var(--ac)">0</div><div class="metric-note">próximos 7 dias</div></div>
+  </div>
   <div id="proximos-container"></div>
 </div>
 
@@ -978,14 +987,14 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="pp-id">
         <div class="pp-nome" id="pp-nome">Paciente</div>
         <div class="pp-meta">
-          <span class="pill p-info" id="pp-status-pill">—</span>
+          <span class="pill p-info" id="pp-situacao-pill">—</span>
           <span id="pp-fone-meta">—</span>
         </div>
       </div>
     </div>
     <div class="pp-actions">
       <button class="btn btn-danger btn-sm" id="pp-btn-excluir" onclick="excluirPt()">Excluir</button>
-      <button class="btn btn-primary btn-sm" id="pp-btn-salvar" onclick="atualizarStatusPt()">Salvar alterações →</button>
+      <button class="btn btn-primary btn-sm" id="pp-btn-salvar" onclick="atualizarSituacaoPt()">Salvar alterações →</button>
     </div>
   </div>
 
@@ -1024,7 +1033,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             <div class="fl"><label>Código do paciente</label><input type="number" id="mpt-codigo" min="1" placeholder="Ex: 1234"></div>
             <div class="fl">
               <label>Situação</label>
-              <select id="mpt-status"></select>
+              <select id="mpt-situacao"></select>
             </div>
             <div class="fl">
               <label>Origem</label>
@@ -1659,12 +1668,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="card" style="max-width:600px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
         <div><div class="card-title">Situação do paciente</div><div class="card-sub">Ordem cronológica — arraste para reordenar</div></div>
-        <button class="btn btn-primary btn-sm" onclick="addStatus()">+ Nova situação</button>
+        <button class="btn btn-primary btn-sm" onclick="addSituacao()">+ Nova situação</button>
       </div>
-      <div id="cfg-status-lista" style="margin-top:12px"></div>
+      <div id="cfg-situacao-lista" style="margin-top:12px"></div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;margin-top:4px;border-top:1px solid var(--border)">
         <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--tx2);cursor:pointer;white-space:nowrap">
-          <span class="toggle-sw" id="status-obrig-toggle" onclick="toggleStatusObrigatorio()"></span>
+          <span class="toggle-sw" id="situacao-obrig-toggle" onclick="toggleSituacaoObrigatorio()"></span>
           Campo obrigatório no cadastro
         </label>
         <div style="font-size:11px;color:var(--tx3);text-align:right;max-width:280px">Se desativado, é possível cadastrar um paciente sem definir a situação (fica como "Lead" por padrão).</div>
@@ -3107,7 +3116,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
         <div class="fl">
           <label>Situação atual *</label>
-          <select id="nn-status" onchange="onStatusChangeModal()">
+          <select id="nn-situacao" onchange="onSituacaoChangeModal()">
             <option value="">Selecionar...</option>
           </select>
         </div>
@@ -4343,11 +4352,11 @@ const FLUXOS_PADRAO = {
 };
 
 // ── INJEÇÃO INTELIGENTE — popula status customizados pelo slot de posição ─
-// Roda uma única vez depois que statusList e fluxos são carregados.
+// Roda uma única vez depois que situacaoList e fluxos são carregados.
 // Para cada status que não tem ações, atribui o slot correspondente à posição.
 function injetarAcoesNosStatusCustomizados(){
   let modificou = false;
-  statusList.forEach((s, idx)=>{
+  situacaoList.forEach((s, idx)=>{
     if(!(s.id in fluxos)){
       const slot = Math.min(idx, ACOES_POR_SLOT.length - 1);
       // clonar com ids únicos para evitar colisão
@@ -4365,6 +4374,21 @@ function injetarAcoesNosStatusCustomizados(){
 
 let fluxos = carregarLS('sk3-fluxos', FLUXOS_PADRAO);
 let pacientes = carregarLS('sk3-pacientes', []);
+// migração: renomeia os campos internos "status"/"statusData" do paciente para
+// "situacao"/"situacaoData" (o termo "status" fica reservado só para o agendamento
+// da agenda; a etapa do paciente na clínica é "situação"). Também migra o campo
+// "status" dentro de cada entrada do histórico. Roda uma única vez por paciente.
+(function migrarSituacaoPacientes(){
+  let modificou=false;
+  pacientes.forEach(p=>{
+    if(p.situacao===undefined && p.status!==undefined){ p.situacao=p.status; delete p.status; modificou=true; }
+    if(p.situacaoData===undefined && p.statusData!==undefined){ p.situacaoData=p.statusData; delete p.statusData; modificou=true; }
+    (p.historico||[]).forEach(h=>{
+      if(h.situacao===undefined && h.status!==undefined){ h.situacao=h.status; delete h.status; modificou=true; }
+    });
+  });
+  if(modificou) salvarLS('sk3-pacientes', pacientes);
+})();
 
 // ── CÓDIGO DO PACIENTE — número aleatório interno (busca/diferenciação) ──
 // Não segue ordem de cadastro nem sequência — sorteado e único entre 1000–9999.
@@ -4893,8 +4917,8 @@ const RITUAIS_PADRAO = [
 ];
 let rituais = carregarLS('sk3-rituais', RITUAIS_PADRAO);
 
-// ── STATUS LIST — configurável ─────────────────────────────────────────
-const STATUS_LIST_PADRAO = [
+// ── LISTA DE SITUAÇÕES — configurável ──────────────────────────────────
+const SITUACAO_LIST_PADRAO = [
   {id:'lead',       label:'Lead'},
   {id:'avaliacao',  label:'Avaliação agendada'},
   {id:'encaminhar', label:'Encaminhar orçamento'},
@@ -4902,8 +4926,8 @@ const STATUS_LIST_PADRAO = [
   {id:'tratamento', label:'Em tratamento'},
   {id:'alta',       label:'Alta'},
 ];
-let statusList = carregarLS('sk3-statuslist', STATUS_LIST_PADRAO);
-let statusObrigatorio = carregarLS('sk3-status-obrigatorio', true);
+let situacaoList = carregarLS('sk3-statuslist', SITUACAO_LIST_PADRAO);
+let situacaoObrigatorio = carregarLS('sk3-status-obrigatorio', true);
 
 // ── CAMPOS DO CADASTRO — configurável ───────────────────────────────────
 // campoId corresponde ao sufixo do input no modal (nn-<campoId>)
@@ -4969,17 +4993,22 @@ let empresaTabAtual = 'dados';
 // fonte: 'campo' (mapeia para um campo do cadastro, incluindo personalizados) | 'proximaAcao'
 // campoId: id do campo em camposCadastro (quando fonte==='campo'), ou null
 const COLUNAS_PACIENTE_PADRAO = [
-  {id:'nome',     label:'Nome',          fonte:'campo',       campoId:'nome',   ativo:true, locked:true},
-  {id:'idade',    label:'Idade',         fonte:'idade',       campoId:null,     ativo:true, locked:false},
-  {id:'status',   label:'Situação',      fonte:'status',      campoId:null,     ativo:true, locked:true},
-  {id:'fone',     label:'Telefone',      fonte:'campo',       campoId:'fone',   ativo:true, locked:false},
-  {id:'proxacao', label:'Próxima ação',  fonte:'proximaAcao', campoId:null,     ativo:true, locked:false},
+  {id:'nome',      label:'Nome',          fonte:'campo',       campoId:'nome',   ativo:true, locked:true},
+  {id:'idade',     label:'Idade',         fonte:'idade',       campoId:null,     ativo:true, locked:false},
+  {id:'situacao',  label:'Situação',      fonte:'situacao',    campoId:null,     ativo:true, locked:true},
+  {id:'fone',      label:'Telefone',      fonte:'campo',       campoId:'fone',   ativo:true, locked:false},
+  {id:'proxacao',  label:'Próxima ação',  fonte:'proximaAcao', campoId:null,     ativo:true, locked:false},
 ];
 let colunasPaciente = carregarLS('sk3-colunaspaciente', COLUNAS_PACIENTE_PADRAO);
 // migração: renomeia a coluna de status já salva (era "Status", agora "Situação")
 (function migrarLabelSituacao(){
   const col = colunasPaciente.find(c=>c.id==='status' && c.fonte==='status');
   if(col && col.label==='Status'){ col.label='Situação'; salvarLS('sk3-colunaspaciente', colunasPaciente); }
+})();
+// migração: renomeia id/fonte da coluna de situação (era "status" internamente, hoje "situacao")
+(function migrarColunaSituacaoId(){
+  const col = colunasPaciente.find(c=>c.id==='status' && c.fonte==='status');
+  if(col){ col.id='situacao'; col.fonte='situacao'; salvarLS('sk3-colunaspaciente', colunasPaciente); }
 })();
 // migração: insere a coluna "Idade" logo após "Nome" em configurações salvas anteriormente
 (function migrarColunaIdade(){
@@ -4994,11 +5023,11 @@ let colunasPaciente = carregarLS('sk3-colunaspaciente', COLUNAS_PACIENTE_PADRAO)
 let ptSortColId = 'nome';
 let ptSortDir = 'asc'; // 'asc' | 'desc'
 
-function getStatusInfo(id){ return statusList.find(s=>s.id===id)||{label:id}; }
-function statusLabelFmt(icone,label){ return label; }
-function getStatusLabel(id){ const s=statusList.find(x=>x.id===id); return s?s.label:id; }
+function getSituacaoInfo(id){ return situacaoList.find(s=>s.id===id)||{label:id}; }
+function situacaoLabelFmt(icone,label){ return label; }
+function getSituacaoLabel(id){ const s=situacaoList.find(x=>x.id===id); return s?s.label:id; }
 // computed helpers (keep legacy references working)
-function buildStatusInfo(){ const o={}; statusList.forEach(s=>o[s.id]=s); return o; }
+function buildSituacaoInfo(){ const o={}; situacaoList.forEach(s=>o[s.id]=s); return o; }
 
 // ── CALCULAR DATA DA AÇÃO ──────────────────────────────────────────────
 function calcDataAcao(acao, dataStatus){
@@ -5010,13 +5039,13 @@ function calcDataAcao(acao, dataStatus){
   return base;
 }
 
-// ── GERAR AÇÕES DO PACIENTE ────────────────────────────────────────────
+// ── GERAR AÇÕES DO PACIENTE (Fluxo de ação) ────────────────────────────
 function gerarAcoes(paciente){
   const lista = [];
-  const fl = fluxos[paciente.status] || [];
+  const fl = fluxos[paciente.situacao] || [];
   fl.filter(a=>a.ativo).forEach(a=>{
-    const data = calcDataAcao(a, paciente.statusData || paciente.dataEvento);
-    if(data) lista.push({...a, data, pacienteId:paciente.id, pacienteNome:paciente.nome});
+    const data = calcDataAcao(a, paciente.situacaoData || paciente.dataEvento);
+    if(data) lista.push({...a, data, pacienteId:paciente.id, pacienteNome:paciente.nome, modalidade:'fluxo'});
   });
   // aniversário
   if(paciente.aniversario){
@@ -5024,13 +5053,40 @@ function gerarAcoes(paciente){
     if(aniv){
       const proxAniv = new Date(hoje.getFullYear(), aniv.getMonth(), aniv.getDate());
       if(proxAniv < hoje) proxAniv.setFullYear(proxAniv.getFullYear()+1);
-      lista.push({id:'aniv_'+paciente.id, titulo:'Aniversário — mensagem pessoal', tipo:'mensagem', responsavel:'Leticia', script:'[Nome], feliz aniversário! Espero que seja um ano muito especial para você.', icone:'🎂', data:proxAniv, pacienteId:paciente.id, pacienteNome:paciente.nome});
+      lista.push({id:'aniv_'+paciente.id, titulo:'Aniversário — mensagem pessoal', tipo:'mensagem', responsavel:'Leticia', script:'[Nome], feliz aniversário! Espero que seja um ano muito especial para você.', icone:'🎂', data:proxAniv, pacienteId:paciente.id, pacienteNome:paciente.nome, modalidade:'fluxo'});
     }
   }
   return lista;
 }
 
-function todasAcoes(){ return pacientes.flatMap(p=>gerarAcoes(p)).concat(gerarAcoesConfirmacaoAgendamento()).concat(gerarAcoesRecontatoCancelamento()); }
+// ── AÇÕES DE PENDÊNCIAS (para "Meu dia" / "Próximos 7 dias") ────────────
+// Converte as pendências (módulo centralizado, ver todasPendencias()) para o mesmo
+// formato usado pelas ações de Lembrete e Fluxo de ação, para poderem aparecer juntas
+// nessas duas telas. Só entram pendências com prazo definido — sem prazo, elas só
+// aparecem na aba "Pendências" (não fazem sentido numa visão organizada por data).
+// A conclusão de uma pendência NÃO usa o sistema genérico de concluirAcao/isConcluida:
+// ela usa o próprio campo p.status ('pendente'/'concluida'), verificado em isConcluida().
+function gerarAcoesPendencias(){
+  return todasPendencias().filter(p=>p.prazo).map(p=>({
+    id: p.id,
+    titulo: p.texto,
+    tipo: 'pendencia',
+    icone: '📌',
+    responsavel: p.responsavel||'',
+    script: '',
+    data: parseIso(p.prazo),
+    pacienteId: p.pacienteId||null,
+    pacienteNome: p.pacienteNome||null,
+    modalidade: 'pendencia',
+    origemPendencia: true,
+    pendenciaStatus: p.status,
+    ocorrenciaId: p.ocorrenciaId,
+    pendId: p.id,
+    avulsa: p.avulsa,
+  }));
+}
+
+function todasAcoes(){ return pacientes.flatMap(p=>gerarAcoes(p)).concat(gerarAcoesConfirmacaoAgendamento()).concat(gerarAcoesRecontatoCancelamento()).concat(gerarAcoesPendencias()); }
 
 // ── VISIBILIDADE DE AÇÕES POR USUÁRIO ───────────────────────────────────
 // Por padrão cada pessoa só vê as ações cujo campo "responsavel" é ela mesma.
@@ -5142,6 +5198,7 @@ function gerarAcoesConfirmacaoAgendamento(){
         pacienteNome: ag.pacienteNome || '(sem nome)',
         agendamentoId: ag.id,
         origemConfirmacao: true,
+        modalidade: 'lembrete',
       });
     });
   });
@@ -5174,6 +5231,7 @@ function gerarAcoesRecontatoCancelamento(){
         pacienteNome: ag.pacienteNome || '(sem nome)',
         agendamentoId: ag.id,
         origemRecontato: true,
+        modalidade: 'lembrete',
       });
     });
     const diasAberto = diffDays(baseCancelamento, hoje);
@@ -5191,6 +5249,7 @@ function gerarAcoesRecontatoCancelamento(){
         pacienteNome: ag.pacienteNome || '(sem nome)',
         agendamentoId: ag.id,
         origemRecontato: true,
+        modalidade: 'lembrete',
       });
     }
   });
@@ -5198,7 +5257,7 @@ function gerarAcoesRecontatoCancelamento(){
 }
 
 function acaoKey(a){ return `${a.pacienteId}_${iso(a.data)}_${a.id||a.titulo}`; }
-function isConcluida(a){ return concluidasIds.includes(acaoKey(a)); }
+function isConcluida(a){ if(a.origemPendencia) return a.pendenciaStatus==='concluida'; return concluidasIds.includes(acaoKey(a)); }
 function concluirAcao(a){ const k=acaoKey(a); if(!concluidasIds.includes(k)) concluidasIds.push(k); salvarLS('sk3-concluidas',concluidasIds); }
 
 // ── NAV ────────────────────────────────────────────────────────────────
@@ -5253,7 +5312,7 @@ function goTo(id, btn){
   if(id==='config'){
     const activeBtn=document.querySelector('#config-subnav .subnav-btn.on');
     const sub=activeBtn?activeBtn.getAttribute('onclick').match(/showCfg\('([^']+)'/)[1]:'usuarios';
-    if(sub==='cadpaciente'){ renderCfgStatus(); renderCfgCampos(); renderCfgColunas(); }
+    if(sub==='cadpaciente'){ renderCfgSituacoes(); renderCfgCampos(); renderCfgColunas(); }
     if(sub==='equipe') renderEquipe();
     if(sub==='reunioes') renderCfgReunioes();
     if(sub==='agenda') renderCfgAgenda();
@@ -5285,11 +5344,13 @@ function renderHoje(){
   const atrasadas = todas.filter(a=>iso(a.data)<hojeStr && !isConcluida(a));
   const deHoje = todas.filter(a=>iso(a.data)===hojeStr && !isConcluida(a));
   const total = atrasadas.length + deHoje.length;
+  const combinadas = atrasadas.concat(deHoje);
 
   document.getElementById('m-hoje').textContent = deHoje.length;
   document.getElementById('m-atras').textContent = atrasadas.length;
-  document.getElementById('m-ativos').textContent = pacientes.length;
-  document.getElementById('m-indic').textContent = indicacoesMes;
+  document.getElementById('m-mod-lembrete').textContent = combinadas.filter(a=>a.modalidade==='lembrete').length;
+  document.getElementById('m-mod-fluxo').textContent = combinadas.filter(a=>a.modalidade==='fluxo').length;
+  document.getElementById('m-mod-pendencia').textContent = combinadas.filter(a=>a.modalidade==='pendencia').length;
 
   const c = document.getElementById('hoje-container');
   if(!total){ c.innerHTML=`<div class="card"><div class="empty"><div class="empty-ic">✅</div>Tudo em dia! Nenhuma ação pendente para hoje.</div></div>`; }
@@ -5297,16 +5358,41 @@ function renderHoje(){
     let html='';
     if(atrasadas.length){
       html+=`<div class="sl" style="color:var(--da)">⚠ Atrasadas — atenção imediata</div>`;
-      atrasadas.forEach(a=>{ html+=renderAcaoCard(a,'atrasada'); });
+      html+=renderAcoesPorModalidade(atrasadas,'atrasada');
     }
     if(deHoje.length){
       html+=`<div class="sl">Para hoje</div>`;
-      deHoje.forEach(a=>{ html+=renderAcaoCard(a,'hoje'); });
+      html+=renderAcoesPorModalidade(deHoje,'hoje');
     }
     c.innerHTML=html;
   }
 
   renderCheckinHoje();
+}
+
+// ── AGRUPAMENTO POR MODALIDADE (Lembretes / Fluxo de ação / Pendências) ─────
+// Usado em "Meu dia" e "Próximos 7 dias" para separar visualmente as 3 modalidades
+// de tarefa dentro de um mesmo bloco de data (ex: dentro de "Atrasadas", ou dentro
+// de um dia específico em "Próximos 7 dias").
+const MODALIDADE_INFO = {
+  lembrete:  {label:'🔔 Lembretes'},
+  fluxo:     {label:'🔄 Fluxo de ação'},
+  pendencia: {label:'📌 Pendências'},
+};
+function renderAcoesPorModalidade(lista, tipoCard){
+  const grupos = {lembrete:[], fluxo:[], pendencia:[]};
+  lista.forEach(a=>{ const mod=a.modalidade||'fluxo'; (grupos[mod]=grupos[mod]||[]).push(a); });
+  let html='';
+  ['lembrete','fluxo','pendencia'].forEach(mod=>{
+    const itens = grupos[mod];
+    if(!itens || !itens.length) return;
+    html += `<div class="sl" style="margin-top:12px;margin-bottom:2px;display:flex;align-items:center;gap:8px;font-size:11px">
+      <span>${MODALIDADE_INFO[mod].label}</span>
+      <span class="pill p-neutral" style="font-size:10px">${itens.length}</span>
+    </div>`;
+    itens.forEach(a=>{ html+=renderAcaoCard(a,tipoCard); });
+  });
+  return html;
 }
 
 function icClass(icone){
@@ -5320,23 +5406,27 @@ function renderAcaoCard(a, tipo){
   const pillCls = tipo==='atrasada' ? 'p-danger' : 'p-green';
   const scriptHtml = a.script ? `<div class="ac-script">"${a.script}"</div>` : '';
   const aStr = JSON.stringify(a).replace(/"/g,'&quot;');
+  const pacienteLinha = a.pacienteNome ? `<div class="ac-patient">👤 ${a.pacienteNome} · <span style="color:var(--tx3)">${a.responsavel||''}</span></div>` : `<div class="ac-patient"><span style="color:var(--tx3)">${a.responsavel||'(sem responsável)'}</span></div>`;
   // Ações de confirmação de agendamento e de recontato de cancelamento não têm "concluir"
   // manual: só somem quando o status/desfecho muda, então o botão leva direto à ação certa.
+  // Pendências usam o próprio toggle de conclusão do módulo de Pendências, não o
+  // sistema genérico de concluirAcao (que é só para Lembrete/Fluxo de ação).
   const botaoHtml = a.origemConfirmacao
     ? `<button class="btn-done" onclick="_abrirModalAgendamentoReal('${a.agendamentoId}')">Abrir agendamento →</button>`
     : a.origemRecontato
     ? `<button class="btn-done" onclick="abrirModalRecontato('${a.agendamentoId}')">Registrar contato →</button>`
+    : a.origemPendencia
+    ? `<button class="btn-done" onclick="togglePendenciaCentral('${a.ocorrenciaId}','${a.pendId}')">✓ Concluir</button>`
     : `<button class="btn-done" onclick="marcarFeito('${k}',${aStr})">✓ Feito</button>`;
   return `<div class="ac-card ${tipo}" id="card-${k}">
     <div class="ac-icon ${icClass(a.icone)}">${a.icone||"💬"}</div>
     <div class="ac-body">
       <div class="ac-title">${a.titulo}</div>
-      <div class="ac-patient">👤 ${a.pacienteNome} · <span style="color:var(--tx3)">${a.responsavel||''}</span></div>
+      ${pacienteLinha}
       ${scriptHtml}
       <div class="ac-meta">
         <span class="pill ${pillCls}">${diasStr}</span>
         <span class="pill p-neutral">📅 ${fmtDate(a.data)}</span>
-        <span class="pill p-neutral">${a.tipo}</span>
       </div>
     </div>
     ${botaoHtml}
@@ -5376,7 +5466,7 @@ function salvarConclusaoAcao(){
 
   // Salva no histórico
   const u = usuarios.find(x=>x.id===usuarioAtualId);
-  const situacaoInfo = statusList.find(s=>s.id===(a.situacaoId||fluxoStatusAtual))||{label:''};
+  const situacaoInfo = situacaoList.find(s=>s.id===(a.situacaoId||fluxoSituacaoAtual))||{label:''};
   const pac = pacientes.find(p=>p.id===a.pacienteId);
   historicoAcoes.unshift({
     id: 'hac_'+Date.now(),
@@ -5384,8 +5474,8 @@ function salvarConclusaoAcao(){
     acaoTitulo: a.titulo||'',
     pacienteId: a.pacienteId||null,
     pacienteNome: a.pacienteNome||'',
-    situacaoId: pac?.status||'',
-    situacaoLabel: pac ? getStatusLabel(pac.status) : '',
+    situacaoId: pac?.situacao||'',
+    situacaoLabel: pac ? getSituacaoLabel(pac.situacao) : '',
     responsavel: a.responsavel||'',
     dataAcao: iso(a.data),
     concluidaEm: iso(hoje),
@@ -5412,7 +5502,7 @@ function abrirHistoricoAcoes(){
   const selSit = document.getElementById('hac-filtro-situacao');
   if(selSit){
     selSit.innerHTML = '<option value="">Todas as situações</option>' +
-      statusList.map(s=>`<option value="${esc(s.id)}">${esc(s.label)}</option>`).join('');
+      situacaoList.map(s=>`<option value="${esc(s.id)}">${esc(s.label)}</option>`).join('');
   }
   const selResp = document.getElementById('hac-filtro-responsavel');
   if(selResp){
@@ -5703,6 +5793,12 @@ function renderProximos(){
   renderModoVisaoControl('proximos-modo-visao', acoesModoEquipe, acoesFiltroPessoa, nomesEquipe(), 'acoesToggleModoEquipe', 'acoesSetFiltroPessoa');
   const todas=acoesVisiveis();
   const futuras=todas.filter(a=>iso(a.data)>hojeStr&&a.data<=limite&&!isConcluida(a)).sort((a,b)=>a.data-b.data);
+
+  document.getElementById('p-mod-total').textContent = futuras.length;
+  document.getElementById('p-mod-lembrete').textContent = futuras.filter(a=>a.modalidade==='lembrete').length;
+  document.getElementById('p-mod-fluxo').textContent = futuras.filter(a=>a.modalidade==='fluxo').length;
+  document.getElementById('p-mod-pendencia').textContent = futuras.filter(a=>a.modalidade==='pendencia').length;
+
   const c=document.getElementById('proximos-container');
   if(!futuras.length){c.innerHTML=`<div class="card"><div class="empty"><div class="empty-ic">📅</div>Nenhuma ação nos próximos 7 dias.</div></div>`;return;}
   const grupos={};
@@ -5713,25 +5809,43 @@ function renderProximos(){
     const diff=diffDays(hoje,d);
     const lbl=diff===1?'Amanhã':`${DIAS[d.getDay()]}, ${fmtDate(d)}`;
     html+=`<div class="day-grp"><div class="day-lbl">${lbl}</div>`;
-    acoes.forEach(a=>{
-      html+=`<div class="ac-card futura" style="margin-bottom:8px">
-        <div class="ac-icon ${icClass(a.icone)}" style="width:30px;height:30px;font-size:14px">${a.icone||"💬"}</div>
-        <div class="ac-body"><div class="ac-title">${a.titulo}</div>
-        <div class="ac-patient">👤 ${a.pacienteNome} · <span style="color:var(--tx3)">${a.responsavel||''}</span></div></div>
-        <span class="pill p-neutral">${fmtDate(a.data)}</span>
-      </div>`;
-    });
+    html+=renderAcoesFuturasPorModalidade(acoes);
     html+='</div>';
   });
   c.innerHTML=html;
 }
 
+// Igual a renderAcoesPorModalidade, mas usando o cartão compacto ("futura") já usado
+// em "Próximos 7 dias" — mantém as 3 modalidades visualmente separadas dentro de cada dia.
+function renderAcoesFuturasPorModalidade(lista){
+  const grupos = {lembrete:[], fluxo:[], pendencia:[]};
+  lista.forEach(a=>{ const mod=a.modalidade||'fluxo'; (grupos[mod]=grupos[mod]||[]).push(a); });
+  let html='';
+  ['lembrete','fluxo','pendencia'].forEach(mod=>{
+    const itens=grupos[mod];
+    if(!itens||!itens.length) return;
+    html+=`<div class="sl" style="margin:8px 0 4px;font-size:10px;display:flex;align-items:center;gap:6px">
+      <span>${MODALIDADE_INFO[mod].label}</span><span class="pill p-neutral" style="font-size:9px">${itens.length}</span>
+    </div>`;
+    itens.forEach(a=>{
+      const pacienteLinha = a.pacienteNome ? `<div class="ac-patient">👤 ${a.pacienteNome} · <span style="color:var(--tx3)">${a.responsavel||''}</span></div>` : `<div class="ac-patient"><span style="color:var(--tx3)">${a.responsavel||'(sem responsável)'}</span></div>`;
+      html+=`<div class="ac-card futura" style="margin-bottom:8px">
+        <div class="ac-icon ${icClass(a.icone)}" style="width:30px;height:30px;font-size:14px">${a.icone||"💬"}</div>
+        <div class="ac-body"><div class="ac-title">${a.titulo}</div>
+        ${pacienteLinha}</div>
+        <span class="pill p-neutral">${fmtDate(a.data)}</span>
+      </div>`;
+    });
+  });
+  return html;
+}
+
 // ── MODAL NOVO PACIENTE ──────────────────────────────────────────────
-function populateStatusSelect(selectId, selectedVal=''){
+function populateSituacaoSelect(selectId, selectedVal=''){
   const el=document.getElementById(selectId);
   if(!el)return;
   el.innerHTML=`<option value="">Selecionar...</option>`+
-    statusList.map(s=>`<option value="${s.id}" ${s.id===selectedVal?'selected':''}>${statusLabelFmt(s.icone,s.label)}</option>`).join('');
+    situacaoList.map(s=>`<option value="${s.id}" ${s.id===selectedVal?'selected':''}>${situacaoLabelFmt(s.icone,s.label)}</option>`).join('');
 }
 
 function abrirModalNovo(){
@@ -5743,7 +5857,7 @@ function abrirModalNovo(){
   const hint=document.getElementById('nn-cpf-hint');if(hint)hint.textContent='';
   const cepHint=document.getElementById('nn-cep-hint');if(cepHint)cepHint.textContent='';
   const cpfEl=document.getElementById('nn-cpf');if(cpfEl)cpfEl.classList.remove('invalid');
-  populateStatusSelect('nn-status');
+  populateSituacaoSelect('nn-situacao');
   atualizarLabelsObrigatorios();
   renderCamposPersonalizadosModal();
   document.getElementById('modal-novo').classList.add('open');
@@ -5760,11 +5874,11 @@ function atualizarLabelsObrigatorios(){
     const base=c.label;
     lbl.textContent=c.obrigatorio?`${base} *`:base;
   });
-  const statusEl=document.getElementById('nn-status');
+  const statusEl=document.getElementById('nn-situacao');
   if(statusEl){
     const fl=statusEl.closest('.fl');
     const lbl=fl?fl.querySelector('label'):null;
-    if(lbl) lbl.textContent=statusObrigatorio?'Situação atual *':'Situação atual';
+    if(lbl) lbl.textContent=situacaoObrigatorio?'Situação atual *':'Situação atual';
   }
 }
 
@@ -5941,16 +6055,16 @@ function onOrigemChange(){
   if(wrap)wrap.style.display=o==='indicacao'?'':'none';
 }
 
-function onStatusChangeModal(){
-  const sid=document.getElementById('nn-status').value;
+function onSituacaoChangeModal(){
+  const sid=document.getElementById('nn-situacao').value;
   if(!sid){
     document.getElementById('nn-historico-wrap').style.display='none';
     document.getElementById('preview-wrap').style.display='none';
     return;
   }
-  const idx=statusList.findIndex(s=>s.id===sid);
+  const idx=situacaoList.findIndex(s=>s.id===sid);
   // tabela de etapas anteriores
-  const anteriores=statusList.slice(0,idx);
+  const anteriores=situacaoList.slice(0,idx);
   const hw=document.getElementById('nn-historico-wrap');
   const tabela=document.getElementById('nn-historico-tabela');
   if(anteriores.length>0){
@@ -5961,7 +6075,7 @@ function onStatusChangeModal(){
         <th style="text-align:left;font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;padding:0 0 8px 12px;border-bottom:1px solid var(--border)">Data (opcional)</th>
       </tr></thead>
       <tbody>${anteriores.map(s=>`<tr>
-        <td style="padding:9px 0;border-bottom:1px solid var(--border);font-size:13px">${statusLabelFmt(s.icone,s.label)}</td>
+        <td style="padding:9px 0;border-bottom:1px solid var(--border);font-size:13px">${situacaoLabelFmt(s.icone,s.label)}</td>
         <td style="padding:9px 0 9px 12px;border-bottom:1px solid var(--border)"><input type="date" id="hist-${s.id}" style="width:160px;font-size:12px;padding:4px 8px"></td>
       </tr>`).join('')}</tbody>
     `;
@@ -5973,13 +6087,13 @@ function onStatusChangeModal(){
 }
 
 function renderPreviewModal(){
-  const sid=document.getElementById('nn-status').value;
+  const sid=document.getElementById('nn-situacao').value;
   const wrap=document.getElementById('preview-wrap');
   const lista=document.getElementById('preview-lista');
   if(!sid){wrap.style.display='none';return;}
-  const dataStatus=iso(hoje);
+  const dataSituacao=iso(hoje);
   const fl=fluxos[sid]||[];
-  const acoes=fl.filter(a=>a.ativo).map(a=>({...a,data:calcDataAcao(a,dataStatus)})).filter(a=>a.data);
+  const acoes=fl.filter(a=>a.ativo).map(a=>({...a,data:calcDataAcao(a,dataSituacao)})).filter(a=>a.data);
   if(!acoes.length){wrap.style.display='none';return;}
   wrap.style.display='block';
   lista.innerHTML=acoes.map(a=>`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px">
@@ -5991,11 +6105,11 @@ function renderPreviewModal(){
 
 function salvarPaciente(){
   const nome=document.getElementById('nn-nome').value.trim();
-  let status=document.getElementById('nn-status').value;
+  let situacao=document.getElementById('nn-situacao').value;
   const fone=document.getElementById('nn-fone').value.trim();
   if(!nome||!fone){alert('Preencha nome e telefone.');return;}
-  if(statusObrigatorio && !status){alert('Preencha o status.');return;}
-  if(!status){ status = statusList[0] ? statusList[0].id : ''; } // sem status definido = entra como o primeiro da lista (ex: "Lead")
+  if(situacaoObrigatorio && !situacao){alert('Preencha a situação.');return;}
+  if(!situacao){ situacao = situacaoList[0] ? situacaoList[0].id : ''; } // sem situação definida = entra como a primeira da lista (ex: "Lead")
   // campos obrigatórios configuráveis
   for(const c of camposCadastro){
     if(!c.obrigatorio) continue;
@@ -6026,12 +6140,12 @@ function salvarPaciente(){
       return;
     }
   }
-  const statusData=iso(hoje);
+  const situacaoData=iso(hoje);
   const origem=document.getElementById('nn-origem').value;
   const indicador=origem==='indicacao'?document.getElementById('nn-indic').value.trim():'';
-  const idx=statusList.findIndex(s=>s.id===status);
+  const idx=situacaoList.findIndex(s=>s.id===situacao);
   const historico=[];
-  historico.push({data:iso(hoje),status,nota:`Cadastrado como ${getStatusLabel(status)}`});
+  historico.push({data:iso(hoje),situacao,nota:`Cadastrado como ${getSituacaoLabel(situacao)}`});
   const customFields={};
   camposCadastro.filter(c=>!c.locked).forEach(c=>{
     const el=document.getElementById('nn-custom-'+c.id);
@@ -6047,7 +6161,7 @@ function salvarPaciente(){
     codigoFinal = gerarCodigoPacienteUnico();
   }
   const p={
-    id:Date.now(),codigo:codigoFinal,nome,status,statusData,fone,
+    id:Date.now(),codigo:codigoFinal,nome,situacao,situacaoData,fone,
     cpf:document.getElementById('nn-cpf').value.trim(),
     nascimento:document.getElementById('nn-nasc').value,
     origem,indicador,
@@ -6078,7 +6192,7 @@ function filtrarPt(f){filtroAtual=f;pacientesPaginaAtual=1;renderPacientes(f);}
 function filtrarPtNome(termo){filtroAtual=termo||'';pacientesPaginaAtual=1;renderPacientes(filtroAtual);}
 
 function renderFiltros(){
-  // Filtro por status (pills) removido — busca agora é por nome via #pt-busca-nome.
+  // Filtro por situação (pills) removido — busca agora é por nome via #pt-busca-nome.
 }
 
 function proximaAcaoPaciente(p){
@@ -6123,8 +6237,8 @@ function ptOrdenarPor(colId){
 }
 
 function valorOrdenacaoColunaPaciente(p,col){
-  if(col.fonte==='status'){
-    return (getStatusInfo(p.status).label||p.status||'').toLowerCase();
+  if(col.fonte==='situacao'){
+    return (getSituacaoInfo(p.situacao).label||p.situacao||'').toLowerCase();
   }
   if(col.fonte==='idade'){
     const idade=calcularIdade(p.nascimento);
@@ -6229,14 +6343,14 @@ let kbDragId=null;
 function renderKanban(){
   const wrap=document.getElementById('pt-kanban');
   if(!wrap)return;
-  wrap.innerHTML=statusList.map(s=>{
-    const lista=pacientes.filter(p=>p.status===s.id);
+  wrap.innerHTML=situacaoList.map(s=>{
+    const lista=pacientes.filter(p=>p.situacao===s.id);
     const cards=lista.length
       ? lista.map(p=>`<div class="kb-card" draggable="true" data-id="${p.id}"
           ondragstart="kbDragStart(event,${p.id})" ondragend="kbDragEnd(event)"
           onclick="pacienteOrigemTab='pacientes';abrirModalPt(${p.id})">${nomeComCodigo(p)}${p.fone?`<div class="kb-card-meta">${p.fone}</div>`:''}</div>`).join('')
       : `<div class="kb-empty">Nenhum paciente</div>`;
-    return `<div class="kb-col" data-status="${s.id}"
+    return `<div class="kb-col" data-situacao="${s.id}"
         ondragover="kbDragOver(event,this)" ondragleave="kbDragLeave(event,this)" ondrop="kbDrop(event,'${s.id}')">
       <div class="kb-col-head"><span>${s.label}</span><span class="kb-col-count">${lista.length}</span></div>
       <div class="kb-col-body">${cards}</div>
@@ -6261,18 +6375,18 @@ function kbDragOver(ev, col){
 function kbDragLeave(ev, col){
   col.classList.remove('drag-over');
 }
-function kbDrop(ev, novoStatus){
+function kbDrop(ev, novaSituacao){
   ev.preventDefault();
   const col=ev.currentTarget;
   col.classList.remove('drag-over');
   const id=kbDragId!==null?kbDragId:parseInt(ev.dataTransfer.getData('text/plain'),10);
   const p=pacientes.find(x=>x.id===id);
   if(!p)return;
-  if(p.status!==novoStatus){
+  if(p.situacao!==novaSituacao){
     p.historico=p.historico||[];
-    p.historico.push({data:iso(hoje),status:novoStatus,nota:`Situação do paciente: ${getStatusLabel(p.status)} → ${getStatusLabel(novoStatus)}`});
-    p.status=novoStatus;
-    p.statusData=iso(hoje);
+    p.historico.push({data:iso(hoje),situacao:novaSituacao,nota:`Situação do paciente: ${getSituacaoLabel(p.situacao)} → ${getSituacaoLabel(novaSituacao)}`});
+    p.situacao=novaSituacao;
+    p.situacaoData=iso(hoje);
     salvarLS('sk3-pacientes',pacientes);
   }
   kbDragId=null;
@@ -6334,8 +6448,8 @@ function abrirModalPt(id){
   // cabeçalho
   document.getElementById('pp-nome').innerHTML=nomeComCodigo(p);
   document.getElementById('pp-avatar').textContent=(p.nome||'?').trim().charAt(0).toUpperCase();
-  const stInfo=getStatusInfo(p.status);
-  document.getElementById('pp-status-pill').textContent=stInfo.label||p.status||'—';
+  const stInfo=getSituacaoInfo(p.situacao);
+  document.getElementById('pp-situacao-pill').textContent=stInfo.label||p.situacao||'—';
   document.getElementById('pp-fone-meta').textContent=p.fone||'Sem telefone cadastrado';
 
   // aba Dados
@@ -6345,7 +6459,7 @@ function abrirModalPt(id){
   document.getElementById('mpt-nasc').value=p.nascimento||'';
   atualizarIdadeCampo('mpt-nasc','mpt-idade');
   document.getElementById('mpt-codigo').value=p.codigo||'';
-  document.getElementById('mpt-status').innerHTML=statusList.map(s=>`<option value="${s.id}" ${p.status===s.id?'selected':''}>${statusLabelFmt(s.icone,s.label)}</option>`).join('');
+  document.getElementById('mpt-situacao').innerHTML=situacaoList.map(s=>`<option value="${s.id}" ${p.situacao===s.id?'selected':''}>${situacaoLabelFmt(s.icone,s.label)}</option>`).join('');
   document.getElementById('mpt-origem').value=p.origem||'';
   document.getElementById('mpt-indic').value=p.indicador||'';
   document.getElementById('mpt-indic-wrap').style.display=p.origem==='indicacao'?'':'none';
@@ -9711,9 +9825,9 @@ async function sincronizarRespostaAnamnese(pacienteId){
       const camposPreenchidos = aplicarVinculosAnamneseNoCadastro(p, respostasRemotas);
       // Aplicar campos de cadastro vindos da anamnese (nome, fone, cpf, etc.)
       _aplicarCamposCadastroAnamnese(p, respostasRemotas);
-      p.historico.push({data: iso(hoje), status: p.status, nota: '🩺 Anamnese preenchida pelo paciente via link'});
+      p.historico.push({data: iso(hoje), situacao: p.situacao, nota: '🩺 Anamnese preenchida pelo paciente via link'});
       if(camposPreenchidos.length){
-        p.historico.push({data: iso(hoje), status: p.status, nota: `📋 Cadastro atualizado a partir da anamnese: ${camposPreenchidos.join(', ')}`});
+        p.historico.push({data: iso(hoje), situacao: p.situacao, nota: `📋 Cadastro atualizado a partir da anamnese: ${camposPreenchidos.join(', ')}`});
       }
       salvarLS('sk3-pacientes', pacientes);
     }
@@ -10455,22 +10569,22 @@ async function limparTodasAnamnesesBanco(){
 // FIM MÓDULO ANAMNESE
 // ══════════════════════════════════════════════════════════════════════
 
-function atualizarStatusPt(){
+function atualizarSituacaoPt(){
   const p=pacientes.find(x=>x.id===modalPtId);
   if(!p)return;
-  const novoStatus=document.getElementById('mpt-status').value;
+  const novaSituacao=document.getElementById('mpt-situacao').value;
   const novoNome=document.getElementById('mpt-nome-edit').value.trim();
   if(!novoNome){alert('O nome não pode ficar em branco.');return;}
-  if(novoStatus!==p.status){
+  if(novaSituacao!==p.situacao){
     p.historico=p.historico||[];
-    p.historico.push({data:iso(hoje),status:novoStatus,nota:`Situação do paciente: ${getStatusLabel(p.status)} → ${getStatusLabel(novoStatus)}`});
-    p.statusData=iso(hoje);
+    p.historico.push({data:iso(hoje),situacao:novaSituacao,nota:`Situação do paciente: ${getSituacaoLabel(p.situacao)} → ${getSituacaoLabel(novaSituacao)}`});
+    p.situacaoData=iso(hoje);
   }
   p.nome=novoNome;
   p.fone=document.getElementById('mpt-fone').value.trim();
   p.cpf=document.getElementById('mpt-cpf').value.trim();
   p.nascimento=document.getElementById('mpt-nasc').value;
-  p.status=novoStatus;
+  p.situacao=novaSituacao;
   p.origem=document.getElementById('mpt-origem').value;
   p.indicador=p.origem==='indicacao'?document.getElementById('mpt-indic').value.trim():'';
   p.obs=document.getElementById('mpt-obs').value.trim();
@@ -10508,16 +10622,16 @@ function excluirPt(){
 }
 
 // ── FLUXOS EDITOR ────────────────────────────────────────────────────
-const STATUS_ORDER=['lead','avaliacao','encaminhar','orcamento','tratamento','alta'];
-let fluxoStatusAtual='lead';
+const SITUACAO_ORDER=['lead','avaliacao','encaminhar','orcamento','tratamento','alta'];
+let fluxoSituacaoAtual='lead';
 let fluxoSubnavAtual='lead'; // 'historico' ou um id de status
 
 function renderFluxos(){
   // Monta os botões no subnav lateral
   const subnav = document.getElementById('fluxo-subnav-situacoes');
   if(subnav){
-    subnav.innerHTML = statusList.map(s=>{
-      const on = s.id===fluxoStatusAtual && fluxoSubnavAtual!=='historico';
+    subnav.innerHTML = situacaoList.map(s=>{
+      const on = s.id===fluxoSituacaoAtual && fluxoSubnavAtual!=='historico';
       const icone = s.icone ? s.icone+' ' : '';
       return `<button class="subnav-btn${on?' on':''}" onclick="selectFluxoSubnav('${s.id}',this)">${icone}${esc(s.label)}</button>`;
     }).join('');
@@ -10534,7 +10648,7 @@ function renderFluxos(){
     document.getElementById('fluxo-area-situacao').style.display='';
     document.getElementById('fluxo-area-historico').style.display='none';
     // Atualiza título da subpágina
-    const st = statusList.find(s=>s.id===fluxoStatusAtual);
+    const st = situacaoList.find(s=>s.id===fluxoSituacaoAtual);
     const tituloEl = document.getElementById('fluxo-area-titulo');
     if(tituloEl && st) tituloEl.textContent = (st.icone?st.icone+' ':'')+st.label;
     renderFluxoContent();
@@ -10548,16 +10662,16 @@ function selectFluxoSubnav(id, btn){
   if(id==='historico'){
     fluxoSubnavAtual='historico';
   } else {
-    fluxoStatusAtual=id;
+    fluxoSituacaoAtual=id;
     fluxoSubnavAtual=id;
   }
   renderFluxos();
 }
 
-function selectFluxoStatus(s){fluxoStatusAtual=s;fluxoSubnavAtual=s;renderFluxos();}
+function selectFluxoSituacao(s){fluxoSituacaoAtual=s;fluxoSubnavAtual=s;renderFluxos();}
 function renderFluxoContent(){
   const c=document.getElementById('fst-content');
-  const acoes=fluxos[fluxoStatusAtual]||[];
+  const acoes=fluxos[fluxoSituacaoAtual]||[];
   const podeEditar=temPerm('fluxos_editar');
   const podeExcluir=temPerm('fluxos_excluir');
   const podeCriar=temPerm('fluxos_criar');
@@ -10683,13 +10797,13 @@ function renderFluxoContent(){
       row.classList.remove('fa-row-over');
       const toId=row.id.replace('far-','');
       if(!faDragId||toId===faDragId)return;
-      const lista=fluxos[fluxoStatusAtual]||[];
+      const lista=fluxos[fluxoSituacaoAtual]||[];
       const fromIdx=lista.findIndex(a=>a.id===faDragId);
       const toIdx  =lista.findIndex(a=>a.id===toId);
       if(fromIdx<0||toIdx<0)return;
       const [moved]=lista.splice(fromIdx,1);
       lista.splice(toIdx,0,moved);
-      fluxos[fluxoStatusAtual]=lista;
+      fluxos[fluxoSituacaoAtual]=lista;
       salvarLS('sk3-fluxos',fluxos);
       renderFluxoContent();
     });
@@ -10713,7 +10827,7 @@ function fmtTamanho(bytes){
 const FA_MAX_TAMANHO=25*1024*1024; // 25MB
 
 function handleFlowAnexos(id,fileList){
-  const s=fluxoStatusAtual;
+  const s=fluxoSituacaoAtual;
   const idx=fluxos[s].findIndex(a=>a.id===id);
   if(idx<0)return;
   if(!fluxos[s][idx].anexos) fluxos[s][idx].anexos=[];
@@ -10744,7 +10858,7 @@ function handleFlowAnexos(id,fileList){
 }
 
 function removeFlowAnexo(id,j){
-  const s=fluxoStatusAtual;
+  const s=fluxoSituacaoAtual;
   const idx=fluxos[s].findIndex(a=>a.id===id);
   if(idx<0)return;
   fluxos[s][idx].anexos.splice(j,1);
@@ -10753,7 +10867,7 @@ function removeFlowAnexo(id,j){
 }
 
 function updateFlowField(id,field,value){
-  const s=fluxoStatusAtual;
+  const s=fluxoSituacaoAtual;
   const idx=fluxos[s].findIndex(a=>a.id===id);
   if(idx<0)return;
   fluxos[s][idx][field]=value;
@@ -10775,12 +10889,12 @@ function showSaveToast(msg){
 function deleteFlowAction(id){
   if(!confirm('Excluir esta ação do fluxo?'))return;
   _bypassQueue=true;
-  fluxos[fluxoStatusAtual]=fluxos[fluxoStatusAtual].filter(a=>a.id!==id);
+  fluxos[fluxoSituacaoAtual]=fluxos[fluxoSituacaoAtual].filter(a=>a.id!==id);
   salvarLS('sk3-fluxos',fluxos);
   renderFluxoContent();
 }
 function addFlowAction(){
-  const s=fluxoStatusAtual;
+  const s=fluxoSituacaoAtual;
   if(!fluxos[s]) fluxos[s]=[];
   const nova={id:'custom_'+Date.now(),titulo:'Nova ação',tipo:'mensagem',baseEm:'evento',offset:1,unidade:'dias',responsavel:equipe[0]||'Leticia',script:'',icone:'💬',ativo:true,anexos:[]};
   fluxos[s].push(nova);
@@ -11914,6 +12028,9 @@ function togglePendenciaCentral(ocorrenciaId,pendId){
     else { p.concluidoPor=null; p.concluidoEm=null; }
     salvarLS('sk3-pendencias-avulsas',pendenciasAvulsas);
     renderPendencias();
+    atualizarBadgePendencias();
+    renderHoje();
+    renderProximos();
     return;
   }
   const o=reunioesOcorrencias.find(x=>x.id===ocorrenciaId);
@@ -11929,6 +12046,9 @@ function togglePendenciaCentral(ocorrenciaId,pendId){
   });
   salvarLS('sk3-reunioes-ocorrencias',reunioesOcorrencias);
   renderPendencias();
+  atualizarBadgePendencias();
+  renderHoje();
+  renderProximos();
 }
 
 function removerPendenciaAvulsa(pendId){
@@ -12712,7 +12832,7 @@ function showCfg(sub, btn){
   const el=document.getElementById('cfg-'+sub);
   if(el) el.style.display='block';
   if(btn) btn.classList.add('on');
-  if(sub==='cadpaciente'){ renderCfgStatus(); renderCfgCampos(); renderCfgColunas(); }
+  if(sub==='cadpaciente'){ renderCfgSituacoes(); renderCfgCampos(); renderCfgColunas(); }
   if(sub==='equipe') renderEquipe();
   if(sub==='reunioes') renderCfgReunioes();
   if(sub==='usuarios') renderUsuarios();
@@ -12724,34 +12844,34 @@ function showCfg(sub, btn){
   if(sub==='tabelas') tbRenderLista();
 }
 
-// ── EDITOR DE STATUS ──────────────────────────────────────────────────
-function renderCfgStatus(){
-  const lista=document.getElementById('cfg-status-lista');
+// ── EDITOR DE SITUAÇÕES ───────────────────────────────────────────────
+function renderCfgSituacoes(){
+  const lista=document.getElementById('cfg-situacao-lista');
   if(!lista)return;
-  lista.innerHTML=statusList.map((s,i)=>`
+  lista.innerHTML=situacaoList.map((s,i)=>`
     <div class="srow-item" draggable="true" data-sid="${s.id}" id="srow-${s.id}"
       style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);position:relative;transition:opacity .15s">
       <span class="srow-handle" style="font-size:18px;cursor:grab;color:var(--tx3);user-select:none;touch-action:none" title="Arraste para reordenar">⠿</span>
-      <input type="text" value="${s.label}" style="flex:1;font-size:13px;padding:6px 10px" onfocus="_mostrarBotaoSalvar()" oninput="updateStatusLabel('${s.id}',this.value)" placeholder="Nome do status">
+      <input type="text" value="${s.label}" style="flex:1;font-size:13px;padding:6px 10px" onfocus="_mostrarBotaoSalvar()" oninput="updateSituacaoLabel('${s.id}',this.value)" placeholder="Nome da situação">
       <span class="pill p-neutral" style="min-width:60px;text-align:center" id="srow-preview-${s.id}">${s.label}</span>
-      ${statusList.length>1?`<button class="btn btn-danger btn-sm" onclick="removeStatus('${s.id}')" style="padding:4px 8px">✕</button>`:'<div style="width:32px"></div>'}
+      ${situacaoList.length>1?`<button class="btn btn-danger btn-sm" onclick="removeSituacao('${s.id}')" style="padding:4px 8px">✕</button>`:'<div style="width:32px"></div>'}
     </div>
   `).join('')+`<div style="font-size:11px;color:var(--tx3);margin-top:8px">A ordem aqui define a sequência cronológica usada no cadastro e no histórico retroativo.</div>`;
-  initStatusDrag();
-  const toggle=document.getElementById('status-obrig-toggle');
-  if(toggle) toggle.classList.toggle('on', !!statusObrigatorio);
+  initSituacaoDrag();
+  const toggle=document.getElementById('situacao-obrig-toggle');
+  if(toggle) toggle.classList.toggle('on', !!situacaoObrigatorio);
 }
 
-function toggleStatusObrigatorio(){
-  statusObrigatorio=!statusObrigatorio;
-  salvarLS('sk3-status-obrigatorio',statusObrigatorio);
-  const toggle=document.getElementById('status-obrig-toggle');
-  if(toggle) toggle.classList.toggle('on', !!statusObrigatorio);
+function toggleSituacaoObrigatorio(){
+  situacaoObrigatorio=!situacaoObrigatorio;
+  salvarLS('sk3-status-obrigatorio',situacaoObrigatorio);
+  const toggle=document.getElementById('situacao-obrig-toggle');
+  if(toggle) toggle.classList.toggle('on', !!situacaoObrigatorio);
   atualizarLabelsObrigatorios();
 }
 
-function initStatusDrag(){
-  const lista=document.getElementById('cfg-status-lista');
+function initSituacaoDrag(){
+  const lista=document.getElementById('cfg-situacao-lista');
   if(!lista)return;
   let dragId=null,dragEl=null;
   lista.querySelectorAll('.srow-item').forEach(row=>{
@@ -12776,44 +12896,44 @@ function initStatusDrag(){
       e.preventDefault();
       row.classList.remove('srow-over');
       if(!dragId||row.dataset.sid===dragId)return;
-      const fromIdx=statusList.findIndex(s=>s.id===dragId);
-      const toIdx  =statusList.findIndex(s=>s.id===row.dataset.sid);
+      const fromIdx=situacaoList.findIndex(s=>s.id===dragId);
+      const toIdx  =situacaoList.findIndex(s=>s.id===row.dataset.sid);
       if(fromIdx<0||toIdx<0)return;
-      const [moved]=statusList.splice(fromIdx,1);
-      statusList.splice(toIdx,0,moved);
-      salvarLS('sk3-statuslist',statusList);
-      renderCfgStatus();
+      const [moved]=situacaoList.splice(fromIdx,1);
+      situacaoList.splice(toIdx,0,moved);
+      salvarLS('sk3-statuslist',situacaoList);
+      renderCfgSituacoes();
     });
   });
 }
 
-function updateStatusLabel(sid,value){
-  const s=statusList.find(x=>x.id===sid);
+function updateSituacaoLabel(sid,value){
+  const s=situacaoList.find(x=>x.id===sid);
   if(!s)return;
   s.label=value;
-  salvarLS('sk3-statuslist',statusList);
+  salvarLS('sk3-statuslist',situacaoList);
   const preview=document.getElementById(`srow-preview-${sid}`);
   if(preview) preview.textContent=value;
 }
 
-// updateStatusLabel agora está definida em renderCfgStatus
+// updateSituacaoLabel agora está definida em renderCfgSituacoes
 
-function addStatus(){
+function addSituacao(){
   const novo={id:'st_'+Date.now(),label:'Nova situação'};
-  statusList.push(novo);
-  salvarLS('sk3-statuslist',statusList);
-  renderCfgStatus();
+  situacaoList.push(novo);
+  salvarLS('sk3-statuslist',situacaoList);
+  renderCfgSituacoes();
 }
 
-function removeStatus(sid){
-  if(statusList.length<=1){alert('Deve existir ao menos um status.');return;}
-  const idx=statusList.findIndex(s=>s.id===sid);
+function removeSituacao(sid){
+  if(situacaoList.length<=1){alert('Deve existir ao menos uma situação.');return;}
+  const idx=situacaoList.findIndex(s=>s.id===sid);
   if(idx<0)return;
-  if(!confirm(`Remover "${statusList[idx].label}"? Pacientes com este status não serão afetados.`))return;
+  if(!confirm(`Remover "${situacaoList[idx].label}"? Pacientes com esta situação não serão afetados.`))return;
   _bypassQueue=true;
-  statusList.splice(idx,1);
-  salvarLS('sk3-statuslist',statusList);
-  renderCfgStatus();
+  situacaoList.splice(idx,1);
+  salvarLS('sk3-statuslist',situacaoList);
+  renderCfgSituacoes();
 }
 
 // ── EDITOR DE CAMPOS DO CADASTRO ────────────────────────────────────────
@@ -13378,7 +13498,7 @@ function colunaOpcoesFonte(){
   // todas as fontes possíveis: campos do cadastro (locked + custom) + próxima ação
   const opts=[];
   camposCadastro.forEach(c=>opts.push({fonte:'campo',campoId:c.id,label:c.label}));
-  opts.push({fonte:'status',campoId:null,label:'Situação'});
+  opts.push({fonte:'situacao',campoId:null,label:'Situação'});
   opts.push({fonte:'idade',campoId:null,label:'Idade'});
   opts.push({fonte:'proximaAcao',campoId:null,label:'Próxima ação'});
   return opts;
@@ -13449,8 +13569,8 @@ function removeColunaPaciente(i){
 
 // ── VALOR DE CÉLULA DA TABELA DE PACIENTES ──────────────────────────────
 function valorColunaPaciente(p,col){
-  if(col.fonte==='status'){
-    const si=getStatusInfo(p.status);
+  if(col.fonte==='situacao'){
+    const si=getSituacaoInfo(p.situacao);
     return `<span class="pill p-neutral">${si.label}</span>`;
   }
   if(col.fonte==='idade'){
@@ -15864,7 +15984,7 @@ function agmRenderCamposExtras(agendamentoExistente){
       const pacienteId = document.getElementById('agm-paciente-id')?.value||'';
       if(!pacienteId) return; // sem paciente vinculado, não exibe
       const situacaoSalva = agendamentoExistente ? (agendamentoExistente.situacaoRegistrada||'') : '';
-      const opcoesHtml = statusList.map(s=>`<option value="${esc(s.id)}" ${situacaoSalva===s.id?'selected':''}>${esc(s.label)}</option>`).join('');
+      const opcoesHtml = situacaoList.map(s=>`<option value="${esc(s.id)}" ${situacaoSalva===s.id?'selected':''}>${esc(s.label)}</option>`).join('');
       html += `<div class="fl fg-full" id="agm-situacao-wrap" style="display:none">
         <label>Situação do paciente${labelStar}</label>
         <select id="agm-situacao">${opcoesHtml}</select>
@@ -16059,13 +16179,13 @@ function agmSelecionarPaciente(id,nome){
   document.getElementById('agm-paciente-resultados').innerHTML='';
   document.getElementById('agm-paciente-novo-wrap').style.display='none';
   const p=pacientes.find(x=>x.id===id);
-  // Re-renderiza campos extras para mostrar situação do paciente com o status correto
+  // Re-renderiza campos extras para mostrar a situação atualizada do paciente
   const editId=document.getElementById('modal-agendamento').dataset.editId;
   const agAtual = editId ? agendamentos.find(a=>a.id===editId) : null;
   agmRenderCamposExtras(agAtual||null);
-  // Pré-seleciona situação com o status atual do paciente
+  // Pré-seleciona o campo situação do agendamento com a situação atual do paciente
   const selSituacao=document.getElementById('agm-situacao');
-  if(p && selSituacao && !agAtual?.situacaoRegistrada) selSituacao.value=p.status;
+  if(p && selSituacao && !agAtual?.situacaoRegistrada) selSituacao.value=p.situacao;
   agmToggleSituacao();
   agmAtualizarPacienteView();
 }
@@ -16260,11 +16380,11 @@ function _salvarAgendamentoInterno(){
   // ao marcar como Realizado, atualiza a situação do paciente no cadastro
   if(situacaoPaciente){
     const p=pacientes.find(x=>x.id===pacienteId);
-    if(p && p.status!==situacaoPaciente){
+    if(p && p.situacao!==situacaoPaciente){
       p.historico=p.historico||[];
-      p.historico.push({data:iso(hoje),status:situacaoPaciente,nota:`Situação do paciente: ${getStatusLabel(p.status)} → ${getStatusLabel(situacaoPaciente)} (atendimento realizado em ${data.split('-').reverse().join('/')})`});
-      p.status=situacaoPaciente;
-      p.statusData=iso(hoje);
+      p.historico.push({data:iso(hoje),situacao:situacaoPaciente,nota:`Situação do paciente: ${getSituacaoLabel(p.situacao)} → ${getSituacaoLabel(situacaoPaciente)} (atendimento realizado em ${data.split('-').reverse().join('/')})`});
+      p.situacao=situacaoPaciente;
+      p.situacaoData=iso(hoje);
       salvarLS('sk3-pacientes',pacientes);
       renderPacientes(filtroAtual);
       renderKanban();
@@ -16302,7 +16422,7 @@ function excluirAgendamento(){
     'togglePendenciaCentral','excluirPendenciaCentral','removerPendenciaAvulsa',
     'salvarRecontato','addRegraRecontato','deleteRegraRecontato',
     // Structural actions that immediately change data (add/remove items)
-    'addStatus','removeStatus','addRitualLinha','removeRitualLinha',
+    'addSituacao','removeSituacao','addRitualLinha','removeRitualLinha',
     'addFlowAction','deleteFlowAction',
     'addRegraConfirmacao','deleteRegraConfirmacao',
     'salvarCampo','removeCampoCadastro','addCampoCadastro','toggleCampoObrigatorio',
@@ -16311,7 +16431,7 @@ function excluirAgendamento(){
     'salvarHorarioFuncionamento','salvarFeriado','toggleFeriadoRecorrente',
     'addSala','removeSala','toggleSalaAtiva',
     'addAgendaProfissional','removeAgendaProfissional',
-    'concluirAcao','atualizarStatusPt',
+    'concluirAcao','atualizarSituacaoPt',
     'mrdToggleChecklist','adicionarPendenciaOcorrencia','removerPendenciaOcorrencia',
     'excluirAgendamento'
   ];
