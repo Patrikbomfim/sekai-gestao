@@ -2098,7 +2098,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="fin-card fin-card-blue" id="flx-card-saldo">
         <div class="fin-card-label">Saldo no período</div>
         <div class="fin-card-value" id="flx-val-saldo">R$ 0,00</div>
-        <div class="fin-card-sub">entradas − saídas no período</div>
+        <div class="fin-card-sub">a receber − a pagar em aberto</div>
       </div>
     </div>
   </div>
@@ -18026,19 +18026,30 @@ function renderFinFluxo(){
   _finFluxoAtualizarBotoes();
   const {de:pDe, ate:pAte} = _finPeriodoFluxoBounds();
 
-  const pagosNoPeriodo = pagar.filter(t=>{ const st=t.status; const d=t.dataBaixa||t.vencimento||''; return (st==='pago')&&d>=pDe&&d<=pAte; });
-  const recebidosNoPeriodo = receber.filter(t=>{ const st=t.status; const d=t.dataBaixa||t.vencimento||''; return (st==='recebido'||st==='pago')&&d>=pDe&&d<=pAte; });
-  const totalPago = pagosNoPeriodo.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
-  const totalRecebido = recebidosNoPeriodo.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  // "A pagar" / "A receber" somam apenas os títulos ainda em aberto (inclui atrasados) com
+  // vencimento dentro do período selecionado — ou seja, o que falta ser liquidado, não o que já
+  // foi pago/recebido.
+  const aPagarNoPeriodo = pagar.filter(t=>{
+    const st=_finStatusEfetivo(t);
+    const v=t.vencimento||'';
+    return (st==='aberto'||st==='atrasado') && v>=pDe && v<=pAte;
+  });
+  const aReceberNoPeriodo = receber.filter(t=>{
+    const st=_finStatusEfetivo(t);
+    const v=t.vencimento||'';
+    return (st==='aberto'||st==='atrasado') && v>=pDe && v<=pAte;
+  });
+  const totalPago = aPagarNoPeriodo.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  const totalRecebido = aReceberNoPeriodo.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
 
   const setEl=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
   const periodoLbl=document.getElementById('flx-periodo-label');
   if(periodoLbl) periodoLbl.textContent=`Período selecionado: ${_finFmtData(pDe)} a ${_finFmtData(pAte)}`;
 
   setEl('flx-val-recebido', _finFmt(totalRecebido));
-  setEl('flx-sub-recebido', recebidosNoPeriodo.length+' título'+(recebidosNoPeriodo.length!==1?'s':'')+' liquidados');
+  setEl('flx-sub-recebido', aReceberNoPeriodo.length+' título'+(aReceberNoPeriodo.length!==1?'s':'')+' em aberto');
   setEl('flx-val-pago', _finFmt(totalPago));
-  setEl('flx-sub-pago', pagosNoPeriodo.length+' título'+(pagosNoPeriodo.length!==1?'s':'')+' liquidados');
+  setEl('flx-sub-pago', aPagarNoPeriodo.length+' título'+(aPagarNoPeriodo.length!==1?'s':'')+' em aberto');
   const saldo=totalRecebido-totalPago;
   const elSaldo=document.getElementById('flx-val-saldo');
   if(elSaldo){ elSaldo.textContent=_finFmt(saldo); elSaldo.style.color=saldo>=0?'var(--su)':'var(--da)'; }
