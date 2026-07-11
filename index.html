@@ -4904,8 +4904,8 @@ const STATUS_AGENDAMENTO = [
 // regrasConfirmacaoAgendamento: {id, titulo, offset(dias em relação à data do agendamento;
 // negativo = antes, 0 = no dia), responsavel, script, ativo}
 // Cada regra ativa gera uma ação para TODO agendamento com status 'agendado'. A ação some
-// sozinha quando o status do agendamento deixa de ser 'agendado' — não existe "concluir"
-// manual, de propósito, para forçar a confirmação real na Agenda.
+// sozinha quando o status do agendamento deixa de ser 'agendado'; também pode ser marcada
+// como concluída manualmente na tela inicial (ver botão "✓ Concluir" em renderAcaoCard).
 // Configurável em Configurações → Agenda → "Confirmação de agendamentos".
 let regrasConfirmacaoAgendamento = carregarLS('sk3-regras-confirmacao', [
   {id:'rc_padrao_d1', titulo:'Confirmar agendamento (véspera)', offset:-1, responsavel:'', script:'Entrar em contato com [Nome] para confirmar presença no agendamento de amanhã.', ativo:true},
@@ -4917,8 +4917,9 @@ let regrasConfirmacaoAgendamento = carregarLS('sk3-regras-confirmacao', [
 // novo agendamento já marcado, o sistema abre automaticamente um recontato (recontatoStatus
 // 'aberto') para aquele paciente — vale para qualquer profissional da agenda, sem exceção.
 // Cada regra ativa gera uma ação em "Meu dia"/"Pacientes desmarcados" enquanto o recontato
-// estiver em aberto. Assim como a confirmação de agendamento, não existe "concluir" manual:
-// a ação só some quando o desfecho é registrado (Remarcado / Sem retorno / Desistiu).
+// estiver em aberto. Assim como a confirmação de agendamento, some sozinha quando o desfecho
+// é registrado (Remarcado / Sem retorno / Desistiu), mas também pode ser concluída
+// manualmente na tela inicial (ver botão "✓ Concluir" em renderAcaoCard).
 // Configurável em Configurações → Agenda → "Recontato de cancelamentos".
 let regrasRecontatoCancelamento = carregarLS('sk3-regras-recontato', [
   {id:'rr_padrao_d1', titulo:'Tentar recontato — paciente desmarcou', offset:1, responsavel:'', script:'Entrar em contato com [Nome] para entender o motivo do desmarque e tentar remarcar.', ativo:true},
@@ -5628,9 +5629,9 @@ function renderResumoEquipeAcoes(){
 
 // ── AÇÕES DE CONFIRMAÇÃO DE AGENDAMENTO ─────────────────────────────────
 // Gera, para cada agendamento com status 'agendado', uma ação por regra ativa em
-// regrasConfirmacaoAgendamento. Diferente das ações de fluxo do paciente: não tem
-// "concluir" manual — a ação só desaparece quando o status do agendamento muda
-// (ver botão "Abrir agendamento →" em renderAcaoCard).
+// regrasConfirmacaoAgendamento. A ação some sozinha quando o status do agendamento muda,
+// mas também pode ser marcada como concluída manualmente na tela inicial
+// (ver botões "Abrir agendamento →" e "✓ Concluir" em renderAcaoCard).
 function gerarAcoesConfirmacaoAgendamento(){
   const lista = [];
   agendamentos.filter(ag=>ag.status==='agendado').forEach(ag=>{
@@ -5660,10 +5661,11 @@ function gerarAcoesConfirmacaoAgendamento(){
 // ── AÇÕES DE RECONTATO DE CANCELAMENTO ──────────────────────────────────
 // Gera, para cada agendamento cancelado com recontato em aberto (paciente desmarcou e
 // ainda não há novo agendamento), uma ação por regra ativa em regrasRecontatoCancelamento
-// — vale para qualquer profissional na agenda. Igual à confirmação de agendamento, não
-// existe "concluir" manual: a ação só some quando o desfecho é registrado (em "Pacientes
-// desmarcados" ou no próprio agendamento). Se o recontato passar do prazo configurado em
-// configRecontato.diasEscalonamento, soma-se uma ação extra de escalonamento.
+// — vale para qualquer profissional na agenda. Igual à confirmação de agendamento, some
+// sozinha quando o desfecho é registrado (em "Pacientes desmarcados" ou no próprio
+// agendamento), mas também pode ser concluída manualmente na tela inicial. Se o recontato
+// passar do prazo configurado em configRecontato.diasEscalonamento, soma-se uma ação extra
+// de escalonamento.
 function gerarAcoesRecontatoCancelamento(){
   const lista = [];
   agendamentos.filter(ag=>ag.status==='cancelado' && ag.recontatoStatus==='aberto').forEach(ag=>{
@@ -5860,14 +5862,22 @@ function renderAcaoCard(a, tipo){
   const scriptHtml = a.script ? `<div class="ac-script">"${a.script}"</div>` : '';
   const aStr = JSON.stringify(a).replace(/"/g,'&quot;');
   const pacienteLinha = a.pacienteNome ? `<div class="ac-patient">👤 ${a.pacienteNome} · <span style="color:var(--tx3)">${a.responsavel||''}</span></div>` : `<div class="ac-patient"><span style="color:var(--tx3)">${a.responsavel||'(sem responsável)'}</span></div>`;
-  // Ações de confirmação de agendamento e de recontato de cancelamento não têm "concluir"
-  // manual: só somem quando o status/desfecho muda, então o botão leva direto à ação certa.
-  // Pendências usam o próprio toggle de conclusão do módulo de Pendências, não o
-  // sistema genérico de concluirAcao (que é só para Lembrete/Fluxo de ação).
+  // Confirmação de agendamento e recontato têm uma ação "principal" (que leva direto ao
+  // lugar certo do sistema — o agendamento ou o registro de recontato) e, além dela, podem
+  // ser concluídas manualmente direto da tela inicial — por isso mostram os dois botões,
+  // empilhados. Pendências usam o próprio toggle de conclusão do módulo de Pendências, não
+  // o sistema genérico de concluirAcao (que é o usado por Lembrete/Fluxo de ação).
+  const botaoConcluirManual = `<button class="btn-done" onclick="marcarFeito('${k}',${aStr})">✓ Concluir</button>`;
   const botaoHtml = a.origemConfirmacao
-    ? `<button class="btn-done" onclick="_abrirModalAgendamentoReal('${a.agendamentoId}')">Abrir agendamento →</button>`
+    ? `<div style="display:flex;flex-direction:column;gap:6px;align-items:stretch">
+        <button class="btn-done" onclick="_abrirModalAgendamentoReal('${a.agendamentoId}')">Abrir agendamento →</button>
+        ${botaoConcluirManual}
+      </div>`
     : a.origemRecontato
-    ? `<button class="btn-done" onclick="abrirModalRecontato('${a.agendamentoId}')">Registrar contato →</button>`
+    ? `<div style="display:flex;flex-direction:column;gap:6px;align-items:stretch">
+        <button class="btn-done" onclick="abrirModalRecontato('${a.agendamentoId}')">Registrar contato →</button>
+        ${botaoConcluirManual}
+      </div>`
     : a.origemPendencia
     ? `<button class="btn-done" onclick="togglePendenciaCentral('${a.ocorrenciaId}','${a.pendId}')">✓ Concluir</button>`
     : `<button class="btn-done" onclick="marcarFeito('${k}',${aStr})">✓ Feito</button>`;
@@ -6192,8 +6202,7 @@ function renderLembretes(){
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-        ${l.status==='pendente'?`<button class="btn btn-primary btn-sm" onclick="concluirLembrete('${l.id}')">✓ Concluir</button>
-        <button class="btn btn-ghost btn-sm" onclick="descartarLembrete('${l.id}')">Descartar</button>`:''}
+        ${l.status==='pendente'?`<button class="btn btn-primary btn-sm" onclick="concluirLembrete('${l.id}')">✓ Concluir</button>`:''}
       </div>
     </div>`;
   }).join('') + `</div>`;
@@ -12815,7 +12824,10 @@ function salvarPendenciaModal(){
 }
 
 function atualizarBadgePendencias(){
-  const abertas=pendenciasDoUsuarioAtual().filter(p=>p.status!=='concluida').length;
+  const hojeStr=iso(hoje);
+  // Só conta hoje + atrasadas (não futuras) — mesmo critério do badge de Lembretes.
+  // Pendências sem prazo definido contam sempre (não têm como ser "futuras").
+  const abertas=pendenciasDoUsuarioAtual().filter(p=>p.status!=='concluida' && (!p.prazo || p.prazo<=hojeStr)).length;
   const badge=document.getElementById('bdg-pend');
   if(!badge)return;
   if(abertas>0){badge.textContent=abertas;badge.style.display='';}
