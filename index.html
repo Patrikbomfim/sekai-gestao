@@ -5082,7 +5082,7 @@ let cargos = carregarLS('sk3-cargos', CARGOS_PADRAO);
   const faltando = todasPerms.filter(p=>!atuais.has(p));
   if(faltando.length){
     cargos[idxAdmin].permissoes = [...atuais, ...faltando];
-    salvarLS('sk3-cargos', cargos);
+    _comSalvarImediato(()=>salvarLS('sk3-cargos', cargos));
   }
 })();
 let pendenciasAvulsas = carregarLS('sk3-pendencias-avulsas', []);
@@ -19393,8 +19393,8 @@ function finRenderAnexos(){
 function _recibos(){ return carregarLS('sk3-recibos', []); }
 function _salvarRecibos(list){ salvarLS('sk3-recibos', list); }
 
-let _rcbEditId = null;
-let _rcbAnexoPendente = null; // {nome, tipo, b64} — arquivo escolhido/arrastado ainda não salvo
+var _rcbEditId = null;
+var _rcbAnexoPendente = null; // {nome, tipo, b64} — arquivo escolhido/arrastado ainda não salvo
 
 function rcbInitMes(){
   const el=document.getElementById('rcb-mes');
@@ -19418,7 +19418,7 @@ function rcbIrHoje(){
   renderFinRecibos();
 }
 
-let _rcbAbaAtual='recebidos';
+var _rcbAbaAtual='recebidos';
 function rcbSetTab(aba){
   _rcbAbaAtual=aba;
   const elR=document.getElementById('rcb-area-recebidos'), elE=document.getElementById('rcb-area-emitido');
