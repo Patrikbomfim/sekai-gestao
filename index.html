@@ -1595,6 +1595,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
     </div>
     <div class="fin-modal-footer">
+      <button class="btn btn-ghost" id="rcb-recn-btn-excluir" onclick="rcbExcluirSerieDoModal()" style="display:none;background:var(--dal);color:var(--da);border-color:#FCA5A5;margin-right:auto" title="Remove os lançamentos futuros; os do mês atual e anteriores são mantidos">🗑 Excluir</button>
       <button class="btn btn-ghost" onclick="fecharModalRcbRecorrenciaNova()">Cancelar</button>
       <button class="btn btn-primary" id="rcb-recn-btn-salvar" onclick="rcbSalvarRecorrenciaNova()">Salvar recorrência</button>
     </div>
@@ -19908,11 +19909,15 @@ function abrirModalRcbRecorrenciaNova(chaveEdicao){
       hint.style.display='block';
       hint.textContent=`As alterações valem só a partir de ${_finCutoffProximoMesLabel()}. Os lançamentos até o mês atual são mantidos como estão.`;
     }
+    const btnExcluir=document.getElementById('rcb-recn-btn-excluir');
+    if(btnExcluir) btnExcluir.style.display='';
   }else{
     if(tituloEl) tituloEl.textContent='Nova recorrência';
     if(btnEl) btnEl.textContent='Salvar recorrência';
     const hint=document.getElementById('rcb-recn-edit-hint');
     if(hint) hint.style.display='none';
+    const btnExcluir=document.getElementById('rcb-recn-btn-excluir');
+    if(btnExcluir) btnExcluir.style.display='none';
   }
 
   rcbRecToggleFreq();
@@ -19921,6 +19926,15 @@ function abrirModalRcbRecorrenciaNova(chaveEdicao){
 function fecharModalRcbRecorrenciaNova(){
   document.getElementById('modal-rcb-recorrencia-nova').classList.remove('open');
   _rcbRecEditChave=null;
+}
+// Botão "Excluir" dentro do próprio modal de edição de recorrência (ao lado de Cancelar):
+// mesma ação/aviso de "Excluir a partir do próx. mês" da lista de recorrências, só que
+// acessível direto de onde o usuário já está editando a série.
+function rcbExcluirSerieDoModal(){
+  if(!_rcbRecEditChave) return;
+  const chave=_rcbRecEditChave;
+  fecharModalRcbRecorrenciaNova();
+  rcbExcluirSerieRecorrente(chave);
 }
 function rcbRecToggleFreq(){
   const v=document.getElementById('rcb-recn-freq').value;
