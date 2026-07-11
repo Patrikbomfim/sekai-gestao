@@ -875,11 +875,19 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="pg-desc" id="hoje-desc"></div>
   <div id="hoje-modo-visao"></div>
   <div class="g5" style="margin-bottom:18px">
-    <div class="metric"><div class="metric-lbl">Para hoje</div><div class="metric-val" id="m-hoje" style="color:var(--ac)">0</div><div class="metric-note">ações pendentes</div></div>
-    <div class="metric"><div class="metric-lbl">Atrasadas</div><div class="metric-val" id="m-atras" style="color:var(--da)">0</div><div class="metric-note">precisam atenção</div></div>
     <div class="metric"><div class="metric-lbl">🔔 Lembretes</div><div class="metric-val" id="m-mod-lembrete" style="color:var(--ac)">0</div><div class="metric-note">hoje + atrasados</div></div>
     <div class="metric"><div class="metric-lbl">🔄 Fluxo de ação</div><div class="metric-val" id="m-mod-fluxo" style="color:var(--ac)">0</div><div class="metric-note">hoje + atrasados</div></div>
     <div class="metric"><div class="metric-lbl">📌 Pendências</div><div class="metric-val" id="m-mod-pendencia" style="color:var(--ac)">0</div><div class="metric-note">hoje + atrasadas</div></div>
+    <div class="metric" style="cursor:pointer" onclick="irFinDoHome('pagar','hoje')" title="Ver em Financeiro → A pagar operacional">
+      <div class="metric-lbl">💸 Contas a pagar hoje</div>
+      <div class="metric-val" id="m-fin-pagar-hoje" style="color:var(--da)">0</div>
+      <div class="metric-note" id="m-fin-pagar-hoje-nota">R$ 0,00</div>
+    </div>
+    <div class="metric" style="cursor:pointer" onclick="irFinDoHome('receber','hoje')" title="Ver em Financeiro → Contas a receber">
+      <div class="metric-lbl">💰 Contas a receber hoje</div>
+      <div class="metric-val" id="m-fin-receber-hoje" style="color:var(--ac)">0</div>
+      <div class="metric-note" id="m-fin-receber-hoje-nota">R$ 0,00</div>
+    </div>
   </div>
   <div id="hoje-resumo-equipe"></div>
   <div id="hoje-container"></div>
@@ -893,11 +901,20 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="pg-title">Próximos 7 dias</div>
   <div class="pg-desc">Planeje com antecedência — ações futuras organizadas por data</div>
   <div id="proximos-modo-visao"></div>
-  <div class="g4" style="margin-bottom:18px">
-    <div class="metric"><div class="metric-lbl">Total no período</div><div class="metric-val" id="p-mod-total" style="color:var(--ac)">0</div><div class="metric-note">próximos 7 dias</div></div>
+  <div class="g5" style="margin-bottom:18px">
     <div class="metric"><div class="metric-lbl">🔔 Lembretes</div><div class="metric-val" id="p-mod-lembrete" style="color:var(--ac)">0</div><div class="metric-note">próximos 7 dias</div></div>
     <div class="metric"><div class="metric-lbl">🔄 Fluxo de ação</div><div class="metric-val" id="p-mod-fluxo" style="color:var(--ac)">0</div><div class="metric-note">próximos 7 dias</div></div>
     <div class="metric"><div class="metric-lbl">📌 Pendências</div><div class="metric-val" id="p-mod-pendencia" style="color:var(--ac)">0</div><div class="metric-note">próximos 7 dias</div></div>
+    <div class="metric" style="cursor:pointer" onclick="irFinDoHome('pagar','prox7')" title="Ver em Financeiro → A pagar operacional">
+      <div class="metric-lbl">💸 Contas a pagar</div>
+      <div class="metric-val" id="p-fin-pagar-prox7" style="color:var(--da)">0</div>
+      <div class="metric-note" id="p-fin-pagar-prox7-nota">R$ 0,00 · próx. 7 dias</div>
+    </div>
+    <div class="metric" style="cursor:pointer" onclick="irFinDoHome('receber','prox7')" title="Ver em Financeiro → Contas a receber">
+      <div class="metric-lbl">💰 Contas a receber</div>
+      <div class="metric-val" id="p-fin-receber-prox7" style="color:var(--ac)">0</div>
+      <div class="metric-note" id="p-fin-receber-prox7-nota">R$ 0,00 · próx. 7 dias</div>
+    </div>
   </div>
   <div id="proximos-container"></div>
 </div>
@@ -5858,11 +5875,10 @@ function renderHoje(){
   const total = atrasadas.length + deHoje.length;
   const combinadas = atrasadas.concat(deHoje);
 
-  document.getElementById('m-hoje').textContent = deHoje.length;
-  document.getElementById('m-atras').textContent = atrasadas.length;
   document.getElementById('m-mod-lembrete').textContent = combinadas.filter(a=>a.modalidade==='lembrete').length;
   document.getElementById('m-mod-fluxo').textContent = combinadas.filter(a=>a.modalidade==='fluxo').length;
   document.getElementById('m-mod-pendencia').textContent = combinadas.filter(a=>a.modalidade==='pendencia').length;
+  atualizarCardsFinanceirosHoje();
 
   const c = document.getElementById('hoje-container');
   if(!total){ c.innerHTML=`<div class="card"><div class="empty"><div class="empty-ic">✅</div>Tudo em dia! Nenhuma ação pendente para hoje.</div></div>`; }
@@ -6279,7 +6295,6 @@ function renderLembretes(){
   const resps = [...new Set(todosLembretesBase.map(a=>a.responsavel).filter(Boolean))];
   const filtrosEl = document.getElementById('lemb-filtros');
   if(filtrosEl) filtrosEl.innerHTML = `
-    <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('')" style="${lembFiltroStatus===''?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Todos</button>
     <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('pendente')" style="${lembFiltroStatus==='pendente'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Pendentes</button>
     <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('concluido')" style="${lembFiltroStatus==='concluido'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Concluídos</button>
     ${resps.length?`<span style="width:1px;background:var(--border);margin:0 4px"></span>
@@ -6470,10 +6485,10 @@ function renderProximos(){
   const todas=acoesVisiveis();
   const futuras=todas.filter(a=>iso(a.data)>hojeStr&&a.data<=limite&&!isConcluida(a)).sort((a,b)=>a.data-b.data);
 
-  document.getElementById('p-mod-total').textContent = futuras.length;
   document.getElementById('p-mod-lembrete').textContent = futuras.filter(a=>a.modalidade==='lembrete').length;
   document.getElementById('p-mod-fluxo').textContent = futuras.filter(a=>a.modalidade==='fluxo').length;
   document.getElementById('p-mod-pendencia').textContent = futuras.filter(a=>a.modalidade==='pendencia').length;
+  atualizarCardsFinanceirosProx7();
 
   const c=document.getElementById('proximos-container');
   if(!futuras.length){c.innerHTML=`<div class="card"><div class="empty"><div class="empty-ic">📅</div>Nenhuma ação nos próximos 7 dias.</div></div>`;return;}
@@ -18490,10 +18505,10 @@ function irFinSub(tipo, grupo){
   const adv = _finFiltrosAdv[tipo];
   // Aplica filtro de status
   if(grupo==='atrasado') adv.status='atrasado';
-  else if(grupo==='hoje'||grupo==='semana') adv.status='aberto';
+  else if(grupo==='hoje'||grupo==='semana'||grupo==='prox7') adv.status='aberto';
   else adv.status='';
 
-  // Aplica filtro de data para hoje/semana
+  // Aplica filtro de data para hoje/semana/próximos 7 dias
   const hoje = _finHoje();
   const hj = _finIso(hoje);
   adv.vencDe=''; adv.vencAte='';
@@ -18503,11 +18518,61 @@ function irFinSub(tipo, grupo){
     const seg=new Date(hoje); const ds=hoje.getDay(); seg.setDate(hoje.getDate()+(ds===0?1:(8-ds)%7||7));
     const sex=new Date(seg); sex.setDate(seg.getDate()+4);
     adv.vencDe=_finIso(seg); adv.vencAte=_finIso(sex);
+  } else if(grupo==='prox7'){
+    const amanha=new Date(hoje); amanha.setDate(hoje.getDate()+1);
+    const fim=new Date(hoje); fim.setDate(hoje.getDate()+7);
+    adv.vencDe=_finIso(amanha); adv.vencAte=_finIso(fim);
   }
   _finUpdateFiltrosBadge(tipo);
   _finPeriodoAtivoLista[tipo]=null;
   _finAtualizarBotoesPeriodoLista(tipo);
   renderFinLista(tipo);
+}
+
+// Clique nos cards "Contas a pagar/receber" de Meu dia / Próximos 7 dias — navega até o
+// módulo Financeiro (aba "A pagar operacional" ou "Contas a receber") já com o filtro de
+// vencimento e status aplicado (ver irFinSub).
+function irFinDoHome(tipo, grupo){
+  const btnFin = document.querySelector('.nav-btn[onclick*="goTo(\'financeiro\'"]');
+  goTo('financeiro', btnFin);
+  irFinSub(tipo, grupo);
+}
+
+// Títulos em aberto (não pagos/recebidos/cancelados) de um tipo ('pagar' ou 'receber'),
+// com vencimento dentro do intervalo [de, ate] (datas ISO, inclusive).
+function _finTitulosAbertosNoPeriodo(tipo, de, ate){
+  return _finTodosTitulos().filter(t=>t.tipo===tipo && t.vencimento && t.vencimento>=de && t.vencimento<=ate && _finStatusEfetivo(t)==='aberto');
+}
+
+// Atualiza os cards "Contas a pagar hoje" / "Contas a receber hoje" em "Meu dia".
+function atualizarCardsFinanceirosHoje(){
+  const hj = iso(hoje);
+  const pagar = _finTitulosAbertosNoPeriodo('pagar', hj, hj);
+  const receber = _finTitulosAbertosNoPeriodo('receber', hj, hj);
+  const somaPagar = pagar.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  const somaReceber = receber.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  const elPV=document.getElementById('m-fin-pagar-hoje'), elPN=document.getElementById('m-fin-pagar-hoje-nota');
+  const elRV=document.getElementById('m-fin-receber-hoje'), elRN=document.getElementById('m-fin-receber-hoje-nota');
+  if(elPV) elPV.textContent = pagar.length;
+  if(elPN) elPN.textContent = _finFmt(somaPagar);
+  if(elRV) elRV.textContent = receber.length;
+  if(elRN) elRN.textContent = _finFmt(somaReceber);
+}
+
+// Atualiza os cards "Contas a pagar" / "Contas a receber" em "Próximos 7 dias" (amanhã até hoje+7).
+function atualizarCardsFinanceirosProx7(){
+  const de = iso(addDays(hoje,1));
+  const ate = iso(addDays(hoje,7));
+  const pagar = _finTitulosAbertosNoPeriodo('pagar', de, ate);
+  const receber = _finTitulosAbertosNoPeriodo('receber', de, ate);
+  const somaPagar = pagar.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  const somaReceber = receber.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+  const elPV=document.getElementById('p-fin-pagar-prox7'), elPN=document.getElementById('p-fin-pagar-prox7-nota');
+  const elRV=document.getElementById('p-fin-receber-prox7'), elRN=document.getElementById('p-fin-receber-prox7-nota');
+  if(elPV) elPV.textContent = pagar.length;
+  if(elPN) elPN.textContent = `${_finFmt(somaPagar)} · próx. 7 dias`;
+  if(elRV) elRV.textContent = receber.length;
+  if(elRN) elRN.textContent = `${_finFmt(somaReceber)} · próx. 7 dias`;
 }
 
 // Retorna a segunda-feira da semana da data informada (padrão: semana começa segunda, termina domingo)
