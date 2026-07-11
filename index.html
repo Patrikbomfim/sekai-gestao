@@ -2589,20 +2589,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <div class="fin-card-value" id="rcb-val-total">R$ 0,00</div>
           <div class="fin-card-sub">valor disponível para emitir recibo aos pacientes</div>
         </div>
-        <div class="fin-card fin-card-green">
-          <div class="fin-card-label">Valor emitido em recibo</div>
-          <div class="fin-card-value" id="rcb-val-pac-recibo">R$ 0,00</div>
-          <div class="fin-card-sub">recebido de pacientes no mês</div>
-        </div>
-        <div class="fin-card fin-card-blue">
-          <div class="fin-card-label">Valor emitido em nota fiscal</div>
-          <div class="fin-card-value" id="rcb-val-pac-nf">R$ 0,00</div>
-          <div class="fin-card-sub">recebido de pacientes no mês</div>
-        </div>
         <div class="fin-card">
-          <div class="fin-card-label">Tratamentos realizados sem emissão fiscal</div>
-          <div class="fin-card-value" id="rcb-val-pac-sem">R$ 0,00</div>
-          <div class="fin-card-sub">recebido de pacientes, sem emissão fiscal ainda</div>
+          <div class="fin-card-label">Previstos</div>
+          <div class="fin-card-value" id="rcb-val-previsto" style="color:var(--wa)">R$ 0,00</div>
+          <div class="fin-card-sub">lançamentos ainda não liquidados no mês</div>
         </div>
       </div>
 
@@ -2629,11 +2619,64 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
     </div>
 
-    <!-- ABA: EMITIDO (em desenvolvimento) -->
+    <!-- ABA: EMITIDO -->
     <div id="rcb-area-emitido" style="display:none">
-      <div class="fin-empty" style="margin-top:30px">
-        <div style="font-size:24px;margin-bottom:8px">🚧</div>
-        Em desenvolvimento — aqui vamos controlar o que a clínica emite em nota fiscal e recibo aos pacientes.
+      <div style="font-size:12px;color:var(--tx3);margin-top:10px">Aqui é só consulta — os lançamentos são feitos na aba Recebidos ou no financeiro do paciente. Clique num card para filtrar a tabela por ele.</div>
+
+      <!-- Filtros -->
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:12px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <label class="lbl" style="margin:0">De</label>
+          <input type="date" id="rcb-emit-de" class="inp" style="max-width:150px" onchange="renderRcbEmitido()">
+          <label class="lbl" style="margin:0">Até</label>
+          <input type="date" id="rcb-emit-ate" class="inp" style="max-width:150px" onchange="renderRcbEmitido()">
+        </div>
+        <div class="fin-ac-wrap" style="max-width:260px;position:relative">
+          <input type="text" id="rcb-emit-paciente" class="inp" placeholder="Buscar paciente..." autocomplete="off"
+            oninput="rcbEmitidoBuscarPaciente(this.value)" onfocus="rcbEmitidoBuscarPaciente(this.value)"
+            onblur="setTimeout(()=>{const dd=document.getElementById('rcb-emit-paciente-dropdown'); if(dd)dd.classList.remove('open')},160)">
+          <div id="rcb-emit-paciente-dropdown" class="fin-ac-dropdown"></div>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="rcbEmitidoLimparFiltros()">Limpar filtros</button>
+      </div>
+
+      <!-- Cards clicáveis -->
+      <div class="fin-cards-row" style="margin-top:14px">
+        <div class="fin-card fin-card-green fin-card-clickable" data-cat="recibo" onclick="rcbEmitidoFiltrarCategoria('recibo')">
+          <div class="fin-card-label">Valor emitido em recibo</div>
+          <div class="fin-card-value" id="rcb-emit-val-recibo">R$ 0,00</div>
+          <div class="fin-card-sub">recebido de pacientes · clique para filtrar</div>
+        </div>
+        <div class="fin-card fin-card-blue fin-card-clickable" data-cat="nota_fiscal" onclick="rcbEmitidoFiltrarCategoria('nota_fiscal')">
+          <div class="fin-card-label">Valor emitido em nota fiscal</div>
+          <div class="fin-card-value" id="rcb-emit-val-nf">R$ 0,00</div>
+          <div class="fin-card-sub">recebido de pacientes · clique para filtrar</div>
+        </div>
+        <div class="fin-card fin-card-clickable" data-cat="sem_recibo" onclick="rcbEmitidoFiltrarCategoria('sem_recibo')">
+          <div class="fin-card-label">Tratamentos realizados sem emissão fiscal</div>
+          <div class="fin-card-value" id="rcb-emit-val-sem">R$ 0,00</div>
+          <div class="fin-card-sub">recebido de pacientes · clique para filtrar</div>
+        </div>
+      </div>
+
+      <!-- Tabela -->
+      <div class="fin-table-wrap" style="margin-top:14px">
+        <table class="fin-table">
+          <thead>
+            <tr>
+              <th style="width:110px">Data pagamento</th>
+              <th>Paciente</th>
+              <th>Descrição</th>
+              <th style="width:120px;text-align:right">Valor</th>
+              <th style="width:130px">Emissão</th>
+            </tr>
+          </thead>
+          <tbody id="rcb-emit-tbody"></tbody>
+        </table>
+        <div id="rcb-emit-empty" class="fin-empty" style="display:none">
+          <div style="font-size:24px;margin-bottom:8px">📄</div>
+          Nenhum título encontrado com esse filtro.
+        </div>
       </div>
     </div>
   </div>
@@ -19710,6 +19753,7 @@ function rcbSetTab(aba){
   if(elE) elE.style.display = aba==='emitido' ? '' : 'none';
   if(btnR) btnR.className = 'btn btn-sm ' + (aba==='recebidos'?'btn-primary':'btn-ghost');
   if(btnE) btnE.className = 'btn btn-sm ' + (aba==='emitido'?'btn-primary':'btn-ghost');
+  if(aba==='emitido') renderRcbEmitido();
 }
 
 // ── Busca, ordenação e agrupamento (independentes do sistema genérico de
@@ -20124,6 +20168,8 @@ function rcbEditarSerieRecorrente(chave){
 // Soma dos títulos do financeiro do paciente (Contas a Receber) já recebidos no mês,
 // separados por tipo de emissão fiscal — fecha o elo entre o que a clínica recebe dos
 // pacientes e o que precisou virar recibo, nota fiscal, ou nada ainda.
+// (Mantida por compatibilidade — a aba "Emitido" hoje usa sua própria lógica de filtro,
+// que cobre um intervalo de datas e paciente, não só o mês corrente.)
 function _rcbTotaisPacientes(mes){
   const titulos=_titulos();
   let emitidoRecibo=0, emitidoNF=0, semRecibo=0;
@@ -20140,6 +20186,121 @@ function _rcbTotaisPacientes(mes){
   return {emitidoRecibo, emitidoNF, semRecibo};
 }
 
+// ── ABA EMITIDO: consulta/busca do que já foi recebido de pacientes, por tipo
+// de emissão fiscal (recibo / nota fiscal / sem emissão ainda). Só visualização —
+// nenhum lançamento é criado aqui.
+let _rcbEmitFiltro = { categoria:null, pacienteId:null, pacienteNome:'' };
+let _rcbEmitBuscaResultados = [];
+
+function _rcbEmitTipoNorm(t){
+  const tipo=t.emissaoFiscal?.tipo;
+  return (tipo && tipo!=='sem_recibo') ? tipo : 'sem_recibo';
+}
+
+function renderRcbEmitido(){
+  const de=document.getElementById('rcb-emit-de')?.value||'';
+  const ate=document.getElementById('rcb-emit-ate')?.value||'';
+
+  const base=_titulos().filter(t=>{
+    if(t.status!=='pago') return false;
+    const dataPag=t.dataPagamento||'';
+    if(de && dataPag<de) return false;
+    if(ate && dataPag>ate) return false;
+    if(_rcbEmitFiltro.pacienteId && String(t.pacienteId)!==String(_rcbEmitFiltro.pacienteId)) return false;
+    return true;
+  });
+
+  // Totais dos 3 cards — sempre sobre data+paciente, ignorando a categoria selecionada
+  // (senão o card ativo zeraria os outros dois ao ser clicado).
+  let valRecibo=0, valNF=0, valSem=0;
+  base.forEach(t=>{
+    const valor=parseFloat(t.valor)||0;
+    const cat=_rcbEmitTipoNorm(t);
+    if(cat==='recibo') valRecibo+=valor;
+    else if(cat==='nota_fiscal') valNF+=valor;
+    else valSem+=valor;
+  });
+  const elRc=document.getElementById('rcb-emit-val-recibo'); if(elRc) elRc.textContent=fmtMoedaDisplay(valRecibo);
+  const elNf=document.getElementById('rcb-emit-val-nf'); if(elNf) elNf.textContent=fmtMoedaDisplay(valNF);
+  const elSem=document.getElementById('rcb-emit-val-sem'); if(elSem) elSem.textContent=fmtMoedaDisplay(valSem);
+
+  document.querySelectorAll('#rcb-area-emitido .fin-card-clickable').forEach(card=>{
+    card.classList.toggle('on', (card.dataset.cat||'')===(_rcbEmitFiltro.categoria||''));
+  });
+
+  // Tabela — aqui sim aplica o filtro de categoria do card selecionado
+  const filtrados = base.filter(t=> !_rcbEmitFiltro.categoria || _rcbEmitTipoNorm(t)===_rcbEmitFiltro.categoria)
+    .sort((a,b)=>(b.dataPagamento||'').localeCompare(a.dataPagamento||''));
+
+  const tbody=document.getElementById('rcb-emit-tbody');
+  const empty=document.getElementById('rcb-emit-empty');
+  if(!tbody) return;
+  if(!filtrados.length){
+    tbody.innerHTML='';
+    if(empty) empty.style.display='block';
+    return;
+  }
+  if(empty) empty.style.display='none';
+  const tipoLbl={recibo:'Recibo',nota_fiscal:'Nota Fiscal',sem_recibo:'Sem emissão'};
+  const tipoCor={recibo:'#065F46',nota_fiscal:'var(--ac)',sem_recibo:'var(--tx3)'};
+  tbody.innerHTML=filtrados.map(t=>{
+    const p=pacientes.find(x=>String(x.id)===String(t.pacienteId));
+    const cat=_rcbEmitTipoNorm(t);
+    return `<tr style="cursor:pointer" onclick="irParaFinanceiroOrcamento('${t.pacienteId}','${t.orcamentoId}')">
+      <td>${_finFmtData(t.dataPagamento)}</td>
+      <td>${esc(p?p.nome:'—')}</td>
+      <td>${esc(t.descricao||'—')}</td>
+      <td style="text-align:right">${_finFmt(t.valor)}</td>
+      <td><span style="font-size:11.5px;font-weight:600;color:${tipoCor[cat]}">${tipoLbl[cat]}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function rcbEmitidoFiltrarCategoria(cat){
+  _rcbEmitFiltro.categoria = (_rcbEmitFiltro.categoria===cat) ? null : cat;
+  renderRcbEmitido();
+}
+
+function rcbEmitidoBuscarPaciente(termo){
+  const dd=document.getElementById('rcb-emit-paciente-dropdown');
+  if(!dd) return;
+  if(_rcbEmitFiltro.pacienteId && termo!==_rcbEmitFiltro.pacienteNome){
+    _rcbEmitFiltro.pacienteId=null;
+    _rcbEmitFiltro.pacienteNome='';
+    renderRcbEmitido();
+  }
+  const t=(termo||'').trim().toLowerCase();
+  if(!t){ dd.classList.remove('open'); return; }
+  const filtrados=(typeof pacientes!=='undefined'?pacientes:[]).filter(p=>(p.nome||'').toLowerCase().includes(t)).slice(0,10);
+  _rcbEmitBuscaResultados=filtrados;
+  if(!filtrados.length){
+    dd.innerHTML='<div class="fin-ac-empty">Nenhum paciente encontrado.</div>';
+  } else {
+    dd.innerHTML=filtrados.map((p,i)=>`<div class="fin-ac-item" onmousedown="rcbEmitidoSelecionarPaciente(${i})"><span class="fin-ac-item-nome">${esc(p.nome)}</span></div>`).join('');
+  }
+  dd.classList.add('open');
+}
+
+function rcbEmitidoSelecionarPaciente(idx){
+  const p=_rcbEmitBuscaResultados[idx];
+  if(!p) return;
+  _rcbEmitFiltro.pacienteId=p.id;
+  _rcbEmitFiltro.pacienteNome=p.nome;
+  const input=document.getElementById('rcb-emit-paciente');
+  if(input) input.value=p.nome;
+  const dd=document.getElementById('rcb-emit-paciente-dropdown');
+  if(dd) dd.classList.remove('open');
+  renderRcbEmitido();
+}
+
+function rcbEmitidoLimparFiltros(){
+  _rcbEmitFiltro={categoria:null,pacienteId:null,pacienteNome:''};
+  const input=document.getElementById('rcb-emit-paciente'); if(input) input.value='';
+  const deEl=document.getElementById('rcb-emit-de'); if(deEl) deEl.value='';
+  const ateEl=document.getElementById('rcb-emit-ate'); if(ateEl) ateEl.value='';
+  renderRcbEmitido();
+}
+
 function renderFinRecibos(){
   rcbSetTab(_rcbAbaAtual);
   rcbInitMes();
@@ -20147,20 +20308,16 @@ function renderFinRecibos(){
 
   const mes=document.getElementById('rcb-mes').value||_finMesAtual();
   const listaMes=_rcbListaMes();
-  let totalNF=0, totalRecibo=0;
+  let totalNF=0, totalRecibo=0, totalPrevisto=0;
   listaMes.forEach(r=>{
-    if(r.liquidado===false) return; // previsto — ainda não confirmado, não entra no total
+    if(r.liquidado===false){ totalPrevisto+=(r.valor||0); return; } // previsto — ainda não confirmado, não entra no total
     if(r.tipo==='nota_fiscal') totalNF+=(r.valor||0);
     else if(r.tipo==='recibo') totalRecibo+=(r.valor||0);
   });
   const elNf=document.getElementById('rcb-val-nf'); if(elNf) elNf.textContent=fmtMoedaDisplay(totalNF);
   const elRc=document.getElementById('rcb-val-recibo'); if(elRc) elRc.textContent=fmtMoedaDisplay(totalRecibo);
   const elTt=document.getElementById('rcb-val-total'); if(elTt) elTt.textContent=fmtMoedaDisplay(totalNF+totalRecibo);
-
-  const pac=_rcbTotaisPacientes(mes);
-  const elPacRc=document.getElementById('rcb-val-pac-recibo'); if(elPacRc) elPacRc.textContent=fmtMoedaDisplay(pac.emitidoRecibo);
-  const elPacNf=document.getElementById('rcb-val-pac-nf'); if(elPacNf) elPacNf.textContent=fmtMoedaDisplay(pac.emitidoNF);
-  const elPacSem=document.getElementById('rcb-val-pac-sem'); if(elPacSem) elPacSem.textContent=fmtMoedaDisplay(pac.semRecibo);
+  const elPrev=document.getElementById('rcb-val-previsto'); if(elPrev) elPrev.textContent=fmtMoedaDisplay(totalPrevisto);
 
   const tbody=document.getElementById('rcb-tbody');
   const empty=document.getElementById('rcb-empty');
