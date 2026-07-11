@@ -6885,6 +6885,7 @@ let modalPtId=null;
 let pacienteOrigemTab='pacientes'; // para saber pra onde voltar
 let pacienteOrigemAgendamentoId=null; // se veio do modal de um agendamento específico, reabre ele ao voltar
 let pacienteOrigemEraPopover=false; // se veio do popover, reabre o popover ao voltar
+let pacienteOrigemFinSub=null; // se veio do Financeiro, qual sub-aba (fluxo/pagar/folha/receber/comissao/recibos) reabrir ao voltar
 
 function abrirModalPt(id){
   const p=pacientes.find(x=>x.id===id || String(x.id)===String(id));
@@ -6975,12 +6976,18 @@ function voltarParaPacientes(){
         _abrirModalAgendamentoReal(pacienteOrigemAgendamentoId);
       }
     }
+  } else if(pacienteOrigemTab==='financeiro'){
+    const btnFin = document.querySelector('.nav-btn[onclick*="goTo(\'financeiro\'"]');
+    goTo('financeiro', btnFin);
+    const sub = pacienteOrigemFinSub||'receber';
+    showFinSub(sub, document.getElementById('fin-sub-'+sub));
   } else {
     goTo('pacientes', document.getElementById('navbtn-pacientes'));
   }
   pacienteOrigemTab='pacientes';
   pacienteOrigemAgendamentoId=null;
   pacienteOrigemEraPopover=false;
+  pacienteOrigemFinSub=null;
 }
 
 function switchPpArea(area){
@@ -7005,8 +7012,19 @@ function switchPpArea(area){
 // orçamento correspondente — pra ver a situação real ali, onde a edição de verdade
 // acontece (desaprovando o orçamento, se for o caso).
 function irParaFinanceiroOrcamento(pacienteId, orcamentoId){
+  // Guarda de onde veio, pra "voltar" retornar exatamente pra cá (mesma sub-aba do Financeiro)
+  pacienteOrigemTab='financeiro';
+  pacienteOrigemFinSub=_finSubAtual;
+
   abrirModalPt(pacienteId);
   switchPpArea('financeiro');
+
+  // O menu lateral de sub-abas do Financeiro (Fluxo/A pagar/.../Recibos) é do módulo que
+  // ficou pra trás — não faz sentido continuar visível dentro da ficha do paciente.
+  document.querySelector('.layout').classList.remove('has-subnav');
+  const finSubnav=document.getElementById('financeiro-subnav');
+  if(finSubnav) finSubnav.classList.remove('subnav-ativo');
+
   setTimeout(()=>{
     const uid='fin-orc-'+orcamentoId;
     const body=document.getElementById(uid);
