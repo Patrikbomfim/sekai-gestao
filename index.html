@@ -5557,7 +5557,7 @@ function gerarAcoesPendencias(){
   }));
 }
 
-function todasAcoes(){ return pacientes.flatMap(p=>gerarAcoes(p)).concat(gerarAcoesConfirmacaoAgendamento()).concat(gerarAcoesRecontatoCancelamento()).concat(gerarAcoesPendencias()); }
+function todasAcoes(){ return pacientes.flatMap(p=>gerarAcoes(p)).concat(gerarTodosLembretes()).concat(gerarAcoesPendencias()); }
 
 // ── VISIBILIDADE DE AÇÕES POR USUÁRIO ───────────────────────────────────
 // Por padrão cada pessoa só vê as ações cujo campo "responsavel" é ela mesma.
@@ -5729,7 +5729,46 @@ function gerarAcoesRecontatoCancelamento(){
 }
 
 function acaoKey(a){ return `${a.pacienteId}_${iso(a.data)}_${a.id||a.titulo}`; }
-function isConcluida(a){ if(a.origemPendencia) return a.pendenciaStatus==='concluida'; return concluidasIds.includes(acaoKey(a)); }
+function isConcluida(a){
+  if(a.origemPendencia) return a.pendenciaStatus==='concluida';
+  if(a.origemLembreteGerado) return a.lembreteStatus==='concluido';
+  return concluidasIds.includes(acaoKey(a));
+}
+
+// ── AÇÕES DE LEMBRETES AUTOMÁTICOS (regrasLembretes / lembretesGerados) ──────
+// Converte lembretesGerados para o mesmo formato usado pelas outras ações de
+// modalidade 'lembrete' (confirmação de agendamento e recontato), para que o
+// módulo "Lembretes" e o bloco "🔔 Lembretes" em "Meu dia"/"Próximos 7 dias"
+// mostrem sempre o mesmo conjunto de itens e a mesma contagem. Itens descartados
+// não entram (não fazem mais sentido em nenhuma das duas telas).
+function gerarAcoesLembretesGerados(){
+  return (lembretesGerados||[]).filter(l=>l.status!=='descartado').map(l=>({
+    id: l.id,
+    titulo: l.titulo||'Lembrete',
+    tipo: 'lembrete',
+    icone: '🔔',
+    responsavel: l.responsavel||'',
+    script: l.script||'',
+    data: parseIso(l.dataLembrete),
+    pacienteId: l.pacienteId||null,
+    pacienteNome: l.pacienteNome||'(sem nome)',
+    agendamentoId: l.agendamentoId||null,
+    origemLembreteGerado: true,
+    lembreteId: l.id,
+    lembreteStatus: l.status,
+    modalidade: 'lembrete',
+  }));
+}
+
+// Junta as três origens de "lembrete" (confirmação de agendamento, recontato de
+// cancelamento e lembretes automáticos configurados) num único conjunto — é essa
+// lista que alimenta tanto o bloco "🔔 Lembretes" de Meu dia/Próximos 7 dias quanto
+// o módulo "Lembretes" e seu contador no menu, garantindo que os números batam.
+function gerarTodosLembretes(){
+  return gerarAcoesConfirmacaoAgendamento()
+    .concat(gerarAcoesRecontatoCancelamento())
+    .concat(gerarAcoesLembretesGerados());
+}
 function concluirAcao(a){ const k=acaoKey(a); if(!concluidasIds.includes(k)) concluidasIds.push(k); salvarLS('sk3-concluidas',concluidasIds); }
 
 // ── NAV ────────────────────────────────────────────────────────────────
@@ -5876,16 +5915,17 @@ function icClass(icone){
 function renderAcaoCard(a, tipo){
   const k = acaoKey(a).replace(/[^a-z0-9_]/gi,'_');
   _acoesPorChave[k] = a; // cache p/ lookup seguro nos botões (evita embutir JSON no onclick)
-  const diasStr = tipo==='atrasada' ? `Atrasada ${Math.abs(diffDays(a.data,hoje))}d` : 'Hoje';
-  const pillCls = tipo==='atrasada' ? 'p-danger' : 'p-green';
+  const diasStr = tipo==='atrasada' ? `Atrasada ${Math.abs(diffDays(a.data,hoje))}d` : tipo==='futura' ? 'Agendado' : 'Hoje';
+  const pillCls = tipo==='atrasada' ? 'p-danger' : tipo==='futura' ? 'p-neutral' : 'p-green';
   const scriptHtml = a.script ? `<div class="ac-script">"${a.script}"</div>` : '';
   const aStr = JSON.stringify(a).replace(/"/g,'&quot;');
   const pacienteLinha = a.pacienteNome ? `<div class="ac-patient">👤 ${a.pacienteNome} · <span style="color:var(--tx3)">${a.responsavel||''}</span></div>` : `<div class="ac-patient"><span style="color:var(--tx3)">${a.responsavel||'(sem responsável)'}</span></div>`;
   // Confirmação de agendamento e recontato têm uma ação "principal" (que leva direto ao
   // lugar certo do sistema — o agendamento ou o registro de recontato) e, além dela, podem
   // ser concluídas manualmente direto da tela inicial — por isso mostram os dois botões,
-  // empilhados. Pendências usam o próprio toggle de conclusão do módulo de Pendências, não
-  // o sistema genérico de concluirAcao (que é o usado por Lembrete/Fluxo de ação).
+  // empilhados. Lembretes automáticos (regras configuráveis) seguem o mesmo padrão, mas
+  // usam seu próprio campo de status (ver concluirLembrete), não o concluirAcao genérico.
+  // Pendências usam o próprio toggle de conclusão do módulo de Pendências.
   const botaoConcluirManual = `<button class="btn-done" onclick="confirmarRealizacaoAcao('${k}')">✓ Concluir</button>`;
   const botaoHtml = a.origemConfirmacao
     ? `<div style="display:flex;flex-direction:column;gap:6px;align-items:stretch">
@@ -5896,6 +5936,11 @@ function renderAcaoCard(a, tipo){
     ? `<div style="display:flex;flex-direction:column;gap:6px;align-items:stretch">
         <button class="btn-done" onclick="abrirModalRecontato('${a.agendamentoId}')">Registrar contato →</button>
         ${botaoConcluirManual}
+      </div>`
+    : a.origemLembreteGerado
+    ? `<div style="display:flex;flex-direction:column;gap:6px;align-items:stretch">
+        ${a.agendamentoId?`<button class="btn-done" onclick="_abrirModalAgendamentoReal('${a.agendamentoId}')">Abrir agendamento →</button>`:''}
+        ${a.lembreteStatus==='pendente'?`<button class="btn-done" onclick="confirmarConcluirLembreteGerado('${a.lembreteId}','${k}')">✓ Concluir</button>`:''}
       </div>`
     : a.origemPendencia
     ? `<button class="btn-done" onclick="togglePendenciaCentral('${a.ocorrenciaId}','${a.pendId}')">✓ Concluir</button>`
@@ -6225,12 +6270,13 @@ function lembToggleModoEquipe(v){ lembModoEquipe=v; renderLembretes(); }
 function renderLembretes(){
   renderModoVisaoControl('lemb-modo-visao', lembModoEquipe, '', [], 'lembToggleModoEquipe', '');
   const nomeAtual = nomeUsuarioAtual();
-  let lista = lembretesGerados.filter(l=>{
-    if(!lembModoEquipe && nomeAtual && l.responsavel && l.responsavel.toLowerCase().trim()!==nomeAtual.toLowerCase().trim()) return false;
+  const todosLembretesBase = gerarTodosLembretes();
+  let lista = todosLembretesBase.filter(a=>{
+    if(!lembModoEquipe && !acaoEhDe(a, nomeAtual)) return false;
     return true;
   });
   // filtros
-  const resps = [...new Set(lembretesGerados.map(l=>l.responsavel).filter(Boolean))];
+  const resps = [...new Set(todosLembretesBase.map(a=>a.responsavel).filter(Boolean))];
   const filtrosEl = document.getElementById('lemb-filtros');
   if(filtrosEl) filtrosEl.innerHTML = `
     <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('')" style="${lembFiltroStatus===''?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Todos</button>
@@ -6239,15 +6285,16 @@ function renderLembretes(){
     ${resps.length?`<span style="width:1px;background:var(--border);margin:0 4px"></span>
     ${resps.map(r=>`<button class="btn btn-ghost btn-sm" onclick="setLembFiltroResp('${r}')" style="${lembFiltroResp===r?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">${esc(r)}</button>`).join('')}`:''}
   `;
-  if(lembFiltroStatus) lista = lista.filter(l=>l.status===lembFiltroStatus);
-  if(lembFiltroResp) lista = lista.filter(l=>l.responsavel===lembFiltroResp);
+  if(lembFiltroStatus==='pendente') lista = lista.filter(a=>!isConcluida(a));
+  else if(lembFiltroStatus==='concluido') lista = lista.filter(a=>isConcluida(a));
+  if(lembFiltroResp) lista = lista.filter(a=>a.responsavel===lembFiltroResp);
   const buscaPac = (document.getElementById('lemb-busca-paciente')?.value||'').toLowerCase().trim();
-  if(buscaPac) lista = lista.filter(l=>(l.pacienteNome||'').toLowerCase().includes(buscaPac));
+  if(buscaPac) lista = lista.filter(a=>(a.pacienteNome||'').toLowerCase().includes(buscaPac));
   const filtroDe = document.getElementById('lemb-filtro-de')?.value||'';
   const filtroAte = document.getElementById('lemb-filtro-ate')?.value||'';
-  if(filtroDe) lista = lista.filter(l=>l.dataLembrete>=filtroDe);
-  if(filtroAte) lista = lista.filter(l=>l.dataLembrete<=filtroAte);
-  lista = lista.slice().sort((a,b)=>a.dataLembrete>b.dataLembrete?1:-1);
+  if(filtroDe) lista = lista.filter(a=>iso(a.data)>=filtroDe);
+  if(filtroAte) lista = lista.filter(a=>iso(a.data)<=filtroAte);
+  lista = lista.filter(a=>a.data).slice().sort((a,b)=>a.data-b.data);
   const wrap = document.getElementById('lemb-lista-wrap');
   if(!wrap) return;
   if(!lista.length){
@@ -6256,29 +6303,14 @@ function renderLembretes(){
     return;
   }
   const hojeStr = iso(hoje);
-  wrap.innerHTML = `<div class="card">` + lista.map(l=>{
-    const atrasado = l.status==='pendente' && l.dataLembrete < hojeStr;
-    const pillCls = l.status==='concluido'?'p-green':l.status==='descartado'?'p-neutral':atrasado?'p-danger':'p-info';
-    const pillLbl = l.status==='concluido'?'✓ Concluído':l.status==='descartado'?'Descartado':atrasado?'Atrasado':'Pendente';
-    const borderLeft = atrasado?'border-left:3px solid var(--da)':'';
-    return `<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);${borderLeft}">
-      <div style="font-size:22px;flex-shrink:0">🔔</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600">${esc(l.titulo)}</div>
-        <div style="font-size:12px;color:var(--tx2);margin-top:2px">👤 ${esc(l.pacienteNome||'—')} · ${esc(l.responsavel||'—')}</div>
-        ${l.script?`<div style="font-size:12px;color:var(--tx2);margin-top:5px;padding:6px 10px;background:var(--s2);border-radius:var(--r6);border-left:2px solid var(--border-s)">"${esc(l.script)}"</div>`:''}
-        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
-          <span class="pill ${pillCls}" style="font-size:11px">${pillLbl}</span>
-          <span class="pill p-neutral" style="font-size:11px">📅 ${fmtDate(parseIso(l.dataLembrete))}</span>
-          ${l.status==='concluido'&&l.concluidoPorNome?`<span style="font-size:11px;color:var(--tx3)">por ${esc(l.concluidoPorNome)}${l.concluidoEm?' em '+fmtDate(parseIso(l.concluidoEm)):''}</span>`:''}
-        </div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-        ${l.agendamentoId?`<button class="btn-done" onclick="_abrirModalAgendamentoReal('${l.agendamentoId}')">Abrir agendamento →</button>`:''}
-        ${l.status==='pendente'?`<button class="btn-done" onclick="confirmarConcluirLembrete('${l.id}')">✓ Concluir</button>`:''}
-      </div>
-    </div>`;
-  }).join('') + `</div>`;
+  // Reaproveita renderAcaoCard — mesmo componente usado em "Meu dia"/"Próximos 7 dias" —
+  // para que os cards (título, botões "Abrir agendamento"/"Concluir", cores) sejam
+  // idênticos em qualquer tela onde o lembrete apareça.
+  wrap.innerHTML = lista.map(a=>{
+    const diaISO = iso(a.data);
+    const tipo = diaISO<hojeStr ? 'atrasada' : diaISO===hojeStr ? 'hoje' : 'futura';
+    return renderAcaoCard(a, tipo);
+  }).join('');
   atualizarBadgeLembretes();
 }
 function setLembFiltroStatus(s){lembFiltroStatus=s;renderLembretes();}
@@ -6294,13 +6326,28 @@ function lembLimparFiltros(){
 function confirmarConcluirLembrete(id){
   abrirConfirmacaoSimples('Confirmação de realização', 'Confirma que este lembrete foi concluído?', ()=>concluirLembrete(id));
 }
+// Usado pelos cards renderizados via renderAcaoCard (Meu dia, Próximos 7 dias e módulo
+// Lembretes — todos compartilham o mesmo componente de card agora). Além de concluir,
+// esconde o card imediatamente e atualiza as outras telas que também podem estar
+// mostrando o mesmo lembrete.
+function confirmarConcluirLembreteGerado(lembreteId, k){
+  abrirConfirmacaoSimples('Confirmação de realização', 'Confirma que este lembrete foi concluído?', ()=>{
+    concluirLembrete(lembreteId);
+    const card = document.getElementById('card-'+k);
+    if(card){ card.classList.add('done'); }
+  });
+}
 function concluirLembrete(id){
   const l=lembretesGerados.find(x=>x.id===id);
   if(!l)return;
   const u = usuarios.find(x=>x.id===usuarioAtualId);
   l.status='concluido';l.concluidoEm=iso(hoje);l.concluidoPorId=usuarioAtualId;l.concluidoPorNome=u?.nome||'';
   salvarLS('sk3-lembretes-gerados',lembretesGerados);
-  renderLembretes();
+  setTimeout(()=>{
+    renderLembretes();
+    if(typeof renderHoje==='function') renderHoje();
+    if(typeof renderProximos==='function') renderProximos();
+  }, 450);
 }
 function descartarLembrete(id){
   if(!confirm('Descartar este lembrete?'))return;
@@ -6314,11 +6361,13 @@ function descartarLembrete(id){
 function atualizarBadgeLembretes(){
   const hojeStr=iso(hoje);
   const nomeAtual=nomeUsuarioAtual();
-  const pendentes=lembretesGerados.filter(l=>{
-    if(l.status!=='pendente')return false;
-    if(l.dataLembrete>hojeStr)return false;
-    if(!lembModoEquipe && nomeAtual && l.responsavel && l.responsavel.toLowerCase().trim()!==nomeAtual.toLowerCase().trim()) return false;
-    return true;
+  // Mesmo critério usado em "Meu dia" (acaoEhDe/acoesMinhas): só conta o que é
+  // realmente meu, hoje + atrasado, e ainda não concluído — para o número bater
+  // exatamente com o card "🔔 Lembretes" da tela inicial.
+  const pendentes=gerarTodosLembretes().filter(a=>{
+    if(isConcluida(a)) return false;
+    if(!a.data || iso(a.data)>hojeStr) return false;
+    return acaoEhDe(a, nomeAtual);
   }).length;
   const bdg=document.getElementById('bdg-lembretes');
   if(bdg){bdg.textContent=pendentes;bdg.style.display=pendentes>0?'':'none';}
@@ -14279,6 +14328,7 @@ injetarAcoesNosStatusCustomizados(); // popula fluxos de status customizados pel
 popularUsuarioAtual();
 aplicarPermissoesNav();
 renderHoje();
+atualizarBadgeLembretes();
 atualizarBadgePendencias();
 atualizarBadgeDesmarcados();
 renderUsuarios();
