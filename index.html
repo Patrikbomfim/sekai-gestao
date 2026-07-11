@@ -2510,6 +2510,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             <th style="width:100px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','vencimento')" title="Ordenar por vencimento">Vencimento <span class="fin-th-sort-ic" id="rc-sort-ic-vencimento"></span></span><button type="button" class="fin-th-group-btn" id="rc-group-btn-vencimento" onclick="finAgruparColuna('receber','vencimento')" title="Agrupar por vencimento">⊞</button></div></th>
             <th style="width:110px"><div class="fin-th-wrap" style="justify-content:flex-end"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','valor')" title="Ordenar por valor">Valor <span class="fin-th-sort-ic" id="rc-sort-ic-valor"></span></span></div></th>
             <th style="width:90px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','status')" title="Ordenar por status">Status <span class="fin-th-sort-ic" id="rc-sort-ic-status"></span></span><button type="button" class="fin-th-group-btn" id="rc-group-btn-status" onclick="finAgruparColuna('receber','status')" title="Agrupar por status">⊞</button></div></th>
+            <th style="width:60px">Anexo</th>
             <th style="width:80px"></th>
           </tr>
         </thead>
@@ -2623,13 +2624,18 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div id="rcb-area-emitido" style="display:none">
       <div style="font-size:12px;color:var(--tx3);margin-top:10px">Aqui é só consulta — os lançamentos são feitos na aba Recebidos ou no financeiro do paciente. Clique num card para filtrar a tabela por ele.</div>
 
+      <!-- Atalho de período -->
+      <div style="display:flex;align-items:center;gap:8px;margin-top:12px">
+        <button type="button" class="btn btn-sm" id="rcb-emit-btn-mes" onclick="rcbEmitidoFiltroMesAtual()">Este mês</button>
+      </div>
+
       <!-- Filtros -->
-      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:12px">
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:10px">
         <div style="display:flex;align-items:center;gap:6px">
           <label class="lbl" style="margin:0">De</label>
-          <input type="date" id="rcb-emit-de" class="inp" style="max-width:150px" onchange="renderRcbEmitido()">
+          <input type="date" id="rcb-emit-de" class="inp" style="max-width:150px" onchange="rcbEmitidoDataManual()">
           <label class="lbl" style="margin:0">Até</label>
-          <input type="date" id="rcb-emit-ate" class="inp" style="max-width:150px" onchange="renderRcbEmitido()">
+          <input type="date" id="rcb-emit-ate" class="inp" style="max-width:150px" onchange="rcbEmitidoDataManual()">
         </div>
         <div class="fin-ac-wrap" style="max-width:260px;position:relative">
           <input type="text" id="rcb-emit-paciente" class="inp" placeholder="Buscar paciente..." autocomplete="off"
@@ -2669,6 +2675,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
               <th>Descrição</th>
               <th style="width:120px;text-align:right">Valor</th>
               <th style="width:130px">Emissão</th>
+              <th style="width:70px">Anexo</th>
             </tr>
           </thead>
           <tbody id="rcb-emit-tbody"></tbody>
@@ -8777,6 +8784,7 @@ function renderPpFinanceiro(p, _filtroAtivo){
               <div style="font-size:14px;font-weight:700;color:var(--ac)">R$ ${fmtMoeda(t.valor)}</div>
             </div>
             ${statusPill(t.status||'aberto')}
+            <span onclick="event.stopPropagation()">${_finAnexoIconHtml(t)}</span>
             <button onclick="abrirModalEmissaoFiscal('${t.id}')"
               title="Emissão fiscal"
               style="font-size:11px;padding:4px 10px;border-radius:var(--r6);border:1px solid ${t.emissaoFiscal?.status==='concluido'?'#6EE7B7':'var(--border)'};background:${t.emissaoFiscal?.status==='concluido'?'#ECFDF5':'var(--s2)'};color:${t.emissaoFiscal?.status==='concluido'?'#065F46':'var(--tx2)'};cursor:pointer;font-weight:600;flex-shrink:0;font-family:var(--font)">
@@ -18230,6 +18238,43 @@ function _finTodosTitulos(){
   return [...gestao, ...pacientesList];
 }
 
+// ── Anexo de título ──────────────────────────────────────────────────
+// Para títulos de paciente (gerados por orçamento), o "anexo" é o arquivo da emissão
+// fiscal (nota fiscal/recibo anexado ao confirmar a emissão). Para títulos manuais de
+// gestão (a pagar/folha/a receber avulso), é o(s) anexo(s) do próprio lançamento.
+function _finAnexoDoTitulo(t){
+  if(t.orcamentoId || t._origem==='paciente') return t.emissaoFiscal?.arquivo||null;
+  return (t.anexos&&t.anexos.length)?t.anexos[t.anexos.length-1]:null;
+}
+
+// Abre o arquivo anexado numa nova aba — funciona tanto com o formato {tipo,b64} (emissão
+// fiscal / recibos) quanto {tipo,data} (dataURL completa, anexos de lançamento manual).
+function _finAbrirAnexoArquivo(arquivo){
+  if(!arquivo) return;
+  const win=window.open('');
+  if(!win) return;
+  const src = arquivo.data ? arquivo.data : `data:${arquivo.tipo};base64,${arquivo.b64}`;
+  const isPdf=(arquivo.tipo||'').includes('pdf');
+  win.document.write(isPdf
+    ? `<iframe src="${src}" style="width:100%;height:100vh;border:none"></iframe>`
+    : `<img src="${src}" style="max-width:100%">`);
+}
+
+function finVerAnexoTitulo(id){
+  const t=_finTodosTitulos().find(x=>String(x.id)===String(id));
+  if(!t) return;
+  _finAbrirAnexoArquivo(_finAnexoDoTitulo(t));
+}
+
+// Ícone de anexo: cinza/sem cor quando não há anexo (decorativo), colorido e clicável quando há.
+function _finAnexoIconHtml(t){
+  const anexo=_finAnexoDoTitulo(t);
+  if(!anexo){
+    return `<span style="font-size:14px;color:var(--tx3);opacity:.35" title="Sem anexo">📎</span>`;
+  }
+  return `<button type="button" class="btn btn-sm" style="padding:3px 7px;background:#ECFDF5;border-color:#6EE7B7;color:#065F46" onclick="event.stopPropagation();finVerAnexoTitulo('${t.id}')" title="Ver anexo">📎</button>`;
+}
+
 // ── Navegação entre submódulos ────────────────────────────────────────
 function showFinSub(sub, btn){
   const permNec = FIN_SUBNAV_MAPA[sub];
@@ -18584,6 +18629,7 @@ function renderFinLista(tipo){
       <td style="white-space:nowrap;color:${st==='atrasado'?'var(--da)':'var(--tx2)'}">${_finFmtData(t.vencimento)}</td>
       <td class="fin-td-valor">${_finFmt(t.valor)}</td>
       <td>${_finBadge(st)}</td>
+      ${tipo==='receber'?`<td onclick="event.stopPropagation()">${_finAnexoIconHtml(t)}</td>`:''}
       <td onclick="event.stopPropagation()">
         ${!isPaciente?`<button class="btn btn-sm ${liquidado?'btn-ghost':''}" style="white-space:nowrap;${liquidado?'':'background:var(--sul);color:var(--su);border-color:var(--su)'}" onclick="${liquidado?`finDesfazerPagamento('${t.id}','${tipo}')`:`abrirModalFinPagar('${t.id}','${tipo}')`}">${liquidado?'Desfazer pagamento':labelAcao}</button>`:''}
       </td>
@@ -18595,7 +18641,7 @@ function renderFinLista(tipo){
     const grupos = _finAgruparLista(lista, tipo);
     tbody.innerHTML = grupos.map(g=>{
       const subtotal = g.itens.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
-      return `<tr class="fin-grupo-row"><td colspan="9">${esc(String(g.label))} <span style="font-weight:400;color:var(--tx3)">· ${g.itens.length} título${g.itens.length!==1?'s':''} · ${_finFmt(subtotal)}</span></td></tr>`
+      return `<tr class="fin-grupo-row"><td colspan="${tipo==='receber'?10:9}">${esc(String(g.label))} <span style="font-weight:400;color:var(--tx3)">· ${g.itens.length} título${g.itens.length!==1?'s':''} · ${_finFmt(subtotal)}</span></td></tr>`
         + g.itens.map(renderLinhaTitulo).join('');
     }).join('');
   } else {
@@ -20191,13 +20237,44 @@ function _rcbTotaisPacientes(mes){
 // nenhum lançamento é criado aqui.
 let _rcbEmitFiltro = { categoria:null, pacienteId:null, pacienteNome:'' };
 let _rcbEmitBuscaResultados = [];
+let _rcbEmitMesAtivo = false; // true quando o atalho "Este mês" está com o filtro de data ativo
+let _rcbEmitIniciado = false; // primeira vez que a aba é aberta nesta sessão
 
 function _rcbEmitTipoNorm(t){
   const tipo=t.emissaoFiscal?.tipo;
   return (tipo && tipo!=='sem_recibo') ? tipo : 'sem_recibo';
 }
 
+// Preenche De/Até com o mês atual e ativa visualmente o atalho "Este mês"
+function rcbEmitidoFiltroMesAtual(){
+  const hoje=new Date();
+  const y=hoje.getFullYear(), m=hoje.getMonth();
+  const de=`${y}-${String(m+1).padStart(2,'0')}-01`;
+  const ultimoDia=new Date(y,m+1,0).getDate();
+  const ate=`${y}-${String(m+1).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}`;
+  const deEl=document.getElementById('rcb-emit-de'), ateEl=document.getElementById('rcb-emit-ate');
+  if(deEl) deEl.value=de;
+  if(ateEl) ateEl.value=ate;
+  _rcbEmitMesAtivo=true;
+  renderRcbEmitido();
+}
+
+// Chamado quando o usuário edita manualmente De/Até — desativa o destaque do atalho "Este mês"
+function rcbEmitidoDataManual(){
+  _rcbEmitMesAtivo=false;
+  renderRcbEmitido();
+}
+
 function renderRcbEmitido(){
+  if(!_rcbEmitIniciado){
+    _rcbEmitIniciado=true;
+    rcbEmitidoFiltroMesAtual(); // já chama renderRcbEmitido() de novo internamente
+    return;
+  }
+
+  const btnMes=document.getElementById('rcb-emit-btn-mes');
+  if(btnMes) btnMes.className='btn btn-sm '+(_rcbEmitMesAtivo?'btn-primary':'btn-ghost');
+
   const de=document.getElementById('rcb-emit-de')?.value||'';
   const ate=document.getElementById('rcb-emit-ate')?.value||'';
 
@@ -20252,6 +20329,7 @@ function renderRcbEmitido(){
       <td>${esc(t.descricao||'—')}</td>
       <td style="text-align:right">${_finFmt(t.valor)}</td>
       <td><span style="font-size:11.5px;font-weight:600;color:${tipoCor[cat]}">${tipoLbl[cat]}</span></td>
+      <td onclick="event.stopPropagation()">${_finAnexoIconHtml(t)}</td>
     </tr>`;
   }).join('');
 }
@@ -20295,6 +20373,7 @@ function rcbEmitidoSelecionarPaciente(idx){
 
 function rcbEmitidoLimparFiltros(){
   _rcbEmitFiltro={categoria:null,pacienteId:null,pacienteNome:''};
+  _rcbEmitMesAtivo=false;
   const input=document.getElementById('rcb-emit-paciente'); if(input) input.value='';
   const deEl=document.getElementById('rcb-emit-de'); if(deEl) deEl.value='';
   const ateEl=document.getElementById('rcb-emit-ate'); if(ateEl) ateEl.value='';
