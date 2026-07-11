@@ -6028,7 +6028,15 @@ function confirmarRealizacaoAcao(k){
     concluirAcao(a);
     const card = document.getElementById('card-'+k);
     if(card){ card.classList.add('done'); }
-    setTimeout(()=>renderHoje(), 450);
+    // Este botão de "Concluir" aparece tanto em Meu dia/Próximos 7 dias quanto no módulo
+    // Lembretes (mesmo componente de card) — por isso atualiza as três telas + o badge do
+    // menu, independente de onde a ação foi concluída, para nunca ficarem dessincronizados.
+    setTimeout(()=>{
+      renderHoje();
+      renderProximos();
+      renderLembretes();
+      atualizarBadgeLembretes();
+    }, 450);
   });
 }
 
@@ -6292,13 +6300,10 @@ function renderLembretes(){
     return true;
   });
   // filtros
-  const resps = [...new Set(todosLembretesBase.map(a=>a.responsavel).filter(Boolean))];
   const filtrosEl = document.getElementById('lemb-filtros');
   if(filtrosEl) filtrosEl.innerHTML = `
     <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('pendente')" style="${lembFiltroStatus==='pendente'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Pendentes</button>
     <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('concluido')" style="${lembFiltroStatus==='concluido'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Concluídos</button>
-    ${resps.length?`<span style="width:1px;background:var(--border);margin:0 4px"></span>
-    ${resps.map(r=>`<button class="btn btn-ghost btn-sm" onclick="setLembFiltroResp('${r}')" style="${lembFiltroResp===r?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">${esc(r)}</button>`).join('')}`:''}
   `;
   if(lembFiltroStatus==='pendente') lista = lista.filter(a=>!isConcluida(a));
   else if(lembFiltroStatus==='concluido') lista = lista.filter(a=>isConcluida(a));
