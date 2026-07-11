@@ -5455,7 +5455,23 @@ let colunasPaciente = carregarLS('sk3-colunaspaciente', COLUNAS_PACIENTE_PADRAO)
   salvarLS('sk3-colunaspaciente', colunasPaciente);
 })();
 
-// ── ORDENAÇÃO DA LISTA DE PACIENTES — padrão: nome, A→Z ────────────────
+// migração: corrige títulos cuja emissão fiscal foi marcada "Sem recibo" mas ainda
+// carregava o arquivo de uma emissão anterior (bug corrigido em confirmarEmissaoFiscal —
+// trocar o tipo para "sem_recibo" não descartava o anexo salvo antes). Aqui é uma limpeza
+// única dos dados já gravados: nenhum anexo deve sobreviver quando o tipo não precisa dele.
+(function migrarAnexoOrfaoEmissaoFiscal(){
+  const list = carregarLS('sk3-titulos', []);
+  let alterou=false;
+  list.forEach(t=>{
+    if(t.emissaoFiscal && t.emissaoFiscal.tipo!=='recibo' && t.emissaoFiscal.tipo!=='nota_fiscal' && t.emissaoFiscal.arquivo){
+      delete t.emissaoFiscal.arquivo;
+      alterou=true;
+    }
+  });
+  if(alterou) salvarLS('sk3-titulos', list);
+})();
+
+
 let ptSortColId = 'nome';
 let ptSortDir = 'asc'; // 'asc' | 'desc'
 
@@ -9013,7 +9029,11 @@ async function confirmarEmissaoFiscal(){
   const idx=list.findIndex(t=>t.id===_emissaoFiscalTituloId);
   if(idx<0) return;
 
-  let arquivoData=list[idx].emissaoFiscal?.arquivo||null;
+  const precisaArquivo=(tipo==='recibo'||tipo==='nota_fiscal');
+
+  // Só carrega o arquivo já salvo se o tipo atual ainda exige arquivo — do contrário
+  // (ex: mudou para "Sem recibo") o anexo antigo é descartado de vez, sem deixar resíduo.
+  let arquivoData = precisaArquivo ? (list[idx].emissaoFiscal?.arquivo||null) : null;
 
   if(file){
     arquivoData=await new Promise((res,rej)=>{
@@ -9024,7 +9044,6 @@ async function confirmarEmissaoFiscal(){
     });
   }
 
-  const precisaArquivo=(tipo==='recibo'||tipo==='nota_fiscal');
   if(precisaArquivo&&!arquivoData){ alert('Anexe o arquivo antes de salvar.'); return; }
 
   const usuarioId=(typeof usuarioAtualId!=='undefined')?usuarioAtualId:null;
