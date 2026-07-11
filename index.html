@@ -2416,58 +2416,75 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
   <!-- RECIBOS (PESSOA FÍSICA) -->
   <div id="fin-area-recibos" class="fin-area">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:10px">
-      <div>
-        <div class="pg-title">Recibos</div>
-        <div class="pg-desc">Controle do que a Dra. Leticia recebe em nota fiscal e recibo (pessoa física) — a soma do mês define o teto disponível para emitir recibo aos pacientes</div>
-      </div>
-      <button class="btn btn-primary btn-sm" onclick="abrirModalRecibo()" data-perm="fin_recibos_criar">+ Novo lançamento</button>
+    <div class="pg-title">Recibos</div>
+    <div class="pg-desc">Controle de nota fiscal e recibo — o que a Dra. Leticia recebe (pessoa física) forma o teto para o que a clínica emite aos pacientes</div>
+
+    <!-- Sub-abas internas -->
+    <div style="display:flex;gap:8px;margin-top:14px;margin-bottom:4px">
+      <button class="btn btn-sm" id="rcb-tab-recebidos" onclick="rcbSetTab('recebidos')">Recebidos</button>
+      <button class="btn btn-sm" id="rcb-tab-emitido" onclick="rcbSetTab('emitido')">Emitido</button>
     </div>
 
-    <!-- Navegação de mês -->
-    <div style="display:flex;align-items:center;gap:10px;margin-top:14px">
-      <button type="button" class="btn btn-ghost btn-sm" onclick="rcbMudarMes(-1)" title="Mês anterior">◀</button>
-      <input type="month" id="rcb-mes" class="inp" style="max-width:170px" onchange="renderFinRecibos()">
-      <button type="button" class="btn btn-ghost btn-sm" onclick="rcbMudarMes(1)" title="Próximo mês">▶</button>
-      <button type="button" class="btn btn-ghost btn-sm" onclick="rcbIrHoje()">Mês atual</button>
+    <!-- ABA: RECEBIDOS -->
+    <div id="rcb-area-recebidos">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;margin-bottom:4px;flex-wrap:wrap;gap:10px">
+        <div class="pg-desc" style="margin:0">Nota fiscal e recibo que a Dra. Leticia recebe (pessoa física) — a soma do mês define o teto disponível para emitir recibo aos pacientes</div>
+        <button class="btn btn-primary btn-sm" onclick="abrirModalRecibo()" data-perm="fin_recibos_criar">+ Novo lançamento</button>
+      </div>
+
+      <!-- Navegação de mês -->
+      <div style="display:flex;align-items:center;gap:10px;margin-top:14px">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="rcbMudarMes(-1)" title="Mês anterior">◀</button>
+        <input type="month" id="rcb-mes" class="inp" style="max-width:170px" onchange="renderFinRecibos()">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="rcbMudarMes(1)" title="Próximo mês">▶</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="rcbIrHoje()">Mês atual</button>
+      </div>
+
+      <!-- Cards resumo -->
+      <div class="fin-cards-row" style="margin-top:14px">
+        <div class="fin-card fin-card-blue">
+          <div class="fin-card-label">Total em Nota Fiscal</div>
+          <div class="fin-card-value" id="rcb-val-nf">R$ 0,00</div>
+        </div>
+        <div class="fin-card fin-card-green">
+          <div class="fin-card-label">Total em Recibo</div>
+          <div class="fin-card-value" id="rcb-val-recibo">R$ 0,00</div>
+        </div>
+        <div class="fin-card fin-card-amber">
+          <div class="fin-card-label">Teto do mês (NF + Recibo)</div>
+          <div class="fin-card-value" id="rcb-val-total">R$ 0,00</div>
+          <div class="fin-card-sub">valor disponível para emitir recibo aos pacientes</div>
+        </div>
+      </div>
+
+      <!-- Tabela -->
+      <div class="fin-table-wrap" style="margin-top:14px">
+        <table class="fin-table">
+          <thead>
+            <tr>
+              <th style="width:100px">Data</th>
+              <th style="width:120px">Tipo</th>
+              <th>Descrição</th>
+              <th style="width:120px">Valor</th>
+              <th style="width:70px">Anexo</th>
+              <th style="width:80px"></th>
+            </tr>
+          </thead>
+          <tbody id="rcb-tbody"></tbody>
+        </table>
+        <div id="rcb-empty" class="fin-empty" style="display:none">
+          <div style="font-size:24px;margin-bottom:8px">🧾</div>
+          Nenhum lançamento neste mês.
+          <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="abrirModalRecibo()" data-perm="fin_recibos_criar">+ Novo lançamento</button>
+        </div>
+      </div>
     </div>
 
-    <!-- Cards resumo -->
-    <div class="fin-cards-row" style="margin-top:14px">
-      <div class="fin-card fin-card-blue">
-        <div class="fin-card-label">Total em Nota Fiscal</div>
-        <div class="fin-card-value" id="rcb-val-nf">R$ 0,00</div>
-      </div>
-      <div class="fin-card fin-card-green">
-        <div class="fin-card-label">Total em Recibo</div>
-        <div class="fin-card-value" id="rcb-val-recibo">R$ 0,00</div>
-      </div>
-      <div class="fin-card fin-card-amber">
-        <div class="fin-card-label">Teto do mês (NF + Recibo)</div>
-        <div class="fin-card-value" id="rcb-val-total">R$ 0,00</div>
-        <div class="fin-card-sub">valor disponível para emitir recibo aos pacientes</div>
-      </div>
-    </div>
-
-    <!-- Tabela -->
-    <div class="fin-table-wrap" style="margin-top:14px">
-      <table class="fin-table">
-        <thead>
-          <tr>
-            <th style="width:100px">Data</th>
-            <th style="width:120px">Tipo</th>
-            <th>Descrição</th>
-            <th style="width:120px">Valor</th>
-            <th style="width:70px">Anexo</th>
-            <th style="width:80px"></th>
-          </tr>
-        </thead>
-        <tbody id="rcb-tbody"></tbody>
-      </table>
-      <div id="rcb-empty" class="fin-empty" style="display:none">
-        <div style="font-size:24px;margin-bottom:8px">🧾</div>
-        Nenhum lançamento neste mês.
-        <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="abrirModalRecibo()" data-perm="fin_recibos_criar">+ Novo lançamento</button>
+    <!-- ABA: EMITIDO (em desenvolvimento) -->
+    <div id="rcb-area-emitido" style="display:none">
+      <div class="fin-empty" style="margin-top:30px">
+        <div style="font-size:24px;margin-bottom:8px">🚧</div>
+        Em desenvolvimento — aqui vamos controlar o que a clínica emite em nota fiscal e recibo aos pacientes.
       </div>
     </div>
   </div>
@@ -5052,6 +5069,22 @@ let usuarios = carregarLS('sk3-usuarios', USUARIOS_PADRAO);
 let fornecedores = carregarLS('sk3-fornecedores', []);
 function salvarFornecedores(){ _comSalvarImediato(()=>salvarLS('sk3-fornecedores', fornecedores)); }
 let cargos = carregarLS('sk3-cargos', CARGOS_PADRAO);
+// Migração: o cargo "Administrador" deve sempre ter acesso a TODAS as permissões
+// existentes no sistema. Como `cargos` fica salvo no localStorage, sempre que uma
+// nova permissão é adicionada ao código (ex: um novo submódulo), quem já tinha
+// dados salvos não a recebe automaticamente — isso já causou um botão sumir para
+// o administrador real. Este bloco corrige isso a cada carregamento.
+(function _migrarPermissoesAdministrador(){
+  const idxAdmin = cargos.findIndex(c=>c.id==='cg_administrador');
+  if(idxAdmin<0) return;
+  const todasPerms = PERMISSOES_DISPONIVEIS.map(p=>p.id);
+  const atuais = new Set(cargos[idxAdmin].permissoes||[]);
+  const faltando = todasPerms.filter(p=>!atuais.has(p));
+  if(faltando.length){
+    cargos[idxAdmin].permissoes = [...atuais, ...faltando];
+    salvarLS('sk3-cargos', cargos);
+  }
+})();
 let pendenciasAvulsas = carregarLS('sk3-pendencias-avulsas', []);
 // melhorias: [{id, texto, data(ISO), criadoPor(usuarioId), resolvido(bool)}] — lembretes de erros/melhorias do sistema
 let melhorias = carregarLS('sk3-melhorias', []);
@@ -19385,7 +19418,19 @@ function rcbIrHoje(){
   renderFinRecibos();
 }
 
+let _rcbAbaAtual='recebidos';
+function rcbSetTab(aba){
+  _rcbAbaAtual=aba;
+  const elR=document.getElementById('rcb-area-recebidos'), elE=document.getElementById('rcb-area-emitido');
+  const btnR=document.getElementById('rcb-tab-recebidos'), btnE=document.getElementById('rcb-tab-emitido');
+  if(elR) elR.style.display = aba==='recebidos' ? '' : 'none';
+  if(elE) elE.style.display = aba==='emitido' ? '' : 'none';
+  if(btnR) btnR.className = 'btn btn-sm ' + (aba==='recebidos'?'btn-primary':'btn-ghost');
+  if(btnE) btnE.className = 'btn btn-sm ' + (aba==='emitido'?'btn-primary':'btn-ghost');
+}
+
 function renderFinRecibos(){
+  rcbSetTab(_rcbAbaAtual);
   rcbInitMes();
   const mes=document.getElementById('rcb-mes').value||_finMesAtual();
   const list=_recibos().filter(r=>r.data && r.data.slice(0,7)===mes).sort((a,b)=>a.data<b.data?1:(a.data>b.data?-1:0));
