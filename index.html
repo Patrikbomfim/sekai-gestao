@@ -1474,6 +1474,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <label class="lbl">Valor *</label>
         <input type="text" id="rcb-valor" class="inp" placeholder="R$ 0,00" oninput="fmtMoeda(this)">
       </div>
+      <div class="fg" style="margin-bottom:12px">
+        <label class="lbl">Tomador *</label>
+        <input type="text" id="rcb-tomador" class="inp" placeholder="Nome de quem recebe (pessoa física)" value="Dra. Leticia">
+        <div style="font-size:11px;color:var(--tx3);margin-top:3px">Em qual nome está o recibo/nota — hoje sempre a Dra. Leticia, que é quem emite os recibos aos pacientes</div>
+      </div>
       <div class="fg" style="margin-bottom:4px">
         <label class="lbl">Descrição</label>
         <input type="text" id="rcb-desc" class="inp" placeholder="Ex: Consultório contabilidade, Fornecedor X...">
@@ -19529,12 +19534,14 @@ function _rcbPopularDatalist(){
 function _rcbLinhaHtml(r){
   const podeEditar=souAdministradorReal()||temPerm('fin_recibos_editar');
   const podeExcluir=souAdministradorReal()||temPerm('fin_recibos_excluir');
-  const anexoBtn=r.anexo?`<button type="button" class="btn btn-ghost btn-sm" onclick="rcbVerAnexo('${r.id}')" title="Ver anexo">📎</button>`:'—';
+  const anexoBtn=r.anexo
+    ?`<button type="button" class="btn btn-sm" style="background:#ECFDF5;border-color:#6EE7B7;color:#065F46" onclick="event.stopPropagation();rcbVerAnexo('${r.id}')" title="Ver anexo">📎</button>`
+    :'—';
   const acoes=`<div style="display:flex;gap:4px">
-    ${podeEditar?`<button type="button" class="btn btn-ghost btn-sm" onclick="abrirModalRecibo('${r.id}')" title="Editar">✎</button>`:''}
-    ${podeExcluir?`<button type="button" class="btn btn-ghost btn-sm" onclick="excluirRecibo('${r.id}')" title="Excluir">🗑</button>`:''}
+    ${podeExcluir?`<button type="button" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();excluirRecibo('${r.id}')" title="Excluir">🗑</button>`:''}
   </div>`;
-  return `<tr>
+  const rowClick=podeEditar?` onclick="abrirModalRecibo('${r.id}')" style="cursor:pointer"`:'';
+  return `<tr${rowClick}>
     <td>${_rcbFmtData(r.data)}</td>
     <td>${_rcbTipoLbl(r.tipo)}</td>
     <td>${esc(r.descricao||'—')}</td>
@@ -19691,6 +19698,7 @@ function abrirModalRecibo(id){
   const tipoEl=document.getElementById('rcb-tipo');
   const valorEl=document.getElementById('rcb-valor');
   const descEl=document.getElementById('rcb-desc');
+  const tomadorEl=document.getElementById('rcb-tomador');
 
   let anexoAtual=null;
   if(id){
@@ -19701,6 +19709,7 @@ function abrirModalRecibo(id){
       valorEl.value=fmtMoedaValorParaInput(r.valor||0);
       valorEl.dataset.valor=String(r.valor||'');
       descEl.value=r.descricao||'';
+      tomadorEl.value=r.tomador||'Dra. Leticia';
       anexoAtual=r.anexo||null;
     }
   }else{
@@ -19709,6 +19718,7 @@ function abrirModalRecibo(id){
     valorEl.value='';
     valorEl.dataset.valor='';
     descEl.value='';
+    tomadorEl.value='Dra. Leticia';
   }
   _rcbAtualizarUpload(anexoAtual);
   document.getElementById('modal-recibo').classList.add('open');
@@ -19787,10 +19797,12 @@ function salvarRecibo(){
   const valorEl=document.getElementById('rcb-valor');
   const valor=parseFloat(valorEl.dataset.valor||'0')||0;
   const desc=(document.getElementById('rcb-desc').value||'').trim();
+  const tomador=(document.getElementById('rcb-tomador').value||'').trim();
 
   if(!data){ alert('Informe a data.'); return; }
   if(!tipo){ alert('Selecione o tipo (Nota Fiscal ou Recibo).'); return; }
   if(!valor){ alert('Informe o valor.'); return; }
+  if(!tomador){ alert('Informe o tomador.'); return; }
 
   const list=_recibos();
 
@@ -19804,7 +19816,7 @@ function salvarRecibo(){
     if(idx>=0){
       list[idx]={
         ...list[idx],
-        data, tipo, valor, descricao:desc,
+        data, tipo, valor, descricao:desc, tomador,
         anexo: anexoFinal===undefined?list[idx].anexo:anexoFinal,
         editadoEm:new Date().toISOString(),
         editadoPor:(typeof usuarioAtualId!=='undefined')?usuarioAtualId:null,
@@ -19813,7 +19825,7 @@ function salvarRecibo(){
   }else{
     list.push({
       id: uid('rcb'),
-      data, tipo, valor, descricao:desc,
+      data, tipo, valor, descricao:desc, tomador,
       anexo: anexoFinal===undefined?null:anexoFinal,
       criadoEm:new Date().toISOString(),
       criadoPor:(typeof usuarioAtualId!=='undefined')?usuarioAtualId:null,
