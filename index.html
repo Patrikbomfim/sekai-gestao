@@ -1488,6 +1488,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <label class="lbl">Descrição</label>
         <input type="text" id="rcb-desc" class="inp" placeholder="Ex: Consultório contabilidade, Fornecedor X...">
       </div>
+      <div class="fg" style="margin-bottom:12px;margin-top:10px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500">
+          <input type="checkbox" id="rcb-previsto"> Previsto — ainda não recebi nota/recibo
+        </label>
+        <div style="font-size:11px;color:var(--tx3);margin-top:3px">Use para lançamentos futuros (ex: recorrências) que ainda não foram efetivamente confirmados. Eles não entram nos totais do mês até você clicar em "Liquidar".</div>
+      </div>
       <div id="rcb-upload-wrap" style="margin-top:12px"></div>
     </div>
     <div class="modal-footer">
@@ -2535,29 +2541,29 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
   <!-- RECIBOS (PESSOA FÍSICA) -->
   <div id="fin-area-recibos" class="fin-area">
-    <div class="pg-title">Recibos</div>
 
     <!-- Sub-abas internas -->
-    <div style="display:flex;gap:8px;margin-top:14px;margin-bottom:4px">
+    <div style="display:flex;gap:8px;margin-bottom:4px">
       <button class="btn btn-sm" id="rcb-tab-recebidos" onclick="rcbSetTab('recebidos')">Recebidos</button>
       <button class="btn btn-sm" id="rcb-tab-emitido" onclick="rcbSetTab('emitido')">Emitido</button>
     </div>
 
     <!-- ABA: RECEBIDOS -->
     <div id="rcb-area-recebidos">
-      <div style="display:flex;align-items:center;justify-content:flex-end;margin-top:10px;margin-bottom:4px;flex-wrap:wrap;gap:8px">
-        <button class="btn btn-ghost btn-sm" onclick="abrirModalRcbRecorrentes()">🔁 Recorrentes cadastrados</button>
-        <button class="btn btn-ghost btn-sm" onclick="rcbBaixarAnexos()" title="Baixar todos os anexos dos lançamentos filtrados">📥 Baixar anexos</button>
-        <button class="btn btn-ghost btn-sm" onclick="rcbExportarPDF()">📄 Exportar PDF</button>
-        <button class="btn btn-primary btn-sm" onclick="abrirModalRecibo()" data-perm="fin_recibos_criar">+ Novo lançamento</button>
-      </div>
-
-      <!-- Navegação de mês -->
-      <div style="display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap">
-        <button type="button" class="btn btn-ghost btn-sm" onclick="rcbMudarMes(-1)" title="Mês anterior">◀</button>
-        <input type="month" id="rcb-mes" class="inp" style="max-width:170px" onchange="renderFinRecibos()">
-        <button type="button" class="btn btn-ghost btn-sm" onclick="rcbMudarMes(1)" title="Próximo mês">▶</button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="rcbIrHoje()">Mês atual</button>
+      <!-- Navegação de mês + ações -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="rcbMudarMes(-1)" title="Mês anterior">◀</button>
+          <input type="month" id="rcb-mes" class="inp" style="max-width:170px" onchange="renderFinRecibos()">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="rcbMudarMes(1)" title="Próximo mês">▶</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="rcbIrHoje()">Mês atual</button>
+        </div>
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="abrirModalRcbRecorrentes()">🔁 Recorrentes cadastrados</button>
+          <button class="btn btn-ghost btn-sm" onclick="rcbBaixarAnexos()" title="Baixar todos os anexos dos lançamentos filtrados">📥 Baixar anexos</button>
+          <button class="btn btn-ghost btn-sm" onclick="rcbExportarPDF()">📄 Exportar PDF</button>
+          <button class="btn btn-primary btn-sm" onclick="abrirModalRecibo()" data-perm="fin_recibos_criar">+ Novo lançamento</button>
+        </div>
       </div>
 
       <!-- Busca por descrição -->
@@ -2571,15 +2577,15 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <!-- Cards resumo -->
       <div class="fin-cards-row" style="margin-top:14px">
         <div class="fin-card fin-card-blue">
-          <div class="fin-card-label">Total em Nota Fiscal</div>
+          <div class="fin-card-label">Total recebido em nota fiscal</div>
           <div class="fin-card-value" id="rcb-val-nf">R$ 0,00</div>
         </div>
         <div class="fin-card fin-card-green">
-          <div class="fin-card-label">Total em Recibo</div>
+          <div class="fin-card-label">Total recebido em recibo</div>
           <div class="fin-card-value" id="rcb-val-recibo">R$ 0,00</div>
         </div>
         <div class="fin-card fin-card-amber">
-          <div class="fin-card-label">Teto do mês (NF + Recibo)</div>
+          <div class="fin-card-label">Teto a emitir mensal (NF + recibo)</div>
           <div class="fin-card-value" id="rcb-val-total">R$ 0,00</div>
           <div class="fin-card-sub">valor disponível para emitir recibo aos pacientes</div>
         </div>
@@ -2594,7 +2600,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <div class="fin-card-sub">recebido de pacientes no mês</div>
         </div>
         <div class="fin-card">
-          <div class="fin-card-label">Recebimentos sem recibo</div>
+          <div class="fin-card-label">Tratamentos realizados sem emissão fiscal</div>
           <div class="fin-card-value" id="rcb-val-pac-sem">R$ 0,00</div>
           <div class="fin-card-sub">recebido de pacientes, sem emissão fiscal ainda</div>
         </div>
@@ -19797,10 +19803,14 @@ function _rcbLinhaHtml(r){
     ?`<button type="button" class="btn btn-sm" style="background:#ECFDF5;border-color:#6EE7B7;color:#065F46" onclick="event.stopPropagation();rcbVerAnexo('${r.id}')" title="Ver anexo">📎</button>`
     :'—';
   const recorrIc=r.recorrente?`<span class="fin-recorr-ic" title="Recorrente">⟳</span>`:'';
+  const previsto = r.liquidado===false;
+  const previstoIc = previsto?` <span style="font-size:10.5px;font-weight:700;color:var(--wa);background:var(--wal);border:1px solid #FDE68A;border-radius:20px;padding:1px 8px;white-space:nowrap">Previsto</span>`:'';
   // Qualquer lançamento (recorrente ou não) abre o modal padrão de edição individual — a alteração
   // e a exclusão feitas ali afetam somente este título. Para editar a série recorrente como um
   // todo (valor/frequência/início/fim futuros), o caminho é o botão "Títulos recorrentes".
-  const acoes = `<div style="display:flex;gap:4px">
+  const acoes = `<div style="display:flex;gap:4px;align-items:center">
+        ${previsto&&podeEditar?`<button type="button" class="btn btn-sm" style="white-space:nowrap;background:var(--sul);color:var(--su);border-color:var(--su)" onclick="event.stopPropagation();rcbLiquidar('${r.id}')" title="Confirmar recebimento da nota/recibo">Liquidar</button>`:''}
+        ${!previsto&&r.liquidadoEm&&podeEditar?`<button type="button" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();rcbDesfazerLiquidacao('${r.id}')" title="Voltar para Previsto">↺</button>`:''}
         ${podeExcluir?`<button type="button" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();excluirRecibo('${r.id}')" title="Excluir">🗑</button>`:''}
       </div>`;
   const rowClick = podeEditar
@@ -19809,11 +19819,36 @@ function _rcbLinhaHtml(r){
   return `<tr${rowClick}>
     <td>${_rcbFmtData(r.data)}</td>
     <td>${_rcbTipoLbl(r.tipo)}</td>
-    <td>${esc(r.descricao||'—')}${recorrIc}</td>
+    <td>${esc(r.descricao||'—')}${recorrIc}${previstoIc}</td>
     <td>${fmtMoedaDisplay(r.valor)}</td>
     <td>${anexoBtn}</td>
     <td>${acoes}</td>
   </tr>`;
+}
+
+// Marca um lançamento previsto (recorrência futura ainda não confirmada) como liquidado —
+// passa a contar nos totais do mês. Não afeta os demais títulos da mesma série.
+function rcbLiquidar(id){
+  if(!souAdministradorReal() && !temPerm('fin_recibos_editar')){ alert('Você não tem permissão para esta ação.'); return; }
+  const list=_recibos();
+  const idx=list.findIndex(r=>r.id===id);
+  if(idx<0) return;
+  list[idx]={...list[idx], liquidado:true, liquidadoEm:new Date().toISOString()};
+  _comSalvarImediato(()=>_salvarRecibos(list));
+  renderFinRecibos();
+}
+
+// Reverte um lançamento liquidado de volta para "Previsto" (caso tenha sido confirmado por engano).
+function rcbDesfazerLiquidacao(id){
+  if(!souAdministradorReal() && !temPerm('fin_recibos_editar')){ alert('Você não tem permissão para esta ação.'); return; }
+  if(!confirm('Voltar este lançamento para "Previsto"?')) return;
+  const list=_recibos();
+  const idx=list.findIndex(r=>r.id===id);
+  if(idx<0) return;
+  const {liquidadoEm, ...resto}=list[idx];
+  list[idx]={...resto, liquidado:false};
+  _comSalvarImediato(()=>_salvarRecibos(list));
+  renderFinRecibos();
 }
 
 // ── RECORRÊNCIA DE RECIBOS ───────────────────────────────────────────────
@@ -20042,6 +20077,7 @@ function rcbSalvarRecorrenciaNova(){
     list.push({
       id: uid('rcb'), data:dataIso, tipo, valor, descricao:desc, tomador,
       anexo, recorrente:true, serieId, freq,
+      liquidado:false,
       diaSemana: freq==='semanal'?diaSemana:undefined,
       diaMes: freq==='mensal'?diaMes:undefined,
       criadoEm:new Date().toISOString(),
@@ -20113,6 +20149,7 @@ function renderFinRecibos(){
   const listaMes=_rcbListaMes();
   let totalNF=0, totalRecibo=0;
   listaMes.forEach(r=>{
+    if(r.liquidado===false) return; // previsto — ainda não confirmado, não entra no total
     if(r.tipo==='nota_fiscal') totalNF+=(r.valor||0);
     else if(r.tipo==='recibo') totalRecibo+=(r.valor||0);
   });
@@ -20204,13 +20241,15 @@ function rcbExportarPDF(){
   const list=_rcbListaFiltrada();
   if(!list.length){ alert('Não há lançamentos no filtro atual para exportar.'); return; }
   const mes=document.getElementById('rcb-mes').value||_finMesAtual();
-  const totalNF=list.filter(r=>r.tipo==='nota_fiscal').reduce((s,r)=>s+(r.valor||0),0);
-  const totalRecibo=list.filter(r=>r.tipo==='recibo').reduce((s,r)=>s+(r.valor||0),0);
+  const confirmados=list.filter(r=>r.liquidado!==false);
+  const totalNF=confirmados.filter(r=>r.tipo==='nota_fiscal').reduce((s,r)=>s+(r.valor||0),0);
+  const totalRecibo=confirmados.filter(r=>r.tipo==='recibo').reduce((s,r)=>s+(r.valor||0),0);
   const rows=list.map(r=>`<tr>
     <td>${_rcbFmtData(r.data)}</td>
     <td>${r.tipo==='nota_fiscal'?'Nota Fiscal':'Recibo'}</td>
     <td>${esc(r.descricao||'—')}</td>
     <td style="text-align:right">${fmtMoedaDisplay(r.valor)}</td>
+    <td>${r.liquidado===false?'Previsto':'Confirmado'}</td>
   </tr>`).join('');
   const win=window.open('','_blank');
   const html=`<html><head><meta charset="utf-8"><title>Recibos — Sekai</title>
@@ -20229,12 +20268,12 @@ function rcbExportarPDF(){
   <h1>Recibos — Sekai</h1>
   <div class="sub">Mês ${esc(mes)} · Gerado em ${_rcbFmtData(new Date().toISOString().slice(0,10))} · ${list.length} lançamento${list.length!==1?'s':''}</div>
   <div class="cards">
-    <div class="card"><div class="lbl">Total Nota Fiscal</div><div class="val">${fmtMoedaDisplay(totalNF)}</div></div>
-    <div class="card"><div class="lbl">Total Recibo</div><div class="val">${fmtMoedaDisplay(totalRecibo)}</div></div>
-    <div class="card"><div class="lbl">Teto do mês</div><div class="val">${fmtMoedaDisplay(totalNF+totalRecibo)}</div></div>
+    <div class="card"><div class="lbl">Total recebido — Nota Fiscal</div><div class="val">${fmtMoedaDisplay(totalNF)}</div></div>
+    <div class="card"><div class="lbl">Total recebido — Recibo</div><div class="val">${fmtMoedaDisplay(totalRecibo)}</div></div>
+    <div class="card"><div class="lbl">Teto a emitir mensal</div><div class="val">${fmtMoedaDisplay(totalNF+totalRecibo)}</div></div>
   </div>
   <table>
-    <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th style="text-align:right">Valor</th></tr></thead>
+    <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th style="text-align:right">Valor</th><th>Situação</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
   <script>window.onload=()=>window.print();<\/script>
@@ -20261,6 +20300,7 @@ function abrirModalRecibo(id){
 
   let anexoAtual=null;
   const badge=document.getElementById('rcb-modal-recorr-badge');
+  const previstoEl=document.getElementById('rcb-previsto');
   _rcbEditChaveSerie=null;
   if(id){
     const r=_recibos().find(x=>x.id===id);
@@ -20272,6 +20312,7 @@ function abrirModalRecibo(id){
       descEl.value=r.descricao||'';
       tomadorEl.value=r.tomador||'Dra. Leticia';
       anexoAtual=r.anexo||null;
+      if(previstoEl) previstoEl.checked = r.liquidado===false;
       if(r.recorrente){
         _rcbEditChaveSerie=_rcbChaveSerie(r);
         if(badge) badge.style.display='block';
@@ -20284,6 +20325,7 @@ function abrirModalRecibo(id){
     valorEl.dataset.valor='';
     descEl.value='';
     tomadorEl.value='Dra. Leticia';
+    if(previstoEl) previstoEl.checked=false;
     if(badge) badge.style.display='none';
   }
   _rcbAtualizarUpload(anexoAtual);
@@ -20375,6 +20417,7 @@ function salvarRecibo(){
   const valor=parseFloat(valorEl.dataset.valor||'0')||0;
   const desc=(document.getElementById('rcb-desc').value||'').trim();
   const tomador=(document.getElementById('rcb-tomador').value||'').trim();
+  const previsto=document.getElementById('rcb-previsto')?.checked||false;
 
   if(!data){ alert('Informe a data.'); return; }
   if(!tipo){ alert('Selecione o tipo (Nota Fiscal ou Recibo).'); return; }
@@ -20391,9 +20434,13 @@ function salvarRecibo(){
   if(_rcbEditId){
     const idx=list.findIndex(r=>r.id===_rcbEditId);
     if(idx>=0){
+      const jaEraLiquidado=list[idx].liquidado!==false;
+      const liquidado = previsto ? false : true;
       list[idx]={
         ...list[idx],
         data, tipo, valor, descricao:desc, tomador,
+        liquidado,
+        liquidadoEm: (liquidado && !jaEraLiquidado) ? new Date().toISOString() : (liquidado?list[idx].liquidadoEm:undefined),
         anexo: anexoFinal===undefined?list[idx].anexo:anexoFinal,
         editadoEm:new Date().toISOString(),
         editadoPor:(typeof usuarioAtualId!=='undefined')?usuarioAtualId:null,
@@ -20403,6 +20450,8 @@ function salvarRecibo(){
     list.push({
       id: uid('rcb'),
       data, tipo, valor, descricao:desc, tomador,
+      liquidado: !previsto,
+      liquidadoEm: !previsto?new Date().toISOString():undefined,
       anexo: anexoFinal===undefined?null:anexoFinal,
       criadoEm:new Date().toISOString(),
       criadoPor:(typeof usuarioAtualId!=='undefined')?usuarioAtualId:null,
