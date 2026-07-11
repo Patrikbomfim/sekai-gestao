@@ -1741,14 +1741,14 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 <!-- MODAL CONFIRMAÇÃO SIMPLES (genérico — usado por confirmar realização de ação e concluir lembrete) -->
 <div class="modal-ov" id="modal-confirmar-simples">
-  <div class="modal" style="width:420px">
-    <div class="modal-header">
-      <div class="modal-title" id="mcs-titulo">Confirmação</div>
+  <div class="modal" style="width:360px;height:auto;max-height:none;padding-bottom:4px">
+    <div class="modal-header" style="padding:20px 20px 0">
+      <div class="modal-title" id="mcs-titulo" style="margin-bottom:8px">Confirmação</div>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" style="flex:none;padding:0 20px 4px">
       <div id="mcs-mensagem" style="font-size:13px;color:var(--tx2)"></div>
     </div>
-    <div class="modal-footer">
+    <div class="modal-footer" style="padding:14px 20px">
       <button class="btn btn-ghost" onclick="fecharModal('modal-confirmar-simples')">Cancelar</button>
       <button class="btn btn-primary" onclick="_mcsConfirmar()">Confirmar</button>
     </div>
@@ -1763,10 +1763,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="pg-desc">Lembretes gerados automaticamente pelas regras configuradas em Config. de agenda</div>
   <div id="lemb-modo-visao"></div>
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="lemb-filtros"></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-    <input type="text" id="lemb-busca-paciente" placeholder="Buscar por paciente..." oninput="renderLembretes()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r6);min-width:180px">
-    <input type="date" id="lemb-filtro-de" onchange="renderLembretes()" title="De" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
-    <input type="date" id="lemb-filtro-ate" onchange="renderLembretes()" title="Até" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+    <input type="text" id="lemb-busca-paciente" placeholder="Buscar por paciente..." onkeydown="if(event.key==='Enter')renderLembretes()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r6);width:180px">
+    <input type="date" id="lemb-filtro-de" title="De" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6);width:132px">
+    <input type="date" id="lemb-filtro-ate" title="Até" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6);width:132px">
+    <button class="btn btn-primary btn-sm" onclick="renderLembretes()">Buscar</button>
+    <button class="btn btn-ghost btn-sm" onclick="lembLimparFiltros()">Limpar filtros</button>
   </div>
   <div id="lemb-lista-wrap"></div>
 </div>
@@ -5873,6 +5875,7 @@ function icClass(icone){
 
 function renderAcaoCard(a, tipo){
   const k = acaoKey(a).replace(/[^a-z0-9_]/gi,'_');
+  _acoesPorChave[k] = a; // cache p/ lookup seguro nos botões (evita embutir JSON no onclick)
   const diasStr = tipo==='atrasada' ? `Atrasada ${Math.abs(diffDays(a.data,hoje))}d` : 'Hoje';
   const pillCls = tipo==='atrasada' ? 'p-danger' : 'p-green';
   const scriptHtml = a.script ? `<div class="ac-script">"${a.script}"</div>` : '';
@@ -5883,7 +5886,7 @@ function renderAcaoCard(a, tipo){
   // ser concluídas manualmente direto da tela inicial — por isso mostram os dois botões,
   // empilhados. Pendências usam o próprio toggle de conclusão do módulo de Pendências, não
   // o sistema genérico de concluirAcao (que é o usado por Lembrete/Fluxo de ação).
-  const botaoConcluirManual = `<button class="btn-done" onclick="confirmarRealizacaoAcao('${k}',${aStr})">✓ Concluir</button>`;
+  const botaoConcluirManual = `<button class="btn-done" onclick="confirmarRealizacaoAcao('${k}')">✓ Concluir</button>`;
   const botaoHtml = a.origemConfirmacao
     ? `<div style="display:flex;flex-direction:column;gap:6px;align-items:stretch">
         <button class="btn-done" onclick="_abrirModalAgendamentoReal('${a.agendamentoId}')">Abrir agendamento →</button>
@@ -5929,10 +5932,18 @@ function _mcsConfirmar(){
   if(cb) cb();
 }
 
+// Cache de ações por chave (k), preenchido em renderAcaoCard — permite que os botões
+// chamem funções passando só a chave (string simples), em vez de embutir o objeto inteiro
+// (serializado em JSON) dentro do atributo onclick, o que é frágil quando título/paciente/
+// script contêm aspas ou caracteres especiais.
+let _acoesPorChave = {};
+
 // Conclusão manual "simples" (sem escolher realizada/não realizada) — usada pelo botão
 // "✓ Concluir" que aparece em ações de confirmação de agendamento e recontato na tela
 // inicial. Registra no mesmo histórico de ações, com resultado fixo 'realizada'.
-function confirmarRealizacaoAcao(k, a){
+function confirmarRealizacaoAcao(k){
+  const a = _acoesPorChave[k];
+  if(!a) return;
   abrirConfirmacaoSimples('Confirmação de realização', 'Confirma que esta ação foi realizada?', ()=>{
     const u = usuarios.find(x=>x.id===usuarioAtualId);
     const pac = pacientes.find(p=>p.id===a.pacienteId);
@@ -6225,10 +6236,8 @@ function renderLembretes(){
     <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('')" style="${lembFiltroStatus===''?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Todos</button>
     <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('pendente')" style="${lembFiltroStatus==='pendente'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Pendentes</button>
     <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('concluido')" style="${lembFiltroStatus==='concluido'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Concluídos</button>
-    <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('descartado')" style="${lembFiltroStatus==='descartado'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Descartados</button>
-    <span style="width:1px;background:var(--border);margin:0 4px"></span>
-    <button class="btn btn-ghost btn-sm" onclick="setLembFiltroResp('')" style="${lembFiltroResp===''?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Todos responsáveis</button>
-    ${resps.map(r=>`<button class="btn btn-ghost btn-sm" onclick="setLembFiltroResp('${r}')" style="${lembFiltroResp===r?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">${esc(r)}</button>`).join('')}
+    ${resps.length?`<span style="width:1px;background:var(--border);margin:0 4px"></span>
+    ${resps.map(r=>`<button class="btn btn-ghost btn-sm" onclick="setLembFiltroResp('${r}')" style="${lembFiltroResp===r?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">${esc(r)}</button>`).join('')}`:''}
   `;
   if(lembFiltroStatus) lista = lista.filter(l=>l.status===lembFiltroStatus);
   if(lembFiltroResp) lista = lista.filter(l=>l.responsavel===lembFiltroResp);
@@ -6265,7 +6274,8 @@ function renderLembretes(){
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-        ${l.status==='pendente'?`<button class="btn btn-primary btn-sm" onclick="confirmarConcluirLembrete('${l.id}')">✓ Concluir</button>`:''}
+        ${l.agendamentoId?`<button class="btn-done" onclick="_abrirModalAgendamentoReal('${l.agendamentoId}')">Abrir agendamento →</button>`:''}
+        ${l.status==='pendente'?`<button class="btn-done" onclick="confirmarConcluirLembrete('${l.id}')">✓ Concluir</button>`:''}
       </div>
     </div>`;
   }).join('') + `</div>`;
@@ -6273,6 +6283,14 @@ function renderLembretes(){
 }
 function setLembFiltroStatus(s){lembFiltroStatus=s;renderLembretes();}
 function setLembFiltroResp(r){lembFiltroResp=r;renderLembretes();}
+function lembLimparFiltros(){
+  lembFiltroStatus='pendente';
+  lembFiltroResp='';
+  const busca=document.getElementById('lemb-busca-paciente'); if(busca) busca.value='';
+  const de=document.getElementById('lemb-filtro-de'); if(de) de.value='';
+  const ate=document.getElementById('lemb-filtro-ate'); if(ate) ate.value='';
+  renderLembretes();
+}
 function confirmarConcluirLembrete(id){
   abrirConfirmacaoSimples('Confirmação de realização', 'Confirma que este lembrete foi concluído?', ()=>concluirLembrete(id));
 }
