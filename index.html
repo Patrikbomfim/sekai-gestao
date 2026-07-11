@@ -1459,6 +1459,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div class="modal-body" style="padding-top:16px">
       <input type="hidden" id="rcb-modal-id">
+      <div id="rcb-modal-recorr-badge" style="display:none;margin-bottom:14px;padding:10px 12px;background:var(--acl);border:1px solid var(--ac);border-radius:var(--r8);font-size:12px;color:var(--tx2)">
+        <span class="fin-recorr-ic" title="Recorrente">⟳</span> Este título faz parte de uma recorrência. As alterações e a exclusão aqui valem <strong>apenas para este título</strong> — os demais da série não são afetados.
+        <button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px;display:block" onclick="rcbAbrirSerieDoTitulo()">Editar recorrência completa</button>
+      </div>
       <div class="fg" style="margin-bottom:12px">
         <label class="lbl">Data *</label>
         <input type="date" id="rcb-data" class="inp">
@@ -2771,6 +2775,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             <div style="font-size:11px;color:var(--wa)">⚠ Serão criados múltiplos títulos com base na frequência e número de repetições informados.</div>
           </div>
         </div>
+      </div>
+      <!-- Badge: exibido quando o título aberto pertence a uma série recorrente. Edição/exclusão
+           aqui afetam somente este título; a série completa só é editada via "Títulos recorrentes". -->
+      <div id="fin-modal-recorr-badge" style="display:none;margin-top:4px;padding:10px 12px;background:var(--acl);border:1px solid var(--ac);border-radius:var(--r8);font-size:12px;color:var(--tx2)">
+        <span class="fin-recorr-ic" title="Recorrente">⟳</span> Este título faz parte de uma recorrência. As alterações e a exclusão aqui valem <strong>apenas para este título</strong> — os demais da série não são afetados.
+        <button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px;display:block" onclick="finAbrirSerieDoTitulo()">Editar recorrência completa</button>
       </div>
     </div>
     <div class="fin-modal-footer">
@@ -18503,17 +18513,14 @@ function renderFinLista(tipo){
     const parcelaCol = (t.parcelaInfo&&t.parcelaInfo.numero) ? `${t.parcelaInfo.numero}/${t.parcelaInfo.total}` : (t.recorrente ? 'Recorrente' : '—');
     const liquidado = st==='pago'||st==='recebido';
     const labelAcao = isPagar||isFolha?'Pagar':'Receber';
-    // Títulos recorrentes abrem o modal dedicado de edição de recorrência (mesmo do cadastro);
-    // títulos avulsos (ou parcelados) abrem o modal padrão de lançamento.
     // Títulos de pacientes levam direto para a aba Financeiro da ficha do paciente,
     // já abrindo/destacando o orçamento a que pertencem (edição real só acontece lá,
-    // desaprovando o orçamento se for o caso). Recorrentes abrem o modal dedicado de
-    // edição de recorrência; avulsos (ou parcelados) abrem o modal padrão de lançamento.
+    // desaprovando o orçamento se for o caso). Todos os demais — recorrentes ou avulsos —
+    // abrem o modal padrão de lançamento, editável/excluível individualmente; para editar
+    // a série recorrente como um todo, o caminho é o botão "Títulos recorrentes".
     const rowClick = isPaciente
       ? `onclick="irParaFinanceiroOrcamento('${t.pacienteId}','${t.orcamentoId}')"`
-      : (t.recorrente
-          ? `onclick="finEditarSerieRecorrente('${_finChaveSerie(t).replace(/'/g,"\\'")}','${tipo}')"`
-          : `onclick="abrirModalFinLancamento('${tipo}','${t.id}')"`);
+      : `onclick="abrirModalFinLancamento('${tipo}','${t.id}')"`;
 
     const beneficiario = isPaciente ? (pacNome ? pacNome.replace(' — ','') : '—') : (t._contraparte || '—');
 
@@ -19206,6 +19213,17 @@ function finExcluirSelecionados(tipo){
 
 // ── MODAL LANÇAMENTO ─────────────────────────────────────────────────
 let _finModalEditId = null;
+// Chave da série recorrente à qual o título aberto no modal individual pertence
+// (null se não for recorrente). Usado só pelo botão "Editar recorrência completa".
+let _finTituloEditChave = null;
+
+function finAbrirSerieDoTitulo(){
+  if(!_finTituloEditChave) return;
+  const chave=_finTituloEditChave;
+  const tipo=document.getElementById('fin-modal-tipo').value;
+  fecharModalFinLancamento();
+  finEditarSerieRecorrente(chave, tipo);
+}
 
 function abrirModalFinLancamento(tipo, id){
   // Checa permissão de verdade (não só esconder botão) — criar quando é lançamento
@@ -19228,6 +19246,8 @@ function abrirModalFinLancamento(tipo, id){
   finSincronizarTxtData(document.getElementById('fin-modal-venc'));
   document.getElementById('fin-modal-recorr').checked=false;
   document.getElementById('fin-modal-recorr-box').style.display='none';
+  document.getElementById('fin-modal-recorr-badge').style.display='none';
+  _finTituloEditChave=null;
   document.getElementById('fin-modal-freq').value='mensal';
   document.getElementById('fin-modal-rep').value='12';
   document.getElementById('fin-modal-tipo').value=tipo;
@@ -19272,6 +19292,12 @@ function abrirModalFinLancamento(tipo, id){
       document.getElementById('fin-modal-obs').value=t.obs||'';
       document.getElementById('fin-modal-recorr').checked=!!t.recorrente;
       document.getElementById('fin-modal-recorr-box').style.display=t.recorrente?'flex':'none';
+      if(t.recorrente){
+        _finTituloEditChave=_finChaveSerie(t);
+        document.getElementById('fin-modal-recorr-badge').style.display='block';
+      } else {
+        document.getElementById('fin-modal-recorr-badge').style.display='none';
+      }
       if(t.parteTipo&&t.parteId){
         _finParteSelecionada={tipo:t.parteTipo,id:t.parteId,nome:t.parte};
         const tagMap={paciente:'Paciente',usuario:'Usuário',fornecedor:'Fornecedor'};
@@ -19771,17 +19797,14 @@ function _rcbLinhaHtml(r){
     ?`<button type="button" class="btn btn-sm" style="background:#ECFDF5;border-color:#6EE7B7;color:#065F46" onclick="event.stopPropagation();rcbVerAnexo('${r.id}')" title="Ver anexo">📎</button>`
     :'—';
   const recorrIc=r.recorrente?`<span class="fin-recorr-ic" title="Recorrente">⟳</span>`:'';
-  // Lançamentos recorrentes abrem o modal dedicado de edição de recorrência (a alteração/exclusão
-  // ali só afeta os títulos a partir do mês que vem); avulsos abrem o modal padrão de edição.
-  const acoes = r.recorrente
-    ? ''
-    : `<div style="display:flex;gap:4px">
+  // Qualquer lançamento (recorrente ou não) abre o modal padrão de edição individual — a alteração
+  // e a exclusão feitas ali afetam somente este título. Para editar a série recorrente como um
+  // todo (valor/frequência/início/fim futuros), o caminho é o botão "Títulos recorrentes".
+  const acoes = `<div style="display:flex;gap:4px">
         ${podeExcluir?`<button type="button" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();excluirRecibo('${r.id}')" title="Excluir">🗑</button>`:''}
       </div>`;
   const rowClick = podeEditar
-    ? (r.recorrente
-        ? ` onclick="rcbEditarSerieRecorrente('${_rcbChaveSerie(r).replace(/'/g,"\\'")}')" style="cursor:pointer"`
-        : ` onclick="abrirModalRecibo('${r.id}')" style="cursor:pointer"`)
+    ? ` onclick="abrirModalRecibo('${r.id}')" style="cursor:pointer"`
     : '';
   return `<tr${rowClick}>
     <td>${_rcbFmtData(r.data)}</td>
@@ -20237,6 +20260,8 @@ function abrirModalRecibo(id){
   const tomadorEl=document.getElementById('rcb-tomador');
 
   let anexoAtual=null;
+  const badge=document.getElementById('rcb-modal-recorr-badge');
+  _rcbEditChaveSerie=null;
   if(id){
     const r=_recibos().find(x=>x.id===id);
     if(r){
@@ -20247,6 +20272,10 @@ function abrirModalRecibo(id){
       descEl.value=r.descricao||'';
       tomadorEl.value=r.tomador||'Dra. Leticia';
       anexoAtual=r.anexo||null;
+      if(r.recorrente){
+        _rcbEditChaveSerie=_rcbChaveSerie(r);
+        if(badge) badge.style.display='block';
+      } else if(badge) badge.style.display='none';
     }
   }else{
     dataEl.value=new Date().toISOString().slice(0,10);
@@ -20255,9 +20284,21 @@ function abrirModalRecibo(id){
     valorEl.dataset.valor='';
     descEl.value='';
     tomadorEl.value='Dra. Leticia';
+    if(badge) badge.style.display='none';
   }
   _rcbAtualizarUpload(anexoAtual);
   document.getElementById('modal-recibo').classList.add('open');
+}
+
+// Estado transitório: chave da série recorrente à qual o título aberto no modal individual
+// pertence (null se não for recorrente). Usado só pelo botão "Editar recorrência completa".
+let _rcbEditChaveSerie=null;
+
+function rcbAbrirSerieDoTitulo(){
+  if(!_rcbEditChaveSerie) return;
+  const chave=_rcbEditChaveSerie;
+  fecharModalRecibo();
+  rcbEditarSerieRecorrente(chave);
 }
 
 function fecharModalRecibo(){
