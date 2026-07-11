@@ -2417,7 +2417,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <!-- RECIBOS (PESSOA FÍSICA) -->
   <div id="fin-area-recibos" class="fin-area">
     <div class="pg-title">Recibos</div>
-    <div class="pg-desc">Controle de nota fiscal e recibo — o que a Dra. Leticia recebe (pessoa física) forma o teto para o que a clínica emite aos pacientes</div>
 
     <!-- Sub-abas internas -->
     <div style="display:flex;gap:8px;margin-top:14px;margin-bottom:4px">
@@ -2427,17 +2426,26 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
     <!-- ABA: RECEBIDOS -->
     <div id="rcb-area-recebidos">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;margin-bottom:4px;flex-wrap:wrap;gap:10px">
-        <div class="pg-desc" style="margin:0">Nota fiscal e recibo que a Dra. Leticia recebe (pessoa física) — a soma do mês define o teto disponível para emitir recibo aos pacientes</div>
+      <div style="display:flex;align-items:center;justify-content:flex-end;margin-top:10px;margin-bottom:4px;flex-wrap:wrap;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="rcbBaixarAnexos()" title="Baixar todos os anexos dos lançamentos filtrados">📥 Baixar anexos</button>
+        <button class="btn btn-ghost btn-sm" onclick="rcbExportarPDF()">📄 Exportar PDF</button>
         <button class="btn btn-primary btn-sm" onclick="abrirModalRecibo()" data-perm="fin_recibos_criar">+ Novo lançamento</button>
       </div>
 
       <!-- Navegação de mês -->
-      <div style="display:flex;align-items:center;gap:10px;margin-top:14px">
+      <div style="display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap">
         <button type="button" class="btn btn-ghost btn-sm" onclick="rcbMudarMes(-1)" title="Mês anterior">◀</button>
         <input type="month" id="rcb-mes" class="inp" style="max-width:170px" onchange="renderFinRecibos()">
         <button type="button" class="btn btn-ghost btn-sm" onclick="rcbMudarMes(1)" title="Próximo mês">▶</button>
         <button type="button" class="btn btn-ghost btn-sm" onclick="rcbIrHoje()">Mês atual</button>
+      </div>
+
+      <!-- Busca por descrição -->
+      <div style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <input type="text" id="rcb-busca" class="inp" style="max-width:280px" placeholder="Buscar por descrição…" list="rcb-desc-datalist" onkeydown="if(event.key==='Enter')rcbBuscar()">
+        <datalist id="rcb-desc-datalist"></datalist>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="rcbBuscar()">🔍 Buscar</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="rcbLimparFiltro()">Limpar filtro</button>
       </div>
 
       <!-- Cards resumo -->
@@ -2455,6 +2463,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <div class="fin-card-value" id="rcb-val-total">R$ 0,00</div>
           <div class="fin-card-sub">valor disponível para emitir recibo aos pacientes</div>
         </div>
+        <div class="fin-card">
+          <div class="fin-card-label">Valor já emitido</div>
+          <div class="fin-card-value" id="rcb-val-emitido">R$ 0,00</div>
+          <div class="fin-card-sub">a configurar</div>
+        </div>
       </div>
 
       <!-- Tabela -->
@@ -2462,10 +2475,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <table class="fin-table">
           <thead>
             <tr>
-              <th style="width:100px">Data</th>
-              <th style="width:120px">Tipo</th>
-              <th>Descrição</th>
-              <th style="width:120px">Valor</th>
+              <th style="width:100px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="rcbOrdenarColuna('data')" title="Ordenar por data">Data <span class="fin-th-sort-ic" id="rcb-sort-ic-data"></span></span><button type="button" class="fin-th-group-btn" id="rcb-group-btn-data" onclick="rcbAgruparColuna('data')" title="Agrupar por data">⊞</button></div></th>
+              <th style="width:120px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="rcbOrdenarColuna('tipo')" title="Ordenar por tipo">Tipo <span class="fin-th-sort-ic" id="rcb-sort-ic-tipo"></span></span><button type="button" class="fin-th-group-btn" id="rcb-group-btn-tipo" onclick="rcbAgruparColuna('tipo')" title="Agrupar por tipo">⊞</button></div></th>
+              <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="rcbOrdenarColuna('descricao')" title="Ordenar por descrição">Descrição <span class="fin-th-sort-ic" id="rcb-sort-ic-descricao"></span></span><button type="button" class="fin-th-group-btn" id="rcb-group-btn-descricao" onclick="rcbAgruparColuna('descricao')" title="Agrupar por descrição">⊞</button></div></th>
+              <th style="width:120px"><div class="fin-th-wrap" style="justify-content:flex-end"><span class="fin-th-sort" onclick="rcbOrdenarColuna('valor')" title="Ordenar por valor">Valor <span class="fin-th-sort-ic" id="rcb-sort-ic-valor"></span></span></div></th>
               <th style="width:70px">Anexo</th>
               <th style="width:80px"></th>
             </tr>
@@ -19429,14 +19442,116 @@ function rcbSetTab(aba){
   if(btnE) btnE.className = 'btn btn-sm ' + (aba==='emitido'?'btn-primary':'btn-ghost');
 }
 
+// ── Busca, ordenação e agrupamento (independentes do sistema genérico de
+// títulos, já que o modelo de dados de Recibos é mais simples) ─────────────
+var _rcbBusca = '';
+var _rcbOrdem = {campo:'data', dir:'desc'};
+var _rcbAgrupar = null;
+
+function rcbBuscar(){
+  const el=document.getElementById('rcb-busca');
+  _rcbBusca = el ? el.value.trim().toLowerCase() : '';
+  renderFinRecibos();
+}
+function rcbLimparFiltro(){
+  _rcbBusca='';
+  const el=document.getElementById('rcb-busca');
+  if(el) el.value='';
+  renderFinRecibos();
+}
+
+function rcbOrdenarColuna(campo){
+  if(_rcbOrdem.campo===campo) _rcbOrdem.dir = _rcbOrdem.dir==='asc'?'desc':'asc';
+  else { _rcbOrdem.campo=campo; _rcbOrdem.dir='asc'; }
+  renderFinRecibos();
+}
+function rcbAgruparColuna(campo){
+  _rcbAgrupar = _rcbAgrupar===campo ? null : campo;
+  renderFinRecibos();
+}
+
+function _rcbFmtData(iso){
+  const d=parseIso(iso);
+  return d?`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`:'—';
+}
+function _rcbTipoLbl(tipo){ return tipo==='nota_fiscal'?'📘 Nota Fiscal':'🧾 Recibo'; }
+
+function _rcbValorColuna(r, campo){
+  if(campo==='valor') return r.valor||0;
+  if(campo==='tipo') return _rcbTipoLbl(r.tipo);
+  if(campo==='data') return r.data||'';
+  return (r.descricao||'').toLowerCase();
+}
+
+// Lista do mês selecionado, sem filtro de busca (usada para os cards de totais/teto)
+function _rcbListaMes(){
+  const mes=document.getElementById('rcb-mes').value||_finMesAtual();
+  return _recibos().filter(r=>r.data && r.data.slice(0,7)===mes);
+}
+
+// Lista do mês + busca por descrição + ordenação (usada na tabela, no PDF e no download de anexos)
+function _rcbListaFiltrada(){
+  let list=_rcbListaMes();
+  if(_rcbBusca) list=list.filter(r=>(r.descricao||'').toLowerCase().includes(_rcbBusca));
+  list=list.slice().sort((a,b)=>{
+    const va=_rcbValorColuna(a,_rcbOrdem.campo), vb=_rcbValorColuna(b,_rcbOrdem.campo);
+    let cmp;
+    if(typeof va==='number'&&typeof vb==='number') cmp=va-vb;
+    else cmp=String(va).localeCompare(String(vb),'pt-BR');
+    return _rcbOrdem.dir==='desc'?-cmp:cmp;
+  });
+  return list;
+}
+
+function _rcbAtualizarHeaders(){
+  ['data','tipo','descricao','valor'].forEach(campo=>{
+    const ic=document.getElementById('rcb-sort-ic-'+campo);
+    if(ic) ic.textContent = _rcbOrdem.campo===campo ? (_rcbOrdem.dir==='asc'?'▲':'▼') : '';
+    const gb=document.getElementById('rcb-group-btn-'+campo);
+    if(gb) gb.classList.toggle('on', _rcbAgrupar===campo);
+  });
+}
+
+function _rcbRotuloGrupo(r, campo){
+  if(campo==='data') return _rcbFmtData(r.data);
+  if(campo==='tipo') return _rcbTipoLbl(r.tipo);
+  if(campo==='descricao') return r.descricao||'—';
+  return '—';
+}
+
+function _rcbPopularDatalist(){
+  const dl=document.getElementById('rcb-desc-datalist');
+  if(!dl) return;
+  const descs=[...new Set(_recibos().map(r=>(r.descricao||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  dl.innerHTML=descs.map(d=>`<option value="${esc(d)}">`).join('');
+}
+
+function _rcbLinhaHtml(r){
+  const podeEditar=souAdministradorReal()||temPerm('fin_recibos_editar');
+  const podeExcluir=souAdministradorReal()||temPerm('fin_recibos_excluir');
+  const anexoBtn=r.anexo?`<button type="button" class="btn btn-ghost btn-sm" onclick="rcbVerAnexo('${r.id}')" title="Ver anexo">📎</button>`:'—';
+  const acoes=`<div style="display:flex;gap:4px">
+    ${podeEditar?`<button type="button" class="btn btn-ghost btn-sm" onclick="abrirModalRecibo('${r.id}')" title="Editar">✎</button>`:''}
+    ${podeExcluir?`<button type="button" class="btn btn-ghost btn-sm" onclick="excluirRecibo('${r.id}')" title="Excluir">🗑</button>`:''}
+  </div>`;
+  return `<tr>
+    <td>${_rcbFmtData(r.data)}</td>
+    <td>${_rcbTipoLbl(r.tipo)}</td>
+    <td>${esc(r.descricao||'—')}</td>
+    <td>${fmtMoedaDisplay(r.valor)}</td>
+    <td>${anexoBtn}</td>
+    <td>${acoes}</td>
+  </tr>`;
+}
+
 function renderFinRecibos(){
   rcbSetTab(_rcbAbaAtual);
   rcbInitMes();
-  const mes=document.getElementById('rcb-mes').value||_finMesAtual();
-  const list=_recibos().filter(r=>r.data && r.data.slice(0,7)===mes).sort((a,b)=>a.data<b.data?1:(a.data>b.data?-1:0));
+  _rcbPopularDatalist();
 
+  const listaMes=_rcbListaMes();
   let totalNF=0, totalRecibo=0;
-  list.forEach(r=>{
+  listaMes.forEach(r=>{
     if(r.tipo==='nota_fiscal') totalNF+=(r.valor||0);
     else if(r.tipo==='recibo') totalRecibo+=(r.valor||0);
   });
@@ -19448,6 +19563,9 @@ function renderFinRecibos(){
   const empty=document.getElementById('rcb-empty');
   if(!tbody||!empty) return;
 
+  const list=_rcbListaFiltrada();
+  _rcbAtualizarHeaders();
+
   if(!list.length){
     tbody.innerHTML='';
     empty.style.display='block';
@@ -19455,27 +19573,108 @@ function renderFinRecibos(){
   }
   empty.style.display='none';
 
-  const podeEditar=souAdministradorReal()||temPerm('fin_recibos_editar');
-  const podeExcluir=souAdministradorReal()||temPerm('fin_recibos_excluir');
+  if(_rcbAgrupar){
+    const grupos={}; const ordem=[];
+    list.forEach(r=>{
+      const chave=_rcbRotuloGrupo(r,_rcbAgrupar)||'—';
+      if(!grupos[chave]){ grupos[chave]=[]; ordem.push(chave); }
+      grupos[chave].push(r);
+    });
+    tbody.innerHTML=ordem.map(chave=>{
+      const itens=grupos[chave];
+      const subtotal=itens.reduce((s,r)=>s+(r.valor||0),0);
+      const header=`<tr style="background:var(--s2)">
+        <td colspan="4" style="font-weight:600">${esc(chave)} <span style="font-weight:400;color:var(--tx3)">(${itens.length})</span></td>
+        <td colspan="2" style="text-align:right;font-weight:600">${fmtMoedaDisplay(subtotal)}</td>
+      </tr>`;
+      return header + itens.map(_rcbLinhaHtml).join('');
+    }).join('');
+  }else{
+    tbody.innerHTML=list.map(_rcbLinhaHtml).join('');
+  }
+}
 
-  tbody.innerHTML=list.map(r=>{
-    const d=parseIso(r.data);
-    const dataFmt=d?`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`:'—';
-    const tipoLbl=r.tipo==='nota_fiscal'?'📘 Nota Fiscal':'🧾 Recibo';
-    const anexoBtn=r.anexo?`<button type="button" class="btn btn-ghost btn-sm" onclick="rcbVerAnexo('${r.id}')" title="Ver anexo">📎</button>`:'—';
-    const acoes=`<div style="display:flex;gap:4px">
-      ${podeEditar?`<button type="button" class="btn btn-ghost btn-sm" onclick="abrirModalRecibo('${r.id}')" title="Editar">✎</button>`:''}
-      ${podeExcluir?`<button type="button" class="btn btn-ghost btn-sm" onclick="excluirRecibo('${r.id}')" title="Excluir">🗑</button>`:''}
-    </div>`;
-    return `<tr>
-      <td>${dataFmt}</td>
-      <td>${tipoLbl}</td>
-      <td>${esc(r.descricao||'—')}</td>
-      <td>${fmtMoedaDisplay(r.valor)}</td>
-      <td>${anexoBtn}</td>
-      <td>${acoes}</td>
-    </tr>`;
-  }).join('');
+// ── Baixar todos os anexos (zip) dos lançamentos filtrados no período ──────
+function _rcbSanitizeNome(s){
+  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]+/g,'_').replace(/_+/g,'_').slice(0,60);
+}
+function _rcbCarregarJSZip(){
+  return new Promise((resolve,reject)=>{
+    if(window.JSZip){ resolve(); return; }
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+    s.onload=()=>resolve();
+    s.onerror=()=>reject(new Error('Falha ao carregar ferramenta de compactação'));
+    document.head.appendChild(s);
+  });
+}
+async function rcbBaixarAnexos(){
+  const mes=document.getElementById('rcb-mes').value||_finMesAtual();
+  const comAnexo=_rcbListaFiltrada().filter(r=>r.anexo);
+  if(!comAnexo.length){ alert('Nenhum lançamento do filtro atual tem anexo.'); return; }
+  try{ await _rcbCarregarJSZip(); }
+  catch(e){ alert('Não foi possível carregar a ferramenta de compactação. Verifique sua conexão e tente novamente.'); return; }
+  const zip=new JSZip();
+  const usados={};
+  comAnexo.forEach(r=>{
+    const tipoStr=(r.anexo.tipo||'').toLowerCase();
+    const ext=tipoStr.includes('pdf')?'pdf':(tipoStr.includes('png')?'png':(tipoStr.includes('jpeg')||tipoStr.includes('jpg')?'jpg':'dat'));
+    const base=_rcbSanitizeNome((r.anexo.nome||'anexo').replace(/\.[^.]+$/,''));
+    const dataStr=(r.data||'').replace(/-/g,'');
+    let nome=`${dataStr}_${r.tipo==='nota_fiscal'?'NF':'Recibo'}_${base}.${ext}`;
+    if(usados[nome]){ usados[nome]++; nome=nome.replace(`.${ext}`, `_${usados[nome]}.${ext}`); } else { usados[nome]=1; }
+    zip.file(nome, r.anexo.b64, {base64:true});
+  });
+  const blob=await zip.generateAsync({type:'blob'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`recibos-anexos-${mes}.zip`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+}
+
+// ── Exportar PDF da lista filtrada ──────────────────────────────────────────
+function rcbExportarPDF(){
+  const list=_rcbListaFiltrada();
+  if(!list.length){ alert('Não há lançamentos no filtro atual para exportar.'); return; }
+  const mes=document.getElementById('rcb-mes').value||_finMesAtual();
+  const totalNF=list.filter(r=>r.tipo==='nota_fiscal').reduce((s,r)=>s+(r.valor||0),0);
+  const totalRecibo=list.filter(r=>r.tipo==='recibo').reduce((s,r)=>s+(r.valor||0),0);
+  const rows=list.map(r=>`<tr>
+    <td>${_rcbFmtData(r.data)}</td>
+    <td>${r.tipo==='nota_fiscal'?'Nota Fiscal':'Recibo'}</td>
+    <td>${esc(r.descricao||'—')}</td>
+    <td style="text-align:right">${fmtMoedaDisplay(r.valor)}</td>
+  </tr>`).join('');
+  const win=window.open('','_blank');
+  const html=`<html><head><meta charset="utf-8"><title>Recibos — Sekai</title>
+  <style>
+    body{font-family:Arial,sans-serif;color:#111;padding:32px;font-size:13px}
+    h1{font-size:18px;margin-bottom:4px}
+    .sub{color:#666;font-size:12px;margin-bottom:20px}
+    .cards{display:flex;gap:14px;margin-bottom:22px;flex-wrap:wrap}
+    .card{border:1px solid #ddd;border-radius:8px;padding:10px 14px;min-width:120px}
+    .card .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:4px}
+    .card .val{font-size:16px;font-weight:700}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #eee;font-size:12px}
+    th{color:#888;text-transform:uppercase;font-size:10px;letter-spacing:.05em}
+  </style></head><body>
+  <h1>Recibos — Sekai</h1>
+  <div class="sub">Mês ${esc(mes)} · Gerado em ${_rcbFmtData(new Date().toISOString().slice(0,10))} · ${list.length} lançamento${list.length!==1?'s':''}</div>
+  <div class="cards">
+    <div class="card"><div class="lbl">Total Nota Fiscal</div><div class="val">${fmtMoedaDisplay(totalNF)}</div></div>
+    <div class="card"><div class="lbl">Total Recibo</div><div class="val">${fmtMoedaDisplay(totalRecibo)}</div></div>
+    <div class="card"><div class="lbl">Teto do mês</div><div class="val">${fmtMoedaDisplay(totalNF+totalRecibo)}</div></div>
+  </div>
+  <table>
+    <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th style="text-align:right">Valor</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <script>window.onload=()=>window.print();<\/script>
+  </body></html>`;
+  win.document.write(html);
+  win.document.close();
 }
 
 function abrirModalRecibo(id){
