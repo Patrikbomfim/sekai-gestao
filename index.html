@@ -1492,6 +1492,114 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
+<!-- MODAL RECIBOS: LISTA DE RECORRÊNCIAS -->
+<div class="fin-modal-ov" id="modal-rcb-recorrentes" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharModalRcbRecorrentes)">
+  <div class="fin-modal-box" style="max-width:640px">
+    <div class="fin-modal-hdr">
+      <div class="fin-modal-title">Recorrências — Recibos</div>
+      <button class="fin-modal-close" onclick="fecharModalRcbRecorrentes()">✕</button>
+    </div>
+    <div class="fin-modal-body">
+      <button class="btn btn-primary btn-sm" style="margin-bottom:14px" onclick="rcbNovoRecorrenteDoModal()">+ Nova recorrência</button>
+      <div id="rcb-rec-lista"></div>
+      <div id="rcb-rec-empty" class="fin-empty" style="display:none">
+        Nenhuma recorrência lançada ainda.
+      </div>
+    </div>
+    <div class="fin-modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModalRcbRecorrentes()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RECIBOS: NOVA/EDITAR RECORRÊNCIA -->
+<div class="fin-modal-ov" id="modal-rcb-recorrencia-nova" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharModalRcbRecorrenciaNova)">
+  <div class="fin-modal-box" style="max-width:560px">
+    <div class="fin-modal-hdr">
+      <div class="fin-modal-title" id="rcb-recn-modal-titulo">Nova recorrência</div>
+      <button class="fin-modal-close" onclick="fecharModalRcbRecorrenciaNova()">✕</button>
+    </div>
+    <div class="fin-modal-body">
+      <div id="rcb-recn-edit-hint" style="display:none;margin-bottom:14px;padding:10px 12px;background:var(--acl);border:1px solid var(--ac);border-radius:var(--r8);font-size:12px;color:var(--tx2)"></div>
+      <div class="fl">
+        <label>Descrição <span class="req">*</span></label>
+        <input type="text" id="rcb-recn-desc" placeholder="Ex: Diária Maru, Aluguel sala 3...">
+      </div>
+      <div class="fg">
+        <div class="fl">
+          <label>Tipo <span class="req">*</span></label>
+          <select id="rcb-recn-tipo">
+            <option value="">Selecionar…</option>
+            <option value="nota_fiscal">Nota Fiscal</option>
+            <option value="recibo">Recibo</option>
+          </select>
+        </div>
+        <div class="fl">
+          <label>Valor <span class="req">*</span></label>
+          <input type="text" id="rcb-recn-valor" placeholder="R$ 0,00" oninput="finMaskMoeda(this)">
+        </div>
+      </div>
+      <div class="fl">
+        <label>Tomador <span class="req">*</span></label>
+        <input type="text" id="rcb-recn-tomador" value="Dra. Leticia">
+      </div>
+      <div class="fl">
+        <label>Forma da recorrência <span class="req">*</span></label>
+        <select id="rcb-recn-freq" onchange="rcbRecToggleFreq()">
+          <option value="mensal">Mensal</option>
+          <option value="semanal">Semanal</option>
+        </select>
+        <div id="rcb-recn-box-semanal" style="display:none;margin-top:10px">
+          <div class="fl">
+            <label>Dia da semana</label>
+            <select id="rcb-recn-dia-semana">
+              <option value="0">Domingo</option>
+              <option value="1" selected>Segunda-feira</option>
+              <option value="2">Terça-feira</option>
+              <option value="3">Quarta-feira</option>
+              <option value="4">Quinta-feira</option>
+              <option value="5">Sexta-feira</option>
+              <option value="6">Sábado</option>
+            </select>
+          </div>
+        </div>
+        <div id="rcb-recn-box-mensal" style="display:block;margin-top:10px">
+          <div class="fl">
+            <label>Dia do mês</label>
+            <select id="rcb-recn-dia-mes"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option></select>
+            <div style="font-size:11px;color:var(--tx3);margin-top:4px">Em meses mais curtos, ajusta automaticamente para o último dia do mês.</div>
+          </div>
+        </div>
+      </div>
+      <div class="fg">
+        <div class="fl">
+          <label>Início <span class="req">*</span></label>
+          <input type="month" id="rcb-recn-inicio">
+        </div>
+        <div class="fl">
+          <label>Fim <span class="req">*</span></label>
+          <input type="month" id="rcb-recn-fim">
+        </div>
+      </div>
+      <div class="fl">
+        <label>Anexo (aplicado a todos os títulos gerados)</label>
+        <div id="rcb-recn-drop" class="fin-drop-zone" onclick="document.getElementById('rcb-recn-anexo-input').click()"
+          ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')"
+          ondrop="rcbRecDropAnexo(event)">
+          <div class="fin-drop-zone-ic">📎</div>
+          <div style="font-size:12px;color:var(--tx2)">Arraste o arquivo aqui ou clique para escolher</div>
+        </div>
+        <input type="file" id="rcb-recn-anexo-input" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="rcbRecAnexoSelecionado(this.files)">
+        <div id="rcb-recn-anexo-lista"></div>
+      </div>
+    </div>
+    <div class="fin-modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModalRcbRecorrenciaNova()">Cancelar</button>
+      <button class="btn btn-primary" id="rcb-recn-btn-salvar" onclick="rcbSalvarRecorrenciaNova()">Salvar recorrência</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL APROVAR ORÇAMENTO -->
 <div class="modal-ov" id="modal-aprovar-orc" style="z-index:240">
   <div class="modal" style="width:760px;max-width:96vw;max-height:90vh">
@@ -2432,6 +2540,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <!-- ABA: RECEBIDOS -->
     <div id="rcb-area-recebidos">
       <div style="display:flex;align-items:center;justify-content:flex-end;margin-top:10px;margin-bottom:4px;flex-wrap:wrap;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="abrirModalRcbRecorrentes()">🔁 Recorrentes cadastrados</button>
         <button class="btn btn-ghost btn-sm" onclick="rcbBaixarAnexos()" title="Baixar todos os anexos dos lançamentos filtrados">📥 Baixar anexos</button>
         <button class="btn btn-ghost btn-sm" onclick="rcbExportarPDF()">📄 Exportar PDF</button>
         <button class="btn btn-primary btn-sm" onclick="abrirModalRecibo()" data-perm="fin_recibos_criar">+ Novo lançamento</button>
@@ -2468,10 +2577,20 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <div class="fin-card-value" id="rcb-val-total">R$ 0,00</div>
           <div class="fin-card-sub">valor disponível para emitir recibo aos pacientes</div>
         </div>
+        <div class="fin-card fin-card-green">
+          <div class="fin-card-label">Valor emitido em recibo</div>
+          <div class="fin-card-value" id="rcb-val-pac-recibo">R$ 0,00</div>
+          <div class="fin-card-sub">recebido de pacientes no mês</div>
+        </div>
+        <div class="fin-card fin-card-blue">
+          <div class="fin-card-label">Valor emitido em nota fiscal</div>
+          <div class="fin-card-value" id="rcb-val-pac-nf">R$ 0,00</div>
+          <div class="fin-card-sub">recebido de pacientes no mês</div>
+        </div>
         <div class="fin-card">
-          <div class="fin-card-label">Valor já emitido</div>
-          <div class="fin-card-value" id="rcb-val-emitido">R$ 0,00</div>
-          <div class="fin-card-sub">a configurar</div>
+          <div class="fin-card-label">Recebimentos sem recibo</div>
+          <div class="fin-card-value" id="rcb-val-pac-sem">R$ 0,00</div>
+          <div class="fin-card-sub">recebido de pacientes, sem emissão fiscal ainda</div>
         </div>
       </div>
 
@@ -3001,6 +3120,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="fin-modal-close" onclick="fecharModalFinRecorrenciaNova()">✕</button>
     </div>
     <div class="fin-modal-body">
+      <div id="fin-recn-edit-hint" style="display:none;margin-bottom:14px;padding:10px 12px;background:var(--acl);border:1px solid var(--ac);border-radius:var(--r8);font-size:12px;color:var(--tx2)"></div>
       <div class="fl">
         <label>Descrição <span class="req">*</span></label>
         <input type="text" id="fin-recn-desc" placeholder="Ex: Aluguel, Internet, Diária Maru...">
@@ -18567,6 +18687,21 @@ function _finChaveSerie(t){
   return t.serieId || (t.descricao.replace(/\s*\(\d+\/\d+\)\s*$/,'')+'|'+t.valor);
 }
 
+// Data-limite: primeiro dia do PRÓXIMO mês, a partir de hoje. Edições/exclusões de
+// recorrências (tanto no Financeiro — a pagar/folha/a receber — quanto em Recibos)
+// nunca tocam títulos com vencimento/data anterior a este limite: eles já podem ter
+// sido contabilizados. Só o que é do mês que vem em diante é alterado ou removido.
+function _finCutoffProximoMes(){
+  const hoje=new Date();
+  const y = hoje.getMonth()===11 ? hoje.getFullYear()+1 : hoje.getFullYear();
+  const m = hoje.getMonth()===11 ? 0 : hoje.getMonth()+1;
+  return `${y}-${String(m+1).padStart(2,'0')}-01`;
+}
+function _finCutoffProximoMesLabel(){
+  const [y,m] = _finCutoffProximoMes().split('-').map(Number);
+  return `${MESES[m-1]} de ${y}`;
+}
+
 // Todos os títulos (de gestão) que pertencem à mesma série recorrente.
 function _finTitulosDaSerie(chave, tipo){
   return _finTitulosGestao().filter(t=>t.tipo===tipo && t.recorrente && _finChaveSerie(t)===chave);
@@ -18633,7 +18768,7 @@ function abrirModalFinRecorrentes(tipo){
             <span>${proximo?'Próximo vencimento: <strong style="color:var(--tx2);font-weight:600">'+_finFmtData(proximo.vencimento)+'</strong>':'Todos liquidados/cancelados'}</span>
           </div>
         </div>
-        <button class="btn btn-ghost btn-sm" style="color:var(--da);border-color:#FCA5A5;flex-shrink:0" onclick="finExcluirSerieRecorrente('${chave.replace(/'/g,"\\'")}','${tipo}')">Excluir série</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--da);border-color:#FCA5A5;flex-shrink:0" onclick="finExcluirSerieRecorrente('${chave.replace(/'/g,"\\'")}','${tipo}')" title="Remove os títulos futuros; os do mês atual e anteriores são mantidos">Excluir a partir do próx. mês</button>
       </div>`;
     }).join('');
   }
@@ -18647,10 +18782,10 @@ function fecharModalFinRecorrentes(){
 
 // Clique na descrição de uma série recorrente na lista "Títulos recorrentes": fecha o modal
 // de recorrentes e abre o MESMO modal usado no cadastro (dedicado, com frequência, dia do
-// vencimento, início/fim e categoria), pré-preenchido para edição. Se algum título da série já
-// estiver liquidado (pago/recebido), bloqueia e orienta a estornar antes.
+// vencimento, início/fim e categoria), pré-preenchido para edição. Qualquer alteração feita
+// aqui (ou exclusão) só afeta os títulos a partir do mês que vem — os do mês atual e
+// anteriores são sempre mantidos como estão, mesmo já liquidados.
 function finEditarSerieRecorrente(chave, tipo){
-  if(_finBloqueiaSerieLiquidada(chave, tipo)) return;
   _finRecModalTipo = tipo;
   fecharModalFinRecorrentes();
   abrirModalFinRecorrenciaNova(chave);
@@ -18715,10 +18850,23 @@ function abrirModalFinRecorrenciaNova(chaveEdicao){
       document.getElementById('fin-recn-dia-mes').value = String(Math.min(diaMes,31));
       document.getElementById('fin-recn-dia-semana').value = String(diaSemana);
       const ultimo = itens[itens.length-1];
+      const cutoff=_finCutoffProximoMes();
+      const [cy,cm]=cutoff.split('-');
       const iniD = new Date((primeiro.vencimento||'')+'T12:00:00');
       const fimD = new Date((ultimo.vencimento||'')+'T12:00:00');
-      if(!isNaN(iniD)) document.getElementById('fin-recn-inicio').value = `${iniD.getFullYear()}-${String(iniD.getMonth()+1).padStart(2,'0')}`;
-      if(!isNaN(fimD)) document.getElementById('fin-recn-fim').value = `${fimD.getFullYear()}-${String(fimD.getMonth()+1).padStart(2,'0')}`;
+      // O campo "Início" na edição sempre aponta pro próximo mês: é a partir dali que
+      // a alteração realmente passa a valer (o que já passou é preservado como estava).
+      document.getElementById('fin-recn-inicio').value = `${cy}-${cm}`;
+      if(!isNaN(fimD) && `${fimD.getFullYear()}-${String(fimD.getMonth()+1).padStart(2,'0')}` >= `${cy}-${cm}`){
+        document.getElementById('fin-recn-fim').value = `${fimD.getFullYear()}-${String(fimD.getMonth()+1).padStart(2,'0')}`;
+      } else {
+        document.getElementById('fin-recn-fim').value = `${cy}-${cm}`;
+      }
+      const hint=document.getElementById('fin-recn-edit-hint');
+      if(hint){
+        hint.style.display='block';
+        hint.textContent=`As alterações valem só a partir de ${_finCutoffProximoMesLabel()}. Os títulos até o mês atual (inclusive já vencidos ou pagos) são mantidos como estão.`;
+      }
       if(primeiro.parteTipo&&primeiro.parteId){
         _finRecParteSelecionada={tipo:primeiro.parteTipo,id:primeiro.parteId,nome:primeiro.parte};
         const tagMap={paciente:'Paciente',usuario:'Usuário',fornecedor:'Fornecedor'};
@@ -18733,6 +18881,8 @@ function abrirModalFinRecorrenciaNova(chaveEdicao){
   } else {
     if(tituloEl) tituloEl.textContent='Nova recorrência';
     if(btnEl) btnEl.textContent='Salvar recorrência';
+    const hint=document.getElementById('fin-recn-edit-hint');
+    if(hint) hint.style.display='none';
   }
 
   finRecToggleFreq();
@@ -18890,21 +19040,31 @@ function finSalvarRecorrenciaNova(){
   if(datas.length>240){ alert(`O período gerou ${datas.length} títulos, o que é muito grande. Reduza o intervalo entre início e fim.`); return; }
 
   const chaveEdicao=_finRecEditChave;
-  if(chaveEdicao && _finBloqueiaSerieLiquidada(chaveEdicao, tipo)) return; // defesa extra, além da checagem ao abrir o modal
+  const cutoff=_finCutoffProximoMes();
 
   let list=_finTitulosGestao();
+  let serieIdReaproveitado=null;
+
   if(chaveEdicao){
-    // Edição de recorrência existente: substitui todos os títulos da série antiga pelos novos
-    // (só chega aqui se nenhum título da série estiver liquidado — checado acima e ao abrir o modal)
-    list = list.filter(t=> !(t.tipo===tipo && t.recorrente && _finChaveSerie(t)===chaveEdicao));
+    // Edição de recorrência existente: os títulos até o mês atual (inclusive já
+    // vencidos/pagos) são preservados como estão. Só os títulos a partir do mês
+    // que vem são substituídos pelos novos valores.
+    const antigos = list.filter(t=>t.tipo===tipo && t.recorrente && _finChaveSerie(t)===chaveEdicao);
+    const comSerieId = antigos.find(t=>t.serieId);
+    serieIdReaproveitado = comSerieId ? comSerieId.serieId : null;
+    list = list.filter(t=> !(t.tipo===tipo && t.recorrente && _finChaveSerie(t)===chaveEdicao && (t.vencimento||'')>=cutoff));
   }
-  const serieId='fserie_'+Date.now();
+  const serieId = serieIdReaproveitado || ('fserie_'+Date.now());
+  let criados=0;
   datas.forEach((d,i)=>{
     // Vencimento em sábado/domingo é sempre jogado para a próxima segunda-feira (dia útil), para todos os tipos
     const dAjustado = _finProximoDiaUtil(d);
+    const vencIso=_finIso(dAjustado);
+    if(chaveEdicao && vencIso<cutoff) return; // nunca regenera o passado — já preservado acima
+    criados++;
     list.push({
       id:'fgt_'+Date.now()+'_'+i, tipo, descricao:desc, parte, parteTipo, parteId,
-      valor, vencimento:_finIso(dAjustado), categoria:cat, forma, obs:'',
+      valor, vencimento:vencIso, categoria:cat, forma, obs:'',
       status:'aberto', origem:'manual', recorrente:true, serieId, freq,
       diaSemana: freq==='semanal'?diaSemana:undefined,
       diaMes: freq==='mensal'?diaMes:undefined,
@@ -18918,15 +19078,27 @@ function finSalvarRecorrenciaNova(){
   renderFinLista(tipo);
   if(_finSubAtual==='fluxo') renderFinFluxo();
   abrirModalFinRecorrentes(tipo); // volta pra lista de recorrentes já atualizada
+
+  if(chaveEdicao){
+    alert(criados
+      ? `Recorrência atualizada: ${criados} título(s) a partir de ${_finCutoffProximoMesLabel()} foram atualizados. Os títulos até o mês atual foram mantidos como estavam.`
+      : `Recorrência encerrada a partir de ${_finCutoffProximoMesLabel()}. Os títulos até o mês atual foram mantidos como estavam.`);
+  }
 }
 
+// Exclui uma série recorrente. Os títulos até o mês atual (inclusive já vencidos/pagos)
+// são sempre mantidos — só os títulos a partir do mês que vem são removidos, encerrando
+// a recorrência dali em diante.
 function finExcluirSerieRecorrente(chave, tipo){
-  if(_finBloqueiaSerieLiquidada(chave, tipo)) return;
-  if(!confirm('Excluir todos os títulos desta série recorrente? Esta ação não pode ser desfeita.')) return;
+  const cutoff=_finCutoffProximoMes();
   let list = _finTitulosGestao();
+  const daSerie = list.filter(t=>t.tipo===tipo && t.recorrente && _finChaveSerie(t)===chave);
+  const futuros = daSerie.filter(t=>(t.vencimento||'')>=cutoff);
+  if(!futuros.length){ alert('Não há títulos futuros nesta recorrência — os títulos até o mês atual são mantidos e não há o que excluir.'); return; }
+  if(!confirm(`Excluir os títulos futuros desta recorrência, a partir de ${_finCutoffProximoMesLabel()}? Os títulos até o mês atual serão mantidos. Esta ação não pode ser desfeita.`)) return;
   list = list.filter(t=>{
-    if(t.tipo!==tipo || !t.recorrente) return true;
-    return _finChaveSerie(t) !== chave;
+    if(t.tipo!==tipo || !t.recorrente || _finChaveSerie(t)!==chave) return true;
+    return (t.vencimento||'') < cutoff; // mantém passado/mês atual, remove futuro
   });
   _finSalvarTitulosGestao(list);
   abrirModalFinRecorrentes(tipo);
@@ -19537,18 +19709,302 @@ function _rcbLinhaHtml(r){
   const anexoBtn=r.anexo
     ?`<button type="button" class="btn btn-sm" style="background:#ECFDF5;border-color:#6EE7B7;color:#065F46" onclick="event.stopPropagation();rcbVerAnexo('${r.id}')" title="Ver anexo">📎</button>`
     :'—';
-  const acoes=`<div style="display:flex;gap:4px">
-    ${podeExcluir?`<button type="button" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();excluirRecibo('${r.id}')" title="Excluir">🗑</button>`:''}
-  </div>`;
-  const rowClick=podeEditar?` onclick="abrirModalRecibo('${r.id}')" style="cursor:pointer"`:'';
+  const recorrIc=r.recorrente?`<span class="fin-recorr-ic" title="Recorrente">⟳</span>`:'';
+  // Lançamentos recorrentes abrem o modal dedicado de edição de recorrência (a alteração/exclusão
+  // ali só afeta os títulos a partir do mês que vem); avulsos abrem o modal padrão de edição.
+  const acoes = r.recorrente
+    ? ''
+    : `<div style="display:flex;gap:4px">
+        ${podeExcluir?`<button type="button" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();excluirRecibo('${r.id}')" title="Excluir">🗑</button>`:''}
+      </div>`;
+  const rowClick = podeEditar
+    ? (r.recorrente
+        ? ` onclick="rcbEditarSerieRecorrente('${_rcbChaveSerie(r).replace(/'/g,"\\'")}')" style="cursor:pointer"`
+        : ` onclick="abrirModalRecibo('${r.id}')" style="cursor:pointer"`)
+    : '';
   return `<tr${rowClick}>
     <td>${_rcbFmtData(r.data)}</td>
     <td>${_rcbTipoLbl(r.tipo)}</td>
-    <td>${esc(r.descricao||'—')}</td>
+    <td>${esc(r.descricao||'—')}${recorrIc}</td>
     <td>${fmtMoedaDisplay(r.valor)}</td>
     <td>${anexoBtn}</td>
     <td>${acoes}</td>
   </tr>`;
+}
+
+// ── RECORRÊNCIA DE RECIBOS ───────────────────────────────────────────────
+// Mesma lógica de "edição/exclusão só afeta o mês que vem em diante" usada no
+// Financeiro (a pagar/folha/a receber) — ver _finCutoffProximoMes().
+function _rcbChaveSerie(r){
+  return r.serieId || ((r.descricao||'')+'|'+r.valor+'|'+r.tipo);
+}
+function _rcbTitulosDaSerie(chave){
+  return _recibos().filter(r=>r.recorrente && _rcbChaveSerie(r)===chave);
+}
+
+function abrirModalRcbRecorrentes(){
+  const todos=_recibos().filter(r=>r.recorrente);
+  const grupos={}; const chaves=[];
+  todos.forEach(r=>{
+    const chave=_rcbChaveSerie(r);
+    if(!grupos[chave]){ grupos[chave]=[]; chaves.push(chave); }
+    grupos[chave].push(r);
+  });
+
+  const lista=document.getElementById('rcb-rec-lista');
+  const empty=document.getElementById('rcb-rec-empty');
+  if(!chaves.length){
+    lista.innerHTML='';
+    empty.style.display='block';
+  }else{
+    empty.style.display='none';
+    const cutoff=_finCutoffProximoMes();
+    lista.innerHTML=chaves.map(chave=>{
+      const itens=grupos[chave].slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+      const primeiro=itens[0], ultimo=itens[itens.length-1];
+      const proximos=itens.filter(r=>(r.data||'')>=cutoff).sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+      const proximo=proximos[0];
+      const freqLabel={mensal:'Mensal',semanal:'Semanal'}[primeiro.freq]||'—';
+      return `<div class="fin-rec-item" style="align-items:flex-start">
+        <div class="fin-rec-item-info" style="flex:1">
+          <div class="fin-rec-item-desc fin-rec-item-desc-link" onclick="rcbEditarSerieRecorrente('${chave.replace(/'/g,"\\'")}')" title="Clique para editar esta recorrência">${esc(primeiro.descricao||'—')} — ${_rcbTipoLbl(primeiro.tipo)}</div>
+          <div class="fin-rec-item-meta" style="display:flex;flex-wrap:wrap;gap:5px 16px;margin-top:5px">
+            <span>Tomador: <strong style="color:var(--tx2);font-weight:600">${esc(primeiro.tomador||'—')}</strong></span>
+            <span>Frequência: <strong style="color:var(--tx2);font-weight:600">${freqLabel}</strong></span>
+            <span>Início: <strong style="color:var(--tx2);font-weight:600">${_rcbFmtData(primeiro.data)}</strong></span>
+            <span>Fim: <strong style="color:var(--tx2);font-weight:600">${_rcbFmtData(ultimo.data)}</strong></span>
+            <span>Qtd. lançamentos: <strong style="color:var(--tx2);font-weight:600">${itens.length}</strong></span>
+            <span>Valor: <strong style="color:var(--tx2);font-weight:600">${fmtMoedaDisplay(primeiro.valor)}</strong> cada</span>
+            <span>${proximo?'Próximo: <strong style="color:var(--tx2);font-weight:600">'+_rcbFmtData(proximo.data)+'</strong>':'Sem lançamentos futuros'}</span>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="color:var(--da);border-color:#FCA5A5;flex-shrink:0" onclick="rcbExcluirSerieRecorrente('${chave.replace(/'/g,"\\'")}')" title="Remove os lançamentos futuros; os do mês atual e anteriores são mantidos">Excluir a partir do próx. mês</button>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('modal-rcb-recorrentes').classList.add('open');
+}
+function fecharModalRcbRecorrentes(){
+  document.getElementById('modal-rcb-recorrentes').classList.remove('open');
+}
+function rcbNovoRecorrenteDoModal(){
+  fecharModalRcbRecorrentes();
+  abrirModalRcbRecorrenciaNova();
+}
+
+var _rcbRecEditChave=null;
+var _rcbRecAnexoPendente=null;
+
+function abrirModalRcbRecorrenciaNova(chaveEdicao){
+  _rcbRecEditChave=chaveEdicao||null;
+  document.getElementById('rcb-recn-desc').value='';
+  document.getElementById('rcb-recn-tipo').value='';
+  document.getElementById('rcb-recn-valor').value='';
+  document.getElementById('rcb-recn-tomador').value='Dra. Leticia';
+  document.getElementById('rcb-recn-freq').value='mensal';
+  document.getElementById('rcb-recn-dia-mes').value='1';
+  document.getElementById('rcb-recn-dia-semana').value='1';
+  document.getElementById('rcb-recn-inicio').value='';
+  document.getElementById('rcb-recn-fim').value='';
+  _rcbRecAnexoPendente=null;
+  _rcbRecRenderAnexoLista();
+
+  const tituloEl=document.getElementById('rcb-recn-modal-titulo');
+  const btnEl=document.getElementById('rcb-recn-btn-salvar');
+
+  if(_rcbRecEditChave){
+    const itens=_rcbTitulosDaSerie(_rcbRecEditChave).sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+    const primeiro=itens[0];
+    if(primeiro){
+      document.getElementById('rcb-recn-desc').value=primeiro.descricao||'';
+      document.getElementById('rcb-recn-tipo').value=primeiro.tipo||'';
+      document.getElementById('rcb-recn-valor').value=primeiro.valor?fmtMoedaValorParaInput(primeiro.valor):'';
+      document.getElementById('rcb-recn-tomador').value=primeiro.tomador||'Dra. Leticia';
+      const freq=primeiro.freq||'mensal';
+      document.getElementById('rcb-recn-freq').value=freq;
+      const primeiraData=new Date((primeiro.data||'')+'T12:00:00');
+      const diaMes=primeiro.diaMes || (!isNaN(primeiraData)?primeiraData.getDate():1);
+      const diaSemana=(primeiro.diaSemana!==undefined)?primeiro.diaSemana:(!isNaN(primeiraData)?primeiraData.getDay():1);
+      document.getElementById('rcb-recn-dia-mes').value=String(Math.min(diaMes,31));
+      document.getElementById('rcb-recn-dia-semana').value=String(diaSemana);
+      const ultimo=itens[itens.length-1];
+      const cutoff=_finCutoffProximoMes();
+      const [cy,cm]=cutoff.split('-');
+      // "Início" na edição sempre aponta pro próximo mês: é a partir dali que a
+      // alteração vale de verdade — o que já passou fica preservado como estava.
+      document.getElementById('rcb-recn-inicio').value=`${cy}-${cm}`;
+      const fimD=new Date((ultimo.data||'')+'T12:00:00');
+      if(!isNaN(fimD) && `${fimD.getFullYear()}-${String(fimD.getMonth()+1).padStart(2,'0')}`>=`${cy}-${cm}`){
+        document.getElementById('rcb-recn-fim').value=`${fimD.getFullYear()}-${String(fimD.getMonth()+1).padStart(2,'0')}`;
+      }else{
+        document.getElementById('rcb-recn-fim').value=`${cy}-${cm}`;
+      }
+      if(primeiro.anexo){ _rcbRecAnexoPendente=primeiro.anexo; _rcbRecRenderAnexoLista(); }
+    }
+    if(tituloEl) tituloEl.textContent='Editar recorrência';
+    if(btnEl) btnEl.textContent='Salvar alterações';
+    const hint=document.getElementById('rcb-recn-edit-hint');
+    if(hint){
+      hint.style.display='block';
+      hint.textContent=`As alterações valem só a partir de ${_finCutoffProximoMesLabel()}. Os lançamentos até o mês atual são mantidos como estão.`;
+    }
+  }else{
+    if(tituloEl) tituloEl.textContent='Nova recorrência';
+    if(btnEl) btnEl.textContent='Salvar recorrência';
+    const hint=document.getElementById('rcb-recn-edit-hint');
+    if(hint) hint.style.display='none';
+  }
+
+  rcbRecToggleFreq();
+  document.getElementById('modal-rcb-recorrencia-nova').classList.add('open');
+}
+function fecharModalRcbRecorrenciaNova(){
+  document.getElementById('modal-rcb-recorrencia-nova').classList.remove('open');
+  _rcbRecEditChave=null;
+}
+function rcbRecToggleFreq(){
+  const v=document.getElementById('rcb-recn-freq').value;
+  document.getElementById('rcb-recn-box-semanal').style.display = v==='semanal'?'block':'none';
+  document.getElementById('rcb-recn-box-mensal').style.display = v==='mensal'?'block':'none';
+}
+
+function rcbRecDropAnexo(ev){
+  ev.preventDefault();
+  const dz=document.getElementById('rcb-recn-drop');
+  if(dz) dz.classList.remove('drag');
+  const file=ev.dataTransfer?.files[0];
+  if(file) _rcbRecLerArquivo(file);
+}
+function rcbRecAnexoSelecionado(files){
+  if(files[0]) _rcbRecLerArquivo(files[0]);
+}
+function _rcbRecLerArquivo(file){
+  const reader=new FileReader();
+  reader.onload=(ev)=>{
+    _rcbRecAnexoPendente={nome:file.name, tipo:file.type, b64:ev.target.result.split(',')[1]};
+    _rcbRecRenderAnexoLista();
+  };
+  reader.readAsDataURL(file);
+}
+function rcbRecRemoverAnexoPendente(){
+  _rcbRecAnexoPendente=null;
+  _rcbRecRenderAnexoLista();
+}
+function _rcbRecRenderAnexoLista(){
+  const wrap=document.getElementById('rcb-recn-anexo-lista');
+  if(!wrap) return;
+  wrap.innerHTML=_rcbRecAnexoPendente
+    ? `<div class="fin-anexo-item"><span class="fin-anexo-nome">📄 ${esc(_rcbRecAnexoPendente.nome)}</span><button type="button" class="fin-anexo-rm" onclick="rcbRecRemoverAnexoPendente()" title="Remover">✕</button></div>`
+    : '';
+}
+
+function rcbSalvarRecorrenciaNova(){
+  const desc=(document.getElementById('rcb-recn-desc').value||'').trim();
+  const tipo=document.getElementById('rcb-recn-tipo').value;
+  const valor=_finParseValor(document.getElementById('rcb-recn-valor').value);
+  const tomador=(document.getElementById('rcb-recn-tomador').value||'').trim();
+  const freq=document.getElementById('rcb-recn-freq').value;
+  const diaSemana=parseInt(document.getElementById('rcb-recn-dia-semana').value);
+  const diaMes=parseInt(document.getElementById('rcb-recn-dia-mes').value);
+  const inicio=document.getElementById('rcb-recn-inicio').value;
+  const fim=document.getElementById('rcb-recn-fim').value;
+
+  if(!desc){ alert('Informe a descrição.'); return; }
+  if(!tipo){ alert('Selecione o tipo (Nota Fiscal ou Recibo).'); return; }
+  if(!valor){ alert('Informe o valor.'); return; }
+  if(!tomador){ alert('Informe o tomador.'); return; }
+  if(!inicio){ alert('Informe o mês/ano de início.'); return; }
+  if(!fim){ alert('Informe o mês/ano de fim.'); return; }
+  if(fim<inicio){ alert('O fim não pode ser anterior ao início.'); return; }
+
+  const datas=_finRecGerarDatas(freq,diaSemana,diaMes,inicio,fim);
+  if(!datas.length){ alert('Não foi possível gerar nenhuma data com esses parâmetros. Confira o período de início e fim.'); return; }
+  if(datas.length>240){ alert(`O período gerou ${datas.length} lançamentos, o que é muito grande. Reduza o intervalo entre início e fim.`); return; }
+
+  const chaveEdicao=_rcbRecEditChave;
+  const cutoff=_finCutoffProximoMes();
+  const anexo=_rcbRecAnexoPendente||null;
+
+  let list=_recibos();
+  let serieIdReaproveitado=null;
+  if(chaveEdicao){
+    // Edição de recorrência existente: os lançamentos até o mês atual (inclusive já
+    // passados) são preservados como estão. Só o que é do mês que vem em diante é substituído.
+    const antigos=list.filter(r=>r.recorrente && _rcbChaveSerie(r)===chaveEdicao);
+    const comSerieId=antigos.find(r=>r.serieId);
+    serieIdReaproveitado = comSerieId ? comSerieId.serieId : null;
+    list = list.filter(r=> !(r.recorrente && _rcbChaveSerie(r)===chaveEdicao && (r.data||'')>=cutoff));
+  }
+  const serieId = serieIdReaproveitado || uid('rcbserie');
+  let criados=0;
+  datas.forEach(d=>{
+    const dAjustado=_finProximoDiaUtil(d);
+    const dataIso=_finIso(dAjustado);
+    if(chaveEdicao && dataIso<cutoff) return; // nunca regenera o passado — já preservado acima
+    criados++;
+    list.push({
+      id: uid('rcb'), data:dataIso, tipo, valor, descricao:desc, tomador,
+      anexo, recorrente:true, serieId, freq,
+      diaSemana: freq==='semanal'?diaSemana:undefined,
+      diaMes: freq==='mensal'?diaMes:undefined,
+      criadoEm:new Date().toISOString(),
+      criadoPor:(typeof usuarioAtualId!=='undefined')?usuarioAtualId:null,
+    });
+  });
+
+  _comSalvarImediato(()=>_salvarRecibos(list));
+  fecharModalRcbRecorrenciaNova();
+  renderFinRecibos();
+  abrirModalRcbRecorrentes();
+
+  if(chaveEdicao){
+    alert(criados
+      ? `Recorrência atualizada: ${criados} lançamento(s) a partir de ${_finCutoffProximoMesLabel()} foram atualizados. Os lançamentos até o mês atual foram mantidos como estavam.`
+      : `Recorrência encerrada a partir de ${_finCutoffProximoMesLabel()}. Os lançamentos até o mês atual foram mantidos como estavam.`);
+  }
+}
+
+// Exclui uma recorrência de Recibos. Os lançamentos até o mês atual (inclusive já
+// passados) são sempre mantidos — só os lançamentos a partir do mês que vem são
+// removidos, encerrando a recorrência dali em diante.
+function rcbExcluirSerieRecorrente(chave){
+  const cutoff=_finCutoffProximoMes();
+  let list=_recibos();
+  const daSerie=list.filter(r=>r.recorrente && _rcbChaveSerie(r)===chave);
+  const futuros=daSerie.filter(r=>(r.data||'')>=cutoff);
+  if(!futuros.length){ alert('Não há lançamentos futuros nesta recorrência — os lançamentos até o mês atual são mantidos e não há o que excluir.'); return; }
+  if(!confirm(`Excluir os lançamentos futuros desta recorrência, a partir de ${_finCutoffProximoMesLabel()}? Os lançamentos até o mês atual serão mantidos. Esta ação não pode ser desfeita.`)) return;
+  list = list.filter(r=>{
+    if(!r.recorrente || _rcbChaveSerie(r)!==chave) return true;
+    return (r.data||'') < cutoff; // mantém passado/mês atual, remove futuro
+  });
+  _comSalvarImediato(()=>_salvarRecibos(list));
+  abrirModalRcbRecorrentes();
+  renderFinRecibos();
+}
+
+function rcbEditarSerieRecorrente(chave){
+  fecharModalRcbRecorrentes();
+  abrirModalRcbRecorrenciaNova(chave);
+}
+
+// Soma dos títulos do financeiro do paciente (Contas a Receber) já recebidos no mês,
+// separados por tipo de emissão fiscal — fecha o elo entre o que a clínica recebe dos
+// pacientes e o que precisou virar recibo, nota fiscal, ou nada ainda.
+function _rcbTotaisPacientes(mes){
+  const titulos=_titulos();
+  let emitidoRecibo=0, emitidoNF=0, semRecibo=0;
+  titulos.forEach(t=>{
+    if(t.status!=='pago') return; // só conta o que já foi efetivamente recebido
+    const dataPag=t.dataPagamento||'';
+    if(dataPag.slice(0,7)!==mes) return;
+    const valor=parseFloat(t.valor)||0;
+    const tipoEf=t.emissaoFiscal?.tipo;
+    if(tipoEf==='recibo') emitidoRecibo+=valor;
+    else if(tipoEf==='nota_fiscal') emitidoNF+=valor;
+    else semRecibo+=valor; // "sem_recibo" explícito, ou ainda sem nenhuma emissão registrada
+  });
+  return {emitidoRecibo, emitidoNF, semRecibo};
 }
 
 function renderFinRecibos(){
@@ -19556,6 +20012,7 @@ function renderFinRecibos(){
   rcbInitMes();
   _rcbPopularDatalist();
 
+  const mes=document.getElementById('rcb-mes').value||_finMesAtual();
   const listaMes=_rcbListaMes();
   let totalNF=0, totalRecibo=0;
   listaMes.forEach(r=>{
@@ -19565,6 +20022,11 @@ function renderFinRecibos(){
   const elNf=document.getElementById('rcb-val-nf'); if(elNf) elNf.textContent=fmtMoedaDisplay(totalNF);
   const elRc=document.getElementById('rcb-val-recibo'); if(elRc) elRc.textContent=fmtMoedaDisplay(totalRecibo);
   const elTt=document.getElementById('rcb-val-total'); if(elTt) elTt.textContent=fmtMoedaDisplay(totalNF+totalRecibo);
+
+  const pac=_rcbTotaisPacientes(mes);
+  const elPacRc=document.getElementById('rcb-val-pac-recibo'); if(elPacRc) elPacRc.textContent=fmtMoedaDisplay(pac.emitidoRecibo);
+  const elPacNf=document.getElementById('rcb-val-pac-nf'); if(elPacNf) elPacNf.textContent=fmtMoedaDisplay(pac.emitidoNF);
+  const elPacSem=document.getElementById('rcb-val-pac-sem'); if(elPacSem) elPacSem.textContent=fmtMoedaDisplay(pac.semRecibo);
 
   const tbody=document.getElementById('rcb-tbody');
   const empty=document.getElementById('rcb-empty');
