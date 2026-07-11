@@ -1337,6 +1337,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <span style="font-size:13px">📄</span> Gerar PDF
         </button>
         <button class="btn btn-ghost" id="btn-reprovar-orc" onclick="reprovarOrcamento()" style="display:none;background:var(--dal);color:var(--da);border-color:#FCA5A5">✗ Reprovar orçamento</button>
+        <button class="btn btn-ghost" id="btn-desaprovar-orc" onclick="desaprovarOrcamento()" style="display:none;background:var(--dal);color:var(--da);border-color:#FCA5A5" title="Remove os títulos gerados e volta o orçamento para 'Em aberto', pra você ajustar valores e aprovar de novo">↩ Desaprovar orçamento</button>
         <button class="btn btn-ghost" id="btn-aprovar-orc" onclick="abrirModalAprovarOrcamento()" style="display:none;background:var(--sul);color:var(--su);border-color:#86efac">✓ Aprovar orçamento</button>
         <button class="btn btn-primary" onclick="salvarOrcamento()">Salvar orçamento</button>
       </div>
@@ -6999,6 +7000,21 @@ function switchPpArea(area){
   if(area==='prontuario') switchProntTab('plano');
 }
 
+// A partir de um título em Contas a Receber (Financeiro) originado de um paciente,
+// abre a ficha do paciente já na aba Financeiro, expandindo e rolando até o bloco do
+// orçamento correspondente — pra ver a situação real ali, onde a edição de verdade
+// acontece (desaprovando o orçamento, se for o caso).
+function irParaFinanceiroOrcamento(pacienteId, orcamentoId){
+  abrirModalPt(pacienteId);
+  switchPpArea('financeiro');
+  setTimeout(()=>{
+    const uid='fin-orc-'+orcamentoId;
+    const body=document.getElementById(uid);
+    if(body && body.style.display!=='block') _finToggle(uid);
+    if(body) body.scrollIntoView({behavior:'smooth', block:'center'});
+  }, 60);
+}
+
 function renderPpAcoes(p){
   const acoes=gerarAcoes(p).sort((a,b)=>a.data-b.data);
   const hojeStr=iso(hoje);
@@ -7768,10 +7784,13 @@ function abrirModalOrcamento(pacId, orcId){
   // Botões aprovar/reprovar — só para orçamentos em aberto já salvos
   const btnAprovar=document.getElementById('btn-aprovar-orc');
   const btnReprovar=document.getElementById('btn-reprovar-orc');
+  const btnDesaprovar=document.getElementById('btn-desaprovar-orc');
   const statusAtualBotao=(orcEdit&&orcEdit.status)||'aberto';
   const isAberto = orcId && statusAtualBotao==='aberto';
+  const isAprovado = orcId && statusAtualBotao==='aprovado';
   if(btnAprovar) btnAprovar.style.display=isAberto?'':'none';
   if(btnReprovar) btnReprovar.style.display=isAberto?'':'none';
+  if(btnDesaprovar) btnDesaprovar.style.display=isAprovado?'':'none';
 
   _renderOrcItens();
   _renderOrcTotal();
@@ -7799,6 +7818,23 @@ function reprovarOrcamento(){
   fecharModalOrcamento();
   const p=pacientes.find(x=>String(x.id)===String(_orcModalPacId));
   if(p){ renderPpOrcamento(p); _sincronizarProntuario(p); }
+}
+
+// Desaprova um orçamento já aprovado, direto do modal do orçamento: cancela os títulos
+// gerados (reaproveitando a mesma lógica/confirmação de "cancelarTitulosOrcamento") e volta
+// o status para "Em aberto" — daí dá pra ajustar valores/formas/datas e aprovar de novo.
+// Bloqueado (pela própria cancelarTitulosOrcamento) se algum título já tiver sido recebido.
+function desaprovarOrcamento(){
+  if(!_orcModalId) return;
+  const orcId=_orcModalId, pacId=_orcModalPacId;
+  const antes=_orcamentos().find(o=>o.id===orcId);
+  if(!antes) return;
+  cancelarTitulosOrcamento(orcId); // confirma, cancela títulos e volta status pra "aberto"
+  const depois=_orcamentos().find(o=>o.id===orcId);
+  if(depois && depois.status==='aberto' && antes.status!=='aberto'){
+    // Reabre o próprio modal já atualizado (status "Em aberto"), pronto pra editar e aprovar de novo
+    abrirModalOrcamento(pacId, orcId);
+  }
 }
 
 function _orcToggleDataDecisao(status){
@@ -18450,13 +18486,19 @@ function renderFinLista(tipo){
     const labelAcao = isPagar||isFolha?'Pagar':'Receber';
     // Títulos recorrentes abrem o modal dedicado de edição de recorrência (mesmo do cadastro);
     // títulos avulsos (ou parcelados) abrem o modal padrão de lançamento.
-    const rowClick = isPaciente ? '' : (t.recorrente
-      ? `onclick="finEditarSerieRecorrente('${_finChaveSerie(t).replace(/'/g,"\\'")}','${tipo}')"`
-      : `onclick="abrirModalFinLancamento('${tipo}','${t.id}')"`);
+    // Títulos de pacientes levam direto para a aba Financeiro da ficha do paciente,
+    // já abrindo/destacando o orçamento a que pertencem (edição real só acontece lá,
+    // desaprovando o orçamento se for o caso). Recorrentes abrem o modal dedicado de
+    // edição de recorrência; avulsos (ou parcelados) abrem o modal padrão de lançamento.
+    const rowClick = isPaciente
+      ? `onclick="irParaFinanceiroOrcamento('${t.pacienteId}','${t.orcamentoId}')"`
+      : (t.recorrente
+          ? `onclick="finEditarSerieRecorrente('${_finChaveSerie(t).replace(/'/g,"\\'")}','${tipo}')"`
+          : `onclick="abrirModalFinLancamento('${tipo}','${t.id}')"`);
 
     const beneficiario = isPaciente ? (pacNome ? pacNome.replace(' — ','') : '—') : (t._contraparte || '—');
 
-    return `<tr style="${!isPaciente?'cursor:pointer':''}" ${rowClick}>
+    return `<tr style="cursor:pointer" ${rowClick}>
       <td onclick="event.stopPropagation()"><input type="checkbox" class="fin-chk fin-chk-${tipo}" data-id="${t.id}" data-origem="${t._origem||'manual'}" onchange="finAtualizarSelecao('${tipo}')"></td>
       <td class="fin-td-desc">
         <div style="font-weight:500;color:var(--tx)">${t.descricao||'—'}${recorrIc}</div>
