@@ -1739,6 +1739,22 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
+<!-- MODAL CONFIRMAÇÃO SIMPLES (genérico — usado por confirmar realização de ação e concluir lembrete) -->
+<div class="modal-ov" id="modal-confirmar-simples">
+  <div class="modal" style="width:420px">
+    <div class="modal-header">
+      <div class="modal-title" id="mcs-titulo">Confirmação</div>
+    </div>
+    <div class="modal-body">
+      <div id="mcs-mensagem" style="font-size:13px;color:var(--tx2)"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-confirmar-simples')">Cancelar</button>
+      <button class="btn btn-primary" onclick="_mcsConfirmar()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <!-- LEMBRETES -->
 <div id="sec-lembretes" class="sec">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
@@ -5867,7 +5883,7 @@ function renderAcaoCard(a, tipo){
   // ser concluídas manualmente direto da tela inicial — por isso mostram os dois botões,
   // empilhados. Pendências usam o próprio toggle de conclusão do módulo de Pendências, não
   // o sistema genérico de concluirAcao (que é o usado por Lembrete/Fluxo de ação).
-  const botaoConcluirManual = `<button class="btn-done" onclick="marcarFeito('${k}',${aStr})">✓ Concluir</button>`;
+  const botaoConcluirManual = `<button class="btn-done" onclick="confirmarRealizacaoAcao('${k}',${aStr})">✓ Concluir</button>`;
   const botaoHtml = a.origemConfirmacao
     ? `<div style="display:flex;flex-direction:column;gap:6px;align-items:stretch">
         <button class="btn-done" onclick="_abrirModalAgendamentoReal('${a.agendamentoId}')">Abrir agendamento →</button>
@@ -5896,6 +5912,53 @@ function renderAcaoCard(a, tipo){
   </div>`;
 }
 
+
+let _mcsCallback = null;
+function abrirConfirmacaoSimples(titulo, mensagem, callback){
+  _mcsCallback = callback;
+  const t = document.getElementById('mcs-titulo');
+  const m = document.getElementById('mcs-mensagem');
+  if(t) t.textContent = titulo;
+  if(m) m.textContent = mensagem;
+  document.getElementById('modal-confirmar-simples').classList.add('open');
+}
+function _mcsConfirmar(){
+  const cb = _mcsCallback;
+  fecharModal('modal-confirmar-simples');
+  _mcsCallback = null;
+  if(cb) cb();
+}
+
+// Conclusão manual "simples" (sem escolher realizada/não realizada) — usada pelo botão
+// "✓ Concluir" que aparece em ações de confirmação de agendamento e recontato na tela
+// inicial. Registra no mesmo histórico de ações, com resultado fixo 'realizada'.
+function confirmarRealizacaoAcao(k, a){
+  abrirConfirmacaoSimples('Confirmação de realização', 'Confirma que esta ação foi realizada?', ()=>{
+    const u = usuarios.find(x=>x.id===usuarioAtualId);
+    const pac = pacientes.find(p=>p.id===a.pacienteId);
+    historicoAcoes.unshift({
+      id: 'hac_'+Date.now(),
+      acaoId: a.id||'',
+      acaoTitulo: a.titulo||'',
+      pacienteId: a.pacienteId||null,
+      pacienteNome: a.pacienteNome||'',
+      situacaoId: pac?.situacao||'',
+      situacaoLabel: pac ? getSituacaoLabel(pac.situacao) : '',
+      responsavel: a.responsavel||'',
+      dataAcao: iso(a.data),
+      concluidaEm: iso(hoje),
+      resultado: 'realizada',
+      motivo: null,
+      concluidoPorId: usuarioAtualId||null,
+      concluidoPorNome: u?.nome||'',
+    });
+    salvarLS('sk3-historico-acoes', historicoAcoes);
+    concluirAcao(a);
+    const card = document.getElementById('card-'+k);
+    if(card){ card.classList.add('done'); }
+    setTimeout(()=>renderHoje(), 450);
+  });
+}
 
 let _acaoPendenteConclusao = null; // {k, a} aguardando modal
 
@@ -6202,7 +6265,7 @@ function renderLembretes(){
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-        ${l.status==='pendente'?`<button class="btn btn-primary btn-sm" onclick="concluirLembrete('${l.id}')">✓ Concluir</button>`:''}
+        ${l.status==='pendente'?`<button class="btn btn-primary btn-sm" onclick="confirmarConcluirLembrete('${l.id}')">✓ Concluir</button>`:''}
       </div>
     </div>`;
   }).join('') + `</div>`;
@@ -6210,6 +6273,9 @@ function renderLembretes(){
 }
 function setLembFiltroStatus(s){lembFiltroStatus=s;renderLembretes();}
 function setLembFiltroResp(r){lembFiltroResp=r;renderLembretes();}
+function confirmarConcluirLembrete(id){
+  abrirConfirmacaoSimples('Confirmação de realização', 'Confirma que este lembrete foi concluído?', ()=>concluirLembrete(id));
+}
 function concluirLembrete(id){
   const l=lembretesGerados.find(x=>x.id===id);
   if(!l)return;
