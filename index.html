@@ -140,8 +140,6 @@
 .fin-tt-tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
 .fin-tt-tag-oper{background:var(--acl);color:var(--ac)}
 .fin-tt-tag-folha{background:#F3E8FF;color:#7C3AED}
-.fin-origem-chip{cursor:pointer;padding:6px 14px;border:1px solid var(--border);border-radius:var(--r8);font-size:12.5px;background:var(--surface);display:inline-flex;align-items:center;gap:6px;transition:border-color .12s,background .12s}
-.fin-origem-chip.on{border-color:var(--ac);background:var(--acl)}
 .fin-origem-comissao{background:var(--wal);color:var(--wa)}
 
 /* Tag recorrente */
@@ -851,9 +849,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <nav class="subnav" id="financeiro-subnav">
   <div class="subnav-title">Financeiro</div>
   <button class="subnav-btn on" id="fin-sub-fluxo" onclick="showFinSub('fluxo',this)">Fluxo de Caixa</button>
-  <button class="subnav-btn" id="fin-sub-total" onclick="showFinSub('total',this)">A pagar total</button>
   <button class="subnav-btn" id="fin-sub-pagar" onclick="showFinSub('pagar',this)">A pagar operacional</button>
-  <button class="subnav-btn" id="fin-sub-folha" onclick="showFinSub('folha',this)" style="display:none">A pagar folha</button>
+  <button class="subnav-btn" id="fin-sub-folha" onclick="showFinSub('folha',this)" style="display:none">A pagar total</button>
   <button class="subnav-btn" id="fin-sub-receber" onclick="showFinSub('receber',this)">Contas a Receber</button>
   <button class="subnav-btn" id="fin-sub-comissao" onclick="showFinSub('comissao',this)">Comissão Dentistas</button>
   <button class="subnav-btn" id="fin-sub-recibos" onclick="showFinSub('recibos',this)">Recibos</button>
@@ -2312,79 +2309,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
   </div>
 
-  <!-- A PAGAR TOTAL (unifica operacional + folha) -->
-  <div id="fin-area-total" class="fin-area">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:10px">
-      <div>
-        <div class="pg-title">A pagar total</div>
-        <div class="pg-desc">Visão unificada — operacional (Sicoob) e folha (C6) lado a lado</div>
-      </div>
-    </div>
-
-    <!-- Atalhos de período -->
-    <div class="fin-periodo-row" style="margin-top:14px">
-      <button type="button" class="fin-periodo-btn" id="tt-periodo-btn-mes" onclick="finSetPeriodoTotal('mes')">
-        <span class="fin-periodo-lbl">Este mês</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-      <button type="button" class="fin-periodo-btn" id="tt-periodo-btn-semana" onclick="finSetPeriodoTotal('semana')">
-        <span class="fin-periodo-lbl">Esta semana</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-      <button type="button" class="fin-periodo-btn" id="tt-periodo-btn-prox_semana" onclick="finSetPeriodoTotal('prox_semana')">
-        <span class="fin-periodo-lbl">Próxima semana</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-    </div>
-
-    <!-- Cards resumo -->
-    <div class="fin-cards-row">
-      <div class="fin-card fin-card-blue fin-card-clickable on" data-status="" onclick="finFiltrarStatusTotal('')">
-        <div class="fin-card-label">Total geral</div>
-        <div class="fin-card-value" id="tt-val-total">R$ 0,00</div>
-      </div>
-      <div class="fin-card fin-card-amber fin-card-clickable" data-status="aberto" onclick="finFiltrarStatusTotal('aberto')">
-        <div class="fin-card-label">Em aberto</div>
-        <div class="fin-card-value" id="tt-val-aberto">R$ 0,00</div>
-      </div>
-      <div class="fin-card fin-card-red fin-card-clickable" data-status="atrasado" onclick="finFiltrarStatusTotal('atrasado')">
-        <div class="fin-card-label">Atrasado</div>
-        <div class="fin-card-value" id="tt-val-atrasado">R$ 0,00</div>
-      </div>
-    </div>
-
-    <!-- Composição por origem: operacional x folha -->
-    <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
-      <div class="fin-origem-chip on" data-origem="" onclick="finFiltrarOrigemTotal('')">Todos</div>
-      <div class="fin-origem-chip" data-origem="pagar" onclick="finFiltrarOrigemTotal('pagar')">
-        <span class="fin-tt-tag fin-tt-tag-oper">Operacional</span> <span id="tt-val-operacional" style="font-weight:600">R$ 0,00</span>
-      </div>
-      <div class="fin-origem-chip" data-origem="folha" onclick="finFiltrarOrigemTotal('folha')">
-        <span class="fin-tt-tag fin-tt-tag-folha">Folha</span> <span id="tt-val-folha" style="font-weight:600">R$ 0,00</span>
-      </div>
-    </div>
-
-    <!-- Tabela -->
-    <div class="fin-table-wrap" style="margin-top:14px">
-      <table class="fin-table">
-        <thead>
-          <tr>
-            <th>Origem</th>
-            <th>Descrição</th>
-            <th>Beneficiário</th>
-            <th>Categoria</th>
-            <th>Vencimento</th>
-            <th>Valor</th>
-            <th>Status</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="fin-tt-tbody"></tbody>
-      </table>
-      <div id="fin-tt-empty" style="display:none;text-align:center;padding:24px;color:var(--tx3);font-size:13px">Nenhum título neste período.</div>
-    </div>
-  </div>
-
   <!-- CONTAS A PAGAR -->
   <div id="fin-area-pagar" class="fin-area">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:10px">
@@ -2470,14 +2394,14 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
   </div>
 
-  <!-- FOLHA -->
+  <!-- FOLHA (agora "A pagar total" — unifica operacional + folha) -->
   <div id="fin-area-folha" class="fin-area">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:10px">
       <div>
-        <div class="pg-title">A pagar folha</div>
-        <div class="pg-desc">Pagamentos a pessoas: salários, repasses de dentistas e transferência mensal para o C6</div>
+        <div class="pg-title">A pagar total</div>
+        <div class="pg-desc">Tudo que a clínica tem a pagar, unificado: operacional (Sicoob) e folha — salários, repasses e transferência ao C6</div>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="abrirModalFinLancamento('folha')" data-perm="fin_folha_criar">+ Novo lançamento</button>
+      <button class="btn btn-primary btn-sm" onclick="abrirModalFinNovoTotal()" data-perm="fin_folha_criar">+ Novo lançamento</button>
     </div>
 
     <!-- Atalhos de período -->
@@ -2518,7 +2442,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
     <!-- Toolbar -->
     <div class="fin-toolbar" style="margin-top:14px">
-      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('folha')">🔁 Recorrentes cadastrados</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('pagar')">🔁 Recorrentes Operacional</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('folha')">🔁 Recorrentes Folha</button>
       <button class="btn btn-ghost btn-sm" onclick="abrirFiltrosFin('folha')">▤ Filtros<span class="fin-filtros-badge" id="fin-fl-filtros-badge" style="display:none">0</span></button>
       <button class="btn btn-ghost btn-sm" onclick="finLimparFiltros('folha')">Limpar</button>
       <div id="fin-fl-sel-bar" style="display:none;align-items:center;gap:8px;margin-left:auto">
@@ -2534,6 +2459,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <thead>
           <tr>
             <th style="width:32px"><input type="checkbox" id="fin-fl-chk-all" onchange="finToggleAll('folha',this)"></th>
+            <th style="width:100px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('folha','tipoPagto')" title="Ordenar por tipo">Tipo <span class="fin-th-sort-ic" id="fl-sort-ic-tipoPagto"></span></span><button type="button" class="fin-th-group-btn" id="fl-group-btn-tipoPagto" onclick="finAgruparColuna('folha','tipoPagto')" title="Agrupar por tipo">⊞</button></div></th>
             <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('folha','descricao')" title="Ordenar por descrição">Descrição <span class="fin-th-sort-ic" id="fl-sort-ic-descricao"></span></span><button type="button" class="fin-th-group-btn" id="fl-group-btn-descricao" onclick="finAgruparColuna('folha','descricao')" title="Agrupar por descrição">⊞</button></div></th>
             <th style="width:140px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('folha','beneficiario')" title="Ordenar por beneficiário">Beneficiário <span class="fin-th-sort-ic" id="fl-sort-ic-beneficiario"></span></span><button type="button" class="fin-th-group-btn" id="fl-group-btn-beneficiario" onclick="finAgruparColuna('folha','beneficiario')" title="Agrupar por beneficiário">⊞</button></div></th>
             <th style="width:90px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('folha','parcela')" title="Ordenar por parcela">Parcela <span class="fin-th-sort-ic" id="fl-sort-ic-parcela"></span></span><button type="button" class="fin-th-group-btn" id="fl-group-btn-parcela" onclick="finAgruparColuna('folha','parcela')" title="Agrupar por parcela">⊞</button></div></th>
@@ -2549,7 +2475,34 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div id="fin-fl-empty" class="fin-empty" style="display:none">
         <div style="font-size:24px;margin-bottom:8px">👥</div>
         Nenhum título encontrado.
-        <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="abrirModalFinLancamento('folha')" data-perm="fin_folha_criar">+ Novo lançamento</button>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="abrirModalFinNovoTotal()" data-perm="fin_folha_criar">+ Novo lançamento</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: escolha entre Operacional/Folha ao criar um novo lançamento na aba "A pagar total" -->
+  <div id="modal-fin-total-escolha" class="fin-modal-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharModalFinTotalEscolha)">
+    <div class="fin-modal-box" style="max-width:420px">
+      <div class="fin-modal-hdr">
+        <div class="fin-modal-title">Novo lançamento</div>
+        <button class="fin-modal-close" onclick="fecharModalFinTotalEscolha()">✕</button>
+      </div>
+      <div class="fin-modal-body">
+        <p style="font-size:12.5px;color:var(--tx2)">Em qual submódulo este título deve entrar?</p>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-ghost" style="justify-content:flex-start;text-align:left;padding:12px 14px;height:auto" onclick="finEscolherTipoNovoTotal('pagar')">
+            <div>
+              <div style="font-weight:600;font-size:13px"><span class="fin-tt-tag fin-tt-tag-oper">Operacional</span></div>
+              <div style="font-size:11.5px;color:var(--tx3);font-weight:400;margin-top:4px">Aluguel, material, serviços, impostos e demais despesas (Sicoob)</div>
+            </div>
+          </button>
+          <button class="btn btn-ghost" style="justify-content:flex-start;text-align:left;padding:12px 14px;height:auto" onclick="finEscolherTipoNovoTotal('folha')">
+            <div>
+              <div style="font-weight:600;font-size:13px"><span class="fin-tt-tag fin-tt-tag-folha">Folha</span></div>
+              <div style="font-size:11.5px;color:var(--tx3);font-weight:400;margin-top:4px">Salário fixo, repasse a dentistas e transferência ao C6</div>
+            </div>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -3216,9 +3169,17 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="fin-drawer-body">
       <input type="hidden" id="fin-filtro-tipo">
 
-      <div>
+      <div id="fin-filtro-cat-single-wrap">
         <div class="fin-drawer-sec-label">Categoria</div>
         <div class="fin-cat-list" id="fin-filtro-cat-list"></div>
+      </div>
+
+      <div id="fin-filtro-cat-dupla-wrap" style="display:none">
+        <div class="fin-drawer-sec-label">Categorias operacionais</div>
+        <select multiple id="fin-filtro-cat-operacional" class="fi" style="min-height:110px"></select>
+        <div class="fin-drawer-sec-label" style="margin-top:14px">Categorias folha</div>
+        <select multiple id="fin-filtro-cat-folha" class="fi" style="min-height:110px"></select>
+        <div style="font-size:11px;color:var(--tx3);margin-top:4px">Segure Ctrl (ou Cmd no Mac) para selecionar mais de uma categoria em cada lista.</div>
       </div>
 
       <div id="fin-filtro-origem-wrap" style="display:none">
@@ -4615,9 +4576,6 @@ function aplicarPermissoesFinanceiroSubnav(){
     const m = btn.getAttribute('onclick').match(/showFinSub\('([^']+)'/);
     if(!m) return;
     const sub = m[1];
-    // "A pagar total" não tem permissão própria: aparece pra quem enxerga
-    // pelo menos uma das duas listas que ela unifica (operacional ou folha)
-    if(sub==='total'){ btn.style.display = _finTotalVisivel() ? '' : 'none'; return; }
     const perm = FIN_SUBNAV_MAPA[sub];
     const pode = admin || !perm || temPerm(perm);
     btn.style.display = pode ? '' : 'none';
@@ -5117,9 +5075,9 @@ const PERMISSOES_GRUPOS = [
     ]
   },
   {
-    grupo:'Financeiro — A pagar folha (restrito)',
+    grupo:'Financeiro — A pagar total (restrito, une operacional + folha)',
     itens:[
-      {id:'fin_folha_ver',label:'Visualizar (salários e repasses)'},
+      {id:'fin_folha_ver',label:'Visualizar (une operacional + salários/repasses)'},
       {id:'fin_folha_criar',label:'Criar/lançar'},
       {id:'fin_folha_editar',label:'Editar/liquidar'},
       {id:'fin_folha_excluir',label:'Excluir'},
@@ -18274,6 +18232,7 @@ function _finValorColuna(t, campo){
     case 'parcela': return (t.parcelaInfo&&t.parcelaInfo.numero)?t.parcelaInfo.numero:(t.recorrente?9999:-1);
     case 'categoria': return (t.categoria||'').toLowerCase();
     case 'origem': return t._origem==='paciente'?'paciente':'manual';
+    case 'tipoPagto': return t.tipo==='folha'?'folha':'pagar';
     case 'vencimento': return t.vencimento||'';
     case 'valor': return parseFloat(t.valor)||0;
     case 'status': return _finStatusEfetivo(t);
@@ -18299,6 +18258,7 @@ function _finRotuloGrupo(t, campo){
   }
   if(campo==='categoria') return t.categoria||'Sem categoria';
   if(campo==='origem') return t._origem==='paciente'?'Paciente':'Manual';
+  if(campo==='tipoPagto') return t.tipo==='folha'?'Folha':'Operacional';
   if(campo==='vencimento') return _finFmtData(t.vencimento);
   return '—';
 }
@@ -18336,7 +18296,7 @@ function _finAtualizarHeadersOrdenacao(tipo){
   const prefix = tipo==='pagar'?'pg':(tipo==='folha'?'fl':'rc');
   const ord = _finOrdemColuna[tipo] || {campo:'vencimento',dir:'asc'};
   const grp = _finAgruparColuna[tipo];
-  ['descricao','beneficiario','parcela','categoria','origem','vencimento','valor','status'].forEach(campo=>{
+  ['tipoPagto','descricao','beneficiario','parcela','categoria','origem','vencimento','valor','status'].forEach(campo=>{
     const ic=document.getElementById(`${prefix}-sort-ic-${campo}`);
     if(ic) ic.textContent = ord.campo===campo ? (ord.dir==='asc'?'▲':'▼') : '';
     const gb=document.getElementById(`${prefix}-group-btn-${campo}`);
@@ -18547,10 +18507,7 @@ function _finAnexoIconHtml(t){
 // ── Navegação entre submódulos ────────────────────────────────────────
 function showFinSub(sub, btn){
   const permNec = FIN_SUBNAV_MAPA[sub];
-  // "A pagar total" não tem permissão própria — libera se a pessoa enxerga
-  // pelo menos uma das duas listas que ela unifica (operacional ou folha)
-  const semPermissao = sub==='total' ? !_finTotalVisivel() : (permNec && !souAdministradorReal() && !temPerm(permNec));
-  if(semPermissao){
+  if(permNec && !souAdministradorReal() && !temPerm(permNec)){
     const aviso = document.getElementById('perm-aviso');
     if(aviso){
       const nome = usuarios.find(u=>u.id===usuarioAtualId)?.nome || 'este usuário';
@@ -18568,7 +18525,6 @@ function showFinSub(sub, btn){
   document.querySelectorAll('#financeiro-subnav .subnav-btn').forEach(b=>b.classList.remove('on'));
   if(btn) btn.classList.add('on');
   if(sub==='fluxo') renderFinFluxo();
-  else if(sub==='total') renderFinTotal();
   else if(sub==='pagar') finSetPeriodoLista('pagar','mes');
   else if(sub==='folha') finSetPeriodoLista('folha','mes');
   else if(sub==='receber') finSetPeriodoLista('receber','mes');
@@ -18580,7 +18536,7 @@ function renderFinanceiro(){
   // Controla visibilidade de cada aba do Financeiro conforme permissão do usuário logado
   aplicarPermissoesFinanceiroSubnav();
   const admin = souAdministradorReal();
-  const podeAtual = admin || (_finSubAtual==='total' ? _finTotalVisivel() : (!FIN_SUBNAV_MAPA[_finSubAtual] || temPerm(FIN_SUBNAV_MAPA[_finSubAtual])));
+  const podeAtual = admin || !FIN_SUBNAV_MAPA[_finSubAtual] || temPerm(FIN_SUBNAV_MAPA[_finSubAtual]);
   if(!podeAtual){
     // Se a aba atual deixou de estar disponível, cai na primeira aba permitida
     _finSubAtual = Object.keys(FIN_SUBNAV_MAPA).find(sub=>admin||temPerm(FIN_SUBNAV_MAPA[sub])) || 'fluxo';
@@ -18861,95 +18817,16 @@ function _finAplicarFiltrosAdv(todos, adv, tipo, isPagar, ignorarStatus){
   });
 }
 
-// ── A PAGAR TOTAL (unifica operacional + folha) ─────────────────────
-let _finTotalPeriodoAtivo = 'mes';
-let _finTotalStatusFiltro = '';
-let _finTotalOrigemFiltro = ''; // '', 'pagar', 'folha'
-
-function _finTotalPodeVerFolha(){ return souAdministradorReal() || temPerm('fin_folha_ver'); }
-function _finTotalPodeVerPagar(){ return souAdministradorReal() || temPerm('fin_pagar_ver'); }
-function _finTotalVisivel(){ return _finTotalPodeVerPagar() || _finTotalPodeVerFolha(); }
-
-function finSetPeriodoTotal(periodo){ _finTotalPeriodoAtivo = periodo; renderFinTotal(); }
-function finFiltrarOrigemTotal(origem){ _finTotalOrigemFiltro = origem; renderFinTotal(); }
-function finFiltrarStatusTotal(status){ _finTotalStatusFiltro = status; renderFinTotal(); }
-
-function renderFinTotal(){
-  const {de, ate} = _finPeriodoListaBounds(_finTotalPeriodoAtivo);
-  ['mes','semana','prox_semana'].forEach(p=>{
-    const btn=document.getElementById('tt-periodo-btn-'+p);
-    if(!btn) return;
-    btn.classList.toggle('on', _finTotalPeriodoAtivo===p);
-    const {de:d2,ate:a2}=_finPeriodoListaBounds(p);
-    const el=btn.querySelector('.fin-periodo-datas');
-    if(el) el.textContent = `${_finFmtDataCurta(d2)} – ${_finFmtDataCurta(a2)}`;
-  });
-
-  // Base: só títulos "a pagar" (operacional) e "a pagar folha" — cada um filtrado
-  // pela permissão de visualização que a pessoa já tem nas abas de origem
-  let todos = _finTodosTitulos().filter(t=>t.tipo==='pagar'||t.tipo==='folha');
-  if(!_finTotalPodeVerPagar()) todos = todos.filter(t=>t.tipo!=='pagar');
-  if(!_finTotalPodeVerFolha()) todos = todos.filter(t=>t.tipo!=='folha');
-  todos = todos.filter(t=>t.vencimento && t.vencimento>=de && t.vencimento<=ate);
-  if(_finTotalOrigemFiltro) todos = todos.filter(t=>t.tipo===_finTotalOrigemFiltro);
-
-  const comStatus = todos.map(t=>({...t,_st:_finStatusEfetivo(t)}));
-  const soma = arr=>arr.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
-  const setEl=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
-  setEl('tt-val-total', _finFmt(soma(comStatus)));
-  setEl('tt-val-operacional', _finFmt(soma(comStatus.filter(t=>t.tipo==='pagar'))));
-  setEl('tt-val-folha', _finFmt(soma(comStatus.filter(t=>t.tipo==='folha'))));
-  setEl('tt-val-aberto', _finFmt(soma(comStatus.filter(t=>t._st==='aberto'))));
-  setEl('tt-val-atrasado', _finFmt(soma(comStatus.filter(t=>t._st==='atrasado'))));
-
-  // Esconde o chip da origem à qual a pessoa não tem acesso (ex: secretária não vê "Folha")
-  const chipFolha = document.querySelector('#fin-area-total .fin-origem-chip[data-origem="folha"]');
-  if(chipFolha) chipFolha.style.display = _finTotalPodeVerFolha() ? '' : 'none';
-  const chipPagar = document.querySelector('#fin-area-total .fin-origem-chip[data-origem="pagar"]');
-  if(chipPagar) chipPagar.style.display = _finTotalPodeVerPagar() ? '' : 'none';
-
-  document.querySelectorAll('#fin-area-total .fin-card-clickable[data-status]').forEach(c=>{
-    c.classList.toggle('on',(c.dataset.status||'')===_finTotalStatusFiltro);
-  });
-  document.querySelectorAll('#fin-area-total .fin-origem-chip').forEach(c=>{
-    c.classList.toggle('on',(c.dataset.origem||'')===_finTotalOrigemFiltro);
-  });
-
-  let lista = _finTotalStatusFiltro ? comStatus.filter(t=>t._st===_finTotalStatusFiltro) : comStatus;
-  lista.sort((a,b)=> (a.vencimento||'').localeCompare(b.vencimento||''));
-
-  const tbody = document.getElementById('fin-tt-tbody');
-  const emptyEl = document.getElementById('fin-tt-empty');
-  if(!tbody) return;
-  if(!lista.length){ tbody.innerHTML=''; if(emptyEl) emptyEl.style.display='block'; return; }
-  if(emptyEl) emptyEl.style.display='none';
-
-  tbody.innerHTML = lista.map(t=>{
-    const isFolha = t.tipo==='folha';
-    const origemTag = isFolha
-      ? `<span class="fin-tt-tag fin-tt-tag-folha">Folha</span>`
-      : `<span class="fin-tt-tag fin-tt-tag-oper">Operacional</span>`;
-    const liquidado = t._st==='pago';
-    return `<tr onclick="abrirModalFinLancamento('${t.tipo}','${t.id}')" style="cursor:pointer">
-      <td>${origemTag}</td>
-      <td>${esc(t.descricao||'—')}</td>
-      <td>${esc(t._contraparte||'—')}</td>
-      <td>${esc(t.categoria||'—')}</td>
-      <td style="color:${t._st==='atrasado'?'var(--da)':'var(--tx2)'}">${_finFmtData(t.vencimento)}</td>
-      <td class="fin-td-valor">${_finFmt(t.valor)}</td>
-      <td>${_finBadge(t._st)}</td>
-      <td onclick="event.stopPropagation()">
-        <button class="btn btn-sm ${liquidado?'btn-ghost':''}" style="white-space:nowrap;${liquidado?'':'background:var(--sul);color:var(--su);border-color:var(--su)'}" onclick="${liquidado?`finDesfazerPagamento('${t.id}','${t.tipo}')`:`abrirModalFinPagar('${t.id}','${t.tipo}')`}">${liquidado?'Desfazer':'Pagar'}</button>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
 function renderFinLista(tipo){
   const isPagar = tipo==='pagar';
   const isFolha = tipo==='folha';
   const prefix = isPagar?'pg':(isFolha?'fl':'rc');
-  const todos = _finTodosTitulos().filter(t=> (isPagar||isFolha) ? t.tipo===tipo : (t.tipo==='receber'||!t.tipo));
+  // "folha" agora é a aba unificada "A pagar total": junta títulos operacional + folha
+  const todos = _finTodosTitulos().filter(t=>{
+    if(isPagar) return t.tipo==='pagar';
+    if(isFolha) return t.tipo==='pagar' || t.tipo==='folha';
+    return (t.tipo==='receber'||!t.tipo);
+  });
 
   // Filtros avançados (drawer)
   const adv = _finFiltrosAdv[tipo] || _finFiltroVazio();
@@ -19008,6 +18885,12 @@ function renderFinLista(tipo){
     const origemTag = !isPagar
       ? `<span class="fin-origem fin-origem-${t._origem||'manual'}">${t._origem==='paciente'?'Paciente':'Manual'}</span>`
       : '';
+    // Na aba unificada ("A pagar total"), cada título carrega seu próprio tipo real
+    // (pagar/operacional ou folha) — usado tanto na tag visual quanto na edição/permissão
+    const tipoReal = t.tipo || tipo;
+    const tipoPagtoTag = isFolha
+      ? `<td onclick="event.stopPropagation()">${tipoReal==='folha'?'<span class="fin-tt-tag fin-tt-tag-folha">Folha</span>':'<span class="fin-tt-tag fin-tt-tag-oper">Operacional</span>'}</td>`
+      : '';
     const recorrIc = t.recorrente ? `<span class="fin-recorr-ic" title="Recorrente">⟳</span>` : '';
     const isPaciente = t._origem==='paciente';
     const pacNome = isPaciente ? (() => { const p=pacientes.find(x=>String(x.id)===String(t.pacienteId)); return p?' — '+p.nome:''; })() : '';
@@ -19019,14 +18902,17 @@ function renderFinLista(tipo){
     // desaprovando o orçamento se for o caso). Todos os demais — recorrentes ou avulsos —
     // abrem o modal padrão de lançamento, editável/excluível individualmente; para editar
     // a série recorrente como um todo, o caminho é o botão "Títulos recorrentes".
+    // Importante: usa o tipo REAL do título (tipoReal) e não o tipo da aba/subnav — na
+    // aba unificada isso garante que o modal abra com as categorias e a conta corretas.
     const rowClick = isPaciente
       ? `onclick="irParaFinanceiroOrcamento('${t.pacienteId}','${t.orcamentoId}')"`
-      : `onclick="abrirModalFinLancamento('${tipo}','${t.id}')"`;
+      : `onclick="abrirModalFinLancamento('${tipoReal}','${t.id}')"`;
 
     const beneficiario = isPaciente ? (pacNome ? pacNome.replace(' — ','') : '—') : (t._contraparte || '—');
 
     return `<tr style="cursor:pointer" ${rowClick}>
       <td onclick="event.stopPropagation()"><input type="checkbox" class="fin-chk fin-chk-${tipo}" data-id="${t.id}" data-origem="${t._origem||'manual'}" onchange="finAtualizarSelecao('${tipo}')"></td>
+      ${tipoPagtoTag}
       <td class="fin-td-desc">
         <div style="font-weight:500;color:var(--tx)">${t.descricao||'—'}${recorrIc}</div>
       </td>
@@ -19046,9 +18932,10 @@ function renderFinLista(tipo){
   const grupoCampo = _finAgruparColuna[tipo];
   if(grupoCampo){
     const grupos = _finAgruparLista(lista, tipo);
+    const colspanBase = (tipo==='receber'||tipo==='folha') ? 10 : 9;
     tbody.innerHTML = grupos.map(g=>{
       const subtotal = g.itens.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
-      return `<tr class="fin-grupo-row"><td colspan="${tipo==='receber'?10:9}">${esc(String(g.label))} <span style="font-weight:400;color:var(--tx3)">· ${g.itens.length} título${g.itens.length!==1?'s':''} · ${_finFmt(subtotal)}</span></td></tr>`
+      return `<tr class="fin-grupo-row"><td colspan="${colspanBase}">${esc(String(g.label))} <span style="font-weight:400;color:var(--tx3)">· ${g.itens.length} título${g.itens.length!==1?'s':''} · ${_finFmt(subtotal)}</span></td></tr>`
         + g.itens.map(renderLinhaTitulo).join('');
     }).join('');
   } else {
@@ -19069,16 +18956,27 @@ function finLimparFiltros(tipo){
 function abrirFiltrosFin(tipo){
   document.getElementById('fin-filtro-tipo').value = tipo;
   const isPagar = tipo==='pagar';
+  const isFolha = tipo==='folha'; // aba unificada "A pagar total"
   const adv = _finFiltrosAdv[tipo] || _finFiltroVazio();
 
-  // Categorias (checkboxes)
-  const catList = document.getElementById('fin-filtro-cat-list');
-  const catsFiltro = tipo==='folha' ? FIN_CATEGORIAS_FOLHA : FIN_CATEGORIAS;
-  const opts = [{v:'',l:'Sem categoria'}, ...catsFiltro.map(c=>({v:c,l:c}))];
-  catList.innerHTML = opts.map(o=>`
-    <label class="fin-cat-chip">
-      <input type="checkbox" value="${o.v}" data-fin-cat ${adv.cats.includes(o.v)?'checked':''}> ${o.l}
-    </label>`).join('');
+  // Categoria: lista única (pagar/receber) ou duas listas lado a lado (aba unificada)
+  document.getElementById('fin-filtro-cat-single-wrap').style.display = isFolha ? 'none' : '';
+  document.getElementById('fin-filtro-cat-dupla-wrap').style.display = isFolha ? '' : 'none';
+
+  if(isFolha){
+    const selOper = document.getElementById('fin-filtro-cat-operacional');
+    const selFolha = document.getElementById('fin-filtro-cat-folha');
+    selOper.innerHTML = FIN_CATEGORIAS.map(c=>`<option value="${c}" ${adv.cats.includes(c)?'selected':''}>${c}</option>`).join('');
+    selFolha.innerHTML = FIN_CATEGORIAS_FOLHA.map(c=>`<option value="${c}" ${adv.cats.includes(c)?'selected':''}>${c}</option>`).join('');
+  } else {
+    const catList = document.getElementById('fin-filtro-cat-list');
+    const catsFiltro = FIN_CATEGORIAS;
+    const opts = [{v:'',l:'Sem categoria'}, ...catsFiltro.map(c=>({v:c,l:c}))];
+    catList.innerHTML = opts.map(o=>`
+      <label class="fin-cat-chip">
+        <input type="checkbox" value="${o.v}" data-fin-cat ${adv.cats.includes(o.v)?'checked':''}> ${o.l}
+      </label>`).join('');
+  }
 
   // Origem (só receber)
   document.getElementById('fin-filtro-origem-wrap').style.display = isPagar?'none':'';
@@ -19086,7 +18984,7 @@ function abrirFiltrosFin(tipo){
 
   // Status (opções dependem do tipo)
   const statusSel = document.getElementById('fin-filtro-status');
-  statusSel.innerHTML = isPagar
+  statusSel.innerHTML = (isPagar||isFolha)
     ? `<option value="">Todos os status</option><option value="aberto">Em aberto</option><option value="pago">Pago</option><option value="atrasado">Atrasado</option><option value="cancelado">Cancelado</option>`
     : `<option value="">Todos os status</option><option value="aberto">Em aberto</option><option value="recebido">Recebido</option><option value="atrasado">Atrasado</option><option value="cancelado">Cancelado</option>`;
   statusSel.value = adv.status||'';
@@ -19100,8 +18998,8 @@ function abrirFiltrosFin(tipo){
   document.getElementById('fin-filtro-liq-ate').value = adv.liqAte||'';
 
   // Beneficiário / Pagador
-  document.getElementById('fin-filtro-parte-label').textContent = isPagar?'Beneficiário':'Pagador';
-  document.getElementById('fin-filtro-parte').placeholder = isPagar?'Buscar por beneficiário...':'Buscar por pagador / paciente...';
+  document.getElementById('fin-filtro-parte-label').textContent = (isPagar||isFolha)?'Beneficiário':'Pagador';
+  document.getElementById('fin-filtro-parte').placeholder = (isPagar||isFolha)?'Buscar por beneficiário...':'Buscar por pagador / paciente...';
   document.getElementById('fin-filtro-parte').value = adv.parte||'';
 
   // Recorrentes
@@ -19117,7 +19015,13 @@ function fecharFiltrosFin(){
 function finFiltrosAplicar(){
   const tipo = document.getElementById('fin-filtro-tipo').value;
   if(!tipo) return;
-  const cats = Array.from(document.querySelectorAll('#fin-filtro-cat-list input[data-fin-cat]:checked')).map(c=>c.value);
+  const isFolha = tipo==='folha';
+  const cats = isFolha
+    ? [
+        ...Array.from(document.getElementById('fin-filtro-cat-operacional').selectedOptions).map(o=>o.value),
+        ...Array.from(document.getElementById('fin-filtro-cat-folha').selectedOptions).map(o=>o.value),
+      ]
+    : Array.from(document.querySelectorAll('#fin-filtro-cat-list input[data-fin-cat]:checked')).map(c=>c.value);
 
   _finFiltrosAdv[tipo] = {
     cats,
@@ -19187,7 +19091,7 @@ function exportarFinPDF(tipo){
 
   if(!lista.length){ alert('Não há títulos no filtro atual para exportar.'); return; }
 
-  const tituloTela = {pagar:'A pagar operacional', folha:'A pagar folha', receber:'Contas a Receber'}[tipo] || tipo;
+  const tituloTela = {pagar:'A pagar operacional', folha:'A pagar total', receber:'Contas a Receber'}[tipo] || tipo;
   const statusLabels = {aberto:'Em aberto', atrasado:'Atrasado', pago:'Pago', recebido:'Recebido', cancelado:'Cancelado'};
 
   const total = lista.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
@@ -21227,7 +21131,7 @@ function abrirModalFinLiquidar(ids, tipo){
   document.getElementById('fin-liq-ids').value=pendentes.join(',');
   document.getElementById('fin-liq-tipo').value=tipo;
   document.getElementById('modal-fin-liq-titulo').textContent=`Liquidar ${pendentes.length} título${pendentes.length!==1?'s':''}`;
-  const isPagar=tipo==='pagar';
+  const isPagar=tipo==='pagar'||tipo==='folha';
   document.getElementById('fin-liq-desc').textContent=`Os títulos serão marcados como "${isPagar?'Pago':'Recebido'}". Confirme a data de liquidação.`;
   document.getElementById('fin-liq-data').value=_finIso(new Date());
   document.getElementById('fin-liq-btn-confirmar').textContent=`Confirmar — ${pendentes.length} título${pendentes.length!==1?'s':''}`;
@@ -21251,7 +21155,7 @@ function finConfirmarLiquidar(){
   const dataFixa=document.getElementById('fin-liq-data').value;
   if(modo==='data'&&!dataFixa){ alert('Informe a data de liquidação.'); return; }
 
-  const statusNovo=tipo==='pagar'?'pago':'recebido';
+  const statusNovo=(tipo==='pagar'||tipo==='folha')?'pago':'recebido';
   const forma=document.getElementById('fin-liq-forma').value;
   let list=_finTitulosGestao();
   ids.forEach(id=>{
@@ -21669,6 +21573,21 @@ function finAbrirMedicao(nome){
 function fecharModalFinMedicaoEscolha(){
   document.getElementById('modal-fin-medicao-escolha').classList.remove('open');
   _finMedPendente=null;
+}
+
+// ── Escolha Operacional/Folha ao criar um novo lançamento pela aba "A pagar total" ──
+function abrirModalFinNovoTotal(){
+  if(!souAdministradorReal() && !temPerm('fin_pagar_criar') && !temPerm('fin_folha_criar')){
+    alert('Você não tem permissão para esta ação.'); return;
+  }
+  document.getElementById('modal-fin-total-escolha').classList.add('open');
+}
+function fecharModalFinTotalEscolha(){
+  document.getElementById('modal-fin-total-escolha').classList.remove('open');
+}
+function finEscolherTipoNovoTotal(tipoDestino){
+  document.getElementById('modal-fin-total-escolha').classList.remove('open');
+  abrirModalFinLancamento(tipoDestino);
 }
 
 // Usuário escolheu em qual submódulo o título a pagar deve ser lançado.
