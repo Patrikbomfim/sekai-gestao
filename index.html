@@ -2275,6 +2275,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <span class="fin-periodo-lbl">Próxima semana</span>
         <span class="fin-periodo-datas"></span>
       </button>
+      <button type="button" class="fin-periodo-btn" id="flx-periodo-btn-mes_proximo" onclick="finFluxoSetPeriodo('mes_proximo')">
+        <span class="fin-periodo-lbl">Próximo mês</span>
+        <span class="fin-periodo-datas"></span>
+      </button>
     </div>
 
     <!-- Filtro por período customizado -->
@@ -2331,6 +2335,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </button>
       <button type="button" class="fin-periodo-btn" id="pg-periodo-btn-prox_semana" onclick="finSetPeriodoLista('pagar','prox_semana')">
         <span class="fin-periodo-lbl">Próxima semana</span>
+        <span class="fin-periodo-datas"></span>
+      </button>
+      <button type="button" class="fin-periodo-btn" id="pg-periodo-btn-prox_mes" onclick="finSetPeriodoLista('pagar','prox_mes')">
+        <span class="fin-periodo-lbl">Próximo mês</span>
         <span class="fin-periodo-datas"></span>
       </button>
     </div>
@@ -2404,8 +2412,21 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="btn btn-primary btn-sm" onclick="abrirModalFinNovoTotal()" data-perm="fin_folha_criar">+ Novo lançamento</button>
     </div>
 
-    <!-- Atalhos de período -->
+    <!-- Filtro por tipo: Geral (padrão) / Operacionais / Folha -->
     <div class="fin-periodo-row" style="margin-top:14px">
+      <button type="button" class="fin-periodo-btn fin-tipo-btn on" id="fl-tipo-btn-geral" onclick="finSetTipoFiltroFolha('geral')">
+        <span class="fin-periodo-lbl">Geral</span>
+      </button>
+      <button type="button" class="fin-periodo-btn fin-tipo-btn" id="fl-tipo-btn-pagar" onclick="finSetTipoFiltroFolha('pagar')">
+        <span class="fin-periodo-lbl">Operacionais</span>
+      </button>
+      <button type="button" class="fin-periodo-btn fin-tipo-btn" id="fl-tipo-btn-folha" onclick="finSetTipoFiltroFolha('folha')">
+        <span class="fin-periodo-lbl">Folha</span>
+      </button>
+    </div>
+
+    <!-- Atalhos de período -->
+    <div class="fin-periodo-row" style="margin-top:10px">
       <button type="button" class="fin-periodo-btn" id="fl-periodo-btn-mes" onclick="finSetPeriodoLista('folha','mes')">
         <span class="fin-periodo-lbl">Este mês</span>
         <span class="fin-periodo-datas"></span>
@@ -2416,6 +2437,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </button>
       <button type="button" class="fin-periodo-btn" id="fl-periodo-btn-prox_semana" onclick="finSetPeriodoLista('folha','prox_semana')">
         <span class="fin-periodo-lbl">Próxima semana</span>
+        <span class="fin-periodo-datas"></span>
+      </button>
+      <button type="button" class="fin-periodo-btn" id="fl-periodo-btn-prox_mes" onclick="finSetPeriodoLista('folha','prox_mes')">
+        <span class="fin-periodo-lbl">Próximo mês</span>
         <span class="fin-periodo-datas"></span>
       </button>
     </div>
@@ -18215,6 +18240,8 @@ let _finFiltrosAdv = { pagar:_finFiltroVazio(), folha:_finFiltroVazio(), receber
 
 // Atalho de período ativo nas listas "a pagar" (operacional e folha) — padrão: mês atual
 let _finPeriodoAtivoLista = { pagar:'mes', folha:'mes', receber:'mes' };
+// Filtro de tipo na aba unificada "A pagar total" (fin-area-folha): 'geral' (padrão) | 'pagar' | 'folha'
+let _finFolhaTipoFiltro = 'geral';
 
 // Ordenação e agrupamento por coluna nas listas "a pagar" (operacional e folha)
 let _finOrdemColuna = { pagar:{campo:'vencimento',dir:'asc'}, folha:{campo:'vencimento',dir:'asc'}, receber:{campo:'vencimento',dir:'asc'} };
@@ -18647,6 +18674,11 @@ function _finPeriodoListaBounds(periodo){
     const dom=new Date(seg); dom.setDate(seg.getDate()+6);
     return { de:_finIso(seg), ate:_finIso(dom) };
   }
+  if(periodo==='prox_mes'){
+    const ini=new Date(hoje.getFullYear(),hoje.getMonth()+1,1);
+    const fim=new Date(hoje.getFullYear(),hoje.getMonth()+2,0);
+    return { de:_finIso(ini), ate:_finIso(fim) };
+  }
   // 'mes' (padrão)
   const ini=new Date(hoje.getFullYear(),hoje.getMonth(),1);
   const fim=new Date(hoje.getFullYear(),hoje.getMonth()+1,0);
@@ -18660,10 +18692,10 @@ function _finFmtDataCurta(iso){
   return `${d}/${m}`;
 }
 
-// Atualiza o texto e o estado "ativo" (.on) dos 3 botões de atalho de período de uma lista.
+// Atualiza o texto e o estado "ativo" (.on) dos botões de atalho de período de uma lista.
 function _finAtualizarBotoesPeriodoLista(tipo){
   const prefix = tipo==='pagar'?'pg':(tipo==='folha'?'fl':'rc');
-  ['mes','semana','prox_semana'].forEach(p=>{
+  ['mes','semana','prox_semana','prox_mes'].forEach(p=>{
     const btn=document.getElementById(`${prefix}-periodo-btn-${p}`);
     if(!btn) return;
     btn.classList.toggle('on', _finPeriodoAtivoLista[tipo]===p);
@@ -18735,7 +18767,7 @@ function finFluxoLimparFiltro(){
 }
 
 function _finFluxoAtualizarBotoes(){
-  ['mes_atual','semana_atual','semana_proxima'].forEach(t=>{
+  ['mes_atual','semana_atual','semana_proxima','mes_proximo'].forEach(t=>{
     const b=document.getElementById('flx-periodo-btn-'+t);
     if(!b) return;
     b.classList.toggle('on', _finFluxoPeriodo.tipo===t);
@@ -18817,14 +18849,28 @@ function _finAplicarFiltrosAdv(todos, adv, tipo, isPagar, ignorarStatus){
   });
 }
 
+// Botões "Geral / Operacionais / Folha" da aba unificada "A pagar total" (fin-area-folha)
+function finSetTipoFiltroFolha(v){
+  _finFolhaTipoFiltro = v;
+  document.querySelectorAll('#fin-area-folha .fin-tipo-btn').forEach(b=>b.classList.remove('on'));
+  const btn=document.getElementById('fl-tipo-btn-'+v);
+  if(btn) btn.classList.add('on');
+  renderFinLista('folha');
+}
+
 function renderFinLista(tipo){
   const isPagar = tipo==='pagar';
   const isFolha = tipo==='folha';
   const prefix = isPagar?'pg':(isFolha?'fl':'rc');
-  // "folha" agora é a aba unificada "A pagar total": junta títulos operacional + folha
+  // "folha" agora é a aba unificada "A pagar total": junta títulos operacional + folha,
+  // respeitando o filtro Geral/Operacionais/Folha selecionado acima dos atalhos de período
   const todos = _finTodosTitulos().filter(t=>{
     if(isPagar) return t.tipo==='pagar';
-    if(isFolha) return t.tipo==='pagar' || t.tipo==='folha';
+    if(isFolha){
+      if(_finFolhaTipoFiltro==='pagar') return t.tipo==='pagar';
+      if(_finFolhaTipoFiltro==='folha') return t.tipo==='folha';
+      return t.tipo==='pagar' || t.tipo==='folha';
+    }
     return (t.tipo==='receber'||!t.tipo);
   });
 
@@ -19953,7 +19999,7 @@ function finAbrirParcelasPreview(){
       d.setMonth(d.getMonth()+i);
       let valor=valorParcela;
       if(i===num-1) valor=Math.round((valorParcela+resto)*100)/100; // ajusta arredondamento na última parcela
-      _finParcelasPendentes.push({numero:i+1,total:num,valor,vencimento:_finIso(d)});
+      _finParcelasPendentes.push({numero:i+1,total:num,valor,vencimento:_finIso(_finProximoDiaUtil(d))});
     }
   }
   finRenderParcelasPreview();
@@ -20004,7 +20050,11 @@ function finAtualizarParcelaValor(idx,str){
 }
 function finAtualizarParcelaVenc(idx,val){
   if(!_finParcelasPendentes||!_finParcelasPendentes[idx]) return;
-  _finParcelasPendentes[idx].vencimento=val;
+  if(!val){ _finParcelasPendentes[idx].vencimento=val; return; }
+  const d=new Date(val+'T12:00:00');
+  // Fim de semana → ajusta instantaneamente para a próxima segunda-feira (dia útil), igual ao banco
+  _finParcelasPendentes[idx].vencimento = isNaN(d) ? val : _finIso(_finProximoDiaUtil(d));
+  finRenderParcelasPreview();
 }
 
 function fecharModalParcelas(){
