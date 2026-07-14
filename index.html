@@ -1034,6 +1034,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div style="margin-bottom:14px;max-width:320px">
       <input type="text" id="pt-busca-nome" placeholder="Buscar paciente por nome..." autocomplete="off" autocorrect="off" spellcheck="false" oninput="filtrarPtNome(this.value)" style="width:100%;font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r8);background:var(--surface);color:var(--tx)">
     </div>
+    <div class="fin-toolbar" style="margin-bottom:14px">
+      <button class="btn btn-ghost btn-sm" onclick="abrirFiltrosPt()">▤ Filtros<span class="fin-filtros-badge" id="pt-filtros-badge" style="display:none">0</span></button>
+      <button class="btn btn-ghost btn-sm" onclick="ptFiltrosLimparTudo()">Limpar filtro</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportarPacientesPDF()">📄 Exportar PDF</button>
+    </div>
     <div class="card" id="pt-lista-wrap"><div class="empty"><div class="empty-ic">👥</div>Nenhum paciente cadastrado ainda.<br>Clique em "+ Cadastrar paciente" para começar.</div></div>
   </div>
 
@@ -3257,6 +3262,76 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="fin-drawer-footer">
       <button class="btn btn-ghost btn-sm" onclick="finFiltrosLimparTudo()">Limpar</button>
       <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="finFiltrosAplicar()">Buscar</button>
+    </div>
+  </div>
+</div>
+
+<!-- DRAWER DE FILTROS DE PACIENTES -->
+<div id="pt-drawer-ov" class="fin-drawer-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharFiltrosPt)">
+  <div class="fin-drawer">
+    <div class="fin-drawer-hdr">
+      <div class="fin-drawer-title">Filtros</div>
+      <button class="fin-modal-close" onclick="fecharFiltrosPt()">✕</button>
+    </div>
+    <div class="fin-drawer-body">
+
+      <div>
+        <div class="fin-drawer-sec-label">Situação</div>
+        <div class="fin-cat-list" id="pt-filtro-situacao-list"></div>
+      </div>
+
+      <div>
+        <div class="fin-drawer-sec-label">Origem</div>
+        <select id="pt-filtro-origem" class="fi">
+          <option value="">Todas as origens</option>
+          <option value="google">🔍 Google</option>
+          <option value="instagram">📸 Instagram</option>
+          <option value="indicacao">🤝 Indicação</option>
+          <option value="outro">💬 Outro</option>
+        </select>
+      </div>
+
+      <div>
+        <div class="fin-drawer-sec-label">Indicador</div>
+        <input type="text" id="pt-filtro-indicador" class="fi" placeholder="Buscar por nome do indicador...">
+      </div>
+
+      <div>
+        <div class="fin-drawer-sec-label">Cidade</div>
+        <input type="text" id="pt-filtro-cidade" class="fi" placeholder="Buscar por cidade...">
+      </div>
+
+      <div>
+        <div class="fin-drawer-sec-label">Faixa etária</div>
+        <div class="fin-drawer-row2">
+          <input type="number" min="0" id="pt-filtro-idade-min" class="fi" placeholder="Idade mín.">
+          <input type="number" min="0" id="pt-filtro-idade-max" class="fi" placeholder="Idade máx.">
+        </div>
+      </div>
+
+      <div>
+        <div class="fin-drawer-sec-label">Próxima ação</div>
+        <select id="pt-filtro-proxima-acao" class="fi">
+          <option value="">Todas</option>
+          <option value="atrasada">Atrasada</option>
+          <option value="hoje">Hoje</option>
+          <option value="breve">Em até 3 dias</option>
+          <option value="sem">Sem ação pendente</option>
+        </select>
+      </div>
+
+      <div>
+        <div class="fin-drawer-sec-label">Cadastrado em</div>
+        <div class="fin-drawer-row2">
+          <input type="date" id="pt-filtro-cad-de" class="fi" title="Cadastrado de">
+          <input type="date" id="pt-filtro-cad-ate" class="fi" title="Cadastrado até">
+        </div>
+      </div>
+
+    </div>
+    <div class="fin-drawer-footer">
+      <button class="btn btn-ghost btn-sm" onclick="ptFiltrosLimparTudo()">Limpar</button>
+      <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="ptFiltrosAplicar()">Buscar</button>
     </div>
   </div>
 </div>
@@ -6958,6 +7033,126 @@ function renderFiltros(){
   // Filtro por situação (pills) removido — busca agora é por nome via #pt-busca-nome.
 }
 
+// ── FILTROS AVANÇADOS DE PACIENTES ───────────────────────────────────
+function _ptFiltroVazio(){
+  return {situacoes:[], origem:'', indicador:'', cidade:'', idadeMin:'', idadeMax:'', proximaAcao:'', cadDe:'', cadAte:''};
+}
+let filtrosPtAdv = _ptFiltroVazio();
+// Guarda a última lista (já filtrada e ordenada, sem paginação) renderizada na tela,
+// para a exportação em PDF respeitar exatamente o que está sendo exibido.
+let _ptListaFiltradaAtual = [];
+
+function abrirFiltrosPt(){
+  const adv = filtrosPtAdv;
+
+  const listSit = document.getElementById('pt-filtro-situacao-list');
+  listSit.innerHTML = situacaoList.map(s=>`
+    <label class="fin-cat-chip">
+      <input type="checkbox" value="${s.id}" data-pt-situacao ${adv.situacoes.includes(s.id)?'checked':''}> ${s.icone?s.icone+' ':''}${s.label}
+    </label>`).join('');
+
+  document.getElementById('pt-filtro-origem').value = adv.origem||'';
+  document.getElementById('pt-filtro-indicador').value = adv.indicador||'';
+  document.getElementById('pt-filtro-cidade').value = adv.cidade||'';
+  document.getElementById('pt-filtro-idade-min').value = adv.idadeMin||'';
+  document.getElementById('pt-filtro-idade-max').value = adv.idadeMax||'';
+  document.getElementById('pt-filtro-proxima-acao').value = adv.proximaAcao||'';
+  document.getElementById('pt-filtro-cad-de').value = adv.cadDe||'';
+  document.getElementById('pt-filtro-cad-ate').value = adv.cadAte||'';
+
+  document.getElementById('pt-drawer-ov').classList.add('open');
+}
+
+function fecharFiltrosPt(){
+  document.getElementById('pt-drawer-ov').classList.remove('open');
+}
+
+function ptFiltrosAplicar(){
+  filtrosPtAdv = {
+    situacoes: Array.from(document.querySelectorAll('#pt-filtro-situacao-list input[data-pt-situacao]:checked')).map(c=>c.value),
+    origem: document.getElementById('pt-filtro-origem').value,
+    indicador: document.getElementById('pt-filtro-indicador').value.trim(),
+    cidade: document.getElementById('pt-filtro-cidade').value.trim(),
+    idadeMin: document.getElementById('pt-filtro-idade-min').value,
+    idadeMax: document.getElementById('pt-filtro-idade-max').value,
+    proximaAcao: document.getElementById('pt-filtro-proxima-acao').value,
+    cadDe: document.getElementById('pt-filtro-cad-de').value,
+    cadAte: document.getElementById('pt-filtro-cad-ate').value,
+  };
+  pacientesPaginaAtual = 1;
+  _ptUpdateFiltrosBadge();
+  fecharFiltrosPt();
+  renderPacientes(filtroAtual);
+}
+
+function ptFiltrosLimparTudo(){
+  filtrosPtAdv = _ptFiltroVazio();
+  pacientesPaginaAtual = 1;
+  _ptUpdateFiltrosBadge();
+  if(document.getElementById('pt-drawer-ov').classList.contains('open')) abrirFiltrosPt();
+  renderPacientes(filtroAtual);
+}
+
+function _ptUpdateFiltrosBadge(){
+  const adv = filtrosPtAdv;
+  let n = 0;
+  if(adv.situacoes&&adv.situacoes.length) n++;
+  if(adv.origem) n++;
+  if(adv.indicador) n++;
+  if(adv.cidade) n++;
+  if(adv.idadeMin||adv.idadeMax) n++;
+  if(adv.proximaAcao) n++;
+  if(adv.cadDe||adv.cadAte) n++;
+  const badge = document.getElementById('pt-filtros-badge');
+  if(badge){
+    badge.textContent = n;
+    badge.style.display = n>0 ? 'inline-flex' : 'none';
+  }
+}
+
+// Aplica os filtros avançados (drawer) sobre uma lista de pacientes já filtrada por nome.
+function _ptAplicarFiltrosAdv(lista){
+  const adv = filtrosPtAdv;
+  let out = lista;
+  if(adv.situacoes&&adv.situacoes.length) out = out.filter(p=>adv.situacoes.includes(p.situacao));
+  if(adv.origem) out = out.filter(p=>p.origem===adv.origem);
+  if(adv.indicador){
+    const termo = adv.indicador.toLowerCase();
+    out = out.filter(p=>(p.indicador||'').toLowerCase().includes(termo));
+  }
+  if(adv.cidade){
+    const termo = adv.cidade.toLowerCase();
+    out = out.filter(p=>(p.cidade||'').toLowerCase().includes(termo));
+  }
+  if(adv.idadeMin!==''){
+    const min = parseInt(adv.idadeMin,10);
+    out = out.filter(p=>{const i=calcularIdade(p.nascimento); return i!==null && i>=min;});
+  }
+  if(adv.idadeMax!==''){
+    const max = parseInt(adv.idadeMax,10);
+    out = out.filter(p=>{const i=calcularIdade(p.nascimento); return i!==null && i<=max;});
+  }
+  if(adv.proximaAcao){
+    out = out.filter(p=>{
+      const prox = proximaAcaoPaciente(p);
+      if(adv.proximaAcao==='sem') return prox.label==='—';
+      if(adv.proximaAcao==='atrasada') return prox.pill==='p-danger';
+      if(adv.proximaAcao==='hoje') return prox.pill==='p-green';
+      if(adv.proximaAcao==='breve') return prox.pill==='p-warn';
+      return true;
+    });
+  }
+  if(adv.cadDe||adv.cadAte){
+    out = out.filter(p=>{
+      const dataCad = iso(new Date(p.id));
+      if(adv.cadDe && dataCad<adv.cadDe) return false;
+      if(adv.cadAte && dataCad>adv.cadAte) return false;
+      return true;
+    });
+  }
+  return out;
+}
+
 function proximaAcaoPaciente(p){
   const hojeStr=iso(hoje);
   const pendentes=gerarAcoes(p)
@@ -7041,11 +7236,14 @@ function ordenarListaPacientes(lista){
 function renderPacientes(filtro){
   const wrap=document.getElementById('pt-lista-wrap');
   const termo=(filtro||'').trim().toLowerCase();
-  const filtrada=termo?pacientes.filter(p=>(p.nome||'').toLowerCase().includes(termo)):pacientes;
+  const filtradaNome=termo?pacientes.filter(p=>(p.nome||'').toLowerCase().includes(termo)):pacientes;
+  const filtrada=_ptAplicarFiltrosAdv(filtradaNome);
   const lista=ordenarListaPacientes(filtrada);
+  _ptListaFiltradaAtual=lista;
+  const temFiltroAdv=(()=>{const a=filtrosPtAdv;return !!(a.situacoes.length||a.origem||a.indicador||a.cidade||a.idadeMin!==''||a.idadeMax!==''||a.proximaAcao||a.cadDe||a.cadAte);})();
   if(!lista.length){
-    wrap.innerHTML=termo
-      ? '<div class="empty"><div class="empty-ic">👥</div>Nenhum paciente encontrado para esta busca.</div>'
+    wrap.innerHTML=(termo||temFiltroAdv)
+      ? '<div class="empty"><div class="empty-ic">👥</div>Nenhum paciente encontrado para este filtro.</div>'
       : '<div class="empty"><div class="empty-ic">👥</div>Nenhum paciente cadastrado ainda.</div>';
     return;
   }
@@ -7082,6 +7280,55 @@ function renderPacientes(filtro){
     </div>` : `<div style="font-size:12px;color:var(--tx3);padding-top:10px;margin-top:6px">${lista.length} paciente${lista.length===1?'':'s'}</div>`;
 
   wrap.innerHTML=header+rows+pager;
+}
+
+// ── EXPORTAR PACIENTES EM PDF (respeita busca por nome + filtros avançados) ──
+function exportarPacientesPDF(){
+  const lista = _ptListaFiltradaAtual.length ? _ptListaFiltradaAtual : ordenarListaPacientes(_ptAplicarFiltrosAdv(pacientes));
+  if(!lista.length){ alert('Não há pacientes no filtro atual para exportar.'); return; }
+
+  const origemLabel={'google':'Google','instagram':'Instagram','indicacao':'Indicação','outro':'Outro'};
+
+  const rows = lista.map(p=>{
+    const idade = calcularIdade(p.nascimento);
+    const prox = proximaAcaoPaciente(p);
+    return `<tr>
+      <td>${nomeComCodigoTexto(p)}</td>
+      <td>${getSituacaoInfo(p.situacao).label||'—'}</td>
+      <td>${p.fone||'—'}</td>
+      <td>${idade!==null?idade+' anos':'—'}</td>
+      <td>${p.cidade||'—'}</td>
+      <td>${origemLabel[p.origem]||'—'}</td>
+      <td>${prox.label||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  const temFiltroAdv=(()=>{const a=filtrosPtAdv;return !!(a.situacoes.length||a.origem||a.indicador||a.cidade||a.idadeMin!==''||a.idadeMax!==''||a.proximaAcao||a.cadDe||a.cadAte);})();
+  const buscaTxt = (filtroAtual||'').trim();
+  const filtroDesc = [buscaTxt?`busca "${buscaTxt}"`:'', temFiltroAdv?'filtros avançados aplicados':''].filter(Boolean).join(' · ');
+
+  const win = window.open('','_blank');
+  const html = `<html><head><meta charset="utf-8"><title>Pacientes — Sekai</title>
+  <style>
+    body{font-family:Arial,sans-serif;color:#111;padding:32px;font-size:13px}
+    h1{font-size:18px;margin-bottom:4px}
+    .sub{color:#666;font-size:12px;margin-bottom:20px}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #eee;font-size:12px}
+    th{color:#888;text-transform:uppercase;font-size:10px;letter-spacing:.05em}
+  </style></head><body>
+  <h1>Pacientes — Sekai</h1>
+  <div class="sub">Gerado em ${fmtDateBR(iso(new Date()))} · ${lista.length} paciente${lista.length!==1?'s':''}${filtroDesc?' · '+filtroDesc:''}</div>
+  <table>
+    <thead><tr>
+      <th>Nome</th><th>Situação</th><th>Telefone</th><th>Idade</th><th>Cidade</th><th>Origem</th><th>Próxima ação</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <script>window.onload=()=>window.print();<\/script>
+  </body></html>`;
+  win.document.write(html);
+  win.document.close();
 }
 
 // ── ABAS DE PACIENTES (Lista / Funil / Ações) ───────────────────────────
