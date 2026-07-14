@@ -1113,6 +1113,14 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
               <select id="mpt-situacao"></select>
             </div>
             <div class="fl">
+              <label>Sexo</label>
+              <select id="mpt-sexo">
+                <option value="">—</option>
+                <option value="M">Masculino</option>
+                <option value="F">Feminino</option>
+              </select>
+            </div>
+            <div class="fl">
               <label>Origem</label>
               <select id="mpt-origem" onchange="toggleIndicadorEdit()">
                 <option value="">—</option>
@@ -3281,6 +3289,15 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
 
       <div>
+        <div class="fin-drawer-sec-label">Sexo</div>
+        <select id="pt-filtro-sexo" class="fi">
+          <option value="">Todos</option>
+          <option value="M">Masculino</option>
+          <option value="F">Feminino</option>
+        </select>
+      </div>
+
+      <div>
         <div class="fin-drawer-sec-label">Origem</div>
         <select id="pt-filtro-origem" class="fi">
           <option value="">Todas as origens</option>
@@ -3706,6 +3723,14 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
         <div class="fl"><label>Data de nascimento</label><input type="date" id="nn-nasc" onchange="atualizarIdadeCampo('nn-nasc','nn-idade')"></div>
         <div class="fl"><label>Idade</label><input type="text" id="nn-idade" readonly style="background:var(--s2);color:var(--tx2)" placeholder="—"></div>
+        <div class="fl">
+          <label>Sexo</label>
+          <select id="nn-sexo">
+            <option value="">Selecionar...</option>
+            <option value="M">Masculino</option>
+            <option value="F">Feminino</option>
+          </select>
+        </div>
         <div class="fl">
           <label>Origem</label>
           <select id="nn-origem" onchange="onOrigemChange()">
@@ -5551,6 +5576,7 @@ const CAMPOS_CADASTRO_PADRAO = [
   {id:'fone',        label:'Telefone / WhatsApp',obrigatorio:true,  locked:true},
   {id:'cpf',         label:'CPF',               obrigatorio:false, locked:true},
   {id:'nasc',        label:'Data de nascimento',obrigatorio:false, locked:true},
+  {id:'sexo',        label:'Sexo',              obrigatorio:false, locked:true},
   {id:'origem',      label:'Origem',            obrigatorio:false, locked:true},
   {id:'cep',         label:'CEP',               obrigatorio:false, locked:true},
   {id:'cidade',      label:'Cidade',            obrigatorio:false, locked:true},
@@ -6689,6 +6715,7 @@ function populateSituacaoSelect(selectId, selectedVal=''){
 function abrirModalNovo(){
   ['nn-nome','nn-fone','nn-cpf','nn-nasc','nn-idade','nn-indic','nn-obs','nn-cep','nn-cidade','nn-rua','nn-numero','nn-complemento','nn-codigo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('nn-origem').value='';
+  document.getElementById('nn-sexo').value='';
   document.getElementById('nn-indic-wrap').style.display='none';
   document.getElementById('preview-wrap').style.display='none';
   document.getElementById('nn-historico-wrap').style.display='none';
@@ -7002,6 +7029,7 @@ function salvarPaciente(){
     id:Date.now(),codigo:codigoFinal,nome,situacao,situacaoData,fone,
     cpf:document.getElementById('nn-cpf').value.trim(),
     nascimento:document.getElementById('nn-nasc').value,
+    sexo:document.getElementById('nn-sexo').value,
     origem,indicador,
     cep:document.getElementById('nn-cep').value.trim(),
     cidade:document.getElementById('nn-cidade').value.trim(),
@@ -7035,7 +7063,7 @@ function renderFiltros(){
 
 // ── FILTROS AVANÇADOS DE PACIENTES ───────────────────────────────────
 function _ptFiltroVazio(){
-  return {situacoes:[], origem:'', indicador:'', cidade:'', idadeMin:'', idadeMax:'', proximaAcao:'', cadDe:'', cadAte:''};
+  return {situacoes:[], sexo:'', origem:'', indicador:'', cidade:'', idadeMin:'', idadeMax:'', proximaAcao:'', cadDe:'', cadAte:''};
 }
 let filtrosPtAdv = _ptFiltroVazio();
 // Guarda a última lista (já filtrada e ordenada, sem paginação) renderizada na tela,
@@ -7051,6 +7079,7 @@ function abrirFiltrosPt(){
       <input type="checkbox" value="${s.id}" data-pt-situacao ${adv.situacoes.includes(s.id)?'checked':''}> ${s.icone?s.icone+' ':''}${s.label}
     </label>`).join('');
 
+  document.getElementById('pt-filtro-sexo').value = adv.sexo||'';
   document.getElementById('pt-filtro-origem').value = adv.origem||'';
   document.getElementById('pt-filtro-indicador').value = adv.indicador||'';
   document.getElementById('pt-filtro-cidade').value = adv.cidade||'';
@@ -7070,6 +7099,7 @@ function fecharFiltrosPt(){
 function ptFiltrosAplicar(){
   filtrosPtAdv = {
     situacoes: Array.from(document.querySelectorAll('#pt-filtro-situacao-list input[data-pt-situacao]:checked')).map(c=>c.value),
+    sexo: document.getElementById('pt-filtro-sexo').value,
     origem: document.getElementById('pt-filtro-origem').value,
     indicador: document.getElementById('pt-filtro-indicador').value.trim(),
     cidade: document.getElementById('pt-filtro-cidade').value.trim(),
@@ -7097,6 +7127,7 @@ function _ptUpdateFiltrosBadge(){
   const adv = filtrosPtAdv;
   let n = 0;
   if(adv.situacoes&&adv.situacoes.length) n++;
+  if(adv.sexo) n++;
   if(adv.origem) n++;
   if(adv.indicador) n++;
   if(adv.cidade) n++;
@@ -7115,6 +7146,7 @@ function _ptAplicarFiltrosAdv(lista){
   const adv = filtrosPtAdv;
   let out = lista;
   if(adv.situacoes&&adv.situacoes.length) out = out.filter(p=>adv.situacoes.includes(p.situacao));
+  if(adv.sexo) out = out.filter(p=>p.sexo===adv.sexo);
   if(adv.origem) out = out.filter(p=>p.origem===adv.origem);
   if(adv.indicador){
     const termo = adv.indicador.toLowerCase();
@@ -7240,7 +7272,7 @@ function renderPacientes(filtro){
   const filtrada=_ptAplicarFiltrosAdv(filtradaNome);
   const lista=ordenarListaPacientes(filtrada);
   _ptListaFiltradaAtual=lista;
-  const temFiltroAdv=(()=>{const a=filtrosPtAdv;return !!(a.situacoes.length||a.origem||a.indicador||a.cidade||a.idadeMin!==''||a.idadeMax!==''||a.proximaAcao||a.cadDe||a.cadAte);})();
+  const temFiltroAdv=(()=>{const a=filtrosPtAdv;return !!(a.situacoes.length||a.sexo||a.origem||a.indicador||a.cidade||a.idadeMin!==''||a.idadeMax!==''||a.proximaAcao||a.cadDe||a.cadAte);})();
   if(!lista.length){
     wrap.innerHTML=(termo||temFiltroAdv)
       ? '<div class="empty"><div class="empty-ic">👥</div>Nenhum paciente encontrado para este filtro.</div>'
@@ -7289,6 +7321,8 @@ function exportarPacientesPDF(){
 
   const origemLabel={'google':'Google','instagram':'Instagram','indicacao':'Indicação','outro':'Outro'};
 
+  const sexoLabel={'M':'Masculino','F':'Feminino'};
+
   const rows = lista.map(p=>{
     const idade = calcularIdade(p.nascimento);
     const prox = proximaAcaoPaciente(p);
@@ -7297,13 +7331,14 @@ function exportarPacientesPDF(){
       <td>${getSituacaoInfo(p.situacao).label||'—'}</td>
       <td>${p.fone||'—'}</td>
       <td>${idade!==null?idade+' anos':'—'}</td>
+      <td>${sexoLabel[p.sexo]||'—'}</td>
       <td>${p.cidade||'—'}</td>
       <td>${origemLabel[p.origem]||'—'}</td>
       <td>${prox.label||'—'}</td>
     </tr>`;
   }).join('');
 
-  const temFiltroAdv=(()=>{const a=filtrosPtAdv;return !!(a.situacoes.length||a.origem||a.indicador||a.cidade||a.idadeMin!==''||a.idadeMax!==''||a.proximaAcao||a.cadDe||a.cadAte);})();
+  const temFiltroAdv=(()=>{const a=filtrosPtAdv;return !!(a.situacoes.length||a.sexo||a.origem||a.indicador||a.cidade||a.idadeMin!==''||a.idadeMax!==''||a.proximaAcao||a.cadDe||a.cadAte);})();
   const buscaTxt = (filtroAtual||'').trim();
   const filtroDesc = [buscaTxt?`busca "${buscaTxt}"`:'', temFiltroAdv?'filtros avançados aplicados':''].filter(Boolean).join(' · ');
 
@@ -7321,7 +7356,7 @@ function exportarPacientesPDF(){
   <div class="sub">Gerado em ${fmtDateBR(iso(new Date()))} · ${lista.length} paciente${lista.length!==1?'s':''}${filtroDesc?' · '+filtroDesc:''}</div>
   <table>
     <thead><tr>
-      <th>Nome</th><th>Situação</th><th>Telefone</th><th>Idade</th><th>Cidade</th><th>Origem</th><th>Próxima ação</th>
+      <th>Nome</th><th>Situação</th><th>Telefone</th><th>Idade</th><th>Sexo</th><th>Cidade</th><th>Origem</th><th>Próxima ação</th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>
@@ -7469,6 +7504,7 @@ function abrirModalPt(id){
   document.getElementById('mpt-cpf').value=p.cpf||'';
   document.getElementById('mpt-nasc').value=p.nascimento||'';
   atualizarIdadeCampo('mpt-nasc','mpt-idade');
+  document.getElementById('mpt-sexo').value=p.sexo||'';
   document.getElementById('mpt-codigo').value=p.codigo||'';
   document.getElementById('mpt-situacao').innerHTML=situacaoList.map(s=>`<option value="${s.id}" ${p.situacao===s.id?'selected':''}>${situacaoLabelFmt(s.icone,s.label)}</option>`).join('');
   document.getElementById('mpt-origem').value=p.origem||'';
@@ -11651,6 +11687,7 @@ function atualizarSituacaoPt(){
   p.fone=document.getElementById('mpt-fone').value.trim();
   p.cpf=document.getElementById('mpt-cpf').value.trim();
   p.nascimento=document.getElementById('mpt-nasc').value;
+  p.sexo=document.getElementById('mpt-sexo').value;
   p.situacao=novaSituacao;
   p.origem=document.getElementById('mpt-origem').value;
   p.indicador=p.origem==='indicacao'?document.getElementById('mpt-indic').value.trim():'';
