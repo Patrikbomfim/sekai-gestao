@@ -1066,12 +1066,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="pp-layout">
     <nav class="pp-menu" id="pp-menu">
       <div class="subnav-title" style="padding:4px 10px 8px;margin:0">Menu do paciente</div>
-      <button class="pp-menu-btn on" id="pp-menu-dados" onclick="switchPpArea('dados')">Dados</button>
+      <button class="pp-menu-btn on" id="pp-menu-dados" onclick="switchPpArea('dados')">Cadastro</button>
       <button class="pp-menu-btn" id="pp-menu-agenda" onclick="switchPpArea('agenda')">Agenda</button>
       <div style="height:1px;background:var(--border);margin:6px 2px"></div>
       <button class="pp-menu-btn" id="pp-menu-anamnese" onclick="switchPpArea('anamnese')">Anamnese inicial</button>
-      <button class="pp-menu-btn" id="pp-menu-termo" onclick="switchPpArea('termo')">Termo de compromisso</button>
-      <button class="pp-menu-btn" id="pp-menu-contrato" onclick="switchPpArea('contrato')">Contrato</button>
       <div style="height:1px;background:var(--border);margin:6px 2px"></div>
       <button class="pp-menu-btn" id="pp-menu-orcamento" onclick="switchPpArea('orcamento')">Orçamento</button>
       <button class="pp-menu-btn" id="pp-menu-financeiro" onclick="switchPpArea('financeiro')">Financeiro</button>
@@ -1156,34 +1154,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="card" id="pp-orcamento-wrap"></div>
       </div>
 
-      <!-- TERMO DE COMPROMISSO -->
-      <div class="pp-area" id="pp-area-termo">
-        <div class="pp-area-title">Termo de compromisso</div>
-        <div class="pp-area-desc">Termos assinados pelo paciente referentes aos procedimentos acordados e responsabilidades.</div>
-        <div class="card" id="pp-termo-wrap">
-          <div class="empty" style="padding:32px 0;text-align:center">
-            <div style="font-size:32px;margin-bottom:8px">✍️</div>
-            <div style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:4px">Nenhum termo registrado</div>
-            <div style="font-size:12px;color:var(--tx3);margin-bottom:16px">Emita o termo de compromisso após a aprovação do orçamento pelo paciente.</div>
-            <button class="btn btn-primary btn-sm" onclick="alert('Em desenvolvimento')">+ Gerar termo</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- CONTRATO -->
-      <div class="pp-area" id="pp-area-contrato">
-        <div class="pp-area-title">Contrato</div>
-        <div class="pp-area-desc">Contrato de prestação de serviços odontológicos firmado entre o paciente e a Clínica Sekai.</div>
-        <div class="card" id="pp-contrato-wrap">
-          <div class="empty" style="padding:32px 0;text-align:center">
-            <div style="font-size:32px;margin-bottom:8px">📄</div>
-            <div style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:4px">Nenhum contrato gerado</div>
-            <div style="font-size:12px;color:var(--tx3);margin-bottom:16px">O contrato é gerado após assinatura do termo de compromisso e início do tratamento.</div>
-            <button class="btn btn-primary btn-sm" onclick="alert('Em desenvolvimento')">+ Gerar contrato</button>
-          </div>
-        </div>
-      </div>
-
       <!-- PRONTUÁRIO -->
       <div class="pp-area" id="pp-area-prontuario">
         <!-- TABS -->
@@ -1195,6 +1165,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <button id="pront-tab-btn-ficha" onclick="switchProntTab('ficha')"
             style="font-size:13px;font-weight:600;padding:8px 18px;border:none;background:none;cursor:pointer;color:var(--tx3);border-bottom:2px solid transparent;margin-bottom:-2px;font-family:var(--font)">
             Ficha clínica
+          </button>
+          <button id="pront-tab-btn-docs" onclick="switchProntTab('docs')"
+            style="font-size:13px;font-weight:600;padding:8px 18px;border:none;background:none;cursor:pointer;color:var(--tx3);border-bottom:2px solid transparent;margin-bottom:-2px;font-family:var(--font)">
+            Contratos e termos
           </button>
         </div>
 
@@ -1225,12 +1199,21 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           </div>
           <div id="pp-prontuario-ficha-wrap"></div>
         </div>
+
+        <!-- TAB: CONTRATOS E TERMOS -->
+        <div id="pront-tab-docs" style="display:none">
+          <div style="margin-bottom:14px">
+            <div class="pp-area-title" style="margin-bottom:2px">Contratos e termos</div>
+            <div class="pp-area-desc" style="margin-bottom:0">Contrato, termo e receita de cada orçamento aprovado. Gere a partir de um modelo ou anexe um arquivo pronto.</div>
+          </div>
+          <div id="pp-prontuario-docs-wrap"></div>
+        </div>
       </div>
 
       <!-- DOCUMENTOS -->
       <div class="pp-area" id="pp-area-documentos">
         <div class="pp-area-title">Documentos</div>
-        <div class="pp-area-desc">Exames, contratos e termos anexados ao cadastro do paciente.</div>
+        <div class="pp-area-desc">Arquivos gerais do paciente, não vinculados a um orçamento (exames, RG, laudos externos etc).</div>
         <div class="card" id="pp-documentos-wrap"></div>
       </div>
 
@@ -7538,8 +7521,8 @@ function switchPpArea(area){
   const permMapa = {orcamento:'pacientes_orcamento_ver',financeiro:'pacientes_financeiro_ver',prontuario:'pacientes_prontuario_ver',documentos:'pacientes_documentos_ver',fotos:'pacientes_fotos_ver'};
   const permNec = permMapa[area];
   if(permNec && !souAdministradorReal() && !temPerm(permNec)) area='dados';
-  const areas=['dados','agenda','anamnese','orcamento','termo','contrato','prontuario','documentos','fotos','historico','acoes','lembretes','pendencias','financeiro'];
-  const menuAreas=['dados','agenda','anamnese','orcamento','termo','contrato','prontuario','documentos','fotos','historico','acoes','lembretes','pendencias','financeiro'];
+  const areas=['dados','agenda','anamnese','orcamento','prontuario','documentos','fotos','historico','acoes','lembretes','pendencias','financeiro'];
+  const menuAreas=['dados','agenda','anamnese','orcamento','prontuario','documentos','fotos','historico','acoes','lembretes','pendencias','financeiro'];
   areas.forEach(a=>{
     const el=document.getElementById('pp-area-'+a);
     if(el) el.classList.toggle('on',a===area);
@@ -10014,10 +9997,13 @@ let _prontPacId=null; // paciente atual no módulo prontuário
 function switchProntTab(tab){
   document.getElementById('pront-tab-plano').style.display=tab==='plano'?'':'none';
   document.getElementById('pront-tab-ficha').style.display=tab==='ficha'?'':'none';
+  document.getElementById('pront-tab-docs').style.display=tab==='docs'?'':'none';
   const btnP=document.getElementById('pront-tab-btn-plano');
   const btnF=document.getElementById('pront-tab-btn-ficha');
+  const btnD=document.getElementById('pront-tab-btn-docs');
   if(btnP){ btnP.style.color=tab==='plano'?'var(--ac)':'var(--tx3)'; btnP.style.borderBottomColor=tab==='plano'?'var(--ac)':'transparent'; }
   if(btnF){ btnF.style.color=tab==='ficha'?'var(--ac)':'var(--tx3)'; btnF.style.borderBottomColor=tab==='ficha'?'var(--ac)':'transparent'; }
+  if(btnD){ btnD.style.color=tab==='docs'?'var(--ac)':'var(--tx3)'; btnD.style.borderBottomColor=tab==='docs'?'var(--ac)':'transparent'; }
 }
 
 // Sincroniza prontuário sem mudar de aba — chamado após aprovação/reprovação de orçamento
@@ -10027,6 +10013,7 @@ function _sincronizarProntuario(p){
   if(String(_prontPacId)===String(p.id)){
     _renderProntPlano(p);
     _renderProntFicha(p);
+    _renderProntDocs(p);
   }
 }
 
@@ -10034,6 +10021,7 @@ function renderPpProntuario(p){
   _prontPacId=p.id;
   _renderProntPlano(p);
   _renderProntFicha(p);
+  _renderProntDocs(p);
 }
 
 function _renderProntPlano(p){
@@ -10331,6 +10319,124 @@ function _prontAnexarArquivo(fichaId, input){
   });
   const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
   if(p) _renderProntFicha(p);
+}
+
+// ── CONTRATOS E TERMOS (por orçamento aprovado) ─────────────────────────────
+// Cada entrada representa um documento (contrato, termo ou receita) vinculado
+// a um orçamento aprovado específico. Os três tipos são independentes entre si
+// — não há ordem obrigatória de geração/anexo.
+const PRONT_DOC_TIPOS=[
+  {id:'contrato', label:'Contrato', icone:'📄'},
+  {id:'termo', label:'Termo de compromisso', icone:'✍️'},
+  {id:'receita', label:'Receita', icone:'💊'},
+];
+function _prontDocs(){ return carregarLS('sk3-prontuario-docs',[]); }
+function _salvarProntDocs(list){ salvarLS('sk3-prontuario-docs',list); }
+
+function _renderProntDocs(p){
+  const wrap=document.getElementById('pp-prontuario-docs-wrap');
+  if(!wrap) return;
+  const orcs=_orcamentos().filter(o=>String(o.pacienteId)===String(p.id)&&o.status==='aprovado');
+  if(!orcs.length){
+    wrap.innerHTML='<div class="empty"><div class="empty-ic">📄</div><div style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:4px">Nenhum orçamento aprovado</div><div style="font-size:12px;color:var(--tx3)">Aprove um orçamento para gerar ou anexar contrato, termo e receita.</div></div>';
+    return;
+  }
+  const docs=_prontDocs().filter(d=>String(d.pacienteId)===String(p.id));
+  const fmtData=d=>{ if(!d) return '—'; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
+
+  let html='';
+  orcs.forEach(orc=>{
+    const uid='pront-docs-orc-'+orc.id;
+    const docsOrc=docs.filter(d=>d.orcamentoId===orc.id);
+
+    html+=`
+    <div style="border:1px solid var(--border);border-radius:var(--r8);margin-bottom:10px;overflow:hidden">
+      <div onclick="_prontToggleDocs('${uid}')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;background:var(--surface);user-select:none"
+           onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--surface)'">
+        <span id="${uid}-caret" style="font-size:11px;color:var(--tx3);transition:transform .18s;display:inline-block;flex-shrink:0">▶</span>
+        <div style="width:8px;height:8px;border-radius:50%;background:#065F46;flex-shrink:0"></div>
+        <span style="font-size:13px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${orc.nomeOrc||('Plano #'+(orc.num||orc.id.slice(-4)))}</span>
+        <span style="font-size:11px;color:var(--tx3);flex-shrink:0">${docsOrc.length} documento(s)</span>
+      </div>
+      <div id="${uid}-body" style="display:none;border-top:1px solid var(--border);padding:14px;background:var(--surface)">
+        ${PRONT_DOC_TIPOS.map(t=>{
+          const lista=docsOrc.filter(d=>d.tipo===t.id);
+          return `
+          <div style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div style="font-size:12px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em">${t.icone} ${t.label}</div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <button onclick="_prontDocGerar('${orc.id}','${t.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--tx2)">Gerar</button>
+                <label style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--tx2)">
+                  Anexar
+                  <input type="file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="_prontDocAnexar('${orc.id}','${t.id}',this)">
+                </label>
+              </div>
+            </div>
+            ${lista.length?lista.map(d=>`
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r4);margin-bottom:6px;background:var(--s2)">
+                <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:${d.origem==='anexado'?'#ECFDF5':'#EFF6FF'};color:${d.origem==='anexado'?'#065F46':'#1D4ED8'};flex-shrink:0">${d.origem==='anexado'?'Anexado':'Gerado'}</span>
+                <span style="font-size:13px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.arquivoNome||d.modeloNome||'—'}</span>
+                <span style="font-size:11px;color:var(--tx3);flex-shrink:0">${fmtData(d.criadoEm)}</span>
+                ${d.arquivoData?`<a href="${d.arquivoData}" download="${d.arquivoNome}" style="font-size:11px;color:var(--ac);flex-shrink:0">Baixar</a>`:''}
+                <button onclick="_prontDocExcluir('${d.id}')" style="font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--da);flex-shrink:0">Excluir</button>
+              </div>`).join(''):'<div style="font-size:12px;color:var(--tx3)">Nenhum documento ainda.</div>'}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+  wrap.innerHTML=html;
+}
+
+function _prontToggleDocs(uid){
+  const body=document.getElementById(uid+'-body');
+  const caret=document.getElementById(uid+'-caret');
+  if(!body) return;
+  const open=body.style.display==='block';
+  body.style.display=open?'none':'block';
+  if(caret) caret.style.transform=open?'':'rotate(90deg)';
+}
+
+// Geração a partir de modelo — depende do módulo de modelos padrão (ainda não criado).
+function _prontDocGerar(orcId,tipo){
+  alert('Nenhum modelo cadastrado ainda para este tipo de documento.\n\nCadastre um modelo padrão no módulo de modelos para poder gerar automaticamente. Por enquanto, use "Anexar" para subir o documento pronto.');
+}
+
+function _prontDocAnexar(orcId,tipo,input){
+  const file=input.files&&input.files[0];
+  if(!file) return;
+  const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
+  const reader=new FileReader();
+  reader.onload=e=>{
+    _comSalvarImediato(()=>{
+      const list=_prontDocs();
+      list.push({
+        id:'pdoc_'+Date.now(),
+        pacienteId:_prontPacId,
+        orcamentoId:orcId,
+        tipo:tipo,
+        origem:'anexado',
+        arquivoNome:file.name,
+        arquivoData:e.target.result,
+        criadoEm:iso(hoje),
+        criadoPor:nomeUsuarioAtual(),
+      });
+      _salvarProntDocs(list);
+    });
+    if(p) _renderProntDocs(p);
+  };
+  reader.readAsDataURL(file);
+}
+
+function _prontDocExcluir(docId){
+  if(!confirm('Excluir este documento?')) return;
+  _comSalvarImediato(()=>{
+    const list=_prontDocs().filter(d=>d.id!==docId);
+    _salvarProntDocs(list);
+  });
+  const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
+  if(p) _renderProntDocs(p);
 }
 
 function _prontExportarFichaUnica(fichaId){
