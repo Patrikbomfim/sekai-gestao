@@ -831,19 +831,13 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="slb-label">Administrativo</div>
   <button class="nav-btn" onclick="goTo('financeiro',this)">Financeiro</button>
   <button class="nav-btn" onclick="goTo('reuniao',this)">Reuniões</button>
+  <button class="nav-btn" onclick="goTo('relatorios',this)">Relatórios</button>
   <div class="slb-label">Gestão</div>
   <button class="nav-btn" onclick="goTo('dashboard',this)">Dashboard</button>
-  <button class="nav-btn" onclick="goTo('rituais',this)">Rituais</button>
-  <button class="nav-btn" onclick="goTo('relatorios',this)">Relatórios</button>
-  <button class="nav-btn" id="navbtn-desmarcados" onclick="goTo('desmarcados',this)">Pacientes desmarcados<span class="nav-badge" id="bdg-desmarcados" style="display:none">0</span></button>
-  <button class="nav-btn" onclick="goTo('fluxos',this)">Fluxo de ação</button>
   <div class="slb-label">Sistema</div>
   <button class="nav-btn" onclick="goTo('melhorias',this)"><span class="nav-ic">🛠</span>Melhorias para o sistema</button>
-</nav>
-
-<nav class="subnav" id="fluxo-subnav">
-  <div class="subnav-title">Fluxo de ação</div>
-  <div id="fluxo-subnav-situacoes"></div>
+  <button class="nav-btn" onclick="goTo('rituais',this)">Rituais</button>
+  <button class="nav-btn" id="navbtn-desmarcados" onclick="goTo('desmarcados',this)">Pacientes desmarcados<span class="nav-badge" id="bdg-desmarcados" style="display:none">0</span></button>
 </nav>
 
 <nav class="subnav" id="financeiro-subnav">
@@ -1675,29 +1669,14 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
-<!-- FLUXOS DE AÇÃO -->
-<div id="sec-fluxos" class="sec">
-  <!-- subpágina: situação -->
-  <div id="fluxo-area-situacao">
-    <div style="margin-bottom:16px">
-      <div class="pg-title" id="fluxo-area-titulo">Fluxo de ação</div>
-      <div class="pg-desc">Defina quais ações são geradas automaticamente para cada situação do paciente</div>
-    </div>
-    <div class="alert a-info" style="margin-bottom:14px">Cada ação define: quando acontece (dias a partir do evento ou de hoje), o responsável, o tipo e o script da mensagem. Ao alterar aqui, todos os pacientes novos seguirão o fluxo atualizado.</div>
-    <div id="fst-content"></div>
-    <div style="margin-top:16px">
-      <button class="btn btn-primary" id="btn-add-flow-action" onclick="addFlowAction()" data-perm="fluxos_criar">+ Nova ação nesta situação</button>
-    </div>
-  </div>
-</div>
-
-<!-- AÇÕES (instâncias geradas pelo Fluxo de ação — pendentes e histórico) -->
+<!-- AÇÕES (instâncias geradas pelo Fluxo de ação — pendentes, histórico e configuração do fluxo) -->
 <div id="sec-acoes" class="sec">
   <div class="pg-title">Ações</div>
-  <div class="pg-desc">Ações geradas pelo Fluxo de ação para todos os pacientes — pendentes e histórico</div>
+  <div class="pg-desc">Ações geradas pelo Fluxo de ação para todos os pacientes — pendentes, histórico e configuração</div>
   <div style="display:flex;gap:6px;margin-bottom:14px">
     <button class="btn btn-sm" id="acoes-tab-pendentes" onclick="acoesSetAba('pendentes')">Pendentes</button>
     <button class="btn btn-sm" id="acoes-tab-historico" onclick="acoesSetAba('historico')">Histórico</button>
+    <button class="btn btn-sm" id="acoes-tab-fluxo" onclick="acoesSetAba('fluxo')">Fluxo de ação</button>
   </div>
 
   <div id="acoes-area-pendentes">
@@ -1733,6 +1712,20 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <input type="date" id="hac-filtro-ate" onchange="renderHistoricoAcoes()" title="Até" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
       </div>
       <div id="hac-lista"></div>
+    </div>
+  </div>
+
+  <!-- ABA FLUXO DE AÇÃO (configuração de quais ações são geradas por situação) -->
+  <div id="acoes-area-fluxo" style="display:none">
+    <div style="margin-bottom:14px;display:flex;gap:6px;flex-wrap:wrap" id="acoes-fluxo-situacoes"></div>
+    <div style="margin-bottom:16px">
+      <div class="pg-title" id="fluxo-area-titulo" style="font-size:15px">Fluxo de ação</div>
+      <div class="pg-desc">Defina quais ações são geradas automaticamente para cada situação do paciente</div>
+    </div>
+    <div class="alert a-info" style="margin-bottom:14px">Cada ação define: quando acontece (dias a partir do evento ou de hoje), o responsável, o tipo e o script da mensagem. Ao alterar aqui, todos os pacientes novos seguirão o fluxo atualizado.</div>
+    <div id="fst-content"></div>
+    <div style="margin-top:16px">
+      <button class="btn btn-primary" id="btn-add-flow-action" onclick="addFlowAction()" data-perm="fluxos_criar">+ Nova ação nesta situação</button>
     </div>
   </div>
 </div>
@@ -4663,7 +4656,6 @@ function temPerm(permId){
 const PERM_SECAO = {
   agenda:    'agenda_ver',
   pacientes: 'pacientes_ver',
-  fluxos:    'fluxos_ver',
   acoes:     'fluxos_ver',
   rituais:   'fluxos_ver',
   reuniao:   'reunioes_ver',
@@ -4708,7 +4700,6 @@ function aplicarPermissoesNav(){
   const mapa = {
     agenda:    'agenda_ver',
     pacientes: 'pacientes_ver',
-    fluxos:    'fluxos_ver',
     acoes:     'fluxos_ver',
     rituais:   'fluxos_ver',
     reuniao:   'reunioes_ver',
@@ -5979,8 +5970,7 @@ function goTo(id, btn){
   document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('on'));
   document.getElementById('sec-'+id).classList.add('on');
   if(btn) btn.classList.add('on');
-  document.querySelector('.layout').classList.toggle('has-subnav', id==='config' || id==='fluxos' || id==='financeiro');
-  document.getElementById('fluxo-subnav').classList.toggle('subnav-ativo', id==='fluxos');
+  document.querySelector('.layout').classList.toggle('has-subnav', id==='config' || id==='financeiro');
   document.getElementById('financeiro-subnav').classList.toggle('subnav-ativo', id==='financeiro');
   document.getElementById('config-subnav').classList.toggle('subnav-ativo', id==='config');
   if(btn && btn.classList.contains('nav-btn')) colapsarMenuLateral();
@@ -5988,7 +5978,6 @@ function goTo(id, btn){
   if(id==='proximos') renderProximos();
   if(id==='agenda') renderAgenda();
   if(id==='pacientes'){ptSortColId='nome';ptSortDir='asc';filtroAtual='';pacientesPaginaAtual=1;const buscaEl=document.getElementById('pt-busca-nome');if(buscaEl)buscaEl.value='';renderFiltros();renderPacientes('');renderKanban();}
-  if(id==='fluxos') renderFluxos();
   if(id==='acoes') renderAcoesModulo();
   if(id==='rituais') renderRituais();
   if(id==='reuniao') renderReunioes();
@@ -6344,13 +6333,17 @@ function renderAcoesModulo(){
 }
 function acoesSetAba(aba){
   _acoesAbaAtual = aba;
-  const elP=document.getElementById('acoes-area-pendentes'), elH=document.getElementById('acoes-area-historico');
-  const btnP=document.getElementById('acoes-tab-pendentes'), btnH=document.getElementById('acoes-tab-historico');
+  const elP=document.getElementById('acoes-area-pendentes'), elH=document.getElementById('acoes-area-historico'), elF=document.getElementById('acoes-area-fluxo');
+  const btnP=document.getElementById('acoes-tab-pendentes'), btnH=document.getElementById('acoes-tab-historico'), btnF=document.getElementById('acoes-tab-fluxo');
   if(elP) elP.style.display = aba==='pendentes' ? '' : 'none';
   if(elH) elH.style.display = aba==='historico' ? '' : 'none';
+  if(elF) elF.style.display = aba==='fluxo' ? '' : 'none';
   if(btnP) btnP.className = 'btn btn-sm ' + (aba==='pendentes'?'btn-primary':'btn-ghost');
   if(btnH) btnH.className = 'btn btn-sm ' + (aba==='historico'?'btn-primary':'btn-ghost');
-  if(aba==='pendentes') renderAcoesPendentesLista(); else renderHistoricoAcoes();
+  if(btnF) btnF.className = 'btn btn-sm ' + (aba==='fluxo'?'btn-primary':'btn-ghost');
+  if(aba==='pendentes') renderAcoesPendentesLista();
+  else if(aba==='historico') renderHistoricoAcoes();
+  else if(aba==='fluxo') renderFluxos();
 }
 function renderAcoesPendentesLista(){
   const buscaPac = (document.getElementById('acp-busca-paciente')?.value||'').toLowerCase().trim();
@@ -11684,13 +11677,13 @@ const SITUACAO_ORDER=['lead','avaliacao','encaminhar','orcamento','tratamento','
 let fluxoSituacaoAtual='lead';
 
 function renderFluxos(){
-  // Monta os botões no subnav lateral
-  const subnav = document.getElementById('fluxo-subnav-situacoes');
+  // Monta os botões de situação, agora inline dentro da aba "Fluxo de ação" do módulo Ações
+  const subnav = document.getElementById('acoes-fluxo-situacoes');
   if(subnav){
     subnav.innerHTML = situacaoList.map(s=>{
       const on = s.id===fluxoSituacaoAtual;
       const icone = s.icone ? s.icone+' ' : '';
-      return `<button class="subnav-btn${on?' on':''}" onclick="selectFluxoSubnav('${s.id}',this)">${icone}${esc(s.label)}</button>`;
+      return `<button class="btn btn-sm ${on?'btn-primary':'btn-ghost'}" onclick="selectFluxoSubnav('${s.id}',this)">${icone}${esc(s.label)}</button>`;
     }).join('');
   }
   // Atualiza título da subpágina
@@ -11701,9 +11694,6 @@ function renderFluxos(){
 }
 
 function selectFluxoSubnav(id, btn){
-  // Remove .on de todos os botões do subnav
-  document.querySelectorAll('#fluxo-subnav .subnav-btn').forEach(b=>b.classList.remove('on'));
-  if(btn) btn.classList.add('on');
   fluxoSituacaoAtual=id;
   renderFluxos();
 }
