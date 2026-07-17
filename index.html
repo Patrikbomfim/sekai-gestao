@@ -821,6 +821,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="slb-label">Início</div>
   <button class="nav-btn on" onclick="goTo('hoje',this)"><span class="nav-ic">▣</span>Meu dia<span class="nav-badge" id="bdg-hoje" style="display:none">0</span></button>
   <button class="nav-btn" onclick="goTo('proximos',this)">Próximos 7 dias</button>
+  <button class="nav-btn" onclick="goTo('empresa',this)">Empresa</button>
   <div class="slb-label">Pacientes</div>
   <button class="nav-btn" id="navbtn-agenda" onclick="goTo('agenda',this)">Agenda</button>
   <button class="nav-btn" id="navbtn-pacientes" onclick="goTo('pacientes',this)">Pacientes</button>
@@ -828,7 +829,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <button class="nav-btn" onclick="goTo('lembretes',this)">Lembretes<span class="nav-badge" id="bdg-lembretes" style="display:none">0</span></button>
   <button class="nav-btn" onclick="goTo('pendencias',this)">Pendências<span class="nav-badge" id="bdg-pend" style="display:none">0</span></button>
   <div class="slb-label">Administrativo</div>
-  <button class="nav-btn" onclick="goTo('empresa',this)"><span class="nav-ic">🏢</span>Empresa</button>
   <button class="nav-btn" onclick="goTo('financeiro',this)">Financeiro</button>
   <button class="nav-btn" onclick="goTo('reuniao',this)">Reuniões</button>
   <div class="slb-label">Gestão</div>
@@ -1023,7 +1023,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="pt-tabs" id="pt-tabs">
     <button class="pt-tab on" onclick="switchPtTab('lista',this)">Lista</button>
     <button class="pt-tab" onclick="switchPtTab('funil',this)">Funil</button>
-    <button class="pt-tab" onclick="switchPtTab('acoes',this)">Ações</button>
   </div>
 
   <!-- ABA LISTA -->
@@ -1048,11 +1047,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div id="pt-kanban" class="kanban"></div>
   </div>
 
-  <!-- ABA AÇÕES -->
-  <div id="pt-tab-acoes" class="pt-tabcontent">
-    <div class="pg-desc" style="margin-top:-6px;margin-bottom:12px">Todas as ações geradas automaticamente pelo fluxo de cada paciente. Para criar uma ação avulsa, use o módulo Pendências.</div>
-    <div class="card" id="pt-acoes-wrap"></div>
-  </div>
 </div>
 
 <!-- PÁGINA DE DETALHE DO PACIENTE -->
@@ -5993,7 +5987,7 @@ function goTo(id, btn){
   if(id==='hoje') renderHoje();
   if(id==='proximos') renderProximos();
   if(id==='agenda') renderAgenda();
-  if(id==='pacientes'){ptSortColId='nome';ptSortDir='asc';filtroAtual='';pacientesPaginaAtual=1;const buscaEl=document.getElementById('pt-busca-nome');if(buscaEl)buscaEl.value='';renderFiltros();renderPacientes('');renderKanban();renderAcoesTab();}
+  if(id==='pacientes'){ptSortColId='nome';ptSortDir='asc';filtroAtual='';pacientesPaginaAtual=1;const buscaEl=document.getElementById('pt-busca-nome');if(buscaEl)buscaEl.value='';renderFiltros();renderPacientes('');renderKanban();}
   if(id==='fluxos') renderFluxos();
   if(id==='acoes') renderAcoesModulo();
   if(id==='rituais') renderRituais();
@@ -7047,7 +7041,6 @@ function salvarPaciente(){
   fecharModal('modal-novo');
   renderPacientes(filtroAtual);
   renderKanban();
-  renderAcoesTab();
   renderHoje();
   showSaveToast('Paciente cadastrado');
 }
@@ -7379,7 +7372,6 @@ function switchPtTab(tab, btn){
     if(inputBusca && inputBusca.value!==filtroAtual) inputBusca.value=filtroAtual;
   }
   if(tab==='funil') renderKanban();
-  if(tab==='acoes') renderAcoesTab();
 }
 
 // ── FUNIL (KANBAN) ───────────────────────────────────────────────────────
@@ -7436,42 +7428,6 @@ function kbDrop(ev, novaSituacao){
   }
   kbDragId=null;
   renderKanban();
-}
-
-// ── AÇÕES (visão consolidada) ───────────────────────────────────────────
-function renderAcoesTab(){
-  const wrap=document.getElementById('pt-acoes-wrap');
-  if(!wrap)return;
-  const todas=todasAcoes().slice().sort((a,b)=>a.data-b.data);
-  if(!todas.length){
-    wrap.innerHTML='<div class="empty"><div class="empty-ic">✅</div>Nenhuma ação gerada ainda.</div>';
-    return;
-  }
-  wrap.innerHTML=todas.map(a=>{
-    const k=acaoKey(a).replace(/[^a-z0-9_]/gi,'_');
-    const done=isConcluida(a);
-    const aStr=JSON.stringify(a).replace(/"/g,'&quot;');
-    return `<div class="acoes-row ${done?'done':''}" id="acoes-row-${k}">
-      <div class="chk-box ${done?'on':''}" onclick="toggleAcaoTab('${k}',${aStr},this)"></div>
-      <div style="flex:1">
-        <div class="acoes-title" style="font-size:13px;font-weight:500">${a.titulo}</div>
-        <div style="font-size:11px;color:var(--tx3);margin-top:2px">👤 ${a.pacienteNome} · ${a.responsavel||''} · ${fmtDate(a.data)}</div>
-      </div>
-      <span class="pill p-neutral">${a.tipo}</span>
-    </div>`;
-  }).join('');
-}
-
-function toggleAcaoTab(k, a, el){
-  const key=acaoKey(a);
-  const idx=concluidasIds.indexOf(key);
-  const done=idx>=0;
-  if(done) concluidasIds.splice(idx,1); else concluidasIds.push(key);
-  salvarLS('sk3-concluidas',concluidasIds);
-  el.classList.toggle('on',!done);
-  const row=document.getElementById('acoes-row-'+k);
-  if(row) row.classList.toggle('done',!done);
-  renderHoje();
 }
 
 // ── PÁGINA DE DETALHE DO PACIENTE ───────────────────────────────────────
@@ -11708,7 +11664,6 @@ function atualizarSituacaoPt(){
   voltarParaPacientes();
   renderPacientes(filtroAtual);
   renderKanban();
-  renderAcoesTab();
   renderHoje();
   showSaveToast('Paciente atualizado');
 }
@@ -11721,7 +11676,6 @@ function excluirPt(){
   voltarParaPacientes();
   renderPacientes(filtroAtual);
   renderKanban();
-  renderAcoesTab();
   renderHoje();
 }
 
@@ -17484,7 +17438,6 @@ function _salvarAgendamentoInterno(){
       salvarLS('sk3-pacientes',pacientes);
       renderPacientes(filtroAtual);
       renderKanban();
-      renderAcoesTab();
       renderHoje();
     }
   }
