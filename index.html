@@ -856,14 +856,13 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <button class="subnav-btn" onclick="showCfg('cargos',this)"><span class="nav-ic">▤</span>Cargos</button>
   <button class="subnav-btn" onclick="showCfg('equipe',this)"><span class="nav-ic">◉</span>Equipe</button>
   <button class="subnav-btn" onclick="showCfg('reunioes',this)"><span class="nav-ic">○</span>Reuniões</button>
-  <button class="subnav-btn" onclick="showCfg('protocolo',this)"><span class="nav-ic">⭐</span>Protocolo</button>
   <button class="subnav-btn" onclick="showCfg('cadpaciente',this)"><span class="nav-ic">▦</span>Cadastro paciente</button>
   <button class="subnav-btn" onclick="showCfg('empresa',this)"><span class="nav-ic">🏢</span>Empresa</button>
   <button class="subnav-btn" onclick="showCfg('checkin',this)"><span class="nav-ic">▣</span>Rotina</button>
-  <button class="subnav-btn" onclick="showCfg('agenda',this)"><span class="nav-ic">◫</span>Config. de agenda</button>
+  <button class="subnav-btn" onclick="showCfg('agenda',this)"><span class="nav-ic">◫</span>Agenda</button>
   <button class="subnav-btn" onclick="showCfg('anamnese',this)"><span class="nav-ic">▧</span>Anamnese</button>
   <button class="subnav-btn" onclick="showCfg('dashboard',this)"><span class="nav-ic">▦</span>Dashboard</button>
-  <button class="subnav-btn" onclick="showCfg('tabelas',this)">Tabelas precificação</button>
+  <button class="subnav-btn" onclick="showCfg('tabelas',this)"><span class="nav-ic">💲</span>Tabelas precificação</button>
 </nav>
 
 <main class="main">
@@ -1923,28 +1922,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <button class="btn btn-primary btn-sm" onclick="abrirModalTipoReuniao()">+ Novo tipo de reunião</button>
       </div>
       <div id="cfg-reunioes-lista" style="margin-top:8px"></div>
-    </div>
-  </div>
-
-  <!-- PROTOCOLO -->
-  <div id="cfg-protocolo" class="cfg-sub" style="display:none">
-    <div class="card" style="max-width:600px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-        <div><div class="card-title">Protocolo de atendimento</div><div class="card-sub">Rituais e padrões aplicados em cada consulta</div></div>
-        <button class="btn btn-primary btn-sm" disabled style="opacity:.45;cursor:not-allowed">Editar protocolo</button>
-      </div>
-      <div class="cfg-placeholder">
-        <div class="cfg-ph-icon">⭐</div>
-        <div class="cfg-ph-title">Em breve</div>
-        <div class="cfg-ph-desc">Defina os rituais de atendimento da sua clínica: o que acontece antes, durante e após cada consulta. O checklist de rituais será gerado a partir dessa configuração.</div>
-        <div class="cfg-ph-tags">
-          <span class="pill p-neutral">Pré-consulta</span>
-          <span class="pill p-neutral">Recepção</span>
-          <span class="pill p-neutral">Durante consulta</span>
-          <span class="pill p-neutral">Alta</span>
-          <span class="pill p-neutral">Pós-consulta</span>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -4699,7 +4676,7 @@ function aplicarPermissoesNav(){
     relatorios:'relatorios_ver',
     empresa:   ['empresa_dados_ver','empresa_anexos_ver'],
     config: ['cfg_usuarios_ver','cfg_cargos_ver','cfg_equipe_ver','cfg_reunioes_ver',
-             'cfg_protocolo_ver','cfg_cadpaciente_ver','cfg_empresa_ver'],
+             'cfg_cadpaciente_ver','cfg_empresa_ver'],
   };
 
   document.querySelectorAll('.nav-btn[onclick]').forEach(btn=>{
@@ -4723,7 +4700,6 @@ function aplicarPermissoesNav(){
     cargos:     'cfg_cargos_ver',
     equipe:     'cfg_equipe_ver',
     reunioes:   'cfg_reunioes_ver',
-    protocolo:  'cfg_protocolo_ver',
     cadpaciente:'cfg_cadpaciente_ver',
     empresa:    'cfg_empresa_ver',
     checkin:    'cfg_usuarios_ver',
@@ -5315,13 +5291,6 @@ const PERMISSOES_GRUPOS = [
     ]
   },
   {
-    grupo:'Configurações — Protocolo',
-    itens:[
-      {id:'cfg_protocolo_ver',label:'Visualizar'},
-      {id:'cfg_protocolo_editar',label:'Editar'},
-    ]
-  },
-  {
     grupo:'Configurações — Cadastro de paciente',
     itens:[
       {id:'cfg_cadpaciente_ver',label:'Visualizar'},
@@ -5369,7 +5338,6 @@ const CARGOS_PADRAO = [
       'cfg_usuarios_ver','cfg_usuarios_criar','cfg_usuarios_editar',
       'cfg_equipe_ver','cfg_equipe_criar','cfg_equipe_editar','cfg_equipe_excluir',
       'cfg_reunioes_ver','cfg_reunioes_criar','cfg_reunioes_editar','cfg_reunioes_excluir',
-      'cfg_protocolo_ver','cfg_protocolo_editar',
       'cfg_cadpaciente_ver','cfg_cadpaciente_editar',
       'empresa_dados_ver','empresa_dados_editar','empresa_anexos_ver','empresa_anexos_criar','empresa_anexos_excluir',
       'cfg_empresa_ver','cfg_empresa_editar',
@@ -5934,7 +5902,7 @@ function goTo(id, btn){
   if(id!=='hoje' && id!=='proximos'){
     let semAcesso;
     if(id==='config'){
-      const cfgPerms=['cfg_usuarios_ver','cfg_cargos_ver','cfg_equipe_ver','cfg_reunioes_ver','cfg_protocolo_ver','cfg_cadpaciente_ver','cfg_empresa_ver'];
+      const cfgPerms=['cfg_usuarios_ver','cfg_cargos_ver','cfg_equipe_ver','cfg_reunioes_ver','cfg_cadpaciente_ver','cfg_empresa_ver'];
       semAcesso = !cfgPerms.some(p=>temPerm(p));
     } else {
       const permNecessaria = PERM_SECAO[id];
@@ -13973,7 +13941,7 @@ function removeCheckinAtribuicao(i){
 function showCfg(sub, btn){
   const cfgPermMapa = {
     usuarios:'cfg_usuarios_ver', cargos:'cfg_cargos_ver', equipe:'cfg_equipe_ver',
-    reunioes:'cfg_reunioes_ver', protocolo:'cfg_protocolo_ver', cadpaciente:'cfg_cadpaciente_ver',
+    reunioes:'cfg_reunioes_ver', cadpaciente:'cfg_cadpaciente_ver',
     checkin:'cfg_usuarios_ver', agenda:'cfg_usuarios_ver', anamnese:'cfg_usuarios_ver',
     dashboard:'dashboard_cfg', empresa:'cfg_empresa_ver', tabelas:'cfg_usuarios_ver',
   };
