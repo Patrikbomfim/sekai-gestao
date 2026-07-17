@@ -1765,17 +1765,33 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
     <div class="pg-title">Lembretes</div>
   </div>
-  <div class="pg-desc">Lembretes gerados automaticamente pelas regras configuradas em Config. de agenda</div>
+  <div class="pg-desc">Lembretes gerados automaticamente pelas regras configuradas na aba "Configuração de lembretes"</div>
   <div id="lemb-modo-visao"></div>
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="lemb-filtros"></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
-    <input type="text" id="lemb-busca-paciente" placeholder="Buscar por paciente..." onkeydown="if(event.key==='Enter')renderLembretes()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r6);width:180px">
-    <input type="date" id="lemb-filtro-de" title="De" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6);width:132px">
-    <input type="date" id="lemb-filtro-ate" title="Até" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6);width:132px">
-    <button class="btn btn-primary btn-sm" onclick="renderLembretes()">Buscar</button>
-    <button class="btn btn-ghost btn-sm" onclick="lembLimparFiltros()">Limpar filtros</button>
+
+  <div id="lemb-tab-lista">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+      <input type="text" id="lemb-busca-paciente" placeholder="Buscar por paciente..." onkeydown="if(event.key==='Enter')renderLembretes()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r6);width:180px">
+      <input type="date" id="lemb-filtro-de" title="De" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6);width:132px">
+      <input type="date" id="lemb-filtro-ate" title="Até" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6);width:132px">
+      <button class="btn btn-primary btn-sm" onclick="renderLembretes()">Buscar</button>
+      <button class="btn btn-ghost btn-sm" onclick="lembLimparFiltros()">Limpar filtros</button>
+    </div>
+    <div id="lemb-lista-wrap"></div>
   </div>
-  <div id="lemb-lista-wrap"></div>
+
+  <div id="lemb-tab-config" style="display:none">
+    <div class="card" style="max-width:760px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div>
+          <div class="card-title">Lembretes automáticos</div>
+          <div class="card-sub">Configure lembretes disparados automaticamente com base nos campos do agendamento. Cada lembrete define o gatilho (campo + valor), quando acontece e quem é responsável. Os lembretes aparecem nesta tela e podem ser marcados como concluídos ou descartados.</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addRegraLembrete()">+ Nova regra</button>
+      </div>
+      <div id="cfg-regras-lembretes-lista" style="margin-top:12px"></div>
+    </div>
+  </div>
 </div>
 
 <!-- RITUAIS -->
@@ -2093,18 +2109,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div style="margin-top:10px">
         <button class="btn btn-ghost btn-sm" onclick="addCampoEvento()">+ Novo campo</button>
       </div>
-    </div>
-
-    <!-- LEMBRETES -->
-    <div class="card" style="max-width:760px;margin-top:0">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-        <div>
-          <div class="card-title">Lembretes automáticos</div>
-          <div class="card-sub">Configure lembretes disparados automaticamente com base nos campos do agendamento. Cada lembrete define o gatilho (campo + valor), quando acontece e quem é responsável. Os lembretes aparecem no módulo "Lembretes" e podem ser marcados como concluídos ou descartados.</div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="addRegraLembrete()">+ Nova regra</button>
-      </div>
-      <div id="cfg-regras-lembretes-lista" style="margin-top:12px"></div>
     </div>
 
   </div>
@@ -6431,18 +6435,31 @@ function lembToggleModoEquipe(v){ lembModoEquipe=v; renderLembretes(); }
 
 function renderLembretes(){
   renderModoVisaoControl('lemb-modo-visao', lembModoEquipe, '', [], 'lembToggleModoEquipe', '');
+  // filtros / abas
+  const filtrosEl = document.getElementById('lemb-filtros');
+  if(filtrosEl) filtrosEl.innerHTML = `
+    <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('pendente')" style="${lembFiltroStatus==='pendente'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Pendentes</button>
+    <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('concluido')" style="${lembFiltroStatus==='concluido'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Concluídos</button>
+    <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('config')" style="${lembFiltroStatus==='config'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Configuração de lembretes</button>
+  `;
+  const tabLista = document.getElementById('lemb-tab-lista');
+  const tabConfig = document.getElementById('lemb-tab-config');
+  if(lembFiltroStatus==='config'){
+    if(tabLista) tabLista.style.display='none';
+    if(tabConfig) tabConfig.style.display='';
+    renderCfgRegrasLembretes();
+    atualizarBadgeLembretes();
+    return;
+  }
+  if(tabLista) tabLista.style.display='';
+  if(tabConfig) tabConfig.style.display='none';
+
   const nomeAtual = nomeUsuarioAtual();
   const todosLembretesBase = gerarTodosLembretes();
   let lista = todosLembretesBase.filter(a=>{
     if(!lembModoEquipe && !acaoEhDe(a, nomeAtual)) return false;
     return true;
   });
-  // filtros
-  const filtrosEl = document.getElementById('lemb-filtros');
-  if(filtrosEl) filtrosEl.innerHTML = `
-    <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('pendente')" style="${lembFiltroStatus==='pendente'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Pendentes</button>
-    <button class="btn btn-ghost btn-sm" onclick="setLembFiltroStatus('concluido')" style="${lembFiltroStatus==='concluido'?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">Concluídos</button>
-  `;
   if(lembFiltroStatus==='pendente') lista = lista.filter(a=>!isConcluida(a));
   else if(lembFiltroStatus==='concluido') lista = lista.filter(a=>isConcluida(a));
   if(lembFiltroResp) lista = lista.filter(a=>a.responsavel===lembFiltroResp);
@@ -14790,7 +14807,6 @@ function renderCfgAgenda(){
   renderCfgAgendaProfissionais();
   renderCfgCamposAgendamento();
   renderCfgCamposEvento();
-  renderCfgRegrasLembretes();
 }
 
 // ── REGRAS DE CONFIRMAÇÃO DE AGENDAMENTO ────────────────────────────────
