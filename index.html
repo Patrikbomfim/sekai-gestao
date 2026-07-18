@@ -10947,7 +10947,13 @@ function _prontDocAbrirPdf(docId){
   const p=pacientes.find(x=>String(x.id)===String(doc.pacienteId));
   const emp=getEmpresaAtual()||{};
   const dadosEmp=emp.dados||{};
-  const razao=dadosEmp.razaoSocial||'Clínica Sekai';
+  const fantasia=(dadosEmp.nomeFantasia||'').trim();
+  const razaoS=(dadosEmp.razaoSocial||'').trim();
+  const nomeExibir=fantasia||razaoS||'Clínica Sekai';
+  // Em todo documento usamos o Nome Fantasia; só em Contrato, complementamos com a Razão Social.
+  const tituloHeader = (doc.tipo==='contrato' && razaoS && razaoS!==nomeExibir)
+    ? `${esc(nomeExibir)} — ${esc(razaoS)}`
+    : esc(nomeExibir);
   const endereco=dadosEmp.endereco||[dadosEmp.rua,dadosEmp.numero,dadosEmp.bairro].filter(Boolean).join(', ');
   const telefone=dadosEmp.telefone||'';
   const contatoLinha=[endereco,telefone].filter(Boolean).map(esc).join(' · ');
@@ -10955,22 +10961,20 @@ function _prontDocAbrirPdf(docId){
   const rodape=papelTimbrado.textoRodape||'';
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html>
-<html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(doc.modeloNome||'Documento')} — ${esc(p?p.nome:'')}</title>
+<html lang="pt-BR"><head><meta charset="UTF-8"><title></title>
 <style>
-body{font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#1a1a1a;max-width:720px;margin:0 auto;padding:0 24px 40px}
-.doc-header{display:flex;align-items:center;gap:16px;border-bottom:2px solid #1a1a1a;padding:28px 0 16px;margin-bottom:8px}
+body{font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#1a1a1a;max-width:720px;margin:0 auto;padding:0 24px ${rodape?'56px':'24px'}}
+.doc-header{display:flex;align-items:center;gap:16px;border-bottom:2px solid #1a1a1a;padding:28px 0 16px;margin-bottom:24px}
 .doc-header img{max-height:56px;max-width:150px;object-fit:contain;flex-shrink:0}
 .doc-header .info .razao{font-size:15px;font-weight:700}
 .doc-header .info .sub{font-size:11px;color:#6a6a6a;margin-top:2px}
-.doc-meta{font-size:10px;color:#9a9a9a;margin-bottom:24px}
-.doc-footer{border-top:1px solid #e2e2e2;margin-top:40px;padding-top:12px;font-size:10px;color:#9a9a9a;text-align:center}
+.doc-footer{position:fixed;bottom:0;left:0;right:0;border-top:1px solid #e2e2e2;padding:10px 24px;font-size:10px;color:#9a9a9a;text-align:center;background:#fff}
 </style></head>
 <body>
 <div class="doc-header">
   ${logo?`<img src="${logo}">`:''}
-  <div class="info"><div class="razao">${esc(razao)}</div>${contatoLinha?`<div class="sub">${contatoLinha}</div>`:''}</div>
+  <div class="info"><div class="razao">${tituloHeader}</div>${contatoLinha?`<div class="sub">${contatoLinha}</div>`:''}</div>
 </div>
-<div class="doc-meta">${esc(doc.modeloNome||'')} — gerado em ${_fmtDataBR(doc.criadoEm)}</div>
 ${doc.conteudoFinal||''}
 ${rodape?`<div class="doc-footer">${esc(rodape)}</div>`:''}
 <script>window.onload=()=>window.print();<\/script>
