@@ -2126,6 +2126,26 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
       <div id="cfg-pastas-empresa-lista" style="margin-top:12px"></div>
     </div>
+    <div class="card" style="max-width:640px;margin-top:0">
+      <div style="margin-bottom:4px">
+        <div class="card-title">Papel timbrado</div>
+        <div class="card-sub">Logo e cabeçalho usados ao gerar/imprimir contrato, termo, receita, atestado e encaminhamento a partir do prontuário do paciente.</div>
+      </div>
+      <div style="margin-top:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div id="papel-timbrado-preview" style="width:140px;height:64px;border:1px dashed var(--border);border-radius:var(--r8);display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--s2);flex-shrink:0"></div>
+        <div style="display:flex;gap:8px">
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+            Enviar logo
+            <input type="file" accept="image/*" style="display:none" onchange="_papelTimbradoUpload(this)">
+          </label>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="_papelTimbradoRemoverLogo()">Remover logo</button>
+        </div>
+      </div>
+      <div class="fl fg-full" style="margin-top:14px">
+        <label>Texto de rodapé (opcional)</label>
+        <input type="text" id="papel-timbrado-rodape" placeholder="Ex: www.clinicasekai.com.br · @clinicasekai" oninput="_papelTimbradoSalvarRodape(this.value)">
+      </div>
+    </div>
   </div>
   <div id="cfg-checkin" class="cfg-sub" style="display:none">
     <div class="card" style="max-width:760px">
@@ -6104,7 +6124,7 @@ function goTo(id, btn){
     if(sub==='reunioes') renderCfgReunioes();
     if(sub==='agenda') renderCfgAgenda();
     if(sub==='anamnese') renderCfgAnamnese();
-    if(sub==='empresa'){ renderCfgCamposEmpresa(); renderCfgPastasEmpresa(); }
+    if(sub==='empresa'){ renderCfgCamposEmpresa(); renderCfgPastasEmpresa(); renderPapelTimbrado(); }
     if(sub==='tabelas') tbRenderLista();
   }
   aplicarPermissoesNav();
@@ -10887,24 +10907,72 @@ function _gerarDocConfirmar(){
   if(doc) _prontDocAbrirPdf(doc.id);
 }
 
+// ── PAPEL TIMBRADO (LOGO + CABEÇALHO USADO NOS PDFS GERADOS) ────────────
+let papelTimbrado = carregarLS('sk3-papel-timbrado', {logoDataUrl:null, textoRodape:''});
+function _salvarPapelTimbrado(){ salvarLS('sk3-papel-timbrado', papelTimbrado); }
+
+function renderPapelTimbrado(){
+  const prev=document.getElementById('papel-timbrado-preview');
+  if(!prev) return;
+  prev.innerHTML = papelTimbrado.logoDataUrl
+    ? `<img src="${papelTimbrado.logoDataUrl}" style="max-width:100%;max-height:100%;object-fit:contain">`
+    : '<span style="font-size:11px;color:var(--tx3)">Sem logo</span>';
+  const rodapeEl=document.getElementById('papel-timbrado-rodape');
+  if(rodapeEl) rodapeEl.value=papelTimbrado.textoRodape||'';
+}
+function _papelTimbradoUpload(input){
+  const file=input.files&&input.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    papelTimbrado.logoDataUrl=e.target.result;
+    _salvarPapelTimbrado();
+    renderPapelTimbrado();
+  };
+  reader.readAsDataURL(file);
+}
+function _papelTimbradoRemoverLogo(){
+  papelTimbrado.logoDataUrl=null;
+  _salvarPapelTimbrado();
+  renderPapelTimbrado();
+}
+function _papelTimbradoSalvarRodape(v){
+  papelTimbrado.textoRodape=v;
+  _salvarPapelTimbrado();
+}
+
 function _prontDocAbrirPdf(docId){
   const doc=_prontDocs().find(d=>d.id===docId);
   if(!doc) return;
   const p=pacientes.find(x=>String(x.id)===String(doc.pacienteId));
   const emp=getEmpresaAtual()||{};
-  const razao=(emp.dados||{}).razaoSocial||'Clínica Sekai';
+  const dadosEmp=emp.dados||{};
+  const razao=dadosEmp.razaoSocial||'Clínica Sekai';
+  const endereco=dadosEmp.endereco||[dadosEmp.rua,dadosEmp.numero,dadosEmp.bairro].filter(Boolean).join(', ');
+  const telefone=dadosEmp.telefone||'';
+  const contatoLinha=[endereco,telefone].filter(Boolean).map(esc).join(' · ');
+  const logo=papelTimbrado.logoDataUrl;
+  const rodape=papelTimbrado.textoRodape||'';
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html>
 <html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(doc.modeloNome||'Documento')} — ${esc(p?p.nome:'')}</title>
 <style>
-body{font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#1a1a1a;max-width:720px;margin:40px auto;padding:0 24px}
-.doc-header{border-bottom:1px solid #e2e2e2;padding-bottom:12px;margin-bottom:24px}
-.doc-header .razao{font-size:15px;font-weight:700}
-.doc-header .sub{font-size:11px;color:#6a6a6a;margin-top:2px}
+body{font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#1a1a1a;max-width:720px;margin:0 auto;padding:0 24px 40px}
+.doc-header{display:flex;align-items:center;gap:16px;border-bottom:2px solid #1a1a1a;padding:28px 0 16px;margin-bottom:8px}
+.doc-header img{max-height:56px;max-width:150px;object-fit:contain;flex-shrink:0}
+.doc-header .info .razao{font-size:15px;font-weight:700}
+.doc-header .info .sub{font-size:11px;color:#6a6a6a;margin-top:2px}
+.doc-meta{font-size:10px;color:#9a9a9a;margin-bottom:24px}
+.doc-footer{border-top:1px solid #e2e2e2;margin-top:40px;padding-top:12px;font-size:10px;color:#9a9a9a;text-align:center}
 </style></head>
 <body>
-<div class="doc-header"><div class="razao">${esc(razao)}</div><div class="sub">${esc(doc.modeloNome||'')} — gerado em ${_fmtDataBR(doc.criadoEm)}</div></div>
+<div class="doc-header">
+  ${logo?`<img src="${logo}">`:''}
+  <div class="info"><div class="razao">${esc(razao)}</div>${contatoLinha?`<div class="sub">${contatoLinha}</div>`:''}</div>
+</div>
+<div class="doc-meta">${esc(doc.modeloNome||'')} — gerado em ${_fmtDataBR(doc.criadoEm)}</div>
 ${doc.conteudoFinal||''}
+${rodape?`<div class="doc-footer">${esc(rodape)}</div>`:''}
 <script>window.onload=()=>window.print();<\/script>
 </body></html>`);
   win.document.close();
@@ -14527,7 +14595,7 @@ function showCfg(sub, btn){
   if(sub==='checkin') renderCheckinConfig();
   if(sub==='agenda') renderCfgAgenda();
   if(sub==='dashboard') renderCfgDashboard();
-  if(sub==='empresa'){ renderCfgCamposEmpresa(); renderCfgPastasEmpresa(); }
+  if(sub==='empresa'){ renderCfgCamposEmpresa(); renderCfgPastasEmpresa(); renderPapelTimbrado(); }
   if(sub==='contratos') renderCfgModelos('contrato');
   if(sub==='termos') renderCfgModelos('termo');
   if(sub==='receitas') renderCfgModelos('receita');
