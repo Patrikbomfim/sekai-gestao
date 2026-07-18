@@ -10518,11 +10518,33 @@ function _renderProntDocs(p){
 // um campo especial de assinatura (desenhada na tela na hora de gerar). Se
 // algum campo usado no texto ficar sem valor, a geração é bloqueada — não
 // existe opção de "gerar mesmo assim".
-let modelosDocumentos = carregarLS('sk3-modelos-documento', []);
+let modelosDocumentos = carregarLS('sk3-modelos-documento', [
+  {
+    id:'modelo_atestado_sekai_1',
+    tipo:'atestado',
+    nome:'1 ATESTADO SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-18',
+    camposManuais:[
+      {token:'manual.hora_inicial', label:'Hora inicial da consulta', tipo:'hora', opcoes:[]},
+      {token:'manual.hora_final', label:'Hora final da consulta', tipo:'hora', opcoes:[]},
+      {token:'manual.tempo_repouso', label:'Tempo de repouso', tipo:'texto', opcoes:[]},
+      {token:'manual.dias_ou_horas', label:'Dia(s) ou Hora(s)', tipo:'selecao', opcoes:['Dia(s)','Hora(s)']},
+      {token:'manual.profissional_cro', label:'Nome e CRO do profissional', tipo:'texto', opcoes:[]},
+    ],
+    conteudo:'<div style="text-align:center;font-size:20px;font-weight:700;margin-bottom:20px">Atestado</div>'
+      +'<div style="margin-bottom:16px">Atesto, para fins de comprovação, que <b>{{paciente.nome}}</b>, portador do CPF nº <b>{{paciente.cpf}}</b>, esteve sob meus cuidados profissionais no dia de hoje, no horário das <b>{{manual.hora_inicial}}</b> às <b>{{manual.hora_final}}</b> horas e necessita de <b>{{manual.tempo_repouso}} {{manual.dias_ou_horas}}</b> de afastamento de suas atividades regulares a partir desta data.</div>'
+      +'<div style="margin-bottom:24px">Paciente solicitou o C.I.D. do atendimento. C.I.D.:____________________</div>'
+      +'<div style="text-align:right;margin-bottom:60px">Maringá-PR, {{data_hoje_extenso}}</div>'
+      +'<div style="text-align:center">{{assinatura}}<br>________________________________<br><b>{{manual.profissional_cro}}</b></div>',
+  },
+]);
 function _salvarModelosDocumentos(){ salvarLS('sk3-modelos-documento', modelosDocumentos); }
 
 function _fmtDataBR(d){ if(!d) return ''; const p=String(d).split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:String(d); }
 function _fmtMoedaBR(v){ return (v===undefined||v===null||v==='')?'':'R$ '+parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+const _MESES_EXTENSO=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+function _dataExtenso(isoStr){ if(!isoStr) return ''; const [y,m,day]=isoStr.split('-').map(Number); return `${day} de ${_MESES_EXTENSO[m-1]} de ${y}`; }
 
 // Contexto de mesclagem: dados disponíveis para os campos de um documento.
 // orcamentoId é opcional — se não houver orçamento vinculado, os campos desse
@@ -10562,6 +10584,7 @@ const CAMPOS_DOCUMENTO = [
   ]},
   {grupo:'Geral', campos:[
     {token:'data_hoje', label:'Data de hoje', get:()=>_fmtDataBR(iso(hoje))},
+    {token:'data_hoje_extenso', label:'Data de hoje por extenso', get:()=>_dataExtenso(iso(hoje))},
   ]},
 ];
 function _campoPorToken(token){ for(const g of CAMPOS_DOCUMENTO){ const c=g.campos.find(x=>x.token===token); if(c) return c; } return null; }
