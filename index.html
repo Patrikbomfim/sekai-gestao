@@ -857,6 +857,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <button class="subnav-btn" onclick="showCfg('equipe',this)"><span class="nav-ic">◉</span>Equipe</button>
   <button class="subnav-btn" onclick="showCfg('reunioes',this)"><span class="nav-ic">○</span>Reuniões</button>
   <button class="subnav-btn" onclick="showCfg('cadpaciente',this)"><span class="nav-ic">▦</span>Cadastro paciente</button>
+  <button class="subnav-btn" onclick="showCfg('contratos',this)"><span class="nav-ic">📄</span>Contratos</button>
+  <button class="subnav-btn" onclick="showCfg('termos',this)"><span class="nav-ic">✍️</span>Termos</button>
+  <button class="subnav-btn" onclick="showCfg('receitas',this)"><span class="nav-ic">💊</span>Receitas</button>
   <button class="subnav-btn" onclick="showCfg('empresa',this)"><span class="nav-ic">🏢</span>Empresa</button>
   <button class="subnav-btn" onclick="showCfg('checkin',this)"><span class="nav-ic">▣</span>Rotina</button>
   <button class="subnav-btn" onclick="showCfg('agenda',this)"><span class="nav-ic">◫</span>Agenda</button>
@@ -1759,6 +1762,66 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
+<!-- MODELO DE DOCUMENTO (CONTRATO/TERMO/RECEITA) -->
+<div class="modal-ov" id="modal-modelo-documento">
+  <div class="modal" style="width:760px;max-width:96vw;max-height:90vh">
+    <div class="modal-header">
+      <div class="modal-title" id="modelo-modal-titulo">Novo modelo</div>
+    </div>
+    <div class="modal-body" style="overflow-y:auto">
+      <div class="fl fg-full" style="margin-bottom:14px">
+        <label>Nome do modelo</label>
+        <input type="text" id="modelo-input-nome" placeholder="Ex: Contrato — tratamento geral">
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:10px;flex-wrap:wrap">
+        <div style="display:flex;gap:6px">
+          <button type="button" class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="_modeloExec('bold')" title="Negrito"><b>B</b></button>
+          <button type="button" class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="_modeloExec('italic')" title="Itálico"><i>I</i></button>
+          <button type="button" class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="_modeloExec('underline')" title="Sublinhado"><u>S</u></button>
+          <button type="button" class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="_modeloExec('insertUnorderedList')" title="Lista">Lista</button>
+          <button type="button" class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="_modeloExec('formatBlock','H3')" title="Título">Título</button>
+        </div>
+        <select id="modelo-sel-campo" onchange="_modeloInserirCampo(this.value)" style="font-size:12px;padding:5px 8px;max-width:220px">
+          <option value="">+ Inserir campo</option>
+        </select>
+      </div>
+      <div id="modelo-editor-conteudo" contenteditable="true" style="min-height:280px;max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r8);padding:16px;font-size:13px;line-height:1.7"></div>
+      <div style="margin-top:12px;display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="modelo-input-ativo" checked style="width:auto">
+        <label for="modelo-input-ativo" style="margin-bottom:0;font-size:12px">Modelo ativo (disponível ao gerar documentos no prontuário)</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-modelo-documento')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarModeloDocumento()">Salvar modelo</button>
+    </div>
+  </div>
+</div>
+
+<!-- GERAR DOCUMENTO (A PARTIR DE MODELO) -->
+<div class="modal-ov" id="modal-gerar-doc">
+  <div class="modal" style="width:760px;max-width:96vw;max-height:90vh">
+    <div class="modal-header">
+      <div class="modal-title" id="gerar-doc-titulo">Gerar documento</div>
+    </div>
+    <div class="modal-body" style="overflow-y:auto">
+      <div class="fl fg-full" style="margin-bottom:14px">
+        <label>Modelo</label>
+        <select id="gerar-doc-sel-modelo" onchange="_gerarDocEscolherModelo()"></select>
+      </div>
+      <div id="gerar-doc-preview-wrap" style="display:none">
+        <div id="gerar-doc-aviso-faltando" style="display:none;background:#FEF2F2;border:1px solid #FCA5A5;color:#991B1B;font-size:12.5px;line-height:1.5;padding:10px 12px;border-radius:var(--r8);margin-bottom:12px"></div>
+        <label style="font-size:12px;color:var(--tx3);margin-bottom:4px;display:block">Pré-visualização (você pode ajustar o texto antes de confirmar)</label>
+        <div id="gerar-doc-preview" contenteditable="true" style="min-height:280px;max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r8);padding:16px;font-size:13px;line-height:1.7"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-gerar-doc')">Cancelar</button>
+      <button class="btn btn-primary" id="gerar-doc-btn-confirmar" onclick="_gerarDocConfirmar()" disabled style="opacity:.5;cursor:not-allowed">Confirmar e gerar PDF</button>
+    </div>
+  </div>
+</div>
+
 <!-- LEMBRETES -->
 <div id="sec-lembretes" class="sec">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
@@ -1955,6 +2018,37 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
       <div id="cfg-colunas-lista" style="margin-top:12px"></div>
       <div style="font-size:11px;color:var(--tx3);margin-top:8px">Arraste para reordenar. Desative para ocultar uma coluna sem perder a configuração.</div>
+    </div>
+  </div>
+
+  <!-- MODELOS DE DOCUMENTO — CONTRATOS / TERMOS / RECEITAS -->
+  <div id="cfg-contratos" class="cfg-sub" style="display:none">
+    <div class="card" style="max-width:820px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div><div class="card-title">Modelos de contrato</div><div class="card-sub">Textos padrão usados para gerar contratos na aba "Contratos e termos" do prontuário. Insira campos que serão substituídos automaticamente pelos dados do paciente e do orçamento.</div></div>
+        <button class="btn btn-primary btn-sm" onclick="abrirModalModelo('contrato')">+ Novo modelo</button>
+      </div>
+      <div id="cfg-modelos-contrato-lista" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div id="cfg-termos" class="cfg-sub" style="display:none">
+    <div class="card" style="max-width:820px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div><div class="card-title">Modelos de termo</div><div class="card-sub">Textos padrão usados para gerar termos de compromisso/consentimento na aba "Contratos e termos" do prontuário.</div></div>
+        <button class="btn btn-primary btn-sm" onclick="abrirModalModelo('termo')">+ Novo modelo</button>
+      </div>
+      <div id="cfg-modelos-termo-lista" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div id="cfg-receitas" class="cfg-sub" style="display:none">
+    <div class="card" style="max-width:820px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div><div class="card-title">Modelos de receita</div><div class="card-sub">Textos padrão usados para gerar receitas na aba "Contratos e termos" do prontuário.</div></div>
+        <button class="btn btn-primary btn-sm" onclick="abrirModalModelo('receita')">+ Novo modelo</button>
+      </div>
+      <div id="cfg-modelos-receita-lista" style="margin-top:12px"></div>
     </div>
   </div>
 
@@ -10311,9 +10405,9 @@ function _prontAnexarArquivo(fichaId, input){
 // a um orçamento aprovado específico. Os três tipos são independentes entre si
 // — não há ordem obrigatória de geração/anexo.
 const PRONT_DOC_TIPOS=[
-  {id:'contrato', label:'Contrato', icone:'📄'},
-  {id:'termo', label:'Termo de compromisso', icone:'✍️'},
-  {id:'receita', label:'Receita', icone:'💊'},
+  {id:'contrato', label:'Contrato', icone:'📄', moduloConfig:'Contratos'},
+  {id:'termo', label:'Termo de compromisso', icone:'✍️', moduloConfig:'Termos'},
+  {id:'receita', label:'Receita', icone:'💊', moduloConfig:'Receitas'},
 ];
 function _prontDocs(){ return carregarLS('sk3-prontuario-docs',[]); }
 function _salvarProntDocs(list){ salvarLS('sk3-prontuario-docs',list); }
@@ -10364,6 +10458,7 @@ function _renderProntDocs(p){
                 <span style="font-size:13px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.arquivoNome||d.modeloNome||'—'}</span>
                 <span style="font-size:11px;color:var(--tx3);flex-shrink:0">${fmtData(d.criadoEm)}</span>
                 ${d.arquivoData?`<a href="${d.arquivoData}" download="${d.arquivoNome}" style="font-size:11px;color:var(--ac);flex-shrink:0">Baixar</a>`:''}
+                ${d.origem==='gerado'?`<button onclick="_prontDocAbrirPdf('${d.id}')" style="font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--ac);flex-shrink:0">Ver/baixar</button>`:''}
                 <button onclick="_prontDocExcluir('${d.id}')" style="font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--da);flex-shrink:0">Excluir</button>
               </div>`).join(''):'<div style="font-size:12px;color:var(--tx3)">Nenhum documento ainda.</div>'}
           </div>`;
@@ -10383,9 +10478,261 @@ function _prontToggleDocs(uid){
   if(caret) caret.style.transform=open?'':'rotate(90deg)';
 }
 
-// Geração a partir de modelo — depende do módulo de modelos padrão (ainda não criado).
+// ═══════════════════════════════════════════════════════════════════════
+// MODELOS DE DOCUMENTO (CONTRATOS / TERMOS / RECEITAS)
+// ═══════════════════════════════════════════════════════════════════════
+// Cada modelo é um texto (HTML simples, editado num campo rich-text) com
+// campos de mesclagem no formato {{grupo.campo}}. Ao gerar um documento no
+// prontuário, os campos usados no texto são substituídos pelos dados reais
+// do paciente/orçamento/clínica. Se algum campo usado não tiver valor, a
+// geração é bloqueada — não existe opção de "gerar mesmo assim".
+let modelosDocumentos = carregarLS('sk3-modelos-documento', []);
+function _salvarModelosDocumentos(){ salvarLS('sk3-modelos-documento', modelosDocumentos); }
+
+function _fmtDataBR(d){ if(!d) return ''; const p=String(d).split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:String(d); }
+function _fmtMoedaBR(v){ return (v===undefined||v===null||v==='')?'':'R$ '+parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+// Contexto de mesclagem: dados disponíveis para os campos de um documento.
+function _ctxMesclagem(pacienteId, orcamentoId){
+  const paciente = pacientes.find(x=>String(x.id)===String(pacienteId)) || {};
+  const orcamento = _orcamentos().find(o=>o.id===orcamentoId) || {};
+  const emp = getEmpresaAtual() || {};
+  return {paciente, orcamento, emp};
+}
+
+const CAMPOS_DOCUMENTO = [
+  {grupo:'Paciente', campos:[
+    {token:'paciente.nome', label:'Nome do paciente', get:c=>c.paciente.nome},
+    {token:'paciente.cpf', label:'CPF do paciente', get:c=>c.paciente.cpf},
+    {token:'paciente.telefone', label:'Telefone do paciente', get:c=>c.paciente.telefone||c.paciente.celular},
+    {token:'paciente.email', label:'E-mail do paciente', get:c=>c.paciente.email},
+    {token:'paciente.nascimento', label:'Data de nascimento', get:c=>_fmtDataBR(c.paciente.nascimento)},
+    {token:'paciente.bairro', label:'Bairro do paciente', get:c=>c.paciente.bairro},
+  ]},
+  {grupo:'Orçamento', campos:[
+    {token:'orcamento.numero', label:'Número do orçamento', get:c=>c.orcamento.num!=null?String(c.orcamento.num):(c.orcamento.id?String(c.orcamento.id).slice(-4):'')},
+    {token:'orcamento.nome', label:'Nome do orçamento', get:c=>c.orcamento.nomeOrc},
+    {token:'orcamento.valor_total', label:'Valor total do orçamento', get:c=>{
+      const total=(c.orcamento.itens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+      const vf=c.orcamento.valorFechado!=null?c.orcamento.valorFechado:total;
+      return _fmtMoedaBR(vf);
+    }},
+    {token:'orcamento.data_aprovacao', label:'Data de aprovação do orçamento', get:c=>_fmtDataBR(c.orcamento.dataDecisao)},
+    {token:'orcamento.itens', label:'Itens do orçamento', get:c=>(c.orcamento.itens||[]).map(i=>`${i.proc||''}${i.dentes?' ('+i.dentes+')':''} — ${_fmtMoedaBR(i.valor)}`).join('<br>')},
+  ]},
+  {grupo:'Clínica', campos:[
+    {token:'clinica.razao_social', label:'Razão social da clínica', get:c=>(c.emp.dados||{}).razaoSocial},
+    {token:'clinica.cnpj', label:'CNPJ da clínica', get:c=>(c.emp.dados||{}).cnpj},
+    {token:'clinica.endereco', label:'Endereço da clínica', get:c=>(c.emp.dados||{}).endereco},
+    {token:'clinica.telefone', label:'Telefone da clínica', get:c=>(c.emp.dados||{}).telefone},
+  ]},
+  {grupo:'Geral', campos:[
+    {token:'data_hoje', label:'Data de hoje', get:()=>_fmtDataBR(iso(hoje))},
+  ]},
+];
+function _campoPorToken(token){ for(const g of CAMPOS_DOCUMENTO){ const c=g.campos.find(x=>x.token===token); if(c) return c; } return null; }
+
+// Substitui os campos {{token}} do texto do modelo pelos valores do contexto.
+// Retorna o HTML mesclado e a lista de labels dos campos que ficaram vazios.
+function _mesclarModelo(conteudo, ctx){
+  const tokens = [...new Set([...conteudo.matchAll(/\{\{\s*([\w.]+)\s*\}\}/g)].map(m=>m[1]))];
+  const faltando = [];
+  let resultado = conteudo;
+  tokens.forEach(tok=>{
+    const campo = _campoPorToken(tok);
+    let valor = campo ? campo.get(ctx) : '';
+    valor = (valor===undefined||valor===null) ? '' : String(valor).trim();
+    if(!valor) faltando.push(campo?campo.label:tok);
+    const re = new RegExp('\\{\\{\\s*'+tok.replace(/\./g,'\\.')+'\\s*\\}\\}','g');
+    resultado = resultado.replace(re, valor);
+  });
+  return {html: resultado, faltando};
+}
+
+function _optionsCamposDocumento(){
+  return '<option value="">+ Inserir campo</option>' + CAMPOS_DOCUMENTO.map(g=>
+    `<optgroup label="${g.grupo}">${g.campos.map(c=>`<option value="${c.token}">${c.label}</option>`).join('')}</optgroup>`
+  ).join('');
+}
+
+// ── EDITOR DE MODELO (CRIAR/EDITAR) ─────────────────────────────────────
+let _modeloTipoAtual=null, _modeloEditId=null;
+const _MODELO_TIPO_LABEL={contrato:'contrato',termo:'termo',receita:'receita'};
+
+function renderCfgModelos(tipo){
+  const wrap=document.getElementById('cfg-modelos-'+tipo+'-lista');
+  if(!wrap) return;
+  const lista=modelosDocumentos.filter(m=>m.tipo===tipo);
+  if(!lista.length){
+    wrap.innerHTML='<div class="empty"><div class="empty-ic">📄</div>Nenhum modelo cadastrado ainda.</div>';
+    return;
+  }
+  wrap.innerHTML=lista.map(m=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r8);margin-bottom:8px">
+      <span style="font-size:13px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.nome)}</span>
+      <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:${m.ativo!==false?'#ECFDF5':'#F3F4F6'};color:${m.ativo!==false?'#065F46':'#6B7280'};flex-shrink:0">${m.ativo!==false?'Ativo':'Inativo'}</span>
+      <button onclick="toggleModeloAtivo('${m.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--tx2)">${m.ativo!==false?'Desativar':'Ativar'}</button>
+      <button onclick="abrirModalModelo('${tipo}','${m.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--tx2)">Editar</button>
+      <button onclick="excluirModeloDocumento('${m.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--da)">Excluir</button>
+    </div>`).join('');
+}
+
+function abrirModalModelo(tipo, id){
+  _modeloTipoAtual=tipo; _modeloEditId=id||null;
+  const existente = id ? modelosDocumentos.find(m=>m.id===id) : null;
+  document.getElementById('modelo-modal-titulo').textContent = existente ? 'Editar modelo de '+_MODELO_TIPO_LABEL[tipo] : 'Novo modelo de '+_MODELO_TIPO_LABEL[tipo];
+  document.getElementById('modelo-input-nome').value = existente ? existente.nome : '';
+  document.getElementById('modelo-editor-conteudo').innerHTML = existente ? existente.conteudo : '';
+  document.getElementById('modelo-input-ativo').checked = existente ? existente.ativo!==false : true;
+  document.getElementById('modelo-sel-campo').innerHTML = _optionsCamposDocumento();
+  abrirModal('modal-modelo-documento');
+}
+
+function _modeloExec(cmd, val){
+  document.getElementById('modelo-editor-conteudo').focus();
+  document.execCommand(cmd, false, val||null);
+}
+function _modeloInserirCampo(token){
+  if(!token) return;
+  const ed=document.getElementById('modelo-editor-conteudo');
+  ed.focus();
+  document.execCommand('insertText', false, `{{${token}}}`);
+  document.getElementById('modelo-sel-campo').value='';
+}
+
+function salvarModeloDocumento(){
+  const nome=(document.getElementById('modelo-input-nome').value||'').trim();
+  const conteudo=document.getElementById('modelo-editor-conteudo').innerHTML||'';
+  const ativo=document.getElementById('modelo-input-ativo').checked;
+  if(!nome){ alert('Dê um nome ao modelo.'); return; }
+  if(!conteudo.trim()){ alert('Escreva o texto do modelo.'); return; }
+  if(_modeloEditId){
+    const m=modelosDocumentos.find(x=>x.id===_modeloEditId);
+    if(m){ m.nome=nome; m.conteudo=conteudo; m.ativo=ativo; }
+  } else {
+    modelosDocumentos.push({id:'modelo_'+Date.now(), tipo:_modeloTipoAtual, nome, conteudo, ativo, criadoEm:iso(hoje)});
+  }
+  _salvarModelosDocumentos();
+  fecharModal('modal-modelo-documento');
+  renderCfgModelos(_modeloTipoAtual);
+}
+
+function toggleModeloAtivo(id){
+  const m=modelosDocumentos.find(x=>x.id===id);
+  if(!m) return;
+  m.ativo = m.ativo===false ? true : false;
+  _salvarModelosDocumentos();
+  renderCfgModelos(m.tipo);
+}
+
+function excluirModeloDocumento(id){
+  const m=modelosDocumentos.find(x=>x.id===id);
+  if(!m) return;
+  if(!confirm(`Excluir o modelo "${m.nome}"?`)) return;
+  modelosDocumentos = modelosDocumentos.filter(x=>x.id!==id);
+  _salvarModelosDocumentos();
+  renderCfgModelos(m.tipo);
+}
+
+// ── GERAR DOCUMENTO NO PRONTUÁRIO (A PARTIR DE MODELO) ──────────────────
+let _gerarDocOrcId=null, _gerarDocTipo=null;
+
 function _prontDocGerar(orcId,tipo){
-  alert('Nenhum modelo cadastrado ainda para este tipo de documento.\n\nCadastre um modelo padrão no módulo de modelos para poder gerar automaticamente. Por enquanto, use "Anexar" para subir o documento pronto.');
+  const modelos = modelosDocumentos.filter(m=>m.tipo===tipo && m.ativo!==false);
+  const t = PRONT_DOC_TIPOS.find(x=>x.id===tipo);
+  if(!modelos.length){
+    alert(`Nenhum modelo cadastrado ainda para ${t?t.label.toLowerCase():'este tipo de documento'}.\n\nCadastre um modelo em Configurações → ${t?t.moduloConfig:''}. Por enquanto, use "Anexar" para subir o documento pronto.`);
+    return;
+  }
+  _gerarDocOrcId=orcId; _gerarDocTipo=tipo;
+  document.getElementById('gerar-doc-titulo').textContent = 'Gerar '+(t?t.label.toLowerCase():'documento');
+  const sel=document.getElementById('gerar-doc-sel-modelo');
+  sel.innerHTML = '<option value="">Selecione um modelo...</option>' + modelos.map(m=>`<option value="${m.id}">${esc(m.nome)}</option>`).join('');
+  document.getElementById('gerar-doc-preview-wrap').style.display='none';
+  const btn=document.getElementById('gerar-doc-btn-confirmar');
+  btn.disabled=true; btn.style.opacity='.5'; btn.style.cursor='not-allowed';
+  abrirModal('modal-gerar-doc');
+}
+
+function _gerarDocEscolherModelo(){
+  const modeloId=document.getElementById('gerar-doc-sel-modelo').value;
+  const previewWrap=document.getElementById('gerar-doc-preview-wrap');
+  const avisoEl=document.getElementById('gerar-doc-aviso-faltando');
+  const previewEl=document.getElementById('gerar-doc-preview');
+  const btn=document.getElementById('gerar-doc-btn-confirmar');
+  if(!modeloId){ previewWrap.style.display='none'; btn.disabled=true; btn.style.opacity='.5'; btn.style.cursor='not-allowed'; return; }
+  const modelo=modelosDocumentos.find(m=>m.id===modeloId);
+  if(!modelo) return;
+  const orc=_orcamentos().find(o=>o.id===_gerarDocOrcId);
+  const ctx=_ctxMesclagem(_prontPacId, _gerarDocOrcId);
+  const {html, faltando} = _mesclarModelo(modelo.conteudo, ctx);
+  previewWrap.style.display='';
+  if(faltando.length){
+    avisoEl.style.display='block';
+    avisoEl.innerHTML = `<strong>Não é possível gerar este documento.</strong><br>Faltam: ${faltando.join(', ')}. Preencha esses dados no cadastro do paciente ou no orçamento e tente novamente.`;
+    previewEl.innerHTML='';
+    previewEl.contentEditable='false';
+    previewEl.style.opacity='.5';
+    btn.disabled=true; btn.style.opacity='.5'; btn.style.cursor='not-allowed';
+  } else {
+    avisoEl.style.display='none';
+    previewEl.innerHTML=html;
+    previewEl.contentEditable='true';
+    previewEl.style.opacity='1';
+    btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer';
+  }
+  previewEl.dataset.modeloId=modeloId;
+  previewEl.dataset.modeloNome=modelo.nome;
+}
+
+function _gerarDocConfirmar(){
+  const previewEl=document.getElementById('gerar-doc-preview');
+  const conteudoFinal=previewEl.innerHTML;
+  const modeloNome=previewEl.dataset.modeloNome||'';
+  const modeloId=previewEl.dataset.modeloId||'';
+  _comSalvarImediato(()=>{
+    const list=_prontDocs();
+    list.push({
+      id:'pdoc_'+Date.now(),
+      pacienteId:_prontPacId,
+      orcamentoId:_gerarDocOrcId,
+      tipo:_gerarDocTipo,
+      origem:'gerado',
+      modeloId, modeloNome,
+      conteudoFinal,
+      criadoEm:iso(hoje),
+      criadoPor:nomeUsuarioAtual(),
+    });
+    _salvarProntDocs(list);
+  });
+  fecharModal('modal-gerar-doc');
+  const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
+  if(p) _renderProntDocs(p);
+  const doc=_prontDocs().slice(-1)[0];
+  if(doc) _prontDocAbrirPdf(doc.id);
+}
+
+function _prontDocAbrirPdf(docId){
+  const doc=_prontDocs().find(d=>d.id===docId);
+  if(!doc) return;
+  const p=pacientes.find(x=>String(x.id)===String(doc.pacienteId));
+  const emp=getEmpresaAtual()||{};
+  const razao=(emp.dados||{}).razaoSocial||'Clínica Sekai';
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(doc.modeloNome||'Documento')} — ${esc(p?p.nome:'')}</title>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#1a1a1a;max-width:720px;margin:40px auto;padding:0 24px}
+.doc-header{border-bottom:1px solid #e2e2e2;padding-bottom:12px;margin-bottom:24px}
+.doc-header .razao{font-size:15px;font-weight:700}
+.doc-header .sub{font-size:11px;color:#6a6a6a;margin-top:2px}
+</style></head>
+<body>
+<div class="doc-header"><div class="razao">${esc(razao)}</div><div class="sub">${esc(doc.modeloNome||'')} — gerado em ${_fmtDataBR(doc.criadoEm)}</div></div>
+${doc.conteudoFinal||''}
+<script>window.onload=()=>window.print();<\/script>
+</body></html>`);
+  win.document.close();
 }
 
 function _prontDocAnexar(orcId,tipo,input){
@@ -13943,6 +14290,7 @@ function showCfg(sub, btn){
     usuarios:'cfg_usuarios_ver', cargos:'cfg_cargos_ver', equipe:'cfg_equipe_ver',
     reunioes:'cfg_reunioes_ver', cadpaciente:'cfg_cadpaciente_ver',
     checkin:'cfg_usuarios_ver', agenda:'cfg_usuarios_ver', anamnese:'cfg_usuarios_ver',
+    contratos:'cfg_cadpaciente_ver', termos:'cfg_cadpaciente_ver', receitas:'cfg_cadpaciente_ver',
     dashboard:'dashboard_cfg', empresa:'cfg_empresa_ver', tabelas:'cfg_usuarios_ver',
   };
   const permNec = cfgPermMapa[sub];
@@ -13971,6 +14319,9 @@ function showCfg(sub, btn){
   if(sub==='agenda') renderCfgAgenda();
   if(sub==='dashboard') renderCfgDashboard();
   if(sub==='empresa'){ renderCfgCamposEmpresa(); renderCfgPastasEmpresa(); }
+  if(sub==='contratos') renderCfgModelos('contrato');
+  if(sub==='termos') renderCfgModelos('termo');
+  if(sub==='receitas') renderCfgModelos('receita');
   if(sub==='tabelas') tbRenderLista();
 }
 
