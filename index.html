@@ -3923,6 +3923,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <input type="text" id="mu-cpf" placeholder="000.000.000-00" oninput="fmtCPF(this)" onblur="validarCPF(this)">
         </div>
         <div class="fl"><label>Data de nascimento</label><input type="date" id="mu-nasc"></div>
+        <div class="fl"><label>Registro / CRO</label><input type="text" id="mu-cro" placeholder="Ex: CRO-PR 12345"></div>
         <!-- ENDEREÇO -->
         <div class="fl">
           <label>CEP</label>
@@ -10530,7 +10531,7 @@ let modelosDocumentos = carregarLS('sk3-modelos-documento', [
       {token:'manual.hora_final', label:'Hora final da consulta', tipo:'hora', opcoes:[]},
       {token:'manual.tempo_repouso', label:'Tempo de repouso', tipo:'texto', opcoes:[]},
       {token:'manual.dias_ou_horas', label:'Dia(s) ou Hora(s)', tipo:'selecao', opcoes:['Dia(s)','Hora(s)']},
-      {token:'manual.profissional_cro', label:'Nome e CRO do profissional', tipo:'texto', opcoes:[]},
+      {token:'manual.profissional_cro', label:'Profissional responsável', tipo:'profissional', opcoes:[]},
     ],
     conteudo:'<div style="text-align:center;font-size:20px;font-weight:700;margin-bottom:20px">Atestado</div>'
       +'<div style="margin-bottom:16px">Atesto, para fins de comprovação, que <b>{{paciente.nome}}</b>, portador do CPF nº <b>{{paciente.cpf}}</b>, esteve sob meus cuidados profissionais no dia de hoje, no horário das <b>{{manual.hora_inicial}}</b> às <b>{{manual.hora_final}}</b> horas e necessita de <b>{{manual.tempo_repouso}} {{manual.dias_ou_horas}}</b> de afastamento de suas atividades regulares a partir desta data.</div>'
@@ -10634,7 +10635,21 @@ function _optionsCamposDocumento(camposManuaisAtual){
 // ── EDITOR DE MODELO (CRIAR/EDITAR) ─────────────────────────────────────
 let _modeloTipoAtual=null, _modeloEditId=null, _modeloCamposManuaisAtual=[];
 const _MODELO_TIPO_LABEL={contrato:'contrato',termo:'termo',receita:'receita',atestado:'atestado',encaminhamento:'encaminhamento/carta'};
-const _CAMPO_MANUAL_TIPOS=['texto','numero','data','hora','selecao'];
+const _CAMPO_MANUAL_TIPOS=['texto','numero','data','hora','selecao','profissional'];
+
+// Lista membros da equipe cujo cargo é "Dentista" — são os únicos que podem
+// figurar como responsável em documentos (contrato, termo, atestado etc.),
+// já que secretária/auxiliar não se responsabilizam clinicamente pelo paciente.
+function _dentistasDisponiveis(){
+  return equipe.filter(e=>typeof e!=='string' && e.usuarioId).map(e=>{
+    const cargo=cargos.find(c=>c.id===e.cargoId);
+    if(!cargo || (cargo.nome||'').trim().toLowerCase()!=='dentista') return null;
+    const u=usuarios.find(x=>x.id===e.usuarioId);
+    const nome=u?.nome||e.nome||'';
+    const cro=u?.cro||'';
+    return {usuarioId:e.usuarioId, nome, cro, label: cro?`${nome} — ${cro}`:nome};
+  }).filter(Boolean);
+}
 
 function renderCfgModelos(tipo){
   const wrap=document.getElementById('cfg-modelos-'+tipo+'-lista');
@@ -10781,6 +10796,11 @@ function _gerarDocEscolherModelo(){
     let inputHtml;
     if(c.tipo==='selecao'){
       inputHtml=`<select id="${inputId}" onchange="_gerarDocRecalcular()"><option value="">Selecione...</option>${(c.opcoes||[]).map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select>`;
+    } else if(c.tipo==='profissional'){
+      const dentistas=_dentistasDisponiveis();
+      inputHtml = dentistas.length
+        ? `<select id="${inputId}" onchange="_gerarDocRecalcular()"><option value="">Selecione...</option>${dentistas.map(d=>`<option value="${esc(d.label)}">${esc(d.label)}</option>`).join('')}</select>`
+        : `<div style="font-size:12px;color:var(--tx3)">Nenhum dentista cadastrado em Equipe.</div>`;
     } else {
       const tipoInput = c.tipo==='numero'?'number':c.tipo==='data'?'date':c.tipo==='hora'?'time':'text';
       inputHtml=`<input type="${tipoInput}" id="${inputId}" oninput="_gerarDocRecalcular()">`;
@@ -12668,6 +12688,7 @@ function abrirModalUsuario(id){
   document.getElementById('mu-senha-label').textContent=u?'Nova senha (opcional)':'Senha de acesso *';
   document.getElementById('mu-cpf').value=u?.cpf||'';
   document.getElementById('mu-nasc').value=u?.nascimento||'';
+  document.getElementById('mu-cro').value=u?.cro||'';
   document.getElementById('mu-cep').value=u?.cep||'';
   document.getElementById('mu-cidade').value=u?.cidade||'';
   document.getElementById('mu-rua').value=u?.rua||'';
@@ -12764,6 +12785,7 @@ async function salvarUsuario(){
     nome, login, email,
     cpf:cpfEl.value.trim(),
     nascimento:document.getElementById('mu-nasc').value,
+    cro:document.getElementById('mu-cro').value.trim(),
     cep:document.getElementById('mu-cep').value.trim(),
     cidade:document.getElementById('mu-cidade').value.trim(),
     rua:document.getElementById('mu-rua').value.trim(),
