@@ -1823,10 +1823,16 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <select id="gerar-doc-sel-orcamento" onchange="_gerarDocRecalcular()"><option value="">Nenhum</option></select>
       </div>
       <div id="gerar-doc-campos-manuais"></div>
-      <div id="gerar-doc-assinatura-linha" style="display:none;align-items:center;gap:10px;margin-bottom:14px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r8);background:var(--s2)">
-        <span style="font-size:12px;font-weight:600;color:var(--tx2)">Assinatura</span>
-        <span id="gerar-doc-assinatura-status" style="font-size:12px;color:var(--tx3)">Não capturada</span>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="_gerarDocAssinar()">Assinar</button>
+      <div id="gerar-doc-assinatura-linha" style="display:none;flex-direction:column;gap:8px;margin-bottom:14px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r8);background:var(--s2)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="toggle-sw" id="gerar-doc-assinatura-toggle" onclick="_gerarDocToggleAssinatura()"></span>
+          <span style="font-size:12px;font-weight:600;color:var(--tx2)">Ativar assinatura digital</span>
+          <span style="font-size:11px;color:var(--tx3)">— se desativado, imprima e assine fisicamente</span>
+        </div>
+        <div id="gerar-doc-assinatura-acao" style="display:none;align-items:center;gap:10px">
+          <span id="gerar-doc-assinatura-status" style="font-size:12px;color:var(--tx3)">Não capturada</span>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="_gerarDocAssinar()">Assinar</button>
+        </div>
       </div>
       <div id="gerar-doc-preview-wrap" style="display:none">
         <div id="gerar-doc-aviso-faltando" style="display:none;background:#FEF2F2;border:1px solid #FCA5A5;color:#991B1B;font-size:12.5px;line-height:1.5;padding:10px 12px;border-radius:var(--r8);margin-bottom:12px"></div>
@@ -10506,7 +10512,7 @@ function _renderProntDocs(p){
     return `
     <div style="margin-bottom:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div style="font-size:12px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em">${t.icone} ${t.label}</div>
+        <div style="font-size:12px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em">${t.label}</div>
         <div style="display:flex;align-items:center;gap:6px">
           <button onclick="_prontDocGerar('${t.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--tx2)">Gerar</button>
           <label style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--tx2)">
@@ -10619,9 +10625,10 @@ function _mesclarModelo(conteudo, ctx){
   const faltando = [];
   let resultado = conteudo;
   tokens.forEach(tok=>{
-    let valor='', label=tok;
+    let valor='', label=tok, opcional=false;
     if(tok==='assinatura'){
       label='Assinatura';
+      opcional = !ctx.assinaturaAtiva;
       valor = ctx.assinaturaDataUrl ? `<img src="${ctx.assinaturaDataUrl}" style="max-height:60px">` : '';
     } else if(tok.startsWith('manual.')){
       const campoManual = (ctx.modeloCamposManuais||[]).find(c=>c.token===tok);
@@ -10633,7 +10640,7 @@ function _mesclarModelo(conteudo, ctx){
       valor = campo ? campo.get(ctx) : '';
     }
     valor = (valor===undefined||valor===null) ? '' : String(valor).trim();
-    if(!valor) faltando.push(label);
+    if(!valor && !opcional) faltando.push(label);
     const re = new RegExp('\\{\\{\\s*'+tok.replace(/\./g,'\\.')+'\\s*\\}\\}','g');
     resultado = resultado.replace(re, valor);
   });
@@ -10772,7 +10779,7 @@ function excluirModeloDocumento(id){
 }
 
 // ── GERAR DOCUMENTO NO PRONTUÁRIO (A PARTIR DE MODELO) ──────────────────
-let _gerarDocTipo=null, _gerarDocAssinaturaDataUrl=null;
+let _gerarDocTipo=null, _gerarDocAssinaturaDataUrl=null, _gerarDocAssinaturaAtiva=false;
 
 function _prontDocGerar(tipo){
   const modelos = modelosDocumentos.filter(m=>m.tipo===tipo && m.ativo!==false);
@@ -10783,6 +10790,7 @@ function _prontDocGerar(tipo){
   }
   _gerarDocTipo=tipo;
   _gerarDocAssinaturaDataUrl=null;
+  _gerarDocAssinaturaAtiva=false;
   document.getElementById('gerar-doc-titulo').textContent = 'Gerar '+(t?t.label.toLowerCase():'documento');
   const sel=document.getElementById('gerar-doc-sel-modelo');
   sel.innerHTML = '<option value="">Selecione um modelo...</option>' + modelos.map(m=>`<option value="${m.id}">${esc(m.nome)}</option>`).join('');
@@ -10802,6 +10810,7 @@ function _gerarDocEscolherModelo(){
   const camposWrap=document.getElementById('gerar-doc-campos-manuais');
   const assinLinha=document.getElementById('gerar-doc-assinatura-linha');
   _gerarDocAssinaturaDataUrl=null;
+  _gerarDocAssinaturaAtiva=false;
   if(!modeloId){
     camposWrap.innerHTML=''; assinLinha.style.display='none';
     document.getElementById('gerar-doc-preview-wrap').style.display='none';
@@ -10829,7 +10838,20 @@ function _gerarDocEscolherModelo(){
   }).join('');
   const usaAssinatura = /\{\{\s*assinatura\s*\}\}/.test(modelo.conteudo);
   assinLinha.style.display = usaAssinatura ? 'flex' : 'none';
+  document.getElementById('gerar-doc-assinatura-toggle').classList.remove('on');
+  document.getElementById('gerar-doc-assinatura-acao').style.display='none';
   document.getElementById('gerar-doc-assinatura-status').textContent='Não capturada';
+  _gerarDocRecalcular();
+}
+
+function _gerarDocToggleAssinatura(){
+  _gerarDocAssinaturaAtiva=!_gerarDocAssinaturaAtiva;
+  document.getElementById('gerar-doc-assinatura-toggle').classList.toggle('on', _gerarDocAssinaturaAtiva);
+  document.getElementById('gerar-doc-assinatura-acao').style.display = _gerarDocAssinaturaAtiva ? 'flex' : 'none';
+  if(!_gerarDocAssinaturaAtiva){
+    _gerarDocAssinaturaDataUrl=null;
+    document.getElementById('gerar-doc-assinatura-status').textContent='Não capturada';
+  }
   _gerarDocRecalcular();
 }
 
@@ -10858,6 +10880,7 @@ function _gerarDocRecalcular(){
     ctx.manualValues[c.token]= el ? el.value : '';
   });
   ctx.assinaturaDataUrl=_gerarDocAssinaturaDataUrl;
+  ctx.assinaturaAtiva=_gerarDocAssinaturaAtiva;
   const {html, faltando} = _mesclarModelo(modelo.conteudo, ctx);
   previewWrap.style.display='';
   if(faltando.length){
