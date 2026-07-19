@@ -10565,6 +10565,30 @@ let modelosDocumentos = carregarLS('sk3-modelos-documento', [
       +'<div style="text-align:right;margin-bottom:60px">Maringá-PR, {{data_hoje_extenso}}</div>'
       +'<div style="text-align:center">{{assinatura}}<br>________________________________<br><b>{{manual.profissional_cro}}</b></div>',
   },
+  {
+    id:'modelo_receita_controlada_sekai_1',
+    tipo:'receita',
+    nome:'2 RECEITUÁRIO CONTROLADO S',
+    ativo:true,
+    criadoEm:'2026-07-19',
+    camposManuais:[
+      {token:'manual.endereco_paciente', label:'Endereço do paciente', tipo:'texto', opcoes:[]},
+      {token:'manual.profissional_cro', label:'Nome e CRO do profissional emitente', tipo:'profissional', opcoes:[]},
+      {token:'manual.medicamentos_uso_interno', label:'Medicamento(s) de uso interno e posologia', tipo:'texto', opcoes:[]},
+    ],
+    conteudo:'<div style="background:#F3F4F6;padding:10px 14px;margin-bottom:16px">Paciente: <b>{{paciente.nome}}</b><br>Endereço: <b>{{manual.endereco_paciente}}</b></div>'
+      +'<div style="text-align:center;font-size:16px;font-weight:700;margin-bottom:10px">Receituário de Controle Especial</div>'
+      +'<div style="text-align:center;font-weight:700;margin-bottom:10px">Identificação do Emitente</div>'
+      +'<div style="background:#F3F4F6;padding:10px 14px;margin-bottom:16px">Nome do Profissional: <b>{{manual.profissional_cro}}</b><br>Endereço: <b>{{clinica.endereco}}</b><br>Telefone: <b>{{clinica.telefone}}</b><br>E-mail: <b>{{clinica.email}}</b></div>'
+      +'<div style="background:#F3F4F6;padding:10px 14px;margin-bottom:16px">Uso interno:<br><b>{{manual.medicamentos_uso_interno}}</b></div>'
+      +'<div style="margin-bottom:16px">Uso externo:<br>- Clorexidina 0,12% (Periogard) ------------------ 1 frasco<br>Enxague leve com 10 mL da solução, por 1 minuto, de 12 em 12 horas, por 7 dias. Usar creme dental Periogard nesse período. Aguardar 30 minutos para ingerir líquidos e alimentos.</div>'
+      +'<div style="text-align:right;margin-bottom:60px">Maringá-PR, {{data_hoje_extenso}}</div>'
+      +'<div style="text-align:center;margin-bottom:24px">________________________________<br><b>{{manual.profissional_cro}}</b></div>'
+      +'<div style="display:flex;gap:24px">'
+      +'<div style="flex:1"><b>Identificação do Comprador</b><br><br>Nome:<br>Ident.: ______________ Org. Emissor: ______<br>Endereço:<br>Cidade: ______________ UF: ______<br>Telefone:</div>'
+      +'<div style="flex:1"><br><br>________________________________<br>Assinatura do Farmacêutico<br><br>Data: ______________</div>'
+      +'</div>',
+  },
 ]);
 function _salvarModelosDocumentos(){ salvarLS('sk3-modelos-documento', modelosDocumentos); }
 
@@ -10608,6 +10632,7 @@ const CAMPOS_DOCUMENTO = [
     {token:'clinica.cnpj', label:'CNPJ da clínica', get:c=>(c.emp.dados||{}).cnpj},
     {token:'clinica.endereco', label:'Endereço da clínica', get:c=>(c.emp.dados||{}).endereco},
     {token:'clinica.telefone', label:'Telefone da clínica', get:c=>(c.emp.dados||{}).telefone},
+    {token:'clinica.email', label:'E-mail da clínica', get:c=>(c.emp.dados||{}).email},
   ]},
   {grupo:'Geral', campos:[
     {token:'data_hoje', label:'Data de hoje', get:()=>_fmtDataBR(iso(hoje))},
