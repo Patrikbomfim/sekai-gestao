@@ -1823,6 +1823,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <select id="gerar-doc-sel-orcamento" onchange="_gerarDocRecalcular()"><option value="">Nenhum</option></select>
       </div>
       <div id="gerar-doc-campos-manuais"></div>
+      <div id="gerar-doc-campos-automaticos-faltando"></div>
       <div id="gerar-doc-assinatura-linha" style="display:none;flex-direction:column;gap:8px;margin-bottom:14px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r8);background:var(--s2)">
         <div style="display:flex;align-items:center;gap:10px">
           <span class="toggle-sw" id="gerar-doc-assinatura-toggle" onclick="_gerarDocToggleAssinatura()"></span>
@@ -10573,24 +10574,16 @@ let modelosDocumentos = carregarLS('sk3-modelos-documento', [
     criadoEm:'2026-07-19',
     camposManuais:[
       {token:'manual.profissional_cro', label:'Nome e CRO do profissional emitente', tipo:'profissional', opcoes:[]},
-      {token:'manual.medicamento_1', label:'Medicamento (1)', tipo:'texto', opcoes:[]},
-      {token:'manual.posologia_1', label:'Posologia (1) — ex: Tomar XX cápsulas a cada XX durante X dias', tipo:'texto', opcoes:[]},
-      {token:'manual.medicamento_2', label:'Medicamento (2)', tipo:'texto', opcoes:[]},
-      {token:'manual.posologia_2', label:'Posologia (2) — ex: Tomar XX cápsulas a cada XX durante X dias', tipo:'texto', opcoes:[]},
-      {token:'manual.medicamento_3', label:'Medicamento (3)', tipo:'texto', opcoes:[]},
-      {token:'manual.posologia_3', label:'Posologia (3) — ex: Tomar XX cápsulas a cada XX durante X dias', tipo:'texto', opcoes:[]},
+      {token:'manual.medicamentos', label:'Medicamento(s) de uso interno', tipo:'lista_medicamentos', opcoes:[]},
     ],
     conteudo:'<div style="background:#F3F4F6;padding:10px 14px;margin-bottom:16px">Paciente: <b>{{paciente.nome}}</b><br>Endereço: <b>{{paciente.endereco}}</b></div>'
       +'<div style="text-align:center;font-size:16px;font-weight:700;margin-bottom:10px">Receituário de Controle Especial</div>'
       +'<div style="text-align:center;font-weight:700;margin-bottom:10px">Identificação do Emitente</div>'
       +'<div style="background:#F3F4F6;padding:10px 14px;margin-bottom:16px">Nome do Profissional: <b>{{manual.profissional_cro}}</b><br>Endereço: <b>{{clinica.endereco}}</b><br>Telefone: <b>{{clinica.telefone}}</b><br>E-mail: <b>{{clinica.email}}</b></div>'
-      +'<div style="background:#F3F4F6;padding:10px 14px;margin-bottom:16px">Uso interno:<br>'
-      +'-<b>{{manual.medicamento_1}}</b><br><b>{{manual.posologia_1}}</b><br><br>'
-      +'-<b>{{manual.medicamento_2}}</b><br><b>{{manual.posologia_2}}</b><br><br>'
-      +'-<b>{{manual.medicamento_3}}</b><br><b>{{manual.posologia_3}}</b></div>'
+      +'<div style="background:#F3F4F6;padding:10px 14px;margin-bottom:16px">Uso interno:<br>{{manual.medicamentos}}</div>'
       +'<div style="margin-bottom:16px">Uso externo:<br>- Clorexidina 0,12% (Periogard) ------------------ 1 frasco<br>Enxague leve com 10 mL da solução, por 1 minuto, de 12 em 12 horas, por 7 dias. Usar creme dental Periogard nesse período. Aguardar 30 minutos para ingerir líquidos e alimentos.</div>'
       +'<div style="text-align:right;margin-bottom:60px">Maringá-PR, {{data_hoje_extenso}}</div>'
-      +'<div style="text-align:center;margin-bottom:24px">________________________________<br><b>{{manual.profissional_cro}}</b></div>'
+      +'<div style="text-align:center;margin-bottom:24px">{{assinatura}}<br>________________________________<br><b>{{manual.profissional_cro}}</b></div>'
       +'<div style="display:flex;gap:24px">'
       +'<div style="flex:1"><b>Identificação do Comprador</b><br><br>Nome:<br>Ident.: ______________ Org. Emissor: ______<br>Endereço:<br>Cidade: ______________ UF: ______<br>Telefone:</div>'
       +'<div style="flex:1"><br><br>________________________________<br>Assinatura do Farmacêutico<br><br>Data: ______________</div>'
@@ -10682,6 +10675,11 @@ function _mesclarModelo(conteudo, ctx){
       const campo = _campoPorToken(tok);
       label = campo ? campo.label : tok;
       valor = campo ? campo.get(ctx) : '';
+      // Campo automático veio vazio do cadastro (ex: paciente sem endereço
+      // preenchido) — usa o valor digitado manualmente na tela de geração, se houver.
+      if((!valor || !String(valor).trim()) && ctx.automaticOverrides && ctx.automaticOverrides[tok]){
+        valor = ctx.automaticOverrides[tok];
+      }
     }
     valor = (valor===undefined||valor===null) ? '' : String(valor).trim();
     if(!valor && !opcional) faltando.push(label);
@@ -10706,7 +10704,8 @@ function _optionsCamposDocumento(camposManuaisAtual){
 // ── EDITOR DE MODELO (CRIAR/EDITAR) ─────────────────────────────────────
 let _modeloTipoAtual=null, _modeloEditId=null, _modeloCamposManuaisAtual=[];
 const _MODELO_TIPO_LABEL={contrato:'contrato',termo:'termo',receita:'receita',atestado:'atestado',encaminhamento:'encaminhamento/carta'};
-const _CAMPO_MANUAL_TIPOS=['texto','numero','data','hora','selecao','profissional'];
+const _CAMPO_MANUAL_TIPOS=['texto','numero','data','hora','selecao','profissional','lista_medicamentos'];
+const _CAMPO_MANUAL_TIPO_LABEL={texto:'texto',numero:'número',data:'data',hora:'hora',selecao:'seleção',profissional:'profissional',lista_medicamentos:'lista de medicamentos (+ adicionar)'};
 
 // Lista membros da equipe cujo cargo é "Dentista" — são os únicos que podem
 // figurar como responsável em documentos (contrato, termo, atestado etc.),
@@ -10774,7 +10773,7 @@ function _renderModeloCamposManuaisLista(){
       <div style="display:flex;gap:6px;align-items:center;background:var(--s2);padding:6px 8px;border-radius:var(--r6)">
         <input type="text" value="${esc(c.label)}" placeholder="Nome do campo" oninput="_modeloCamposManuaisAtual[${i}].label=this.value" style="flex:1;font-size:12px;padding:4px 6px">
         <select onchange="_modeloCamposManuaisAtual[${i}].tipo=this.value;_renderModeloCamposManuaisLista()" style="font-size:12px;padding:4px 6px">
-          ${_CAMPO_MANUAL_TIPOS.map(t=>`<option value="${t}" ${c.tipo===t?'selected':''}>${t}</option>`).join('')}
+          ${_CAMPO_MANUAL_TIPOS.map(t=>`<option value="${t}" ${c.tipo===t?'selected':''}>${esc(_CAMPO_MANUAL_TIPO_LABEL[t]||t)}</option>`).join('')}
         </select>
         ${c.tipo==='selecao'?`<input type="text" value="${esc((c.opcoes||[]).join(', '))}" placeholder="Opções, separadas por vírgula" oninput="_modeloCamposManuaisAtual[${i}].opcoes=this.value.split(',').map(s=>s.trim()).filter(Boolean)" style="flex:1;font-size:12px;padding:4px 6px">`:''}
         <button onclick="_modeloCamposManuaisAtual.splice(${i},1);_renderModeloCamposManuaisLista()" style="font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--da)">×</button>
@@ -10824,6 +10823,11 @@ function excluirModeloDocumento(id){
 
 // ── GERAR DOCUMENTO NO PRONTUÁRIO (A PARTIR DE MODELO) ──────────────────
 let _gerarDocTipo=null, _gerarDocAssinaturaDataUrl=null, _gerarDocAssinaturaAtiva=false;
+// Valores digitados manualmente para campos AUTOMÁTICOS que vieram vazios do
+// cadastro (ex: paciente sem endereço preenchido) — { token: valor }
+let _gerarDocAutomaticOverrides={};
+// Contador de linhas por campo do tipo lista_medicamentos, para gerar ids únicos
+let _gerarDocListaContadores={};
 
 function _prontDocGerar(tipo){
   const modelos = modelosDocumentos.filter(m=>m.tipo===tipo && m.ativo!==false);
@@ -10835,6 +10839,8 @@ function _prontDocGerar(tipo){
   _gerarDocTipo=tipo;
   _gerarDocAssinaturaDataUrl=null;
   _gerarDocAssinaturaAtiva=false;
+  _gerarDocAutomaticOverrides={};
+  _gerarDocListaContadores={};
   document.getElementById('gerar-doc-titulo').textContent = 'Gerar '+(t?t.label.toLowerCase():'documento');
   const sel=document.getElementById('gerar-doc-sel-modelo');
   sel.innerHTML = '<option value="">Selecione um modelo...</option>' + modelos.map(m=>`<option value="${m.id}">${esc(m.nome)}</option>`).join('');
@@ -10842,11 +10848,30 @@ function _prontDocGerar(tipo){
   const selOrc=document.getElementById('gerar-doc-sel-orcamento');
   selOrc.innerHTML = '<option value="">Nenhum</option>' + orcs.map(o=>`<option value="${o.id}">${esc(o.nomeOrc||('Orçamento #'+(o.num||o.id.slice(-4))))} (${o.status})</option>`).join('');
   document.getElementById('gerar-doc-campos-manuais').innerHTML='';
+  document.getElementById('gerar-doc-campos-automaticos-faltando').innerHTML='';
   document.getElementById('gerar-doc-assinatura-linha').style.display='none';
   document.getElementById('gerar-doc-preview-wrap').style.display='none';
   const btn=document.getElementById('gerar-doc-btn-confirmar');
   btn.disabled=true; btn.style.opacity='.5'; btn.style.cursor='not-allowed';
   abrirModal('modal-gerar-doc');
+}
+
+// Gera o bloco de inputs (1 linha inicial) para um campo do tipo lista_medicamentos
+function _gerarDocHtmlLinhaMedicamento(inputId, idx, med, pos){
+  return `<div class="lm-linha" data-idx="${idx}" style="display:flex;gap:8px;margin-bottom:6px">
+    <input type="text" placeholder="Medicamento" value="${esc(med||'')}" oninput="_gerarDocRecalcular()" style="flex:1">
+    <input type="text" placeholder="Posologia (ex: Tomar XX cápsulas a cada XX durante X dias)" value="${esc(pos||'')}" oninput="_gerarDocRecalcular()" style="flex:2">
+    ${idx>0?`<button type="button" onclick="this.closest('.lm-linha').remove();_gerarDocRecalcular()" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--da)">×</button>`:''}
+  </div>`;
+}
+function _gerarDocAdicionarMedicamento(inputId){
+  _gerarDocListaContadores[inputId]=(_gerarDocListaContadores[inputId]||1);
+  const idx=_gerarDocListaContadores[inputId];
+  _gerarDocListaContadores[inputId]++;
+  const wrap=document.getElementById(inputId+'-linhas');
+  if(!wrap) return;
+  wrap.insertAdjacentHTML('beforeend', _gerarDocHtmlLinhaMedicamento(inputId, idx));
+  _gerarDocRecalcular();
 }
 
 function _gerarDocEscolherModelo(){
@@ -10855,8 +10880,11 @@ function _gerarDocEscolherModelo(){
   const assinLinha=document.getElementById('gerar-doc-assinatura-linha');
   _gerarDocAssinaturaDataUrl=null;
   _gerarDocAssinaturaAtiva=false;
+  _gerarDocAutomaticOverrides={};
+  _gerarDocListaContadores={};
   if(!modeloId){
     camposWrap.innerHTML=''; assinLinha.style.display='none';
+    document.getElementById('gerar-doc-campos-automaticos-faltando').innerHTML='';
     document.getElementById('gerar-doc-preview-wrap').style.display='none';
     const btn=document.getElementById('gerar-doc-btn-confirmar'); btn.disabled=true; btn.style.opacity='.5'; btn.style.cursor='not-allowed';
     return;
@@ -10874,6 +10902,9 @@ function _gerarDocEscolherModelo(){
       inputHtml = dentistas.length
         ? `<select id="${inputId}" onchange="_gerarDocRecalcular()"><option value="">Selecione...</option>${dentistas.map(d=>`<option value="${esc(d.label)}">${esc(d.label)}</option>`).join('')}</select>`
         : `<div style="font-size:12px;color:var(--tx3)">Nenhum dentista cadastrado em Equipe.</div>`;
+    } else if(c.tipo==='lista_medicamentos'){
+      inputHtml = `<div id="${inputId}-linhas">${_gerarDocHtmlLinhaMedicamento(inputId, 0)}</div>`
+        + `<button type="button" onclick="_gerarDocAdicionarMedicamento('${inputId}')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer">+ Adicionar medicamento</button>`;
     } else {
       const tipoInput = c.tipo==='numero'?'number':c.tipo==='data'?'date':c.tipo==='hora'?'time':'text';
       inputHtml=`<input type="${tipoInput}" id="${inputId}" oninput="_gerarDocRecalcular()">`;
@@ -10885,7 +10916,30 @@ function _gerarDocEscolherModelo(){
   document.getElementById('gerar-doc-assinatura-toggle').classList.remove('on');
   document.getElementById('gerar-doc-assinatura-acao').style.display='none';
   document.getElementById('gerar-doc-assinatura-status').textContent='Não capturada';
+  _gerarDocRenderCamposAutomaticosFaltando(modelo);
   _gerarDocRecalcular();
+}
+
+// Detecta campos AUTOMÁTICOS (não-manuais, não-assinatura) usados no modelo que
+// vieram vazios do cadastro do paciente/empresa/orçamento, e mostra um input para
+// preenchê-los manualmente na hora — sem isso, faltando dado no cadastro, o
+// documento ficaria bloqueado sem nenhuma forma de completar.
+function _gerarDocRenderCamposAutomaticosFaltando(modelo){
+  const wrap=document.getElementById('gerar-doc-campos-automaticos-faltando');
+  const orcId=document.getElementById('gerar-doc-sel-orcamento').value||null;
+  const ctxTeste=_ctxMesclagem(_prontPacId, orcId);
+  const tokens=[...new Set([...modelo.conteudo.matchAll(/\{\{\s*([\w.]+)\s*\}\}/g)].map(m=>m[1]))];
+  const faltantes=[];
+  tokens.forEach(tok=>{
+    if(tok==='assinatura'||tok.startsWith('manual.')) return;
+    const campo=_campoPorToken(tok);
+    if(!campo) return;
+    const valor=campo.get(ctxTeste);
+    if(!valor || !String(valor).trim()) faltantes.push({token:tok, label:campo.label});
+  });
+  if(!faltantes.length){ wrap.innerHTML=''; return; }
+  wrap.innerHTML = `<div style="font-size:11px;color:var(--tx3);margin-bottom:8px">Alguns dados não foram encontrados no cadastro — preencha manualmente para este documento:</div>`
+    + faltantes.map(f=>`<div class="fl fg-full" style="margin-bottom:10px"><label>${esc(f.label)} <span style="font-weight:400;color:var(--tx3)">(não encontrado no cadastro)</span></label><input type="text" id="gerar-doc-auto-${f.token.replace(/\W/g,'_')}" oninput="_gerarDocAutomaticOverrides['${f.token}']=this.value;_gerarDocRecalcular()"></div>`).join('');
 }
 
 function _gerarDocToggleAssinatura(){
@@ -10907,6 +10961,23 @@ function _gerarDocAssinar(){
   });
 }
 
+// Junta as linhas preenchidas de um campo lista_medicamentos num único bloco de
+// texto, no formato "-Medicamento<br>Posologia", separado por linha em branco.
+// Linhas sem nome de medicamento são ignoradas (não é obrigatório usar todas).
+function _gerarDocColetarListaMedicamentos(inputId){
+  const wrap=document.getElementById(inputId+'-linhas');
+  if(!wrap) return '';
+  const linhas=[...wrap.querySelectorAll('.lm-linha')];
+  const partes=linhas.map(linha=>{
+    const inputs=linha.querySelectorAll('input');
+    const med=(inputs[0]?.value||'').trim();
+    const pos=(inputs[1]?.value||'').trim();
+    if(!med) return null;
+    return `-<b>${esc(med)}</b>${pos?'<br>'+esc(pos):''}`;
+  }).filter(Boolean);
+  return partes.join('<br><br>');
+}
+
 function _gerarDocRecalcular(){
   const modeloId=document.getElementById('gerar-doc-sel-modelo').value;
   const previewWrap=document.getElementById('gerar-doc-preview-wrap');
@@ -10920,11 +10991,17 @@ function _gerarDocRecalcular(){
   const ctx=_ctxMesclagem(_prontPacId, orcId);
   ctx.modeloCamposManuais=modelo.camposManuais||[];
   (modelo.camposManuais||[]).forEach(c=>{
+    if(c.tipo==='lista_medicamentos'){
+      const inputId='gerar-doc-campo-'+c.token.replace(/\W/g,'_');
+      ctx.manualValues[c.token]=_gerarDocColetarListaMedicamentos(inputId);
+      return;
+    }
     const el=document.getElementById('gerar-doc-campo-'+c.token.replace(/\W/g,'_'));
     ctx.manualValues[c.token]= el ? el.value : '';
   });
   ctx.assinaturaDataUrl=_gerarDocAssinaturaDataUrl;
   ctx.assinaturaAtiva=_gerarDocAssinaturaAtiva;
+  ctx.automaticOverrides=_gerarDocAutomaticOverrides;
   const {html, faltando} = _mesclarModelo(modelo.conteudo, ctx);
   previewWrap.style.display='';
   if(faltando.length){
@@ -10945,6 +11022,7 @@ function _gerarDocRecalcular(){
   previewEl.dataset.modeloNome=modelo.nome;
   previewEl.dataset.orcId=orcId||'';
 }
+
 
 function _gerarDocConfirmar(){
   const previewEl=document.getElementById('gerar-doc-preview');
