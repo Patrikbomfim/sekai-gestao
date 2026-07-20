@@ -10588,6 +10588,130 @@ let modelosDocumentos = carregarLS('sk3-modelos-documento', [
       +'<div style="flex:1"><br><br>________________________________<br>Assinatura do Farmacêutico<br><br>Data: ______________</div>'
       +'</div>',
   },
+  {
+    id:'modelo_encaminhamento_sekai_1',
+    tipo:'encaminhamento',
+    nome:'ENCAMINHAMENTO SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-19',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Nome e CRO do profissional emitente', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:'<div style="margin-bottom:16px">Caro colega,</div>'
+      +'<div style="margin-bottom:16px">Encaminho o(a) paciente <b>{{paciente.nome}}</b> para avalição sistêmica.</div>'
+      +'<div style="margin-bottom:16px">A paciente relatou ter feito uma angioplastia e cateterismo em janeiro deste ano e iniciou uso de medicamento anticoagulante e Prolia (reumato) devido a osteoporose.</div>'
+      +'<div style="margin-bottom:16px">Na avaliação clínica, constatado fístula do dente 16 (necrose). Indicado fazer extração e implante dentário, pois o dente encontra-se com bastante perda de estrutura e coroa + pinos antigos. Solicitado tomografia da região e existe a necessidade de enxerto ósseo no local.</div>'
+      +'<div style="margin-bottom:16px">Para a cirurgia será empregado uso de anestésico Mepivacaína 2% com vasoconstritor epinefrina, medicação pré-operatória: Dexametasona 4mg e dipirona sódica 500 mg.<br>E no pós-operatório: Clavulin 875mg + Ibuprofeno 600 mg + dipirona sódica 500 mg e enxaguatório bucal de clorexidina 0,12%.</div>'
+      +'<div style="margin-bottom:16px">Aguardo retorno e qualquer dúvida, estou à disposição.<br>Grata.</div>'
+      +'<div style="text-align:center;margin-bottom:60px">Maringá-PR, {{data_hoje_extenso}}</div>'
+      +'<div style="text-align:center">{{assinatura}}<br>________________________________<br><b>{{manual.profissional_cro}}</b></div>',
+  },
+  {
+    id:'modelo_encaminhamento_sekai_2',
+    tipo:'encaminhamento',
+    nome:'ENCAMINHAMENTO PARA ULTRASSON SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-19',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Nome e CRO do profissional emitente', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:'<div style="margin-bottom:16px">Ao Cardiologista,</div>'
+      +'<div style="margin-bottom:16px">Encaminho paciente <b>{{paciente.nome}}</b> para exame de ultrassonografia com imagem Doppler para avaliação de regiões de calcificação citadas no laudo do exame radiográfico - panorâmica (região de bifurcação da carótida lado esquerdo e direito).</div>'
+      +'<div style="margin-bottom:16px">Qualquer dúvida, estou à disposição.<br>Grata.</div>'
+      +'<div style="text-align:center;margin-bottom:60px">Maringá-PR, {{data_hoje_extenso}}</div>'
+      +'<div style="text-align:center">{{assinatura}}<br>________________________________<br><b>{{manual.profissional_cro}}</b></div>',
+  },
+  {
+    id:'modelo_encaminhamento_sekai_3',
+    tipo:'encaminhamento',
+    nome:'ENCAMINHAMENTO PARA ENDÓCRINO OU REUMATO SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-19',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Nome e CRO do profissional emitente', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:'<div style="margin-bottom:16px">Caro(a) Dr.,</div>'
+      +'<div style="margin-bottom:16px">Encaminho o(a) paciente <b>{{paciente.nome}}</b> para avalição sistêmica.</div>'
+      +'<div style="margin-bottom:16px">O(a) paciente relatou ter feito uma angioplastia e cateterismo em janeiro de 2022 e iniciou uso de medicamento anticoagulante e Prolia (reumato) devido a osteoporose. Foi solicitado exames laboratorias e constatado alterações na glicemia em jejum, hemoglobina glicada e colesterol.</div>'
+      +'<div style="margin-bottom:16px">Na avaliação clínica, constatado fístula do dente 16 (necrose). Indicado fazer extração e implante dentário, pois o dente encontra-se com bastante perda de estrutura e coroa + pinos antigos. Solicitado tomografia da região e é necessário enxerto ósseo na região.</div>'
+      +'<div style="margin-bottom:16px">Avaliar condição sistêmica e viabilidade da cirurgia, bem como uso dos seguintes medicamentos abaixo e possíveis interações, por gentileza.</div>'
+      +'<div style="margin-bottom:16px">Para a cirurgia será empregado uso de anestésico Mepivacaína 2% com vasoconstritor epinefrina, medicação pré-operatória: Dexametasona 4mg e dipirona sódica 500 mg.<br>E no pós-operatório: Clavulin 875mg + Ibuprofeno 600 mg + dipirona sódica 500 mg e enxaguatório bucal de clorexidina 0,12%.</div>'
+      +'<div style="margin-bottom:16px">Aguardo retorno e qualquer dúvida, estou à disposição.<br>Grata.</div>'
+      +'<div style="text-align:center;margin-bottom:60px">Maringá-PR, {{data_hoje_extenso}}</div>'
+      +'<div style="text-align:center">{{assinatura}}<br>________________________________<br><b>{{manual.profissional_cro}}</b></div>',
+  },
+  {
+    id:'modelo_encaminhamento_sekai_4',
+    tipo:'encaminhamento',
+    nome:'ENCAMINHAMENTO RADIOGRAFIA OU TOMO SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-19',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Nome e CRO do profissional emitente', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:'<div style="margin-bottom:16px">Encaminho a paciente <b>{{paciente.nome}}</b> para realização dos seguintes exames:</div>'
+      +'<div style="margin-bottom:16px">- Panorâmica padrão sem traçado<br>- Tomografia cone beam da maxila</div>'
+      +'<div style="margin-bottom:16px">Para avaliação do nível ósseo geral, condições das raízes e cárie interproximal.</div>'
+      +'<div style="margin-bottom:16px">Para planejamento cirúrgico da região ________________ e ver disponibilidade óssea para implantes dentários e necessidade de enxerto ósseo.</div>'
+      +'<div style="margin-bottom:16px">Qualquer dúvida, estou à disposição.<br>Grata.</div>'
+      +'<div style="text-align:center;margin-bottom:60px">Maringá-PR, {{data_hoje_extenso}}</div>'
+      +'<div style="text-align:center">{{assinatura}}<br>________________________________<br><b>{{manual.profissional_cro}}</b></div>',
+  },
+  {
+    id:'modelo_encaminhamento_sekai_5',
+    tipo:'encaminhamento',
+    nome:'ENCAMINHAMENTO PARA GASTRO (REFLUXO) SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-19',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Nome e CRO do profissional emitente', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:'<div style="margin-bottom:16px">Ao gastrologista,</div>'
+      +'<div style="margin-bottom:16px">Encaminho o(a) paciente <b>{{paciente.nome}}</b> para avaliação de refluxo gastroesofágico.</div>'
+      +'<div style="margin-bottom:16px">O(a) paciente está apresentando desgaste dentário acentuado devido à uma grande acidez na cavidade bucal. De acordo com relato do recordatório alimentar, não tem alimentação ácida ao ponto do desgaste apresentado.</div>'
+      +'<div style="margin-bottom:16px">Solicitamos avaliação, conduta e retorno.</div>'
+      +'<div style="margin-bottom:16px">Qualquer dúvida, estou à disposição.<br>Grata.</div>'
+      +'<div style="margin-bottom:60px">Maringá-PR, {{data_hoje_extenso}}</div>'
+      +'<div style="text-align:center">{{assinatura}}<br>________________________________<br><b>{{manual.profissional_cro}}</b></div>',
+  },
+  {
+    id:'modelo_encaminhamento_sekai_6',
+    tipo:'encaminhamento',
+    nome:'ENCAMINHAMENTO CARDIOLOGISTA SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-19',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Nome e CRO do profissional emitente', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:'<div style="margin-bottom:16px">Ao cardiologista,</div>'
+      +'<div style="margin-bottom:16px">Encaminho o(a) paciente <b>{{paciente.nome}}</b> para avalição sistêmica.</div>'
+      +'<div style="margin-bottom:16px">O(a) paciente relatou ter feito uma angioplastia e cateterismo em janeiro de 2022 e iniciou uso de medicamento anticoagulante e Prolia (reumato) devido a osteoporose.</div>'
+      +'<div style="margin-bottom:16px">Na avaliação clínica, constatado fístula do dente 16 (necrose). Indicado fazer extração e implante dentário, pois o dente encontra-se com bastante perda de estrutura e coroa + pinos antigos. Solicitado tomografia da região e é necessário enxerto ósseo na região.</div>'
+      +'<div style="margin-bottom:16px">Avaliar condição sistêmica e viabilidade da cirurgia, bem como uso dos seguintes medicamentos abaixo e possíveis interações, por gentileza.</div>'
+      +'<div style="margin-bottom:16px">Para a cirurgia será empregado uso de anestésico Mepivacaína 2% com vasoconstritor epinefrina, medicação pré-operatória: Dexametasona 4mg e dipirona sódica 500 mg.<br>E no pós-operatório: Clavulin 875mg + Ibuprofeno 600 mg + dipirona sódica 500 mg e enxaguatório bucal de clorexidina 0,12%.</div>'
+      +'<div style="margin-bottom:16px">Aguardo retorno e qualquer dúvida, estou à disposição.<br>Grata.</div>'
+      +'<div style="text-align:center;margin-bottom:60px">Maringá-PR, {{data_hoje_extenso}}</div>'
+      +'<div style="text-align:center">{{assinatura}}<br>________________________________<br><b>{{manual.profissional_cro}}</b></div>',
+  },
+  {
+    id:'modelo_encaminhamento_sekai_7',
+    tipo:'encaminhamento',
+    nome:'ENCAMINHAMENTO OTORRINO',
+    ativo:true,
+    criadoEm:'2026-07-19',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Nome e CRO do profissional emitente', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:'<div style="margin-bottom:16px">Caro colega,</div>'
+      +'<div style="margin-bottom:16px">Encaminho o(a) paciente <b>{{paciente.nome}}</b> para avalição de sinusite crônica.</div>'
+      +'<div style="margin-bottom:16px">O(a) paciente relata não ter problema sistêmico, somente alergia à ________.</div>'
+      +'<div style="margin-bottom:16px">Na avaliação clínica, constatado necessidade da troca e subtituição de implantes e prótese protocolo, com necessidade de enxerto ósseo e gengival.</div>'
+      +'<div style="margin-bottom:16px">Avaliar condição dos seios maxilares e viabilidade da cirurgia, pois será necessário realizar levantamento bilateral do seio maxilar.</div>'
+      +'<div style="margin-bottom:16px">Encaminho a tomografia cone beam da maxila pela paciente.</div>'
+      +'<div style="margin-bottom:16px">Aguardo retorno e qualquer dúvida, estou à disposição.<br>Grata.</div>'
+      +'<div style="text-align:center;margin-bottom:60px">Maringá-PR, {{data_hoje_extenso}}</div>'
+      +'<div style="text-align:center">{{assinatura}}<br>________________________________<br><b>{{manual.profissional_cro}}</b></div>',
+  },
 ]);
 function _salvarModelosDocumentos(){ salvarLS('sk3-modelos-documento', modelosDocumentos); }
 
