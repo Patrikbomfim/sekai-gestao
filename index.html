@@ -10572,15 +10572,22 @@ let modelosDocumentos = carregarLS('sk3-modelos-documento', [
     ativo:true,
     criadoEm:'2026-07-19',
     camposManuais:[
-      {token:'manual.endereco_paciente', label:'Endereço do paciente', tipo:'texto', opcoes:[]},
       {token:'manual.profissional_cro', label:'Nome e CRO do profissional emitente', tipo:'profissional', opcoes:[]},
-      {token:'manual.medicamentos_uso_interno', label:'Medicamento(s) de uso interno e posologia', tipo:'texto', opcoes:[]},
+      {token:'manual.medicamento_1', label:'Medicamento (1)', tipo:'texto', opcoes:[]},
+      {token:'manual.posologia_1', label:'Posologia (1) — ex: Tomar XX cápsulas a cada XX durante X dias', tipo:'texto', opcoes:[]},
+      {token:'manual.medicamento_2', label:'Medicamento (2)', tipo:'texto', opcoes:[]},
+      {token:'manual.posologia_2', label:'Posologia (2) — ex: Tomar XX cápsulas a cada XX durante X dias', tipo:'texto', opcoes:[]},
+      {token:'manual.medicamento_3', label:'Medicamento (3)', tipo:'texto', opcoes:[]},
+      {token:'manual.posologia_3', label:'Posologia (3) — ex: Tomar XX cápsulas a cada XX durante X dias', tipo:'texto', opcoes:[]},
     ],
-    conteudo:'<div style="background:#F3F4F6;padding:10px 14px;margin-bottom:16px">Paciente: <b>{{paciente.nome}}</b><br>Endereço: <b>{{manual.endereco_paciente}}</b></div>'
+    conteudo:'<div style="background:#F3F4F6;padding:10px 14px;margin-bottom:16px">Paciente: <b>{{paciente.nome}}</b><br>Endereço: <b>{{paciente.endereco}}</b></div>'
       +'<div style="text-align:center;font-size:16px;font-weight:700;margin-bottom:10px">Receituário de Controle Especial</div>'
       +'<div style="text-align:center;font-weight:700;margin-bottom:10px">Identificação do Emitente</div>'
       +'<div style="background:#F3F4F6;padding:10px 14px;margin-bottom:16px">Nome do Profissional: <b>{{manual.profissional_cro}}</b><br>Endereço: <b>{{clinica.endereco}}</b><br>Telefone: <b>{{clinica.telefone}}</b><br>E-mail: <b>{{clinica.email}}</b></div>'
-      +'<div style="background:#F3F4F6;padding:10px 14px;margin-bottom:16px">Uso interno:<br><b>{{manual.medicamentos_uso_interno}}</b></div>'
+      +'<div style="background:#F3F4F6;padding:10px 14px;margin-bottom:16px">Uso interno:<br>'
+      +'-<b>{{manual.medicamento_1}}</b><br><b>{{manual.posologia_1}}</b><br><br>'
+      +'-<b>{{manual.medicamento_2}}</b><br><b>{{manual.posologia_2}}</b><br><br>'
+      +'-<b>{{manual.medicamento_3}}</b><br><b>{{manual.posologia_3}}</b></div>'
       +'<div style="margin-bottom:16px">Uso externo:<br>- Clorexidina 0,12% (Periogard) ------------------ 1 frasco<br>Enxague leve com 10 mL da solução, por 1 minuto, de 12 em 12 horas, por 7 dias. Usar creme dental Periogard nesse período. Aguardar 30 minutos para ingerir líquidos e alimentos.</div>'
       +'<div style="text-align:right;margin-bottom:60px">Maringá-PR, {{data_hoje_extenso}}</div>'
       +'<div style="text-align:center;margin-bottom:24px">________________________________<br><b>{{manual.profissional_cro}}</b></div>'
@@ -10596,6 +10603,17 @@ function _fmtDataBR(d){ if(!d) return ''; const p=String(d).split('-'); return p
 function _fmtMoedaBR(v){ return (v===undefined||v===null||v==='')?'':'R$ '+parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 const _MESES_EXTENSO=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 function _dataExtenso(isoStr){ if(!isoStr) return ''; const [y,m,day]=isoStr.split('-').map(Number); return `${day} de ${_MESES_EXTENSO[m-1]} de ${y}`; }
+
+// Compõe um endereço completo a partir de partes separadas do cadastro (rua,
+// número, complemento/bairro, cidade, CEP) — usado tanto para paciente quanto
+// para empresa, já que nenhum dos dois guarda um campo único "endereço".
+function _montarEndereco(partes){
+  const rua = partes.rua ? `${partes.rua}${partes.numero?', '+partes.numero:''}` : '';
+  const compl = partes.complemento || partes.bairro || '';
+  const cidade = partes.cidade || '';
+  const cep = partes.cep ? `CEP ${partes.cep}` : '';
+  return [rua, compl, cidade, cep].filter(Boolean).join(' - ');
+}
 
 // Contexto de mesclagem: dados disponíveis para os campos de um documento.
 // orcamentoId é opcional — se não houver orçamento vinculado, os campos desse
@@ -10615,6 +10633,7 @@ const CAMPOS_DOCUMENTO = [
     {token:'paciente.email', label:'E-mail do paciente', get:c=>c.paciente.email},
     {token:'paciente.nascimento', label:'Data de nascimento', get:c=>_fmtDataBR(c.paciente.nascimento)},
     {token:'paciente.bairro', label:'Bairro do paciente', get:c=>c.paciente.bairro},
+    {token:'paciente.endereco', label:'Endereço completo do paciente', get:c=>_montarEndereco({rua:c.paciente.rua, numero:c.paciente.numero, complemento:c.paciente.complemento, cidade:c.paciente.cidade, cep:c.paciente.cep})},
   ]},
   {grupo:'Orçamento (se vinculado)', campos:[
     {token:'orcamento.numero', label:'Número do orçamento', get:c=>c.orcamento.num!=null?String(c.orcamento.num):(c.orcamento.id?String(c.orcamento.id).slice(-4):'')},
@@ -10630,7 +10649,7 @@ const CAMPOS_DOCUMENTO = [
   {grupo:'Clínica', campos:[
     {token:'clinica.razao_social', label:'Razão social da clínica', get:c=>(c.emp.dados||{}).razaoSocial},
     {token:'clinica.cnpj', label:'CNPJ da clínica', get:c=>(c.emp.dados||{}).cnpj},
-    {token:'clinica.endereco', label:'Endereço da clínica', get:c=>(c.emp.dados||{}).endereco},
+    {token:'clinica.endereco', label:'Endereço da clínica', get:c=>{const d=c.emp.dados||{}; return _montarEndereco({rua:d.rua, numero:d.numero, complemento:d.bairro, cidade:d.cidade, cep:d.cep});}},
     {token:'clinica.telefone', label:'Telefone da clínica', get:c=>(c.emp.dados||{}).telefone},
     {token:'clinica.email', label:'E-mail da clínica', get:c=>(c.emp.dados||{}).email},
   ]},
