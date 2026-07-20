@@ -10546,7 +10546,7 @@ function _renderProntDocs(p){
 // um campo especial de assinatura (desenhada na tela na hora de gerar). Se
 // algum campo usado no texto ficar sem valor, a geração é bloqueada — não
 // existe opção de "gerar mesmo assim".
-let modelosDocumentos = carregarLS('sk3-modelos-documento', [
+const _MODELOS_DOCUMENTO_SEED = [
   {
     id:'modelo_atestado_sekai_1',
     tipo:'atestado',
@@ -10712,7 +10712,20 @@ let modelosDocumentos = carregarLS('sk3-modelos-documento', [
       +'<div style="text-align:center;margin-bottom:60px">Maringá-PR, {{data_hoje_extenso}}</div>'
       +'<div style="text-align:center">{{assinatura}}<br>________________________________<br><b>{{manual.profissional_cro}}</b></div>',
   },
-]);
+];
+// Carrega os modelos salvos no navegador; se algum modelo novo foi adicionado
+// ao seed (nesta atualização do sistema) e ainda não existe no que já está
+// salvo (por id), ele é incorporado automaticamente. Isso garante que novos
+// modelos padrão apareçam para quem já usa o sistema, sem apagar modelos que
+// o usuário já tenha criado ou editado manualmente.
+let modelosDocumentos = carregarLS('sk3-modelos-documento', _MODELOS_DOCUMENTO_SEED);
+{
+  let _modelosMesclados=false;
+  _MODELOS_DOCUMENTO_SEED.forEach(seed=>{
+    if(!modelosDocumentos.find(m=>m.id===seed.id)){ modelosDocumentos.push(seed); _modelosMesclados=true; }
+  });
+  if(_modelosMesclados) salvarLS('sk3-modelos-documento', modelosDocumentos);
+}
 function _salvarModelosDocumentos(){ salvarLS('sk3-modelos-documento', modelosDocumentos); }
 
 function _fmtDataBR(d){ if(!d) return ''; const p=String(d).split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:String(d); }
