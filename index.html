@@ -5722,6 +5722,7 @@ const CAMPOS_CADASTRO_PADRAO = [
   {id:'rg',          label:'RG',                obrigatorio:false, tipo:'texto'},
   {id:'estadoCivil', label:'Estado civil',      obrigatorio:false, tipo:'lista', opcoes:['Solteiro(a)','Casado(a)','Divorciado(a)','Viúvo(a)','União estável']},
   {id:'profissao',   label:'Profissão',         obrigatorio:false, tipo:'texto'},
+  {id:'email',       label:'E-mail',            obrigatorio:false, tipo:'texto'},
 ];
 let camposCadastro = carregarLS('sk3-camposcadastro', CAMPOS_CADASTRO_PADRAO);
 {
@@ -7068,8 +7069,10 @@ async function _buscarCEPGenerico(prefixo){
     if(d.erro){hint.textContent='CEP não encontrado';hint.className='input-hint err';return;}
     const rua=document.getElementById(prefixo+'-rua');
     const cidade=document.getElementById(prefixo+'-cidade');
+    const bairro=document.getElementById(prefixo+'-bairro');
     if(rua)rua.value=d.logradouro||'';
     if(cidade)cidade.value=(d.localidade||'')+(d.uf?' / '+d.uf:'');
+    if(bairro)bairro.value=d.bairro||'';
     hint.textContent='Endereço preenchido';hint.className='input-hint ok';
   }catch(e){hint.textContent='Erro ao buscar CEP';hint.className='input-hint err';}
 }
@@ -11123,7 +11126,7 @@ const CAMPOS_DOCUMENTO = [
     {token:'paciente.nome', label:'Nome do paciente', get:c=>c.paciente.nome},
     {token:'paciente.cpf', label:'CPF do paciente', get:c=>c.paciente.cpf},
     {token:'paciente.telefone', label:'Telefone do paciente', get:c=>c.paciente.fone||c.paciente.telefone||c.paciente.celular},
-    {token:'paciente.email', label:'E-mail do paciente', get:c=>c.paciente.email},
+    {token:'paciente.email', label:'E-mail do paciente', get:c=>(c.paciente.customFields||{}).email || c.paciente.email},
     {token:'paciente.nascimento', label:'Data de nascimento', get:c=>_fmtDataBR(c.paciente.nascimento)},
     {token:'paciente.bairro', label:'Bairro do paciente', get:c=>c.paciente.bairro},
     {token:'paciente.endereco', label:'Endereço completo do paciente', get:c=>_montarEndereco({rua:c.paciente.rua, numero:c.paciente.numero, complemento:c.paciente.complemento, cidade:c.paciente.cidade, cep:c.paciente.cep})},
@@ -11497,59 +11500,67 @@ function _gerarDocEscolherModelo(){
   _gerarDocRecalcular();
 }
 
-// Mapa de campo automático (paciente.*/clinica.*) para onde e como salvá-lo —
-// usado pelo modal "Completar cadastro", aberto sem sair da tela de gerar
-// documento. 'destino' indica em qual objeto/propriedade o valor é gravado:
-// paciente (propriedade direta), paciente_custom (dentro de customFields) ou
-// empresa (dentro de emp.dados).
-const _CAMPO_AUTOMATICO_META={
-  'paciente.nome':        {prop:'nome', label:'Nome completo', tipo:'texto', destino:'paciente'},
-  'paciente.cpf':         {prop:'cpf', label:'CPF', tipo:'texto', destino:'paciente'},
-  'paciente.telefone':    {prop:'fone', label:'Telefone / WhatsApp', tipo:'texto', destino:'paciente'},
-  'paciente.nascimento':  {prop:'nascimento', label:'Data de nascimento', tipo:'data', destino:'paciente'},
-  'paciente.codigo':      {prop:'codigo', label:'Código / nº de prontuário', tipo:'numero', destino:'paciente'},
-  'paciente.rg':          {prop:'rg', label:'RG', tipo:'texto', destino:'paciente_custom'},
-  'paciente.estado_civil':{prop:'estadoCivil', label:'Estado civil', tipo:'lista', opcoes:['Solteiro(a)','Casado(a)','Divorciado(a)','Viúvo(a)','União estável'], destino:'paciente_custom'},
-  'paciente.profissao':   {prop:'profissao', label:'Profissão', tipo:'texto', destino:'paciente_custom'},
-  'clinica.razao_social': {prop:'razaoSocial', label:'Razão social', tipo:'texto', destino:'empresa'},
-  'clinica.cnpj':         {prop:'cnpj', label:'CNPJ', tipo:'texto', destino:'empresa'},
-  'clinica.telefone':     {prop:'telefone', label:'Telefone', tipo:'texto', destino:'empresa'},
-  'clinica.email':        {prop:'email', label:'E-mail', tipo:'texto', destino:'empresa'},
+// Mapa de campo automático PACIENTE (locked, fora de customFields) para onde
+// salvar e qual máscara real do cadastro reaplicar — os campos personalizados
+// (RG, estado civil, profissão, e-mail) não entram aqui: sua configuração
+// (tipo/opções) é lida diretamente de `camposCadastro`, a mesma fonte usada
+// no cadastro de verdade, então qualquer mudança lá já reflete aqui sozinha.
+const _CAMPO_PACIENTE_LOCKED={
+  'paciente.nome':       {prop:'nome', label:'Nome completo'},
+  'paciente.cpf':        {prop:'cpf', label:'CPF', mascara:'cpf'},
+  'paciente.telefone':   {prop:'fone', label:'Telefone / WhatsApp', mascara:'fone'},
+  'paciente.nascimento': {prop:'nascimento', label:'Data de nascimento', tipoInput:'date'},
+  'paciente.codigo':     {prop:'codigo', label:'Código / nº de prontuário', tipoInput:'number'},
+};
+const _CAMPO_CLINICA_META={
+  'clinica.razao_social': {prop:'razaoSocial', label:'Razão social'},
+  'clinica.cnpj':         {prop:'cnpj', label:'CNPJ'},
+  'clinica.telefone':     {prop:'telefone', label:'Telefone'},
+  'clinica.email':        {prop:'email', label:'E-mail'},
 };
 let _completarCadastroToken=null;
 
 // Abre um modal pequeno POR CIMA da tela de gerar documento (sem fechá-la nem
 // navegar pra outro lugar do sistema) para completar o dado que falta no
-// cadastro. Ao salvar, volta direto pra onde estava, com o documento já
-// recalculado.
+// cadastro. Os inputs reaproveitam as MESMAS máscaras/config do cadastro real
+// (fmtCPF, maskFone, autocompletar de CEP, tipo lista com as mesmas opções
+// configuradas em Configurações → Cadastro paciente). Ao salvar, volta direto
+// pra onde estava, com o documento já recalculado.
 function _gerarDocIrParaCadastro(token){
   _completarCadastroToken=token;
   const p=pacientes.find(x=>String(x.id)===String(_prontPacId))||{};
   const body=document.getElementById('completar-cadastro-body');
   let html='';
   if(token==='paciente.endereco'){
-    html=`<div class="fl fg-full" style="margin-bottom:10px"><label>CEP</label><input type="text" id="cc-cep" value="${esc(p.cep||'')}"></div>
+    html=`<div class="fl fg-full" style="margin-bottom:10px"><label>CEP</label><input type="text" id="cc-cep" value="${esc(p.cep||'')}" placeholder="00000-000" oninput="fmtCEP(this)" onblur="_buscarCEPGenerico('cc')"><div id="cc-cep-hint" class="input-hint"></div></div>
       <div class="fl fg-full" style="margin-bottom:10px"><label>Rua / Logradouro</label><input type="text" id="cc-rua" value="${esc(p.rua||'')}"></div>
+      <div class="fl" style="margin-bottom:10px"><label>Bairro</label><input type="text" id="cc-bairro" value="${esc(p.complemento||'')}"></div>
       <div class="fl" style="margin-bottom:10px"><label>Número</label><input type="text" id="cc-numero" value="${esc(p.numero||'')}"></div>
-      <div class="fl" style="margin-bottom:10px"><label>Complemento</label><input type="text" id="cc-complemento" value="${esc(p.complemento||'')}"></div>
       <div class="fl fg-full"><label>Cidade</label><input type="text" id="cc-cidade" value="${esc(p.cidade||'')}"></div>`;
   } else if(token==='clinica.endereco'){
     const d=((getEmpresaAtual()||{}).dados)||{};
-    html=`<div class="fl fg-full" style="margin-bottom:10px"><label>Rua</label><input type="text" id="cc-rua" value="${esc(d.rua||'')}"></div>
-      <div class="fl" style="margin-bottom:10px"><label>Número</label><input type="text" id="cc-numero" value="${esc(d.numero||'')}"></div>
+    html=`<div class="fl fg-full" style="margin-bottom:10px"><label>CEP</label><input type="text" id="cc-cep" value="${esc(d.cep||'')}" placeholder="00000-000" oninput="fmtCEP(this)" onblur="_buscarCEPGenerico('cc')"><div id="cc-cep-hint" class="input-hint"></div></div>
+      <div class="fl fg-full" style="margin-bottom:10px"><label>Rua</label><input type="text" id="cc-rua" value="${esc(d.rua||'')}"></div>
       <div class="fl" style="margin-bottom:10px"><label>Bairro</label><input type="text" id="cc-bairro" value="${esc(d.bairro||'')}"></div>
-      <div class="fl fg-full"><label>CEP</label><input type="text" id="cc-cep" value="${esc(d.cep||'')}"></div>`;
+      <div class="fl"><label>Número</label><input type="text" id="cc-numero" value="${esc(d.numero||'')}"></div>`;
+  } else if(token.startsWith('paciente.') && _CAMPO_PACIENTE_LOCKED[token]){
+    const meta=_CAMPO_PACIENTE_LOCKED[token];
+    const valorAtual=p[meta.prop];
+    const maskAttr = meta.mascara==='cpf' ? ' oninput="fmtCPF(this)"' : meta.mascara==='fone' ? ' oninput="this.value=maskFone(this.value)"' : '';
+    html=`<div class="fl fg-full"><label>${esc(meta.label)}</label><input type="${meta.tipoInput||'text'}" id="cc-valor"${maskAttr} value="${esc(valorAtual||'')}"></div>`;
+  } else if(token.startsWith('paciente.')){
+    // Campos personalizados (RG, estado civil, profissão, e-mail...) — reaproveita
+    // a MESMA definição (tipo, opções) cadastrada em Configurações → Cadastro paciente.
+    const campoId = token.split('.')[1]==='estado_civil' ? 'estadoCivil' : token.split('.')[1];
+    const campoDef = camposCadastro.find(c=>c.id===campoId);
+    if(!campoDef) return;
+    html=`<div class="fl fg-full">${campoPersonalizadoInputHtml(campoDef, 'cc-valor', (p.customFields||{})[campoId])}</div>`;
+  } else if(token.startsWith('clinica.') && _CAMPO_CLINICA_META[token]){
+    const meta=_CAMPO_CLINICA_META[token];
+    const valorAtual=((getEmpresaAtual()||{}).dados||{})[meta.prop];
+    html=`<div class="fl fg-full"><label>${esc(meta.label)}</label><input type="text" id="cc-valor" value="${esc(valorAtual||'')}"></div>`;
   } else {
-    const meta=_CAMPO_AUTOMATICO_META[token];
-    if(!meta) return;
-    const valorAtual = meta.destino==='empresa' ? (((getEmpresaAtual()||{}).dados||{})[meta.prop])
-      : meta.destino==='paciente_custom' ? ((p.customFields||{})[meta.prop]) : p[meta.prop];
-    if(meta.tipo==='lista'){
-      html=`<div class="fl fg-full"><label>${esc(meta.label)}</label><select id="cc-valor"><option value="">Selecionar...</option>${(meta.opcoes||[]).map(o=>`<option value="${esc(o)}" ${o===valorAtual?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
-    } else {
-      const tipoInput = meta.tipo==='data'?'date':meta.tipo==='numero'?'number':'text';
-      html=`<div class="fl fg-full"><label>${esc(meta.label)}</label><input type="${tipoInput}" id="cc-valor" value="${esc(valorAtual||'')}"></div>`;
-    }
+    return;
   }
   document.getElementById('completar-cadastro-titulo').textContent = token.startsWith('clinica.') ? 'Completar dados da empresa' : 'Completar cadastro do paciente';
   body.innerHTML=html;
@@ -11562,28 +11573,33 @@ function _completarCadastroSalvar(){
   if(token==='paciente.endereco' && p){
     p.cep=(document.getElementById('cc-cep')||{}).value||'';
     p.rua=(document.getElementById('cc-rua')||{}).value||'';
+    p.complemento=(document.getElementById('cc-bairro')||{}).value||'';
     p.numero=(document.getElementById('cc-numero')||{}).value||'';
-    p.complemento=(document.getElementById('cc-complemento')||{}).value||'';
     p.cidade=(document.getElementById('cc-cidade')||{}).value||'';
     salvarLS('sk3-pacientes',pacientes);
   } else if(token==='clinica.endereco'){
     const emp=getEmpresaAtual();
     if(emp){
       emp.dados=emp.dados||{};
-      emp.dados.rua=(document.getElementById('cc-rua')||{}).value||'';
-      emp.dados.numero=(document.getElementById('cc-numero')||{}).value||'';
-      emp.dados.bairro=(document.getElementById('cc-bairro')||{}).value||'';
       emp.dados.cep=(document.getElementById('cc-cep')||{}).value||'';
+      emp.dados.rua=(document.getElementById('cc-rua')||{}).value||'';
+      emp.dados.bairro=(document.getElementById('cc-bairro')||{}).value||'';
+      emp.dados.numero=(document.getElementById('cc-numero')||{}).value||'';
       salvarLS('sk3-empresas',empresas);
     }
-  } else {
-    const meta=_CAMPO_AUTOMATICO_META[token];
-    if(meta){
-      const valor=(document.getElementById('cc-valor')||{}).value||'';
-      if(meta.destino==='paciente' && p){ p[meta.prop]=valor; salvarLS('sk3-pacientes',pacientes); }
-      else if(meta.destino==='paciente_custom' && p){ p.customFields=p.customFields||{}; p.customFields[meta.prop]=valor; salvarLS('sk3-pacientes',pacientes); }
-      else if(meta.destino==='empresa'){ const emp=getEmpresaAtual(); if(emp){ emp.dados=emp.dados||{}; emp.dados[meta.prop]=valor; salvarLS('sk3-empresas',empresas); } }
-    }
+  } else if(token.startsWith('paciente.') && _CAMPO_PACIENTE_LOCKED[token] && p){
+    const meta=_CAMPO_PACIENTE_LOCKED[token];
+    p[meta.prop]=(document.getElementById('cc-valor')||{}).value||'';
+    salvarLS('sk3-pacientes',pacientes);
+  } else if(token.startsWith('paciente.') && p){
+    const campoId = token.split('.')[1]==='estado_civil' ? 'estadoCivil' : token.split('.')[1];
+    p.customFields=p.customFields||{};
+    p.customFields[campoId]=(document.getElementById('cc-valor')||{}).value||'';
+    salvarLS('sk3-pacientes',pacientes);
+  } else if(token.startsWith('clinica.') && _CAMPO_CLINICA_META[token]){
+    const meta=_CAMPO_CLINICA_META[token];
+    const emp=getEmpresaAtual();
+    if(emp){ emp.dados=emp.dados||{}; emp.dados[meta.prop]=(document.getElementById('cc-valor')||{}).value||''; salvarLS('sk3-empresas',empresas); }
   }
   fecharModal('modal-completar-cadastro');
   // Volta pra tela de gerar documento, já com o dado novo refletido
