@@ -1824,17 +1824,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
       <div id="gerar-doc-campos-manuais"></div>
       <div id="gerar-doc-campos-automaticos-faltando"></div>
-      <div id="gerar-doc-assinatura-linha" style="display:none;flex-direction:column;gap:8px;margin-bottom:14px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r8);background:var(--s2)">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span class="toggle-sw" id="gerar-doc-assinatura-toggle" onclick="_gerarDocToggleAssinatura()"></span>
-          <span style="font-size:12px;font-weight:600;color:var(--tx2)">Ativar assinatura digital</span>
-          <span style="font-size:11px;color:var(--tx3)">— se desativado, imprima e assine fisicamente</span>
-        </div>
-        <div id="gerar-doc-assinatura-acao" style="display:none;align-items:center;gap:10px">
-          <span id="gerar-doc-assinatura-status" style="font-size:12px;color:var(--tx3)">Não capturada</span>
-          <button type="button" class="btn btn-ghost btn-sm" onclick="_gerarDocAssinar()">Assinar</button>
-        </div>
-      </div>
+      <div id="gerar-doc-assinaturas-wrap"></div>
       <div id="gerar-doc-preview-wrap" style="display:none">
         <div id="gerar-doc-aviso-faltando" style="display:none;background:#FEF2F2;border:1px solid #FCA5A5;color:#991B1B;font-size:12.5px;line-height:1.5;padding:10px 12px;border-radius:var(--r8);margin-bottom:12px"></div>
         <label style="font-size:12px;color:var(--tx3);margin-bottom:4px;display:block">Pré-visualização (você pode ajustar o texto antes de confirmar)</label>
@@ -5703,8 +5693,18 @@ const CAMPOS_CADASTRO_PADRAO = [
   {id:'numero',      label:'Número',            obrigatorio:false, locked:true},
   {id:'complemento', label:'Complemento',       obrigatorio:false, locked:true},
   {id:'obs',         label:'Observação',        obrigatorio:false, locked:true},
+  {id:'rg',          label:'RG',                obrigatorio:false, tipo:'texto'},
+  {id:'estadoCivil', label:'Estado civil',      obrigatorio:false, tipo:'lista', opcoes:['Solteiro(a)','Casado(a)','Divorciado(a)','Viúvo(a)','União estável']},
+  {id:'profissao',   label:'Profissão',         obrigatorio:false, tipo:'texto'},
 ];
 let camposCadastro = carregarLS('sk3-camposcadastro', CAMPOS_CADASTRO_PADRAO);
+{
+  let _camposMesclados=false;
+  CAMPOS_CADASTRO_PADRAO.forEach(seed=>{
+    if(!camposCadastro.find(c=>c.id===seed.id)){ camposCadastro.push(seed); _camposMesclados=true; }
+  });
+  if(_camposMesclados) salvarLS('sk3-camposcadastro', camposCadastro);
+}
 
 // ── EMPRESA — campos configuráveis do cadastro ──────────────────────────
 // id 'razaoSocial','nomeFantasia','cnpj': campos do sistema (locked), usados como
@@ -10712,6 +10712,263 @@ const _MODELOS_DOCUMENTO_SEED = [
       +'<div style="text-align:center;margin-bottom:60px">Maringá-PR, {{data_hoje_extenso}}</div>'
       +'<div style="text-align:center">{{assinatura}}<br>________________________________<br><b>{{manual.profissional_cro}}</b></div>',
   },
+  {
+    id:'modelo_contrato_invisalign_sekai_1',
+    tipo:'contrato',
+    nome:'CONTRATO PRESTAÇÃO DE SERVIÇOS - ALINHADORES INVISALIGN',
+    ativo:true,
+    criadoEm:'2026-07-20',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Ortodontista responsável (nome e CRO)', tipo:'profissional', opcoes:[]},
+      {token:'manual.responsavel_nome', label:'Nome do responsável legal (se paciente menor/incapaz)', tipo:'texto', opcoes:[], opcional:true},
+      {token:'manual.responsavel_cpf', label:'CPF do responsável legal', tipo:'texto', opcoes:[], opcional:true},
+      {token:'manual.responsavel_rg', label:'RG do responsável legal', tipo:'texto', opcoes:[], opcional:true},
+      {token:'manual.modalidade_alinhador', label:'Modalidade do alinhador (Express/Lite/Moderate/Comprehensive...)', tipo:'texto', opcoes:[]},
+      {token:'manual.valor_alinhador', label:'Valor do alinhador (pago direto à Align, ex: R$ 1.535,00)', tipo:'texto', opcoes:[]},
+      {token:'manual.forma_pagamento_alinhador', label:'Forma de pagamento do alinhador', tipo:'texto', opcoes:[]},
+      {token:'manual.diagnostico_ortodontico', label:'Diagnóstico ortodôntico (Anexo II)', tipo:'texto', opcoes:[]},
+      {token:'manual.planejamento_ortodontico', label:'Planejamento (Anexo II)', tipo:'texto', opcoes:[]},
+      {token:'manual.prognostico', label:'Prognóstico', tipo:'selecao', opcoes:['Bom','Regular','Reservado']},
+      {token:'manual.necessidade_outros_profissionais', label:'Necessidade de outros profissionais/custos adicionais (Anexo II)', tipo:'texto', opcoes:[], opcional:true},
+      {token:'manual.tempo_tratamento', label:'Tempo de tratamento estimado (ex: 18 a 24 meses)', tipo:'texto', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;font-size:15px;margin-bottom:16px">CONTRATO DE PRESTAÇÃO DE SERVIÇOS - ALINHADORES INVISALIGN®</div>
+<div style="margin-bottom:16px">Ortodontista Especialista responsável: <b>{{manual.profissional_cro}}</b><br>
+Contratada: <b>{{clinica.razao_social}}</b><br>
+CNPJ/MF: <b>{{clinica.cnpj}}</b><br>
+Endereço: <b>{{clinica.endereco}}</b><br>
+Telefone: <b>{{clinica.telefone}}</b><br>
+E-mail: <b>{{clinica.email}}</b></div>
+<div style="margin-bottom:16px">Contratante/Paciente: <b>{{paciente.nome}}</b><br>
+Estado civil: <b>{{paciente.estado_civil}}</b><br>
+RG: <b>{{paciente.rg}}</b><br>
+CPF: <b>{{paciente.cpf}}</b><br>
+Endereço: <b>{{paciente.endereco}}</b><br>
+Telefone: <b>{{paciente.telefone}}</b><br>
+E-mail: <b>{{paciente.email}}</b><br>
+*Tendo como responsável legal, quando não o mesmo: <b>{{manual.responsavel_nome}}</b>, CPF: <b>{{manual.responsavel_cpf}}</b>, RG: <b>{{manual.responsavel_rg}}</b></div>
+<div style="margin-bottom:16px">Que celebram este contrato, mediante as cláusulas e condições seguintes, que mútua e reciprocamente outorgam e aceitam, obrigando-se ao fiel e integral cumprimento:</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA PRIMEIRA: OBJETIVO</div>
+<div style="margin-bottom:16px">Prestar serviços de Ortodontia pelo CONTRATADO do(a) paciente por meio dos alinhadores transparentes INVISALIGN®, recursos e encaminhamentos para os profissionais necessários para movimentar dentes até uma correta posição tanto estética quanto funcional, respeitando os limites biológicos e limitações desse(a) paciente. Dentre as diversas formas de se alcançar esse objetivo, alternativas são apresentadas com vantagens e desvantagens/limitações. A seleção da opção de tratamento é uma escolha conjunta entre dentistas e o CONTRATANTE. O que é dado de garantia pelo CONTRATADO são meios e não resultados, isto é, o que está sendo contratado são recursos ortodônticos e orientação ao paciente, dentro da técnica, e jamais a promessa de falsas expectativas ou falsas ideias de resultado, devido a essa imprevisibilidade das limitações biológicas em cada um. Não é garantido que o paciente fique completamente satisfeito(s) com o resultado e nem todas as complicações ou consequências podem ser antecipadas. Os serviços a serem prestados pelo(a) CONTRATADO ao contratante serão os previstos e aprovados no orçamento que segue em anexo (ANEXO II).</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA SEGUNDA: DO VALOR E PAGAMENTO DOS HONORÁRIOS</div>
+<div style="margin-bottom:16px">O pagamento do tratamento ortodôntico deste contrato será antecipado de acordo com a condição comercial negociada. Este pagamento independe da frequência do paciente ao consultório, sendo uma forma de se dividir o valor total do tratamento. Caso o paciente falte à consulta agendada, não troque os alinhadores e não reagende a consulta, estará ciente que a sua falta prejudica de maneira grave o andamento do tratamento proposto e consentido pelo usuário-responsável. Não há valor de mensalidade para este tipo de tratamento com os alinhadores INVISALIGN®, mesmo que o tempo de tratamento supere os prazos negociados de pagamento.</div>
+<div style="margin-bottom:16px">O valor do alinhador e o valor do tratamento ortodôntico são pagos de formas separadas. O valor do alinhador é pago pelo CONTRATANTE/PACIENTE, via link de pagamento, diretamente para a INVISALIGN®. A própria empresa irá gerar a nota fiscal do alinhador no nome do paciente, que será entregue no início do tratamento (a nota fiscal do alinhador não é dedutível no imposto de renda). Já o valor do tratamento ortodôntico é pago pelo CONTRATANTE/PACIENTE diretamente para o CONTRATADO/DENTISTA, que irá emitir os recibos referentes ao tratamento ortodôntico executado. No tratamento ortodôntico está incluso: 3 escaneamentos, 30 horas clínicas de planejamento, ClinCheck Invisalign, instalação do alinhador e colagem de attachments, IPRs, plano de acompanhamento com consultas presenciais, virtual care e consultas de refinamento do tratamento. O tratamento só será iniciado após a assinatura deste contrato.</div>
+<div style="margin-bottom:16px">O valor do alinhador INVISALIGN® de modalidade <b>{{manual.modalidade_alinhador}}</b> será equivalente a <b>{{manual.valor_alinhador}}</b>, com a seguinte forma de pagamento: <b>{{manual.forma_pagamento_alinhador}}</b> — pago diretamente à Align, fora do financeiro da clínica.</div>
+<div style="margin-bottom:16px">O valor total do tratamento ortodôntico será equivalente a <b>{{orcamento.valor_total}}</b> ({{orcamento.valor_total_extenso}}), com a seguinte forma de pagamento: <b>{{orcamento.forma_pagamento}}</b>. O pagamento se inicia na assinatura desse contrato.</div>
+<div style="margin-bottom:16px"><b>PARÁGRAFO PRIMEIRO</b> - No caso de pagamento mediante boleto bancário, o(a) CONTRATANTE reconhece que o extravio ou qualquer outro motivo não justifica o não pagamento do mesmo na data prevista, sendo que nestes casos, o(a) CONTRATANTE deverá informar imediatamente a CONTRATADA, sob pena de incorrer nas penalidades previstas no presente contrato.</div>
+<div style="margin-bottom:16px"><b>PARÁGRAFO SEGUNDO</b> - O não comparecimento do(a) paciente, por qualquer motivo, às consultas de acompanhamento, não desobriga o(a) CONTRATANTE da responsabilidade pelos pagamentos acordados neste contrato, tendo em vista que o tratamento proposto não se enquadra em sistema de manutenção mensal, mas sim, em um método sequencial que demanda atenção em prazos direcionados pelo ortodontista. O paciente que apresenta faltas às consultas e/ou deficiência de cooperação no uso dos aparelhos e acessórios/peças soltas aumenta o tempo e o custo do seu tratamento e, em casos mais graves, reduz a qualidade do seu tratamento.</div>
+
+<div style="font-weight:700;margin-bottom:8px">2.1 FATORES QUE PODEM AUMENTAR O CUSTO DO TRATAMENTO</div>
+<div style="margin-bottom:16px">a) As faltas sem aviso prévio de 12 horas poderão ser acrescidas à mensalidade como hora clínica, por representarem custo operacional ao consultório odontológico, no valor de R$ 180,00. Deverá ser pago antes da próxima consulta.<br><br>
+b) A inadimplência por mais de 30 (trinta) dias implicará na suspensão ou cancelamento do tratamento, bem como caracteriza rescisão contratual por iniciativa do contratante. O atraso de qualquer parcela estará sujeito a multa moratória no percentual de 2% (dois por cento) acrescidos de juros de mora de 1% (um por cento) ao mês e implicará no vencimento antecipado das demais, e, após 30 dias do vencimento, o CONTRATANTE está sujeito a cobrança extrajudicial e/ou judicial, arcando com custas, despesas processuais e honorários advocatícios do patrono do CONTRATADO. Após 30 (trinta) dias de atraso ocorrerá a inclusão automática (via software da clínica) de seu nome no sistema de proteção ao crédito (SPC).<br><br>
+c) A quantidade de alinhadores utilizados para o tratamento ortodôntico com INVISALIGN depende da modalidade de tratamento planejado para o paciente. Existem as modalidades: express, lite, moderate, comprehensive ilimitado e comprehensive fit. No Express o tratamento é realizado com 7 alinhadores com direito a mais 7. No Lite são 14 alinhadores com direito a mais 14. No Moderate são 26 alinhadores com direito a mais 26. No Comprehensive ilimitado a quantidade de alinhadores é ilimitada, dentro da garantia. No Comprehensive fit a quantidade de alinhadores é ilimitada apenas para o primeiro jogo; se forem necessários alinhadores adicionais, estes não estão inclusos. O segundo jogo de alinhadores adicionais (exceto no comprehensive fit) e o segundo planejamento já estão inclusos no valor em todas as modalidades. Para os tratamentos Express, Lite e Moderate, caso seja necessário um terceiro jogo de alinhadores adicionais ou mais, será cobrado o valor adicional de R$ 1.535,00 por cada novo jogo e replanejamento solicitado, mais R$ 300,00 para cada acompanhamento presencial. Para o Comprehensive ilimitado, jogos adicionais já estão inclusos, mas um terceiro planejamento ou mais será cobrado R$ 1.000,00 para replanejamento mais R$ 300,00 por acompanhamento presencial. Para o Comprehensive fit, um segundo jogo de alinhadores adicionais ou mais será cobrado R$ 1.070,00 por jogo (pago direto à Align pelo link de pagamento); o segundo planejamento já está incluso, mas um terceiro planejamento ou mais será cobrado R$ 1.000,00 por replanejamento mais R$ 300,00 por acompanhamento presencial. A principal causa de solicitação de um terceiro jogo de alinhadores ou mais é a falta de colaboração do paciente no uso dos alinhadores e elásticos intermaxilares. A modalidade Invisalign Touch Up é um tratamento onde o ortodontista solicita apenas alguns alinhadores avulsos para casos simples de leve desalinhamento; caso seja necessário solicitar mais alinhadores ao final do tratamento, estes terão custo adicional de R$ 200,00 cada.</div>
+
+<div style="font-weight:700;margin-bottom:8px">2.2 ITENS NÃO INCLUÍDOS NO ORÇAMENTO INICIAL</div>
+<div style="margin-bottom:16px">a) Para o bom andamento do tratamento ortodôntico, indicação dos serviços de outros profissionais (instalação de mini implantes, procedimentos orto-cirúrgicos, periodontais, protéticos, médicos ou fonoaudiológicos), bem como documentação ortodôntica complementar, poderá ser solicitada durante o período de tratamento, sendo os custos de responsabilidade do CONTRATANTE/PACIENTE.<br><br>
+b) A remoção do aparelho a pedido do cliente para ocasiões determinadas (casamentos, formaturas, etc.) acarretará a cobrança de uma taxa correspondente ao custo de remoção e reinstalação, podendo comprometer o prazo de duração do tratamento.<br><br>
+c) As contenções ortodônticas (contenção em acetato, vivera e 3x3 fixa) não estão inclusas no orçamento inicial.<br><br>
+d) O valor dos honorários poderá sofrer alteração caso seja necessário modificar o plano de tratamento inicialmente aprovado, em face da constatação de questões técnicas ou outras intercorrências que inviabilizem sua execução (falta de colaboração do paciente ou ausência de resposta biológica adequada), sendo necessário que as partes acordem formalmente os novos valores ajustados. A falta de colaboração do paciente inclui: higiene deficiente, não utilização de acessórios recomendados, faltas, quebras, não comparecimento às consultas para averiguação do caso após a colocação das contenções.</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA TERCEIRA: DO TEMPO DO TRATAMENTO</div>
+<div style="margin-bottom:16px">O CONTRATANTE/paciente está ciente de que a duração do tratamento dependerá de diversos fatores, inclusive biológicos, tais como: crescimento ósseo, adaptação muscular, remoção de hábitos, demora na troca dos dentes, quantidade de anomalias e cooperação do(a) paciente e/ou de seus responsáveis quanto ao uso do alinhador e comparecimento às manutenções. A higiene oral é um dos fatores essenciais para uma movimentação dental fisiológica. O tempo aproximado de cada etapa do tratamento deverá ser estimado no plano de tratamento, podendo ser alterado para mais ou para menos, devido à natureza multifatorial da mesma.</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA QUARTA: DOS DEVERES E OBRIGAÇÕES DO CONTRATANTE</div>
+<div style="margin-bottom:16px"><b>4.1 Regularidade de comparecimento ao consultório:</b> a) O paciente deverá comparecer a todos os horários marcados para que seja feita a manutenção do tratamento; as consultas serão marcadas de acordo com a necessidade de cada caso, sendo mais frequentes no início. b) O comparecimento às consultas deve ser rigorosamente observado; se não houver possibilidade de comparecimento, o paciente deverá informar com 12 horas de antecedência a recepção da clínica; em emergências, telefonar antes de comparecer, se possível. c) Eventualmente, quando houver problemas com o alinhador ou dúvidas, o paciente poderá ser atendido em horários extras, marcados com a maior brevidade possível.</div>
+<div style="margin-bottom:16px"><b>4.2 Uso correto do alinhador:</b> a não utilização e o uso incorreto implicam em grandes prejuízos ao tratamento, podendo levar à alteração e até comprometimento de todo o planejamento. Deverão ser seguidas rigorosamente todas as orientações do profissional. O CONTRATANTE declara estar ciente, ter lido e assinado o ANEXO III: Orientações ao paciente ortodôntico com alinhadores INVISALIGN®.</div>
+<div style="margin-bottom:16px"><b>4.3 Paciente menor:</b> sugere-se que um dos pais ou responsável esteja presente a todas as consultas, acompanhando o tratamento e se certificando de que as orientações do ortodontista estão sendo seguidas.</div>
+<div style="margin-bottom:16px"><b>4.4 Profilaxia:</b> deverá ocorrer pelo menos a cada 6 meses ou antes, caso necessário, com o dentista clínico do paciente.</div>
+<div style="margin-bottom:16px"><b>4.5 Documentação ortodôntica:</b> pode se fazer necessária, no decorrer do tratamento, a realização de radiografias de controle e/ou documentação ortodôntica intermediária e/ou final, sendo os custos de responsabilidade do contratante/paciente. Iniciado o tratamento e após sua conclusão, o dever de guarda da documentação ortodôntica cabe ao profissional, para acompanhamento, estudo e refinamento técnico, além de se tratar de registro legal de identificação pessoal. Caso o paciente queira retirar sua documentação, deverá comunicar o profissional com antecedência de 10 (dez) dias.</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA QUINTA: DEVERES E DIREITOS DO CONTRATADO</div>
+<div style="margin-bottom:16px">5.1 Realizar os atendimentos ao paciente mensalmente ou em outra frequência necessária, desde que o CONTRATANTE esteja em dia com os pagamentos acordados.<br><br>
+5.2 Orientar, instruir e dar suporte ao paciente quanto às dúvidas decorrentes do uso do alinhador.<br><br>
+5.3 Interromper ou alterar o tratamento previamente programado, informando ao CONTRATANTE a razão da tomada de decisão.<br><br>
+5.4 Caso o CONTRATADO, por motivos pessoais, não possa dar continuidade ao tratamento, deverá comunicar ao paciente e transferir as informações e documentações pertinentes a outro especialista, sem ser responsabilizado por tal ato.</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA SEXTA: DOS RISCOS E LIMITAÇÕES</div>
+<div style="margin-bottom:16px">O CONTRATANTE/PACIENTE declara estar ciente, ter lido e assinado o ANEXO I: Formulário de Consentimento Invisalign e Conscientização do Paciente Invisalign®.</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA SÉTIMA: DA CONCLUSÃO DO TRATAMENTO</div>
+<div style="margin-bottom:16px">Após a conclusão do tratamento ortodôntico corretivo, preventivo e/ou interceptivo, contenções deverão ser instaladas, mediante custo adicional a ser estipulado no momento da finalização. As avaliações periódicas de retorno terão o valor da consulta vigente no momento e iniciam-se 30 dias após a remoção do alinhador, seguidas de outra com 3 meses, outra com 6 meses e, estando tudo normal, retorno anual durante 5 anos.</div>
+<div style="margin-bottom:16px"><b>PARÁGRAFO PRIMEIRO</b> – movimentações fisiológicas adaptativas após o tratamento ortodôntico, uso inadequado de aparelho de contenção, bem como o não comparecimento às consultas de retorno, desobrigam a equipe odontológica de custear o retratamento por recidiva, cabendo ao CONTRATANTE quitar o custo do novo tratamento adicional. Em caso de quebra, dano ou desaparecimento das contenções, novas serão confeccionadas mediante custo adicional.</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA OITAVA – DAS GARANTIAS</div>
+<div style="margin-bottom:16px"><b>PARÁGRAFO PRIMEIRO</b> - O paciente foi devidamente informado sobre propósitos, riscos e alternativas de tratamento, e de que a Odontologia não é uma ciência exata, podendo os resultados esperados não se concretizar em face da resposta biológica do paciente e da própria limitação da ciência.</div>
+<div style="margin-bottom:16px"><b>PARÁGRAFO SEGUNDO</b> - Cada modalidade de tratamento tem um tempo de garantia. Os tratamentos Lite, Express e Moderate têm 2 anos de garantia (o segundo jogo de alinhadores adicionais ou mais deve ser solicitado dentro desse prazo). O tratamento Comprehensive difere-se das demais modalidades, uma vez que o paciente tem direito a alinhadores ilimitados sem custos adicionais por 5 anos, que é o seu tempo de garantia.</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA NONA: DA RESCISÃO CONTRATUAL</div>
+<div style="margin-bottom:16px"><b>PARÁGRAFO PRIMEIRO:</b> O paciente ou seu responsável legal podem, a qualquer tempo, cancelar o tratamento ortodôntico, sendo obrigatório o pagamento das fases efetivamente iniciadas, bem como a proporção dos meses de manutenção realizados em relação à previsão de tempo inicial. A primeira parte do tratamento (escaneamento inicial, diagnóstico, planejamento, instalação do alinhador e colagem de attachments) corresponde a 50% do valor total. A segunda parte (acompanhamento periódico da evolução) corresponde aos outros 50%.</div>
+<div style="margin-bottom:16px"><b>PARÁGRAFO SEGUNDO:</b> Havendo atraso superior a 30 (trinta) dias no pagamento, o contrato poderá ser automaticamente rescindido, de pleno direito, a critério exclusivo da CONTRATADA, sem aviso prévio, devendo o(a) CONTRATANTE efetuar os pagamentos em aberto acrescidos das penalidades estipuladas, ficando sujeito à negativação do seu nome e à responsabilização judicial. A CONTRATADA fica isenta de quaisquer responsabilidades pelas consequências da suspensão do tratamento.</div>
+<div style="margin-bottom:16px"><b>PARÁGRAFO TERCEIRO:</b> Será caracterizado o abandono do tratamento quando o paciente faltar a três consultas consecutivas, ou se ausentar sem justificativa por mais de noventa dias, sendo o contrato considerado rescindido por iniciativa do paciente, independentemente de rechamada. O paciente só poderá retornar ao tratamento após reavaliação do seu caso e assinatura de um novo contrato.</div>
+<div style="margin-bottom:16px"><b>PARÁGRAFO QUARTO:</b> O CONTRATADO não se responsabiliza por eventuais danos advindos da interrupção do tratamento por omissão do paciente. A interrupção pode causar os dentes entortarem mais do que antes do tratamento, e em casos avançados, perda de vários dentes. A falta de mais de 90 dias eximirá o CONTRATADO de qualquer insucesso posterior.</div>
+<div style="margin-bottom:16px"><b>PARÁGRAFO QUINTO:</b> Pode o CONTRATADO, segundo critério técnico, considerar imprópria a utilização do aparelho, inadequada a higiene ou irregular a frequência às consultas, sendo o(a) CONTRATANTE notificado formalmente para sanar a situação. Persistindo a inobservância, em uma segunda notificação, o tratamento poderá ser interrompido temporária ou definitivamente, com retirada dos aparelhos, sem reembolso.</div>
+<div style="margin-bottom:16px"><b>PARÁGRAFO SEXTO:</b> Em consonância com o artigo 3°, V, do Código de Ética Odontológico, ocorrendo fatos que, a critério do cirurgião-dentista, prejudiquem o bom relacionamento ou o pleno desempenho profissional, o cirurgião-dentista reserva-se o direito de renunciar ao atendimento, comunicando previamente e encaminhando o paciente a, no mínimo, dois outros profissionais.</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA DÉCIMA: DO FORO</div>
+<div style="margin-bottom:16px">As partes elegem o foro da Comarca de Maringá para dirimir eventuais questões decorrentes da execução deste contrato, renunciando desde já a qualquer outro, por mais privilegiado que seja.</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA DÉCIMA PRIMEIRA: DOS CASOS OMISSOS</div>
+<div style="margin-bottom:16px">Os casos omissos neste contrato serão acertados de comum acordo entre o CONTRATANTE e o CONTRATADO.</div>
+
+<div style="font-weight:700;margin-bottom:8px">CONSENTIMENTO</div>
+<div style="margin-bottom:16px">O presente contrato tem duração de 12 (doze) meses, podendo ser prorrogado automaticamente por tantos períodos quanto forem necessários para a finalização do tratamento. O valor combinado é do tratamento completo e não mensalidades, ou seja, o tratamento pode concluir antes ou depois do término das parcelas. Estando de acordo com o tratamento ortodôntico, o(a) CONTRATANTE consente que sejam feitas fotografias e RX antes, durante e após o tratamento, e que esta documentação seja utilizada pelo(a) profissional em publicações e comunicados científicos. Certifica que leu o conteúdo deste contrato e está consciente dos riscos e limitações envolvidos, tendo tido a oportunidade de discutir as considerações e riscos do tratamento com o ortodontista, compreendendo que a prática ortodôntica não é uma ciência exata e, portanto, seus resultados não podem ser garantidos.</div>
+
+<div style="text-align:right;margin-bottom:40px">Maringá-PR, {{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px;margin-bottom:16px">
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>________________________________<br><b>{{manual.profissional_cro}}</b><br>CONTRATADO/DENTISTA</div>
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>________________________________<br><b>{{paciente.nome}}</b><br>CONTRATANTE/PACIENTE</div>
+</div>
+
+<div style="page-break-before:always;text-align:center;font-weight:700;margin-bottom:16px">ANEXO I<br>TERMO DE CONSENTIMENTO LIVRE E ESCLARECIDO PARA TÉCNICA INVISALIGN®</div>
+<div style="margin-bottom:16px">O Tratamento Ortodôntico consiste na prevenção e no tratamento dos dentes mal posicionados nas arcadas dentárias e a relação destas com o resto da face. O procedimento é feito da seguinte forma:</div>
+<div style="margin-bottom:16px"><b>a) Diagnóstico e Planejamento:</b> será necessário realizar exames iniciais (Documentação Ortodôntica) num instituto radiológico especializado e um escaneamento intra-oral dos dentes no próprio consultório. Após a avaliação, serão explicadas em detalhes as fases, objetivos, riscos e benefícios do tratamento, bem como valores e formas de pagamento.<br><br>
+<b>b) Instalação dos attachments e entrega do primeiro alinhador.</b><br><br>
+<b>c) Manutenção:</b> fase mais demorada, com comparecimento ao consultório conforme frequência dependente do tipo de tratamento e gravidade do caso. Nas consultas de manutenção o ortodontista e auxiliares efetuam ativações e ajustes necessários, obtendo fotografias, moldagens e radiografias para verificar resultados. Algumas peças poderão ser trocadas e até o planejamento inicial pode mudar conforme os resultados obtidos.<br><br>
+<b>d) Contenção:</b> última fase; após a remoção do alinhador é preciso usar dispositivo de contenção fixo ou removível, para manter os dentes nas novas posições até completar a formação de novo osso ao redor e adaptação de lábios/língua, diminuindo o risco de recidiva. O tempo necessário de contenção varia conforme o caso. Após a colocação do aparelho de contenção, o paciente se obriga a retornar ao consultório no mínimo 3 vezes: 30 dias após a remoção do alinhador, 3 meses depois, 6 meses depois e, estando tudo normal, retorno anual durante 5 anos. Em caso de não retorno nos períodos fixados, o ortodontista ficará isento de toda e qualquer responsabilidade decorrente do tratamento realizado.</div>
+<div style="margin-bottom:16px">Fui esclarecido ainda, antes do consentimento, que:</div>
+<div style="margin-bottom:16px">a) O tratamento ortodôntico é executado de acordo com planejamento baseado em informações clínicas, exame da cavidade bucal, análise facial, cefalométrica e radiográfica, podendo ser necessários outros exames de imagem (tomografias, ressonância magnética, protocolos específicos). A decisão de tratamento é tomada com base científica, influenciada pela experiência e formação do profissional; a opção sugerida não é a única, podendo sofrer alterações durante o tratamento.<br><br>
+b) A ortodontia contemporânea aceita a instabilidade no pós-tratamento. Embora alguns casos permaneçam iguais, a maioria mostra alteração no posicionamento dentário com o passar do tempo — algumas recidivas, muitas inerentes à maturidade e envelhecimento da face, sendo a mais frequente o entortamento dos dentes inferiores da frente.<br><br>
+c) A previsão do tempo de tratamento não é exata: tipo de crescimento ósseo, diversidade das respostas biológicas, demora na troca dos dentes, faltas frequentes, danos ao aparelho e pouca colaboração com higienização e uso dos alinhadores podem prolongar o tratamento e impedir um bom resultado final.<br><br>
+d) Doenças sistêmicas (diabetes, disfunção renal ou hormonal, gravidez) ou uso de medicamentos podem influenciar o tratamento — o Ortodontista deve ser sempre informado.<br><br>
+e) Os alinhadores INVISALIGN®, desenvolvidos pela Align Technology, consistem em série de aparelhos removíveis de plástico transparente que movimentam os dentes em pequenos incrementos conforme a troca dos alinhadores.<br><br>
+f) O tratamento tem como benefício posicionar os dentes, melhorar a distribuição de forças na mastigação, ajudar na manutenção de boa higiene bucal (reduzindo risco de cárie e doença gengival), evitar fraturas/perdas de dentes muito inclinados, corrigir posições incorretas para melhor adaptação de próteses, e melhorar a estética do sorriso.<br><br>
+g) Para crianças, o tratamento pode assegurar bom relacionamento e funcionamento entre ossos da face e dentes, eliminar hábitos inadequados (sucção de dedo, língua/lábios entre os dentes), permitir desenvolvimento apropriado da fala e mastigação, amenizar problemas respiratórios que afetem o crescimento facial, e coordenar a troca dos dentes de leite pelos permanentes.</div>
+<div style="margin-bottom:16px"><b>PRAZO PARA RECEBER OS PRIMEIROS ALINHADORES:</b> entre 30 e 90 dias após o planejamento (prazos podem aumentar por motivos alheios ao consultório, como greves em órgãos regulatórios). O paciente será mantido informado com o rastreamento.</div>
+<div style="margin-bottom:16px"><b>COOPERAÇÃO DO PACIENTE:</b> indisciplina (quebra/perda do aparelho e/ou faltas) aumenta o tempo de tratamento, reduz a qualidade e os resultados, e aumenta o custo financeiro. Pacientes com colaboração insuficiente provavelmente não alcançam os objetivos mínimos, exigindo alteração de técnica e mais profissionais (custos adicionais).</div>
+<div style="margin-bottom:16px"><b>CONCLUSÃO DO TRATAMENTO COM OU SEM APARELHO ORTODÔNTICO FIXO:</b> embora raro, se o paciente optar por uma melhoria ainda maior nas etapas finais, poderá ser utilizado aparelho fixo. Se o motivo da substituição envolver indisciplina, o custo adicional será de R$ 5.000,00; caso contrário, sem custo adicional — a decisão final cabe ao paciente.</div>
+<div style="margin-bottom:16px"><b>PROBLEMAS PERIODONTAIS / CÁRIES / DOR DE DENTE:</b> boa higienização com escova e fio dental é fundamental na prevenção de gengivas inchadas, inflamadas ou com sangramento. Doença periodontal ou cárie pode evoluir sem dor e causar perda dos dentes. Caso a condição se torne incontrolável, o tratamento poderá ser interrompido parcial ou totalmente, sendo exigido tratamento periodontal com especialista (custo adicional). As revisões a cada 3 ou 6 meses no dentista clínico são de responsabilidade do paciente/responsável. Imprevistos como necessidade de restauração por cárie ou fratura podem gerar pedido de novos alinhadores, com custo adicional.</div>
+<div style="margin-bottom:16px"><b>DESGASTES E MODIFICAÇÕES NO FORMATO DOS DENTES:</b> no tratamento ortodôntico evita-se ao máximo a remoção de dentes, mas com frequência é preciso lixar pequenas quantidades de esmalte dental entre os dentes (slices), podendo ser necessário também dar forma às bordas dos dentes.</div>
+<div style="margin-bottom:16px"><b>DISFUNÇÃO DA ARTICULAÇÃO TEMPOROMANDIBULAR (DTM):</b> pacientes com maloclusões podem ter alto potencial para problemas na ATM, evidentes antes, durante ou depois do tratamento — dor na articulação, ouvido e/ou cabeça. Raramente é necessário atendimento por especialista em ATM (custo adicional).</div>
+<div style="margin-bottom:16px"><b>REABSORÇÃO DA RAIZ:</b> é comum o arredondamento da ponta da raiz em consequência da movimentação dentária; rara é a alteração acentuada, mas alguns pacientes têm tendência a essa ocorrência — serão obtidas radiografias de controle durante o tratamento.</div>
+<div style="margin-bottom:16px"><b>ALTERAÇÕES DENTÁRIAS INTRÍNSECAS:</b> dentes previamente traumatizados ou com restaurações extensas podem ter o nervo danificado; a movimentação ortodôntica pode, em alguns casos, agravar a doença existente, podendo levar a tratamento de canal.</div>
+<div style="margin-bottom:16px"><b>ACONTECIMENTOS INCOMUNS/RAROS:</b> componentes dos alinhadores podem eventualmente ser engolidos, aspirados, ou irritar/ferir o tecido oral, ou ainda haver alergia ao material. O ortodontista deve ser avisado imediatamente para reavaliar os ajustes necessários. Eventualmente o tratamento deve ser interrompido e a técnica alterada, gerando custos e tempo adicionais.</div>
+<div style="margin-bottom:16px"><b>BOTÕES E ATTACHMENTS:</b> quando necessários, são colados com resina em alguns dentes e são visíveis. Uma vez aprovados no ClinCheck, os alinhadores chegam já com eles em posição; qualquer alteração futura implica novo escaneamento, fotos e novo prazo para receber os alinhadores.</div>
+<div style="margin-bottom:16px"><b>ELÁSTICOS AUXILIARES:</b> quando necessários, são prescritos e presos nos alinhadores ou em botões colados nos dentes. O sucesso do tratamento depende do uso correto conforme orientação do ortodontista.</div>
+<div style="margin-bottom:16px"><b>DISPOSITIVOS DE ANCORAGEM TEMPORÁRIA:</b> quando necessários (mini-implantes), são prescritos para planos de tratamento mais complexos, nos quais os alinhadores sozinhos podem não ser suficientes.</div>
+<div style="margin-bottom:16px"><b>ESPAÇOS ENTRE DENTES:</b> ao finalizar o tratamento, espaços entre alguns dentes devem ser corrigidos pelo dentista na especialidade de dentística ou periodontia (custos adicionais), seguido de novo aparelho de contenção pelo ortodontista.</div>
+<div style="margin-bottom:16px"><b>ALTERAÇÕES NO PLANO DE TRATAMENTO:</b> o prognóstico e o plano estão sujeitos a mudanças caso o paciente não utilize os alinhadores/dispositivos propostos ou não se obtenha resposta biológica adequada. Essas mudanças podem envolver alteração do tipo de aparelho, extrações de dentes permanentes ou cirurgia dos ossos da face, incluindo, comumente, instalação de mini-implantes para reforço de ancoragem. Em casos de tracionamento ortodôntico de dente incluso e anquilosado, poderá ser necessária a remoção e instalação de implante por outro dentista (custos adicionais). O paciente ou responsável será informado de qualquer alteração no plano de tratamento original.</div>
+
+<div style="page-break-before:always;text-align:center;font-weight:700;margin-bottom:16px">ANEXO II<br>PLANO DE TRATAMENTO</div>
+<div style="margin-bottom:16px">Diagnóstico ortodôntico: <b>{{manual.diagnostico_ortodontico}}</b><br>
+Planejamento: <b>{{manual.planejamento_ortodontico}}</b><br>
+Prognóstico: <b>{{manual.prognostico}}</b><br>
+Necessidade de outros profissionais, procedimentos, tratamentos e custos adicionais: <b>{{manual.necessidade_outros_profissionais}}</b><br>
+Tempo de tratamento: <b>{{manual.tempo_tratamento}}</b></div>
+<div style="margin-bottom:16px"><b>Procedimentos previstos no orçamento aprovado:</b><br>{{orcamento.itens}}</div>
+
+<div style="page-break-before:always;text-align:center;font-weight:700;margin-bottom:16px">ANEXO III<br>ORIENTAÇÕES AO PACIENTE ORTODÔNTICO COM ALINHADORES INVISALIGN®</div>
+<div style="margin-bottom:16px">Para os pacientes que fazem tratamento ortodôntico com alinhadores Invisalign, seguem algumas orientações e cuidados para que ocorra a melhor evolução do tratamento.</div>
+<div style="margin-bottom:16px"><b>1. PELO MENOS 20 A 22 HORAS POR DIA</b><br>Para que o tratamento ocorra de acordo com o planejado, é importante utilizar os alinhadores pelo máximo de tempo possível: o mínimo é de 20 a 22 horas por dia, inclusive dormindo, trabalhando e praticando esportes. A única atividade em que devem ser retirados é na hora de comer.</div>
+<div style="margin-bottom:16px"><b>2. CUIDADO COM A COMIDA</b><br>As duas a quatro horas por dia sem o alinhador são suficientes para comer e higienizar. É possível tomar água com o alinhador na boca, mas deve-se tomar cuidado com líquidos quentes (deformam o material termoplástico) ou com corantes (vinho, café), que podem manchar o aparelho — retire os alinhadores para tomá-los.</div>
+<div style="margin-bottom:16px"><b>3. CUIDADO COM O CIGARRO</b><br>Recomenda-se não fumar durante o uso do alinhador, pois pode amarelá-lo e o calor pode deformá-lo. É necessário retirar o aparelho toda vez que for fumar.</div>
+<div style="margin-bottom:16px"><b>4. NO LUGAR CERTO</b><br>Ao retirar os alinhadores para comer ou beber, guarde-os na caixa específica fornecida pelo dentista — nunca no bolso, solto na mochila ou enrolado em guardanapo.</div>
+<div style="margin-bottom:16px"><b>5. A HIGIENE CORRETA</b><br>Os alinhadores não podem ser lavados em água quente. O ideal é limpá-los com escova de cerdas macias e creme dental sem material abrasivo.</div>
+<div style="margin-bottom:16px"><b>6. HIGIENE TAMBÉM DOS DENTES</b><br>Higienize muito bem os dentes e a boca antes de recolocar os alinhadores, mantendo a rotina de fio dental e escovação após as refeições.</div>
+<div style="margin-bottom:16px"><b>7. ATENÇÃO PARA RETIRAR E COLOCAR</b><br>Coloque os alinhadores da forma correta após a higiene bucal, certificando-se de que estão no ponto certo. A cada inserção, morder os mordedores/chewies para garantir o melhor tracking. Massagear o alinhador em direção à gengiva para que os attachments fiquem completamente recobertos. Retirar com cuidado, aplicando força nos dois lados para evitar quebra, sempre pela face interna (voltada para a língua).</div>
+<div style="margin-bottom:16px"><b>8. PERDEU UM ATTACHMENT OU O ALINHADOR? ATENÇÃO COMO PROCEDER</b><br>Entre em contato com o consultório imediatamente. Dependendo de quando será a próxima consulta e da programação de uso, pode ser necessário um novo conjunto de alinhadores ou substituir os attachments.</div>
+
+<div style="margin-bottom:16px">Declaro que estou ciente e entendi todas as condições acima e me comprometo a colaborar 100% com o tratamento INVISALIGN®, informando ao ortodontista toda e qualquer dúvida adicional, alteração da condição dos dentes/gengiva e histórico médico/dentário.</div>
+<div style="text-align:right;margin-bottom:40px">Maringá-PR, {{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>________________________________<br><b>{{manual.profissional_cro}}</b><br>CONTRATADO/DENTISTA</div>
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>________________________________<br><b>{{paciente.nome}}</b><br>CONTRATANTE/PACIENTE</div>
+</div>`,
+  },
+  {
+    id:'modelo_contrato_sekai_geral_1',
+    tipo:'contrato',
+    nome:'CONTRATO PRESTAÇÃO DE SERVIÇOS SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-20',
+    camposManuais:[],
+    conteudo:`<div style="text-align:center;font-weight:700;font-size:15px;margin-bottom:16px">CONTRATO DE PRESTAÇÃO DE SERVIÇOS ODONTOLÓGICOS</div>
+<div style="margin-bottom:16px">CONTRATANTE/PACIENTE: <b>{{paciente.nome}}</b> — Nº prontuário: <b>{{paciente.codigo}}</b><br>
+Data de nascimento: <b>{{paciente.nascimento}}</b><br>
+RG: <b>{{paciente.rg}}</b> — CPF/MF: <b>{{paciente.cpf}}</b><br>
+Estado civil: <b>{{paciente.estado_civil}}</b> — Profissão: <b>{{paciente.profissao}}</b><br>
+Fone/Cel: <b>{{paciente.telefone}}</b><br>
+Endereço: <b>{{paciente.endereco}}</b><br>
+E-mail: <b>{{paciente.email}}</b></div>
+<div style="margin-bottom:16px">CONTRATADA: <b>{{clinica.razao_social}}</b><br>
+CNPJ/MF: <b>{{clinica.cnpj}}</b> — IE: -<br>
+Endereço: <b>{{clinica.endereco}}</b><br>
+Fone: <b>{{clinica.telefone}}</b> — E-mail: <b>{{clinica.email}}</b></div>
+<div style="margin-bottom:16px">Que celebram este contrato, mediante as cláusulas e condições seguintes, que mútua e reciprocamente outorgam e aceitam, obrigando-se ao fiel e integral cumprimento:</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA PRIMEIRA – DO OBJETO</div>
+<div style="margin-bottom:16px">A(O) CONTRATANTE contrata, neste ato, serviços odontológicos oferecidos pela CONTRATADA, correspondente a:</div>
+<div style="margin-bottom:16px">{{orcamento.itens}}</div>
+<div style="margin-bottom:16px"><b>PARÁGRAFO PRIMEIRO:</b> A CONTRATADA declara possuir toda condição técnica necessária e pessoal devidamente habilitado para a realização dos serviços ora contratados.<br>
+<b>PARÁGRAFO SEGUNDO:</b> A presente contratação diz respeito apenas e exclusivamente ao tratamento odontológico especificado no caput.</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA SEGUNDA – DO PREÇO E DO PAGAMENTO</div>
+<div style="margin-bottom:16px">O valor certo e ajustado para a presente contratação corresponderá ao total de <b>{{orcamento.valor_total}}</b> ({{orcamento.valor_total_extenso}}), a serem pagos da seguinte forma: <b>{{orcamento.forma_pagamento}}</b>.</div>
+<div style="margin-bottom:16px"><b>PARÁGRAFO PRIMEIRO:</b> O pagamento correspondente à entrada poderá ser realizado à vista mediante emissão de recibo próprio pela CONTRATADA, ou parcelado no cartão de crédito do(a) CONTRATANTE e/ou do(a) PACIENTE. No caso de uso de cartão de crédito de terceiros, o respectivo titular deverá assinar ao final deste contrato como anuente-concordante.<br>
+<b>PARÁGRAFO SEGUNDO:</b> Em relação ao saldo remanescente, a opção é boleto bancário, cartão de crédito ou cheque. Caso a opção seja parcelamento por cheques, estes são entregues neste ato pelo(a) CONTRATANTE à CONTRATADA. No caso de uso de cheques ou cartão de crédito de terceiros, o titular deverá assinar ao final deste contrato como anuente-concordante.<br>
+<b>PARÁGRAFO TERCEIRO:</b> No preço estipulado no caput estão incluídos todos os custos diretos e indiretos que ordinariamente incidam na execução do objeto deste contrato.<br>
+<b>PARÁGRAFO QUARTO:</b> Em caso de atraso nos pagamentos incidirão sobre o valor devido correção monetária conforme variação positiva do IGP-M/FGV, mais juros moratórios de 1% (um por cento) ao mês e multa de 2%, pro rata die, até a data da efetivação do pagamento.<br>
+<b>PARÁGRAFO QUINTO:</b> Como pré-requisito e condição para aprovação da contratação, o(a) CONTRATANTE e/ou o(a) PACIENTE e/ou a(o) titular do cartão de crédito (anuente-concordante) autoriza a CONTRATADA a fazer toda e qualquer consulta junto aos cadastros de proteção ao crédito, tais como SERASA, SCPC e SPC, dentre outros.<br>
+<b>PARÁGRAFO SEXTO:</b> Todo e qualquer procedimento/tratamento odontológico que venha a ser necessário ao PACIENTE deverá ser pago na sua totalidade pelo(a) CONTRATANTE, conforme tabela vigente.<br>
+<b>PARÁGRAFO SÉTIMO:</b> Não estão inclusas nesta contratação despesas relativas a exames eventualmente necessários ao tratamento, tais como radiografias e gastos laboratoriais, os quais deverão ser suportados exclusivamente pelo(a) CONTRATANTE/PACIENTE, conforme tabela vigente à época. Também não estão contemplados custos decorrentes de serviços de terceiros ou serviços que não tenham sido expressamente contratados conforme a cláusula primeira.</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA TERCEIRA – DA VIGÊNCIA</div>
+<div style="margin-bottom:16px">O tempo de duração do tratamento é individual e depende de uma série de fatores relacionados ao(à) próprio(a) PACIENTE, constatados apenas no decorrer dos procedimentos, tais como idade, resposta biológica, frequência nas consultas, cuidados e higienização, hábitos diversos, entre outros. Desta forma, as partes ajustam que o presente contrato/tratamento tem prazo indeterminado e que o prosseguimento de cada fase dependerá do resultado da fase anterior.</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA QUARTA – DAS OBRIGAÇÕES</div>
+<div style="margin-bottom:16px"><b>São obrigações do(a) CONTRATANTE e/ou do(a) PACIENTE:</b> a) observar os prazos estipulados neste contrato; b) respeitar o tempo de agendamento a ser realizado pela CONTRATADA; c) realizar o(s) pagamento(s) devido(s) na(s) data(s) e moldes avençados; d) prestar todas as informações solicitadas e necessárias (sensibilidade e alergias a medicamentos, anestésicos e outros), bem como apresentar documentos e informações de tratamentos odontológicos anteriores; e) comparecer pontualmente às consultas, retornos e procedimentos agendados, desmarcando apenas por motivo justificado e com antecedência mínima de 12 horas; f) cumprir todas as prescrições e recomendações da CONTRATADA (medicamentos, controles, higienização e cuidados durante e após o tratamento); g) informar imediatamente eventuais desconfortos após procedimentos e quaisquer alterações do estado de saúde; h) informar imediatamente qualquer dúvida acerca do tratamento; i) comunicar à CONTRATADA caso se submeta à intervenção de outros profissionais de odontologia durante a vigência do contrato; j) manter seus dados cadastrais atualizados.</div>
+<div style="margin-bottom:16px"><b>PARÁGRAFO PRIMEIRO:</b> A CONTRATADA não se responsabiliza por tratamentos realizados fora do seu consultório.</div>
+<div style="margin-bottom:16px"><b>São obrigações da CONTRATADA:</b> a) prestar o serviço de modo satisfatório e de acordo com as especificações indicadas, disponibilizando local limpo, ambiente adequado e higienizado, produtos hábeis e profissional dentista habilitado; b) prestar os esclarecimentos solicitados pela(o) CONTRATANTE e/ou PACIENTE quanto ao tratamento; c) elaborar e manter atualizados os prontuários na forma das normas em vigor; d) arcar com as despesas ordinárias para prestação dos serviços, inclusive tributos municipais, estaduais e federais incidentes.</div>
+<div style="margin-bottom:16px"><b>PARÁGRAFO SEGUNDO:</b> A CONTRATADA não se responsabiliza por eventuais prejuízos financeiros, estéticos e/ou morais gerados em virtude da não cooperação do(a) PACIENTE durante e/ou após o tratamento, ou pela omissão de informações relevantes para o diagnóstico do caso.<br>
+<b>PARÁGRAFO TERCEIRO:</b> A CONTRATADA não se responsabiliza por qualquer alteração do estado de saúde sistêmico do PACIENTE (bruxismo, apertamento, quebra de dentes e restaurações, necessidade de canal ou de outros procedimentos), sendo total responsabilidade do mesmo procurar auxílio de profissional adequado.<br>
+<b>PARÁGRAFO QUARTO:</b> Considera-se não cooperação do(a) PACIENTE o não comparecimento às consultas preventivas, retornos e procedimentos agendados, a inobservância das recomendações prescritas, bem como a omissão de informações relevantes ao diagnóstico correto.<br>
+<b>PARÁGRAFO QUINTO:</b> Com a observância das obrigações e condutas estipuladas neste contrato, bem como com o emprego da boa técnica e ética profissional, contemplando as excludentes de responsabilidade civil e criminal do Código de Defesa do Consumidor, a CONTRATADA fica isenta de toda e qualquer responsabilidade por eventuais danos e ilícitos decorrentes dos serviços ora contratados.</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA QUINTA – DAS GARANTIAS</div>
+<div style="margin-bottom:16px">A clínica oferece garantia de todos os tratamentos oferecidos, observando-se a duração de cada tratamento e as especificações individuais de cada contratante. As garantias são: a) garantia vitalícia dos implantes (com a apresentação do passaporte; exceto pacientes com bruxismo/apertamento, fumantes, diabéticos ou outro problema sistêmico surgido durante ou após o tratamento); b) 5 anos para porcelanas; c) 5 anos para tratamento endodôntico (canal); d) garantia para tratamento com Alinhadores Invisalign (de acordo com o plano indicado); e) 5 anos para protocolo (cerâmica ou acrílica); f) 3 anos para prótese removível (parcial ou total); g) 2 anos para tratamento ortodôntico convencional; h) 1 ano para restaurações estéticas em resina composta (facetas, reanatomizações e recontornos); i) 3 meses para provisório sobre dente e/ou implante e restaurações em resina composta; j) 1 mês para curativo de demora ou restauração provisória; k) 1 ano para placa rígida (bruxismo/apertamento).</div>
+<div style="margin-bottom:16px"><b>PARÁGRAFO PRIMEIRO:</b> A garantia dos implantes e cirurgias/enxertos não é aplicada em casos de pacientes fumantes e diabéticos.<br>
+<b>PARÁGRAFO SEGUNDO:</b> A garantia do tratamento depende do comparecimento do paciente às manutenções e limpezas profissionais (a cada 6 meses ou quando indicado). O não cumprimento dessas manutenções rescinde a garantia.<br>
+<b>PARÁGRAFO TERCEIRO:</b> Pacientes com bruxismo ou apertamento deverão utilizar a placa rígida estabilizadora recomendada; fraturas ou trincas de porcelana devido à falta de uso da placa são de responsabilidade do paciente.<br>
+<b>PARÁGRAFO QUARTO:</b> Casos de acidentes, quedas ou mau uso do tratamento acarretarão a perda da garantia.</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA SEXTA – DA RESCISÃO</div>
+<div style="margin-bottom:16px">O presente contrato poderá ser rescindido, de pleno direito, nas seguintes situações: a) pelo descumprimento de qualquer cláusula contratual; b) por acordo entre as partes, reduzido a termo distrato.</div>
+<div style="margin-bottom:16px"><b>PARÁGRAFO PRIMEIRO:</b> O não cumprimento das cláusulas previstas neste contrato desobriga o outro contratante ao cumprimento da contraprestação devida, podendo ensejar, conforme a gravidade e/ou prejuízos decorrentes, a resolução imediata desta avença, com responsabilização do culpado pelo inadimplemento, ao pagamento de eventuais perdas e danos e à multa estipulada no parágrafo seguinte.<br>
+<b>PARÁGRAFO SEGUNDO:</b> Havendo atraso superior a 30 (trinta) dias no pagamento, o presente contrato poderá ser automaticamente rescindido, de pleno direito, a critério exclusivo da CONTRATADA, sem aviso prévio, devendo o(a) CONTRATANTE efetuar os pagamentos em aberto acrescidos das penalidades estipuladas, sujeito à negativação do seu nome, reparação de perdas e danos e responsabilização judicial. A CONTRATADA fica isenta de quaisquer responsabilidades em razão das consequências da suspensão do tratamento.<br>
+<b>PARÁGRAFO TERCEIRO:</b> Em caso de rescisão solicitada por uma das partes, por qualquer motivo, ou por descumprimento contratual, a parte responsável arcará, além do valor dos serviços prestados, com multa rescisória de 20% (vinte por cento) sobre o valor total do contrato.<br>
+<b>PARÁGRAFO QUARTO:</b> No caso de falecimento do PACIENTE, o contrato estará rescindido de pleno direito, devendo o(a) CONTRATANTE (quando não for o próprio paciente) ou o espólio arcar com os custos e despesas dos honorários até então dispensados em seu favor.<br>
+<b>PARÁGRAFO QUINTO:</b> No caso de rescisão pelo(a) CONTRATANTE e PACIENTE, além da multa rescisória, também deverão adimplir com todo o tratamento realizado até a data da rescisão.<br>
+<b>PARÁGRAFO SEXTO:</b> Caso o(a) CONTRATANTE tenha efetuado pagamentos de forma antecipada, o reembolso será feito após a devida compensação dos valores pagos (o que não inclui cheques não compensados) e os serviços efetivamente prestados, bem como a multa prevista neste contrato.<br>
+<b>PARÁGRAFO SÉTIMO:</b> Realizada a liquidação do valor de direito do(a) CONTRATANTE, havendo saldo, este será devolvido pela CONTRATADA, da mesma forma em que foi pago, na sede da CONTRATADA.<br>
+<b>PARÁGRAFO OITAVO:</b> CONTRATANTE e PACIENTE autorizam expressamente à CONTRATADA, de forma irrevogável e irretratável, a proceder com a compensação dos valores conforme parágrafos anteriores.<br>
+<b>PARÁGRAFO NONO:</b> O PACIENTE declara estar apto a realizar o tratamento objeto deste contrato; entretanto, caso no decorrer do tratamento seja acometido por doença que inviabilize a continuidade (ex: hipertensão, diabetes, doenças do coração, câncer), o contrato poderá ser rescindido a critério exclusivo do PACIENTE, isento de multa ou outras penalidades, exigidos apenas os custos dos serviços efetivamente prestados, condicionado à apresentação de laudo médico. Caso o laudo ateste doença pré-existente, o PACIENTE e CONTRATANTE perderão essa isenção, incorrendo em todas as penalidades contratuais e legais.</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA SÉTIMA – DISPOSIÇÕES GERAIS</div>
+<div style="margin-bottom:16px">Os serviços aqui contratados serão prestados em observância às normas do Conselho Federal e Conselhos Regionais de Odontologia e executados por profissional dentista competente e devidamente habilitado, podendo a CONTRATADA realizar a substituição do profissional sempre que entender necessário, independentemente de motivo ou circunstância, sem necessidade de aviso prévio ao(à) CONTRATANTE.</div>
+<div style="margin-bottom:16px">Os serviços objeto do presente contrato são de meio e não de fim, não sendo garantido resultado de tratamento ao(à) CONTRATANTE/PACIENTE. A previsão do tratamento odontológico, relativamente à quantidade de etapas, procedimentos e valores, está descrita no Plano de Tratamento Odontológico (orçamento) anexo a este contrato, cujo teor foi devidamente informado e explicado ao(à) CONTRATANTE/PACIENTE, passando a fazer parte integrante e indissociável do presente instrumento.</div>
+<div style="margin-bottom:16px">O(A) CONTRATANTE ou o responsável pela emissão do título de crédito destinado ao pagamento desta contratação (anuente-concordante) desde já autoriza a CONTRATADA, de forma irrevogável e irretratável, a negociar, caucionar, alienar, descontar ou repassar a terceiros, na totalidade ou em partes, todos os créditos, direitos e recebíveis oriundos deste contrato, sem necessidade de prévia notificação, podendo entregar ao cessionário-comprador toda a documentação relativa, incluindo títulos emitidos e eventuais cheques oferecidos em garantia, mantendo-se inalteradas as responsabilidades de pagamento aqui constantes.</div>
+<div style="margin-bottom:16px">No caso de pagamento mediante cheque, o(a) CONTRATANTE reconhece a abstração e autonomia do título, autorizando desde já a CONTRATADA a repassá-lo a terceiros. A obrigação do(a) CONTRATANTE só será considerada cumprida após a devida compensação dos cheques, sendo a não compensação considerada infração contratual. No caso de terceiro emissor dos cheques, o(a) CONTRATANTE se responsabiliza solidariamente pelo pagamento dos títulos. No caso de repasse dos cheques a terceiros, em caso de extinção do contrato por qualquer motivo, o(a) CONTRATANTE fica ciente de que os cheques poderão não ser devolvidos — a CONTRATADA se compromete a depositar, com pelo menos um dia de antecedência ao vencimento, o valor do cheque, deduzidos os valores devidos a título de serviços prestados, despesas incorridas e penalidades contratuais.</div>
+<div style="margin-bottom:16px">No caso de pagamento mediante boleto bancário, o(a) CONTRATANTE reconhece que o extravio ou qualquer outro motivo não justifica o não pagamento na data prevista, devendo informar imediatamente à CONTRATADA, sob pena de incorrer nas penalidades previstas.</div>
+<div style="margin-bottom:16px">CONTRATANTE e PACIENTE reconhecem que o não comparecimento nas consultas e o não cumprimento das recomendações e prescrições aumentam os riscos e o tempo de tratamento, podendo causar complicações odontológicas, do que não se responsabiliza a CONTRATADA. CONTRATANTE e PACIENTE, desde já, autorizam a CONTRATADA a realizar procedimentos não constantes no Plano de Tratamento Odontológico, caso seja verificada, no decorrer do tratamento (especialmente em ato cirúrgico), a necessidade de outros procedimentos para se obter êxito do tratamento, sendo então acrescidos os respectivos custos e honorários odontológicos ao valor inicialmente contratado, mediante aditivo ao presente contrato.</div>
+<div style="margin-bottom:16px">Declara o(a) PACIENTE que não possui qualquer objeção ou reação adversa quanto ao eventual uso de anestesia durante os procedimentos, declarando ainda não haver impedimento médico para se submeter aos procedimentos decorrentes deste contrato. PACIENTE e CONTRATANTE reconhecem e declaram expressamente que lhes foram prestadas todas as informações sobre o tratamento objeto deste contrato. O(A) PACIENTE autoriza expressamente a CONTRATADA a fotografar, filmar, documentar, publicar e divulgar o tratamento, inclusive imagens/vídeo do paciente, sem que lhe seja devida qualquer compensação ou indenização a qualquer título.</div>
+<div style="margin-bottom:16px">A CONTRATADA declara utilizar materiais odontológicos de boa qualidade, visando garantir sempre o bem-estar e a satisfação do PACIENTE. As consultas e agendamentos não serão lembrados por telefonema ou outro meio pela CONTRATADA, ficando a cargo exclusivo do PACIENTE comparecer nas datas e horários pré-agendados.</div>
+<div style="margin-bottom:16px">CONTRATANTE e PACIENTE reconhecem ter recebido da CONTRATADA todas as informações e orientações descritas neste instrumento, necessárias à execução dos serviços contratados, declarando tê-las entendido e compreendido, concordando em todos os seus termos, inclusive quanto a eventuais riscos procedimentais, e declaram que tiveram prévio conhecimento do conteúdo do presente instrumento. As partes se obrigam ao fiel cumprimento de todas as cláusulas e condições estabelecidas. Toda e qualquer tolerância quanto ao cumprimento, por qualquer das partes, das disposições deste contrato, não significará renovação ou alteração das condições pactuadas, mas apenas liberalidade. O presente contrato obriga as partes, herdeiros e sucessores ao seu bom e fiel cumprimento, observado o parágrafo terceiro da cláusula quinta, e constitui título executivo extrajudicial (art. 784 do CPC em vigor).</div>
+
+<div style="font-weight:700;margin-bottom:8px">CLÁUSULA OITAVA – DO FORO</div>
+<div style="margin-bottom:16px">As partes elegem o Foro da Comarca de Maringá/PR para dirimir quaisquer questões oriundas do presente contrato.</div>
+<div style="margin-bottom:16px">E assim, por estarem justos e contratados, assinam o presente instrumento em 02 (duas) vias de igual teor e forma.</div>
+
+<div style="text-align:right;margin-bottom:40px">Maringá-PR, {{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px;margin-bottom:24px">
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>_______________________________<br><b>Dra. Letícia Yuki Kawanichi — CRO 25.191-PR</b><br>CONTRATADA, por sua sócia-administradora</div>
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>_______________________________<br><b>{{paciente.nome}}</b><br>CONTRATANTE</div>
+</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:testemunha1}}<br>_______________________________<br>Testemunha 1 — RG:</div>
+  <div style="flex:1;text-align:center">{{assinatura:testemunha2}}<br>_______________________________<br>Testemunha 2 — RG:</div>
+</div>`,
+  },
 ];
 // Carrega os modelos salvos no navegador; se algum modelo novo foi adicionado
 // ao seed (nesta atualização do sistema) e ainda não existe no que já está
@@ -10730,6 +10987,79 @@ function _salvarModelosDocumentos(){ salvarLS('sk3-modelos-documento', modelosDo
 
 function _fmtDataBR(d){ if(!d) return ''; const p=String(d).split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:String(d); }
 function _fmtMoedaBR(v){ return (v===undefined||v===null||v==='')?'':'R$ '+parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+// Converte um valor monetário em texto por extenso (português), para uso em
+// contratos ("R$ 36.800,00 — trinta e seis mil e oitocentos reais").
+function _numeroPorExtenso(n){
+  if(n===0) return 'zero';
+  const unidades=['','um','dois','três','quatro','cinco','seis','sete','oito','nove'];
+  const dez10a19=['dez','onze','doze','treze','quatorze','quinze','dezesseis','dezessete','dezoito','dezenove'];
+  const dezenas=['','','vinte','trinta','quarenta','cinquenta','sessenta','setenta','oitenta','noventa'];
+  const centenas=['','cento','duzentos','trezentos','quatrocentos','quinhentos','seiscentos','setecentos','oitocentos','novecentos'];
+  function tres(num){
+    if(num===0) return '';
+    if(num===100) return 'cem';
+    const c=Math.floor(num/100), r=num%100;
+    const partes=[];
+    if(c>0) partes.push(centenas[c]);
+    if(r>0){
+      if(r<10) partes.push(unidades[r]);
+      else if(r<20) partes.push(dez10a19[r-10]);
+      else { const d=Math.floor(r/10), u=r%10; partes.push(u>0?dezenas[d]+' e '+unidades[u]:dezenas[d]); }
+    }
+    return partes.join(' e ');
+  }
+  const escalas=[{v:1000000000,s:['bilhão','bilhões']},{v:1000000,s:['milhão','milhões']},{v:1000,s:['mil','mil']}];
+  let resto=n, grupos=[];
+  for(const esc of escalas){
+    if(resto>=esc.v){
+      const q=Math.floor(resto/esc.v); resto=resto%esc.v;
+      grupos.push(esc.v===1000 ? (q===1?'mil':tres(q)+' mil') : tres(q)+' '+(q===1?esc.s[0]:esc.s[1]));
+    }
+  }
+  if(resto>0 || !grupos.length) grupos.push(tres(resto));
+  if(grupos.length===1) return grupos[0];
+  const last=grupos.pop();
+  return grupos.join(', ')+' e '+last;
+}
+function _valorPorExtenso(valor){
+  valor=parseFloat(valor)||0;
+  const reais=Math.floor(valor);
+  const centavos=Math.round((valor-reais)*100);
+  const partes=[];
+  if(reais>0){
+    const txtReais=_numeroPorExtenso(reais);
+    const precisaDe=/(milhão|milhões|bilhão|bilhões)$/.test(txtReais);
+    partes.push(txtReais+(precisaDe?' de ':' ')+(reais===1?'real':'reais'));
+  }
+  if(centavos>0) partes.push(_numeroPorExtenso(centavos)+(centavos===1?' centavo':' centavos'));
+  return partes.length?partes.join(' e '):'zero reais';
+}
+
+// Monta um texto legível de forma de pagamento a partir dos títulos reais
+// gerados na aprovação do orçamento (entrada, parcelas, vencimentos).
+function _formatarFormaPagamentoOrcamento(titulos){
+  if(!titulos || !titulos.length) return '';
+  const grupos={};
+  titulos.forEach(t=>{ const k=t.tipo||'Pagamento'; (grupos[k]=grupos[k]||[]).push(t); });
+  const partes=[];
+  Object.entries(grupos).forEach(([tipo,list])=>{
+    list.sort((a,b)=>(a.vencimento||'').localeCompare(b.vencimento||''));
+    if(list.length===1){
+      partes.push(`${tipo} — ${_fmtMoedaBR(list[0].valor)}, com vencimento em ${_fmtDataBR(list[0].vencimento)}`);
+    } else {
+      const primeiro=list[0], ultimo=list[list.length-1];
+      const mesmoValor=list.every(t=>Math.abs((t.valor||0)-(primeiro.valor||0))<0.01);
+      if(mesmoValor){
+        partes.push(`${list.length} parcelas de ${_fmtMoedaBR(primeiro.valor)} — ${tipo}, com vencimento inicial em ${_fmtDataBR(primeiro.vencimento)} até ${_fmtDataBR(ultimo.vencimento)}`);
+      } else {
+        const total=list.reduce((s,t)=>s+(t.valor||0),0);
+        partes.push(`${list.length} parcelas — ${tipo}, totalizando ${_fmtMoedaBR(total)}, entre ${_fmtDataBR(primeiro.vencimento)} e ${_fmtDataBR(ultimo.vencimento)}`);
+      }
+    }
+  });
+  return partes.join('<br>');
+}
 const _MESES_EXTENSO=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 function _dataExtenso(isoStr){ if(!isoStr) return ''; const [y,m,day]=isoStr.split('-').map(Number); return `${day} de ${_MESES_EXTENSO[m-1]} de ${y}`; }
 
@@ -10763,6 +11093,10 @@ const CAMPOS_DOCUMENTO = [
     {token:'paciente.nascimento', label:'Data de nascimento', get:c=>_fmtDataBR(c.paciente.nascimento)},
     {token:'paciente.bairro', label:'Bairro do paciente', get:c=>c.paciente.bairro},
     {token:'paciente.endereco', label:'Endereço completo do paciente', get:c=>_montarEndereco({rua:c.paciente.rua, numero:c.paciente.numero, complemento:c.paciente.complemento, cidade:c.paciente.cidade, cep:c.paciente.cep})},
+    {token:'paciente.rg', label:'RG do paciente', get:c=>(c.paciente.customFields||{}).rg},
+    {token:'paciente.estado_civil', label:'Estado civil do paciente', get:c=>(c.paciente.customFields||{}).estadoCivil},
+    {token:'paciente.profissao', label:'Profissão do paciente', get:c=>(c.paciente.customFields||{}).profissao},
+    {token:'paciente.codigo', label:'Código/nº de prontuário do paciente', get:c=>c.paciente.codigo!=null?String(c.paciente.codigo):''},
   ]},
   {grupo:'Orçamento (se vinculado)', campos:[
     {token:'orcamento.numero', label:'Número do orçamento', get:c=>c.orcamento.num!=null?String(c.orcamento.num):(c.orcamento.id?String(c.orcamento.id).slice(-4):'')},
@@ -10774,6 +11108,15 @@ const CAMPOS_DOCUMENTO = [
     }},
     {token:'orcamento.data_aprovacao', label:'Data de aprovação do orçamento', get:c=>_fmtDataBR(c.orcamento.dataDecisao)},
     {token:'orcamento.itens', label:'Itens do orçamento', get:c=>(c.orcamento.itens||[]).map(i=>`${i.proc||''}${i.dentes?' ('+i.dentes+')':''} — ${_fmtMoedaBR(i.valor)}`).join('<br>')},
+    {token:'orcamento.valor_total_extenso', label:'Valor total do orçamento por extenso', get:c=>{
+      const total=(c.orcamento.itens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+      const vf=c.orcamento.valorFechado!=null?c.orcamento.valorFechado:total;
+      return c.orcamento.id ? _valorPorExtenso(vf) : '';
+    }},
+    {token:'orcamento.forma_pagamento', label:'Forma de pagamento (títulos do orçamento aprovado)', get:c=>{
+      if(!c.orcamento.id) return '';
+      return _formatarFormaPagamentoOrcamento(_titulos().filter(t=>t.orcamentoId===c.orcamento.id));
+    }},
   ]},
   {grupo:'Clínica', campos:[
     {token:'clinica.razao_social', label:'Razão social da clínica', get:c=>(c.emp.dados||{}).razaoSocial},
@@ -10789,23 +11132,36 @@ const CAMPOS_DOCUMENTO = [
 ];
 function _campoPorToken(token){ for(const g of CAMPOS_DOCUMENTO){ const c=g.campos.find(x=>x.token===token); if(c) return c; } return null; }
 
+// Rótulos amigáveis para assinaturas nomeadas comuns — usado só para exibição;
+// qualquer nome (ex: {{assinatura:testemunha1}}) funciona, mesmo sem estar aqui.
+const _ASSINATURA_LABEL_CONHECIDA={profissional:'Profissional',paciente:'Paciente',responsavel:'Responsável legal',testemunha1:'Testemunha 1',testemunha2:'Testemunha 2',farmaceutico:'Farmacêutico'};
+function _assinaturaLabel(chave){
+  if(!chave) return 'Assinatura';
+  return 'Assinatura — '+(_ASSINATURA_LABEL_CONHECIDA[chave] || (chave.charAt(0).toUpperCase()+chave.slice(1)));
+}
+
 // Substitui os campos {{token}} do texto do modelo pelos valores do contexto.
 // Cobre 3 origens de valor: automáticos (CAMPOS_DOCUMENTO), manuais (definidos
-// pelo próprio modelo, preenchidos no formulário de geração) e a assinatura
-// desenhada na tela. Retorna o HTML mesclado e a lista de labels vazios.
+// pelo próprio modelo, preenchidos no formulário de geração) e assinaturas
+// desenhadas na tela — um modelo pode ter várias, nomeadas: {{assinatura}}
+// (única/padrão) ou {{assinatura:paciente}}, {{assinatura:testemunha1}} etc.
+// Retorna o HTML mesclado e a lista de labels vazios.
 function _mesclarModelo(conteudo, ctx){
-  const tokens = [...new Set([...conteudo.matchAll(/\{\{\s*([\w.]+)\s*\}\}/g)].map(m=>m[1]))];
+  const tokens = [...new Set([...conteudo.matchAll(/\{\{\s*([\w.:]+)\s*\}\}/g)].map(m=>m[1]))];
   const faltando = [];
   let resultado = conteudo;
   tokens.forEach(tok=>{
     let valor='', label=tok, opcional=false;
-    if(tok==='assinatura'){
-      label='Assinatura';
-      opcional = !ctx.assinaturaAtiva;
-      valor = ctx.assinaturaDataUrl ? `<img src="${ctx.assinaturaDataUrl}" style="max-height:60px">` : '';
+    if(tok==='assinatura' || tok.startsWith('assinatura:')){
+      const chave = tok.includes(':') ? tok.slice(tok.indexOf(':')+1) : '';
+      label = _assinaturaLabel(chave);
+      const st = (ctx.assinaturas && ctx.assinaturas[chave]) || {};
+      opcional = !st.ativa;
+      valor = st.dataUrl ? `<img src="${st.dataUrl}" style="max-height:60px">` : '';
     } else if(tok.startsWith('manual.')){
       const campoManual = (ctx.modeloCamposManuais||[]).find(c=>c.token===tok);
       label = campoManual ? campoManual.label : tok;
+      opcional = !!(campoManual && campoManual.opcional);
       valor = (ctx.manualValues && ctx.manualValues[tok]) || '';
     } else {
       const campo = _campoPorToken(tok);
@@ -10819,7 +11175,7 @@ function _mesclarModelo(conteudo, ctx){
     }
     valor = (valor===undefined||valor===null) ? '' : String(valor).trim();
     if(!valor && !opcional) faltando.push(label);
-    const re = new RegExp('\\{\\{\\s*'+tok.replace(/\./g,'\\.')+'\\s*\\}\\}','g');
+    const re = new RegExp('\\{\\{\\s*'+tok.replace(/[.:]/g,'\\$&')+'\\s*\\}\\}','g');
     resultado = resultado.replace(re, valor);
   });
   return {html: resultado, faltando};
@@ -10833,7 +11189,14 @@ function _optionsCamposDocumento(camposManuaisAtual){
   if(manuaisValidos.length){
     html += `<optgroup label="Campos deste modelo">${manuaisValidos.map(c=>`<option value="${c.token}">${esc(c.label)}</option>`).join('')}</optgroup>`;
   }
-  html += `<optgroup label="Assinatura"><option value="assinatura">Assinatura (desenhar na tela)</option></optgroup>`;
+  html += `<optgroup label="Assinatura">
+    <option value="assinatura">Assinatura única (desenhar na tela)</option>
+    <option value="assinatura:profissional">Assinatura — Profissional</option>
+    <option value="assinatura:paciente">Assinatura — Paciente</option>
+    <option value="assinatura:responsavel">Assinatura — Responsável legal</option>
+    <option value="assinatura:testemunha1">Assinatura — Testemunha 1</option>
+    <option value="assinatura:testemunha2">Assinatura — Testemunha 2</option>
+  </optgroup>`;
   return html;
 }
 
@@ -10958,12 +11321,27 @@ function excluirModeloDocumento(id){
 }
 
 // ── GERAR DOCUMENTO NO PRONTUÁRIO (A PARTIR DE MODELO) ──────────────────
-let _gerarDocTipo=null, _gerarDocAssinaturaDataUrl=null, _gerarDocAssinaturaAtiva=false;
+let _gerarDocTipo=null;
+// Estado das assinaturas do documento atual — chave '' é a assinatura única/padrão
+// ({{assinatura}}); chaves nomeadas vêm de {{assinatura:nome}}. Cada entrada:
+// {ativa:bool, dataUrl:string|null}
+let _gerarDocAssinaturas={};
 // Valores digitados manualmente para campos AUTOMÁTICOS que vieram vazios do
 // cadastro (ex: paciente sem endereço preenchido) — { token: valor }
 let _gerarDocAutomaticOverrides={};
 // Contador de linhas por campo do tipo lista_medicamentos, para gerar ids únicos
 let _gerarDocListaContadores={};
+
+// Encontra todas as assinaturas distintas usadas no modelo (bare {{assinatura}}
+// e nomeadas {{assinatura:x}}), na ordem em que aparecem no texto.
+function _gerarDocDetectarAssinaturas(conteudo){
+  const chaves=[];
+  [...conteudo.matchAll(/\{\{\s*assinatura(?::([\w\u00C0-\u017F]+))?\s*\}\}/g)].forEach(m=>{
+    const chave=m[1]||'';
+    if(!chaves.includes(chave)) chaves.push(chave);
+  });
+  return chaves;
+}
 
 function _prontDocGerar(tipo){
   const modelos = modelosDocumentos.filter(m=>m.tipo===tipo && m.ativo!==false);
@@ -10973,8 +11351,7 @@ function _prontDocGerar(tipo){
     return;
   }
   _gerarDocTipo=tipo;
-  _gerarDocAssinaturaDataUrl=null;
-  _gerarDocAssinaturaAtiva=false;
+  _gerarDocAssinaturas={};
   _gerarDocAutomaticOverrides={};
   _gerarDocListaContadores={};
   document.getElementById('gerar-doc-titulo').textContent = 'Gerar '+(t?t.label.toLowerCase():'documento');
@@ -10985,7 +11362,7 @@ function _prontDocGerar(tipo){
   selOrc.innerHTML = '<option value="">Nenhum</option>' + orcs.map(o=>`<option value="${o.id}">${esc(o.nomeOrc||('Orçamento #'+(o.num||o.id.slice(-4))))} (${o.status})</option>`).join('');
   document.getElementById('gerar-doc-campos-manuais').innerHTML='';
   document.getElementById('gerar-doc-campos-automaticos-faltando').innerHTML='';
-  document.getElementById('gerar-doc-assinatura-linha').style.display='none';
+  document.getElementById('gerar-doc-assinaturas-wrap').innerHTML='';
   document.getElementById('gerar-doc-preview-wrap').style.display='none';
   const btn=document.getElementById('gerar-doc-btn-confirmar');
   btn.disabled=true; btn.style.opacity='.5'; btn.style.cursor='not-allowed';
@@ -11013,13 +11390,12 @@ function _gerarDocAdicionarMedicamento(inputId){
 function _gerarDocEscolherModelo(){
   const modeloId=document.getElementById('gerar-doc-sel-modelo').value;
   const camposWrap=document.getElementById('gerar-doc-campos-manuais');
-  const assinLinha=document.getElementById('gerar-doc-assinatura-linha');
-  _gerarDocAssinaturaDataUrl=null;
-  _gerarDocAssinaturaAtiva=false;
+  const assinWrap=document.getElementById('gerar-doc-assinaturas-wrap');
+  _gerarDocAssinaturas={};
   _gerarDocAutomaticOverrides={};
   _gerarDocListaContadores={};
   if(!modeloId){
-    camposWrap.innerHTML=''; assinLinha.style.display='none';
+    camposWrap.innerHTML=''; assinWrap.innerHTML='';
     document.getElementById('gerar-doc-campos-automaticos-faltando').innerHTML='';
     document.getElementById('gerar-doc-preview-wrap').style.display='none';
     const btn=document.getElementById('gerar-doc-btn-confirmar'); btn.disabled=true; btn.style.opacity='.5'; btn.style.cursor='not-allowed';
@@ -11045,13 +11421,27 @@ function _gerarDocEscolherModelo(){
       const tipoInput = c.tipo==='numero'?'number':c.tipo==='data'?'date':c.tipo==='hora'?'time':'text';
       inputHtml=`<input type="${tipoInput}" id="${inputId}" oninput="_gerarDocRecalcular()">`;
     }
-    return `<div class="fl fg-full" style="margin-bottom:10px"><label>${esc(c.label)}</label>${inputHtml}</div>`;
+    const opcionalTag = c.opcional ? ' <span style="font-weight:400;color:var(--tx3)">(opcional)</span>' : '';
+    return `<div class="fl fg-full" style="margin-bottom:10px"><label>${esc(c.label)}${opcionalTag}</label>${inputHtml}</div>`;
   }).join('');
-  const usaAssinatura = /\{\{\s*assinatura\s*\}\}/.test(modelo.conteudo);
-  assinLinha.style.display = usaAssinatura ? 'flex' : 'none';
-  document.getElementById('gerar-doc-assinatura-toggle').classList.remove('on');
-  document.getElementById('gerar-doc-assinatura-acao').style.display='none';
-  document.getElementById('gerar-doc-assinatura-status').textContent='Não capturada';
+
+  const chavesAssinatura = _gerarDocDetectarAssinaturas(modelo.conteudo);
+  chavesAssinatura.forEach(chave=>{ _gerarDocAssinaturas[chave]={ativa:false, dataUrl:null}; });
+  assinWrap.innerHTML = chavesAssinatura.map(chave=>{
+    const idSuf = chave || '_default';
+    return `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r8);background:var(--s2)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="toggle-sw" id="gerar-doc-assin-toggle-${idSuf}" onclick="_gerarDocToggleAssinatura('${chave}')"></span>
+        <span style="font-size:12px;font-weight:600;color:var(--tx2)">Ativar ${esc(_assinaturaLabel(chave)).toLowerCase()} digital</span>
+        <span style="font-size:11px;color:var(--tx3)">— se desativado, imprima e assine fisicamente</span>
+      </div>
+      <div id="gerar-doc-assin-acao-${idSuf}" style="display:none;align-items:center;gap:10px">
+        <span id="gerar-doc-assin-status-${idSuf}" style="font-size:12px;color:var(--tx3)">Não capturada</span>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="_gerarDocAssinar('${chave}')">Assinar</button>
+      </div>
+    </div>`;
+  }).join('');
+
   _gerarDocRenderCamposAutomaticosFaltando(modelo);
   _gerarDocRecalcular();
 }
@@ -11064,10 +11454,10 @@ function _gerarDocRenderCamposAutomaticosFaltando(modelo){
   const wrap=document.getElementById('gerar-doc-campos-automaticos-faltando');
   const orcId=document.getElementById('gerar-doc-sel-orcamento').value||null;
   const ctxTeste=_ctxMesclagem(_prontPacId, orcId);
-  const tokens=[...new Set([...modelo.conteudo.matchAll(/\{\{\s*([\w.]+)\s*\}\}/g)].map(m=>m[1]))];
+  const tokens=[...new Set([...modelo.conteudo.matchAll(/\{\{\s*([\w.:]+)\s*\}\}/g)].map(m=>m[1]))];
   const faltantes=[];
   tokens.forEach(tok=>{
-    if(tok==='assinatura'||tok.startsWith('manual.')) return;
+    if(tok==='assinatura'||tok.startsWith('assinatura:')||tok.startsWith('manual.')) return;
     const campo=_campoPorToken(tok);
     if(!campo) return;
     const valor=campo.get(ctxTeste);
@@ -11078,21 +11468,25 @@ function _gerarDocRenderCamposAutomaticosFaltando(modelo){
     + faltantes.map(f=>`<div class="fl fg-full" style="margin-bottom:10px"><label>${esc(f.label)} <span style="font-weight:400;color:var(--tx3)">(não encontrado no cadastro)</span></label><input type="text" id="gerar-doc-auto-${f.token.replace(/\W/g,'_')}" oninput="_gerarDocAutomaticOverrides['${f.token}']=this.value;_gerarDocRecalcular()"></div>`).join('');
 }
 
-function _gerarDocToggleAssinatura(){
-  _gerarDocAssinaturaAtiva=!_gerarDocAssinaturaAtiva;
-  document.getElementById('gerar-doc-assinatura-toggle').classList.toggle('on', _gerarDocAssinaturaAtiva);
-  document.getElementById('gerar-doc-assinatura-acao').style.display = _gerarDocAssinaturaAtiva ? 'flex' : 'none';
-  if(!_gerarDocAssinaturaAtiva){
-    _gerarDocAssinaturaDataUrl=null;
-    document.getElementById('gerar-doc-assinatura-status').textContent='Não capturada';
+function _gerarDocToggleAssinatura(chave){
+  const idSuf = chave || '_default';
+  const st = _gerarDocAssinaturas[chave] || (_gerarDocAssinaturas[chave]={ativa:false, dataUrl:null});
+  st.ativa = !st.ativa;
+  document.getElementById('gerar-doc-assin-toggle-'+idSuf).classList.toggle('on', st.ativa);
+  document.getElementById('gerar-doc-assin-acao-'+idSuf).style.display = st.ativa ? 'flex' : 'none';
+  if(!st.ativa){
+    st.dataUrl=null;
+    document.getElementById('gerar-doc-assin-status-'+idSuf).textContent='Não capturada';
   }
   _gerarDocRecalcular();
 }
 
-function _gerarDocAssinar(){
+function _gerarDocAssinar(chave){
+  const idSuf = chave || '_default';
   abrirModalAssinatura(dataUrl=>{
-    _gerarDocAssinaturaDataUrl=dataUrl;
-    document.getElementById('gerar-doc-assinatura-status').textContent='✓ Capturada';
+    const st = _gerarDocAssinaturas[chave] || (_gerarDocAssinaturas[chave]={ativa:true, dataUrl:null});
+    st.dataUrl=dataUrl;
+    document.getElementById('gerar-doc-assin-status-'+idSuf).textContent='✓ Capturada';
     _gerarDocRecalcular();
   });
 }
@@ -11135,8 +11529,7 @@ function _gerarDocRecalcular(){
     const el=document.getElementById('gerar-doc-campo-'+c.token.replace(/\W/g,'_'));
     ctx.manualValues[c.token]= el ? el.value : '';
   });
-  ctx.assinaturaDataUrl=_gerarDocAssinaturaDataUrl;
-  ctx.assinaturaAtiva=_gerarDocAssinaturaAtiva;
+  ctx.assinaturas=_gerarDocAssinaturas;
   ctx.automaticOverrides=_gerarDocAutomaticOverrides;
   const {html, faltando} = _mesclarModelo(modelo.conteudo, ctx);
   previewWrap.style.display='';
