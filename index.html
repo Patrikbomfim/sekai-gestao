@@ -1868,6 +1868,20 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
+<!-- COMPLETAR CADASTRO (a partir da tela de gerar documento, sem perder o contexto) -->
+<div class="modal-ov" id="modal-completar-cadastro" style="z-index:260">
+  <div class="modal" style="width:440px;max-width:96vw">
+    <div class="modal-header">
+      <div class="modal-title" id="completar-cadastro-titulo">Completar cadastro</div>
+    </div>
+    <div class="modal-body" id="completar-cadastro-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-completar-cadastro')">Cancelar</button>
+      <button class="btn btn-primary" onclick="_completarCadastroSalvar()">Salvar e voltar</button>
+    </div>
+  </div>
+</div>
+
 <!-- LEMBRETES -->
 <div id="sec-lembretes" class="sec">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
@@ -11108,7 +11122,7 @@ const CAMPOS_DOCUMENTO = [
   {grupo:'Paciente', campos:[
     {token:'paciente.nome', label:'Nome do paciente', get:c=>c.paciente.nome},
     {token:'paciente.cpf', label:'CPF do paciente', get:c=>c.paciente.cpf},
-    {token:'paciente.telefone', label:'Telefone do paciente', get:c=>c.paciente.telefone||c.paciente.celular},
+    {token:'paciente.telefone', label:'Telefone do paciente', get:c=>c.paciente.fone||c.paciente.telefone||c.paciente.celular},
     {token:'paciente.email', label:'E-mail do paciente', get:c=>c.paciente.email},
     {token:'paciente.nascimento', label:'Data de nascimento', get:c=>_fmtDataBR(c.paciente.nascimento)},
     {token:'paciente.bairro', label:'Bairro do paciente', get:c=>c.paciente.bairro},
@@ -11458,7 +11472,7 @@ function _gerarDocEscolherModelo(){
       const tipoInput = c.tipo==='numero'?'number':c.tipo==='data'?'date':c.tipo==='hora'?'time':'text';
       inputHtml=`<input type="${tipoInput}" id="${inputId}" oninput="_gerarDocRecalcular()">`;
     }
-    const opcionalTag = c.opcional ? ' <span style="font-weight:400;color:var(--tx3)">(opcional)</span>' : '';
+    const opcionalTag = c.opcional ? ' <span style="font-weight:400;color:var(--tx3)">(opcional)</span>' : ' <span style="color:var(--da)">*</span>';
     return `<div class="fl fg-full" style="margin-bottom:10px"><label>${esc(c.label)}${opcionalTag}</label>${inputHtml}</div>`;
   }).join('');
 
@@ -11483,25 +11497,100 @@ function _gerarDocEscolherModelo(){
   _gerarDocRecalcular();
 }
 
-// Mapa de campo automático (paciente.*/clinica.*) para o id do input real no
-// cadastro do paciente (ids 'mpt-') ou o rótulo correto do submenu de
-// Configurações, usado pelo botão "Preencher no cadastro".
-const _CAMPO_AUTOMATICO_PARA_INPUT_ID={
-  'paciente.nome':'mpt-nome-edit', 'paciente.cpf':'mpt-cpf', 'paciente.telefone':'mpt-fone',
-  'paciente.nascimento':'mpt-nasc', 'paciente.endereco':'mpt-rua', 'paciente.bairro':'mpt-complemento',
-  'paciente.codigo':'mpt-codigo', 'paciente.rg':'mpt-custom-rg',
-  'paciente.estado_civil':'mpt-custom-estadoCivil', 'paciente.profissao':'mpt-custom-profissao',
+// Mapa de campo automático (paciente.*/clinica.*) para onde e como salvá-lo —
+// usado pelo modal "Completar cadastro", aberto sem sair da tela de gerar
+// documento. 'destino' indica em qual objeto/propriedade o valor é gravado:
+// paciente (propriedade direta), paciente_custom (dentro de customFields) ou
+// empresa (dentro de emp.dados).
+const _CAMPO_AUTOMATICO_META={
+  'paciente.nome':        {prop:'nome', label:'Nome completo', tipo:'texto', destino:'paciente'},
+  'paciente.cpf':         {prop:'cpf', label:'CPF', tipo:'texto', destino:'paciente'},
+  'paciente.telefone':    {prop:'fone', label:'Telefone / WhatsApp', tipo:'texto', destino:'paciente'},
+  'paciente.nascimento':  {prop:'nascimento', label:'Data de nascimento', tipo:'data', destino:'paciente'},
+  'paciente.codigo':      {prop:'codigo', label:'Código / nº de prontuário', tipo:'numero', destino:'paciente'},
+  'paciente.rg':          {prop:'rg', label:'RG', tipo:'texto', destino:'paciente_custom'},
+  'paciente.estado_civil':{prop:'estadoCivil', label:'Estado civil', tipo:'lista', opcoes:['Solteiro(a)','Casado(a)','Divorciado(a)','Viúvo(a)','União estável'], destino:'paciente_custom'},
+  'paciente.profissao':   {prop:'profissao', label:'Profissão', tipo:'texto', destino:'paciente_custom'},
+  'clinica.razao_social': {prop:'razaoSocial', label:'Razão social', tipo:'texto', destino:'empresa'},
+  'clinica.cnpj':         {prop:'cnpj', label:'CNPJ', tipo:'texto', destino:'empresa'},
+  'clinica.telefone':     {prop:'telefone', label:'Telefone', tipo:'texto', destino:'empresa'},
+  'clinica.email':        {prop:'email', label:'E-mail', tipo:'texto', destino:'empresa'},
 };
+let _completarCadastroToken=null;
+
+// Abre um modal pequeno POR CIMA da tela de gerar documento (sem fechá-la nem
+// navegar pra outro lugar do sistema) para completar o dado que falta no
+// cadastro. Ao salvar, volta direto pra onde estava, com o documento já
+// recalculado.
 function _gerarDocIrParaCadastro(token){
-  fecharModal('modal-gerar-doc');
-  if(token.startsWith('paciente.')){
-    abrirModalPt(_prontPacId);
-    const inputId=_CAMPO_AUTOMATICO_PARA_INPUT_ID[token];
-    if(inputId) setTimeout(()=>{ const el=document.getElementById(inputId); if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); el.focus(); } }, 250);
-  } else if(token.startsWith('clinica.')){
-    goTo('config');
-    setTimeout(()=>{ if(typeof showCfg==='function') showCfg('empresa'); }, 100);
+  _completarCadastroToken=token;
+  const p=pacientes.find(x=>String(x.id)===String(_prontPacId))||{};
+  const body=document.getElementById('completar-cadastro-body');
+  let html='';
+  if(token==='paciente.endereco'){
+    html=`<div class="fl fg-full" style="margin-bottom:10px"><label>CEP</label><input type="text" id="cc-cep" value="${esc(p.cep||'')}"></div>
+      <div class="fl fg-full" style="margin-bottom:10px"><label>Rua / Logradouro</label><input type="text" id="cc-rua" value="${esc(p.rua||'')}"></div>
+      <div class="fl" style="margin-bottom:10px"><label>Número</label><input type="text" id="cc-numero" value="${esc(p.numero||'')}"></div>
+      <div class="fl" style="margin-bottom:10px"><label>Complemento</label><input type="text" id="cc-complemento" value="${esc(p.complemento||'')}"></div>
+      <div class="fl fg-full"><label>Cidade</label><input type="text" id="cc-cidade" value="${esc(p.cidade||'')}"></div>`;
+  } else if(token==='clinica.endereco'){
+    const d=((getEmpresaAtual()||{}).dados)||{};
+    html=`<div class="fl fg-full" style="margin-bottom:10px"><label>Rua</label><input type="text" id="cc-rua" value="${esc(d.rua||'')}"></div>
+      <div class="fl" style="margin-bottom:10px"><label>Número</label><input type="text" id="cc-numero" value="${esc(d.numero||'')}"></div>
+      <div class="fl" style="margin-bottom:10px"><label>Bairro</label><input type="text" id="cc-bairro" value="${esc(d.bairro||'')}"></div>
+      <div class="fl fg-full"><label>CEP</label><input type="text" id="cc-cep" value="${esc(d.cep||'')}"></div>`;
+  } else {
+    const meta=_CAMPO_AUTOMATICO_META[token];
+    if(!meta) return;
+    const valorAtual = meta.destino==='empresa' ? (((getEmpresaAtual()||{}).dados||{})[meta.prop])
+      : meta.destino==='paciente_custom' ? ((p.customFields||{})[meta.prop]) : p[meta.prop];
+    if(meta.tipo==='lista'){
+      html=`<div class="fl fg-full"><label>${esc(meta.label)}</label><select id="cc-valor"><option value="">Selecionar...</option>${(meta.opcoes||[]).map(o=>`<option value="${esc(o)}" ${o===valorAtual?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
+    } else {
+      const tipoInput = meta.tipo==='data'?'date':meta.tipo==='numero'?'number':'text';
+      html=`<div class="fl fg-full"><label>${esc(meta.label)}</label><input type="${tipoInput}" id="cc-valor" value="${esc(valorAtual||'')}"></div>`;
+    }
   }
+  document.getElementById('completar-cadastro-titulo').textContent = token.startsWith('clinica.') ? 'Completar dados da empresa' : 'Completar cadastro do paciente';
+  body.innerHTML=html;
+  abrirModal('modal-completar-cadastro');
+}
+
+function _completarCadastroSalvar(){
+  const token=_completarCadastroToken;
+  const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
+  if(token==='paciente.endereco' && p){
+    p.cep=(document.getElementById('cc-cep')||{}).value||'';
+    p.rua=(document.getElementById('cc-rua')||{}).value||'';
+    p.numero=(document.getElementById('cc-numero')||{}).value||'';
+    p.complemento=(document.getElementById('cc-complemento')||{}).value||'';
+    p.cidade=(document.getElementById('cc-cidade')||{}).value||'';
+    salvarLS('sk3-pacientes',pacientes);
+  } else if(token==='clinica.endereco'){
+    const emp=getEmpresaAtual();
+    if(emp){
+      emp.dados=emp.dados||{};
+      emp.dados.rua=(document.getElementById('cc-rua')||{}).value||'';
+      emp.dados.numero=(document.getElementById('cc-numero')||{}).value||'';
+      emp.dados.bairro=(document.getElementById('cc-bairro')||{}).value||'';
+      emp.dados.cep=(document.getElementById('cc-cep')||{}).value||'';
+      salvarLS('sk3-empresas',empresas);
+    }
+  } else {
+    const meta=_CAMPO_AUTOMATICO_META[token];
+    if(meta){
+      const valor=(document.getElementById('cc-valor')||{}).value||'';
+      if(meta.destino==='paciente' && p){ p[meta.prop]=valor; salvarLS('sk3-pacientes',pacientes); }
+      else if(meta.destino==='paciente_custom' && p){ p.customFields=p.customFields||{}; p.customFields[meta.prop]=valor; salvarLS('sk3-pacientes',pacientes); }
+      else if(meta.destino==='empresa'){ const emp=getEmpresaAtual(); if(emp){ emp.dados=emp.dados||{}; emp.dados[meta.prop]=valor; salvarLS('sk3-empresas',empresas); } }
+    }
+  }
+  fecharModal('modal-completar-cadastro');
+  // Volta pra tela de gerar documento, já com o dado novo refletido
+  const modeloId=document.getElementById('gerar-doc-sel-modelo').value;
+  const modelo=modelosDocumentos.find(m=>m.id===modeloId);
+  if(modelo) _gerarDocRenderCamposAutomaticosFaltando(modelo);
+  _gerarDocRecalcular();
 }
 
 // Detecta campos AUTOMÁTICOS (não-manuais, não-assinatura, não-orçamento) usados
