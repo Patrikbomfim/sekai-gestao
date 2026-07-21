@@ -1125,6 +1125,17 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
               <input type="text" id="mpt-indic">
             </div>
             <div class="fl fg-full"><label>Observação</label><textarea id="mpt-obs" rows="2"></textarea></div>
+            <div class="fl">
+              <label>CEP</label>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="text" id="mpt-cep" placeholder="00000-000" oninput="fmtCEP(this)" onblur="buscarCEPPt()" style="flex:1">
+              </div>
+              <span class="input-hint" id="mpt-cep-hint"></span>
+            </div>
+            <div class="fl"><label>Cidade</label><input type="text" id="mpt-cidade" placeholder="Preenchido automaticamente"></div>
+            <div class="fl fg-full"><label>Rua / Logradouro</label><input type="text" id="mpt-rua" placeholder="Preenchido automaticamente"></div>
+            <div class="fl"><label>Número</label><input type="text" id="mpt-numero" placeholder="Ex: 123"></div>
+            <div class="fl"><label>Complemento</label><input type="text" id="mpt-complemento" placeholder="Apto, sala, bloco..."></div>
           </div>
           <div class="fg" style="margin-top:0" id="pp-custom-fields"></div>
         </div>
@@ -1819,8 +1830,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <select id="gerar-doc-sel-modelo" onchange="_gerarDocEscolherModelo()"></select>
       </div>
       <div class="fl fg-full" style="margin-bottom:14px">
-        <label>Vincular a um orçamento (opcional)</label>
+        <label id="gerar-doc-label-orcamento">Vincular a um orçamento (opcional)</label>
         <select id="gerar-doc-sel-orcamento" onchange="_gerarDocRecalcular()"><option value="">Nenhum</option></select>
+        <div id="gerar-doc-aviso-sem-orcamento" style="display:none;font-size:11px;color:#991B1B;margin-top:4px">Este paciente não tem orçamento aprovado. Aprove um orçamento antes de gerar este documento.</div>
       </div>
       <div id="gerar-doc-campos-manuais"></div>
       <div id="gerar-doc-campos-automaticos-faltando"></div>
@@ -7031,22 +7043,24 @@ function fmtCEP(el){
   el.value=v;
 }
 
-async function buscarCEP(){
-  const cep=document.getElementById('nn-cep').value.replace(/\D/g,'');
-  const hint=document.getElementById('nn-cep-hint');
+async function _buscarCEPGenerico(prefixo){
+  const cep=document.getElementById(prefixo+'-cep').value.replace(/\D/g,'');
+  const hint=document.getElementById(prefixo+'-cep-hint');
   if(!hint||cep.length!==8)return;
   hint.textContent='Buscando...';hint.className='input-hint';
   try{
     const res=await fetch(`https://viacep.com.br/ws/${cep}/json/`);
     const d=await res.json();
     if(d.erro){hint.textContent='CEP não encontrado';hint.className='input-hint err';return;}
-    const rua=document.getElementById('nn-rua');
-    const cidade=document.getElementById('nn-cidade');
+    const rua=document.getElementById(prefixo+'-rua');
+    const cidade=document.getElementById(prefixo+'-cidade');
     if(rua)rua.value=d.logradouro||'';
     if(cidade)cidade.value=(d.localidade||'')+(d.uf?' / '+d.uf:'');
     hint.textContent='Endereço preenchido';hint.className='input-hint ok';
   }catch(e){hint.textContent='Erro ao buscar CEP';hint.className='input-hint err';}
 }
+async function buscarCEP(){ return _buscarCEPGenerico('nn'); }
+async function buscarCEPPt(){ return _buscarCEPGenerico('mpt'); }
 
 function onOrigemChange(){
   const o=document.getElementById('nn-origem').value;
@@ -7607,6 +7621,12 @@ function abrirModalPt(id){
   document.getElementById('mpt-indic').value=p.indicador||'';
   document.getElementById('mpt-indic-wrap').style.display=p.origem==='indicacao'?'':'none';
   document.getElementById('mpt-obs').value=p.obs||'';
+  document.getElementById('mpt-cep').value=p.cep||'';
+  document.getElementById('mpt-cidade').value=p.cidade||'';
+  document.getElementById('mpt-rua').value=p.rua||'';
+  document.getElementById('mpt-numero').value=p.numero||'';
+  document.getElementById('mpt-complemento').value=p.complemento||'';
+  const cepHintPt=document.getElementById('mpt-cep-hint'); if(cepHintPt) cepHintPt.textContent='';
   const customWrap=document.getElementById('pp-custom-fields');
   const camposExtras=camposCadastro.filter(c=>!c.locked);
   customWrap.innerHTML=camposExtras.length?camposExtras.map(c=>campoPersonalizadoInputHtml(c,'mpt-custom-'+c.id,(p.customFields&&p.customFields[c.id])||'')).join(''):'';
@@ -10724,10 +10744,10 @@ const _MODELOS_DOCUMENTO_SEED = [
       {token:'manual.responsavel_cpf', label:'CPF do responsável legal', tipo:'texto', opcoes:[], opcional:true},
       {token:'manual.responsavel_rg', label:'RG do responsável legal', tipo:'texto', opcoes:[], opcional:true},
       {token:'manual.modalidade_alinhador', label:'Modalidade do alinhador (Express/Lite/Moderate/Comprehensive...)', tipo:'texto', opcoes:[]},
-      {token:'manual.valor_alinhador', label:'Valor do alinhador (pago direto à Align, ex: R$ 1.535,00)', tipo:'texto', opcoes:[]},
+      {token:'manual.valor_alinhador', label:'Valor do alinhador (pago direto à Align)', tipo:'moeda', opcoes:[]},
       {token:'manual.forma_pagamento_alinhador', label:'Forma de pagamento do alinhador', tipo:'texto', opcoes:[]},
-      {token:'manual.diagnostico_ortodontico', label:'Diagnóstico ortodôntico (Anexo II)', tipo:'texto', opcoes:[]},
-      {token:'manual.planejamento_ortodontico', label:'Planejamento (Anexo II)', tipo:'texto', opcoes:[]},
+      {token:'manual.diagnostico_ortodontico', label:'Diagnóstico ortodôntico (Anexo II)', tipo:'texto', opcoes:[], opcional:true},
+      {token:'manual.planejamento_ortodontico', label:'Planejamento (Anexo II)', tipo:'texto', opcoes:[], opcional:true},
       {token:'manual.prognostico', label:'Prognóstico', tipo:'selecao', opcoes:['Bom','Regular','Reservado']},
       {token:'manual.necessidade_outros_profissionais', label:'Necessidade de outros profissionais/custos adicionais (Anexo II)', tipo:'texto', opcoes:[], opcional:true},
       {token:'manual.tempo_tratamento', label:'Tempo de tratamento estimado (ex: 18 a 24 meses)', tipo:'texto', opcoes:[]},
@@ -11203,8 +11223,8 @@ function _optionsCamposDocumento(camposManuaisAtual){
 // ── EDITOR DE MODELO (CRIAR/EDITAR) ─────────────────────────────────────
 let _modeloTipoAtual=null, _modeloEditId=null, _modeloCamposManuaisAtual=[];
 const _MODELO_TIPO_LABEL={contrato:'contrato',termo:'termo',receita:'receita',atestado:'atestado',encaminhamento:'encaminhamento/carta'};
-const _CAMPO_MANUAL_TIPOS=['texto','numero','data','hora','selecao','profissional','lista_medicamentos'];
-const _CAMPO_MANUAL_TIPO_LABEL={texto:'texto',numero:'número',data:'data',hora:'hora',selecao:'seleção',profissional:'profissional',lista_medicamentos:'lista de medicamentos (+ adicionar)'};
+const _CAMPO_MANUAL_TIPOS=['texto','numero','moeda','data','hora','selecao','profissional','lista_medicamentos'];
+const _CAMPO_MANUAL_TIPO_LABEL={texto:'texto',numero:'número',moeda:'moeda (R$)',data:'data',hora:'hora',selecao:'seleção',profissional:'profissional',lista_medicamentos:'lista de medicamentos (+ adicionar)'};
 
 // Lista membros da equipe cujo cargo é "Dentista" — são os únicos que podem
 // figurar como responsável em documentos (contrato, termo, atestado etc.),
@@ -11275,6 +11295,7 @@ function _renderModeloCamposManuaisLista(){
           ${_CAMPO_MANUAL_TIPOS.map(t=>`<option value="${t}" ${c.tipo===t?'selected':''}>${esc(_CAMPO_MANUAL_TIPO_LABEL[t]||t)}</option>`).join('')}
         </select>
         ${c.tipo==='selecao'?`<input type="text" value="${esc((c.opcoes||[]).join(', '))}" placeholder="Opções, separadas por vírgula" oninput="_modeloCamposManuaisAtual[${i}].opcoes=this.value.split(',').map(s=>s.trim()).filter(Boolean)" style="flex:1;font-size:12px;padding:4px 6px">`:''}
+        <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--tx3);white-space:nowrap"><input type="checkbox" ${c.opcional?'checked':''} onchange="_modeloCamposManuaisAtual[${i}].opcional=this.checked">opcional</label>
         <button onclick="_modeloCamposManuaisAtual.splice(${i},1);_renderModeloCamposManuaisLista()" style="font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--da)">×</button>
       </div>`).join('');
   }
@@ -11326,9 +11347,6 @@ let _gerarDocTipo=null;
 // ({{assinatura}}); chaves nomeadas vêm de {{assinatura:nome}}. Cada entrada:
 // {ativa:bool, dataUrl:string|null}
 let _gerarDocAssinaturas={};
-// Valores digitados manualmente para campos AUTOMÁTICOS que vieram vazios do
-// cadastro (ex: paciente sem endereço preenchido) — { token: valor }
-let _gerarDocAutomaticOverrides={};
 // Contador de linhas por campo do tipo lista_medicamentos, para gerar ids únicos
 let _gerarDocListaContadores={};
 
@@ -11352,7 +11370,6 @@ function _prontDocGerar(tipo){
   }
   _gerarDocTipo=tipo;
   _gerarDocAssinaturas={};
-  _gerarDocAutomaticOverrides={};
   _gerarDocListaContadores={};
   document.getElementById('gerar-doc-titulo').textContent = 'Gerar '+(t?t.label.toLowerCase():'documento');
   const sel=document.getElementById('gerar-doc-sel-modelo');
@@ -11360,6 +11377,8 @@ function _prontDocGerar(tipo){
   const orcs=_orcamentos().filter(o=>String(o.pacienteId)===String(_prontPacId));
   const selOrc=document.getElementById('gerar-doc-sel-orcamento');
   selOrc.innerHTML = '<option value="">Nenhum</option>' + orcs.map(o=>`<option value="${o.id}">${esc(o.nomeOrc||('Orçamento #'+(o.num||o.id.slice(-4))))} (${o.status})</option>`).join('');
+  document.getElementById('gerar-doc-label-orcamento').textContent='Vincular a um orçamento (opcional)';
+  document.getElementById('gerar-doc-aviso-sem-orcamento').style.display='none';
   document.getElementById('gerar-doc-campos-manuais').innerHTML='';
   document.getElementById('gerar-doc-campos-automaticos-faltando').innerHTML='';
   document.getElementById('gerar-doc-assinaturas-wrap').innerHTML='';
@@ -11387,12 +11406,13 @@ function _gerarDocAdicionarMedicamento(inputId){
   _gerarDocRecalcular();
 }
 
+function _gerarDocOrcamentoObrigatorio(modelo){ return /\{\{\s*orcamento\./.test(modelo.conteudo); }
+
 function _gerarDocEscolherModelo(){
   const modeloId=document.getElementById('gerar-doc-sel-modelo').value;
   const camposWrap=document.getElementById('gerar-doc-campos-manuais');
   const assinWrap=document.getElementById('gerar-doc-assinaturas-wrap');
   _gerarDocAssinaturas={};
-  _gerarDocAutomaticOverrides={};
   _gerarDocListaContadores={};
   if(!modeloId){
     camposWrap.innerHTML=''; assinWrap.innerHTML='';
@@ -11403,6 +11423,21 @@ function _gerarDocEscolherModelo(){
   }
   const modelo=modelosDocumentos.find(m=>m.id===modeloId);
   if(!modelo) return;
+
+  // Se o modelo usa qualquer campo do orçamento ({{orcamento.*}}), vincular um
+  // orçamento passa a ser obrigatório, e só orçamentos APROVADOS entram na lista
+  // — é de lá que vêm valor, itens e forma de pagamento reais do contrato.
+  const orcamentoObrigatorio = _gerarDocOrcamentoObrigatorio(modelo);
+  const selOrc=document.getElementById('gerar-doc-sel-orcamento');
+  const valorAtualOrc=selOrc.value;
+  const todosOrcs=_orcamentos().filter(o=>String(o.pacienteId)===String(_prontPacId));
+  const orcsListados = orcamentoObrigatorio ? todosOrcs.filter(o=>o.status==='aprovado') : todosOrcs;
+  selOrc.innerHTML = (orcamentoObrigatorio?'<option value="">Selecione um orçamento aprovado...</option>':'<option value="">Nenhum</option>')
+    + orcsListados.map(o=>`<option value="${o.id}">${esc(o.nomeOrc||('Orçamento #'+(o.num||o.id.slice(-4))))}</option>`).join('');
+  if(orcsListados.find(o=>o.id===valorAtualOrc)) selOrc.value=valorAtualOrc;
+  document.getElementById('gerar-doc-label-orcamento').textContent = orcamentoObrigatorio ? 'Vincular a um orçamento aprovado *' : 'Vincular a um orçamento (opcional)';
+  document.getElementById('gerar-doc-aviso-sem-orcamento').style.display = (orcamentoObrigatorio && !orcsListados.length) ? 'block' : 'none';
+
   const manuais=modelo.camposManuais||[];
   camposWrap.innerHTML = manuais.map(c=>{
     const inputId='gerar-doc-campo-'+c.token.replace(/\W/g,'_');
@@ -11417,6 +11452,8 @@ function _gerarDocEscolherModelo(){
     } else if(c.tipo==='lista_medicamentos'){
       inputHtml = `<div id="${inputId}-linhas">${_gerarDocHtmlLinhaMedicamento(inputId, 0)}</div>`
         + `<button type="button" onclick="_gerarDocAdicionarMedicamento('${inputId}')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer">+ Adicionar medicamento</button>`;
+    } else if(c.tipo==='moeda'){
+      inputHtml=`<div style="display:flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:var(--r8);padding:0 10px"><span style="font-size:13px;color:var(--tx3)">R$</span><input type="text" id="${inputId}" placeholder="0,00" oninput="fmtMoeda(this);_gerarDocRecalcular()" style="border:none;flex:1;padding:8px 0"></div>`;
     } else {
       const tipoInput = c.tipo==='numero'?'number':c.tipo==='data'?'date':c.tipo==='hora'?'time':'text';
       inputHtml=`<input type="${tipoInput}" id="${inputId}" oninput="_gerarDocRecalcular()">`;
@@ -11446,10 +11483,33 @@ function _gerarDocEscolherModelo(){
   _gerarDocRecalcular();
 }
 
-// Detecta campos AUTOMÁTICOS (não-manuais, não-assinatura) usados no modelo que
-// vieram vazios do cadastro do paciente/empresa/orçamento, e mostra um input para
-// preenchê-los manualmente na hora — sem isso, faltando dado no cadastro, o
-// documento ficaria bloqueado sem nenhuma forma de completar.
+// Mapa de campo automático (paciente.*/clinica.*) para o id do input real no
+// cadastro do paciente (ids 'mpt-') ou o rótulo correto do submenu de
+// Configurações, usado pelo botão "Preencher no cadastro".
+const _CAMPO_AUTOMATICO_PARA_INPUT_ID={
+  'paciente.nome':'mpt-nome-edit', 'paciente.cpf':'mpt-cpf', 'paciente.telefone':'mpt-fone',
+  'paciente.nascimento':'mpt-nasc', 'paciente.endereco':'mpt-rua', 'paciente.bairro':'mpt-complemento',
+  'paciente.codigo':'mpt-codigo', 'paciente.rg':'mpt-custom-rg',
+  'paciente.estado_civil':'mpt-custom-estadoCivil', 'paciente.profissao':'mpt-custom-profissao',
+};
+function _gerarDocIrParaCadastro(token){
+  fecharModal('modal-gerar-doc');
+  if(token.startsWith('paciente.')){
+    abrirModalPt(_prontPacId);
+    const inputId=_CAMPO_AUTOMATICO_PARA_INPUT_ID[token];
+    if(inputId) setTimeout(()=>{ const el=document.getElementById(inputId); if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); el.focus(); } }, 250);
+  } else if(token.startsWith('clinica.')){
+    goTo('config');
+    setTimeout(()=>{ if(typeof showCfg==='function') showCfg('empresa'); }, 100);
+  }
+}
+
+// Detecta campos AUTOMÁTICOS (não-manuais, não-assinatura, não-orçamento) usados
+// no modelo que vieram vazios do cadastro do paciente/empresa, e mostra um botão
+// para completar o cadastro (não um campo pra digitar aqui — o dado precisa ficar
+// salvo no cadastro pra valer também nos próximos documentos). Campos do
+// orçamento não entram aqui: se estiverem vazios, é porque falta vincular um
+// orçamento aprovado (ver _gerarDocOrcamentoObrigatorio).
 function _gerarDocRenderCamposAutomaticosFaltando(modelo){
   const wrap=document.getElementById('gerar-doc-campos-automaticos-faltando');
   const orcId=document.getElementById('gerar-doc-sel-orcamento').value||null;
@@ -11457,15 +11517,18 @@ function _gerarDocRenderCamposAutomaticosFaltando(modelo){
   const tokens=[...new Set([...modelo.conteudo.matchAll(/\{\{\s*([\w.:]+)\s*\}\}/g)].map(m=>m[1]))];
   const faltantes=[];
   tokens.forEach(tok=>{
-    if(tok==='assinatura'||tok.startsWith('assinatura:')||tok.startsWith('manual.')) return;
+    if(tok==='assinatura'||tok.startsWith('assinatura:')||tok.startsWith('manual.')||tok.startsWith('orcamento.')) return;
     const campo=_campoPorToken(tok);
     if(!campo) return;
     const valor=campo.get(ctxTeste);
     if(!valor || !String(valor).trim()) faltantes.push({token:tok, label:campo.label});
   });
   if(!faltantes.length){ wrap.innerHTML=''; return; }
-  wrap.innerHTML = `<div style="font-size:11px;color:var(--tx3);margin-bottom:8px">Alguns dados não foram encontrados no cadastro — preencha manualmente para este documento:</div>`
-    + faltantes.map(f=>`<div class="fl fg-full" style="margin-bottom:10px"><label>${esc(f.label)} <span style="font-weight:400;color:var(--tx3)">(não encontrado no cadastro)</span></label><input type="text" id="gerar-doc-auto-${f.token.replace(/\W/g,'_')}" oninput="_gerarDocAutomaticOverrides['${f.token}']=this.value;_gerarDocRecalcular()"></div>`).join('');
+  wrap.innerHTML = `<div style="font-size:11px;color:var(--tx3);margin-bottom:8px">Alguns dados não foram encontrados no cadastro — preencha lá para valer neste e nos próximos documentos:</div>`
+    + faltantes.map(f=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r8);background:var(--s2)">
+        <span style="font-size:12px;color:var(--tx2)">${esc(f.label)} <span style="color:var(--tx3)">(não encontrado no cadastro)</span></span>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="_gerarDocIrParaCadastro('${f.token}')">Preencher no cadastro</button>
+      </div>`).join('');
 }
 
 function _gerarDocToggleAssinatura(chave){
@@ -11527,10 +11590,10 @@ function _gerarDocRecalcular(){
       return;
     }
     const el=document.getElementById('gerar-doc-campo-'+c.token.replace(/\W/g,'_'));
-    ctx.manualValues[c.token]= el ? el.value : '';
+    if(!el){ ctx.manualValues[c.token]=''; return; }
+    ctx.manualValues[c.token] = (c.tipo==='moeda' && el.value) ? ('R$ '+el.value) : el.value;
   });
   ctx.assinaturas=_gerarDocAssinaturas;
-  ctx.automaticOverrides=_gerarDocAutomaticOverrides;
   const {html, faltando} = _mesclarModelo(modelo.conteudo, ctx);
   previewWrap.style.display='';
   if(faltando.length){
@@ -13031,6 +13094,11 @@ function atualizarSituacaoPt(){
   p.origem=document.getElementById('mpt-origem').value;
   p.indicador=p.origem==='indicacao'?document.getElementById('mpt-indic').value.trim():'';
   p.obs=document.getElementById('mpt-obs').value.trim();
+  p.cep=document.getElementById('mpt-cep').value.trim();
+  p.cidade=document.getElementById('mpt-cidade').value.trim();
+  p.rua=document.getElementById('mpt-rua').value.trim();
+  p.numero=document.getElementById('mpt-numero').value.trim();
+  p.complemento=document.getElementById('mpt-complemento').value.trim();
   // Atualizar código do paciente
   const novoCodigo=parseInt(document.getElementById('mpt-codigo')?.value?.trim()||'',10);
   if(novoCodigo && novoCodigo > 0){
