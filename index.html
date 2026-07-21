@@ -5733,6 +5733,69 @@ let camposCadastro = carregarLS('sk3-camposcadastro', CAMPOS_CADASTRO_PADRAO);
   if(_camposMesclados) salvarLS('sk3-camposcadastro', camposCadastro);
 }
 
+// Migração única: alguns clientes já tinham campos personalizados criados
+// manualmente (ex: "Sexo", "E-mail", "Estado civil", "Profissão", "Bairro")
+// ANTES desses viraram campos oficiais do sistema, com ids diferentes dos
+// novos — isso gerava campos duplicados na tela de cadastro e, no caso do
+// Sexo, quebrava o filtro (que lê o campo travado p.sexo, não o personalizado).
+// Roda uma vez só: funde os dados no campo correto e remove a duplicata.
+(function _migrarCamposCadastroDuplicados(){
+  if(carregarLS('sk3-migracao-dedup-campos-v1', false)) return;
+  let mudouCampos=false, mudouPacientes=false;
+
+  // 1) "Sexo" como campo personalizado → migra pro campo travado p.sexo (M/F)
+  const idxSexo = camposCadastro.findIndex(c=>!c.locked && (c.label||'').trim().toLowerCase()==='sexo');
+  if(idxSexo>-1){
+    const campoSexo=camposCadastro[idxSexo];
+    pacientes.forEach(p=>{
+      const val=(p.customFields||{})[campoSexo.id];
+      if(val && !p.sexo){
+        const norm=String(val).trim().toLowerCase();
+        if(norm.startsWith('m')) p.sexo='M';
+        else if(norm.startsWith('f')) p.sexo='F';
+        mudouPacientes=true;
+      }
+      if(p.customFields) delete p.customFields[campoSexo.id];
+    });
+    camposCadastro.splice(idxSexo,1);
+    mudouCampos=true;
+  }
+
+  // 2) Demais campos personalizados duplicados (mesmo rótulo, ids diferentes)
+  // — agrupa por rótulo normalizado e funde tudo no canônico (preferindo os
+  // ids novos do sistema: rg, estadoCivil, profissao, email).
+  const preferidos=['rg','estadoCivil','profissao','email'];
+  const grupos={};
+  camposCadastro.forEach((c,i)=>{
+    if(c.locked) return;
+    const chave=(c.label||'').trim().toLowerCase();
+    (grupos[chave]=grupos[chave]||[]).push({campo:c, idx:i});
+  });
+  const idsRemover=[];
+  Object.values(grupos).forEach(grupo=>{
+    if(grupo.length<2) return;
+    let canonico = grupo.find(g=>preferidos.includes(g.campo.id)) || grupo[0];
+    grupo.forEach(g=>{
+      if(g.campo.id===canonico.campo.id) return;
+      pacientes.forEach(p=>{
+        const cf=p.customFields||{};
+        const val=cf[g.campo.id];
+        if(val && !cf[canonico.campo.id]){ cf[canonico.campo.id]=val; mudouPacientes=true; }
+        delete cf[g.campo.id];
+      });
+      idsRemover.push(g.campo.id);
+    });
+  });
+  if(idsRemover.length){
+    camposCadastro = camposCadastro.filter(c=>!idsRemover.includes(c.id));
+    mudouCampos=true;
+  }
+
+  if(mudouCampos) salvarLS('sk3-camposcadastro', camposCadastro);
+  if(mudouPacientes) salvarLS('sk3-pacientes', pacientes);
+  salvarLS('sk3-migracao-dedup-campos-v1', true);
+})();
+
 // ── EMPRESA — campos configuráveis do cadastro ──────────────────────────
 // id 'razaoSocial','nomeFantasia','cnpj': campos do sistema (locked), usados como
 // identificador da empresa nos cartões/seletores. Os demais são livres.
