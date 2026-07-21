@@ -11534,8 +11534,8 @@ function _gerarDocIrParaCadastro(token){
   if(token==='paciente.endereco'){
     html=`<div class="fl fg-full" style="margin-bottom:10px"><label>CEP</label><input type="text" id="cc-cep" value="${esc(p.cep||'')}" placeholder="00000-000" oninput="fmtCEP(this)" onblur="_buscarCEPGenerico('cc')"><div id="cc-cep-hint" class="input-hint"></div></div>
       <div class="fl fg-full" style="margin-bottom:10px"><label>Rua / Logradouro</label><input type="text" id="cc-rua" value="${esc(p.rua||'')}"></div>
-      <div class="fl" style="margin-bottom:10px"><label>Bairro</label><input type="text" id="cc-bairro" value="${esc(p.complemento||'')}"></div>
       <div class="fl" style="margin-bottom:10px"><label>Número</label><input type="text" id="cc-numero" value="${esc(p.numero||'')}"></div>
+      <div class="fl" style="margin-bottom:10px"><label>Complemento</label><input type="text" id="cc-complemento" value="${esc(p.complemento||'')}"></div>
       <div class="fl fg-full"><label>Cidade</label><input type="text" id="cc-cidade" value="${esc(p.cidade||'')}"></div>`;
   } else if(token==='clinica.endereco'){
     const d=((getEmpresaAtual()||{}).dados)||{};
@@ -11573,7 +11573,7 @@ function _completarCadastroSalvar(){
   if(token==='paciente.endereco' && p){
     p.cep=(document.getElementById('cc-cep')||{}).value||'';
     p.rua=(document.getElementById('cc-rua')||{}).value||'';
-    p.complemento=(document.getElementById('cc-bairro')||{}).value||'';
+    p.complemento=(document.getElementById('cc-complemento')||{}).value||'';
     p.numero=(document.getElementById('cc-numero')||{}).value||'';
     p.cidade=(document.getElementById('cc-cidade')||{}).value||'';
     salvarLS('sk3-pacientes',pacientes);
