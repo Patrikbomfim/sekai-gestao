@@ -12886,13 +12886,24 @@ function _camposCadastroParaLinkPublico(){
     }));
 }
 
+// Campos que continuam contando como preenchidos mesmo vazios — não é
+// realista exigi-los de todo paciente (nem todo mundo tem complemento de
+// endereço, por exemplo).
+const CAMPOS_CADASTRO_OPCIONAIS_COMPLETUDE = ['complemento'];
+
+function _campoContaParaCompletude(c){
+  return !CAMPOS_CADASTRO_OPCIONAIS_COMPLETUDE.includes(c.id);
+}
+
 // ── Verifica se o cadastro do paciente está completo ────────────────────
-// "Completo" = todos os campos marcados como obrigatórios (em Configurações
-// → Cadastro) estão preenchidos. É essa checagem que decide se o botão de
-// enviar link aparece ou não.
+// "Completo" = todos os campos do cadastro (exceto os naturalmente opcionais,
+// como complemento) estão de fato preenchidos com algum valor — não basta
+// estarem marcados como "obrigatório" em Configurações, que é uma flag usada
+// só para validar o formulário de novo paciente. É essa checagem que decide
+// se o botão de enviar link aparece ou não.
 function cadastroCompleto(p){
   return _camposCadastroParaLinkPublico().every(c=>{
-    if(!c.obrigatorio) return true;
+    if(!_campoContaParaCompletude(c)) return true;
     if(c.locked){
       const prop = PROP_MAP_CADASTRO[c.id] || c.id;
       return !!(p[prop] && String(p[prop]).trim());
@@ -12903,7 +12914,7 @@ function cadastroCompleto(p){
 
 function cadastroCamposFaltando(p){
   return _camposCadastroParaLinkPublico().filter(c=>{
-    if(!c.obrigatorio) return false;
+    if(!_campoContaParaCompletude(c)) return false;
     if(c.locked){
       const prop = PROP_MAP_CADASTRO[c.id] || c.id;
       return !(p[prop] && String(p[prop]).trim());
