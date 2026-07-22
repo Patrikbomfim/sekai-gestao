@@ -1091,6 +1091,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <!-- DADOS -->
       <div class="pp-area on" id="pp-area-dados">
         <div class="card">
+          <div id="pp-cadastro-link-wrap" style="margin-bottom:16px"></div>
           <div class="fg" style="margin-bottom:14px">
             <div class="fl"><label>Nome completo</label><input type="text" id="mpt-nome-edit"></div>
             <div class="fl"><label>Telefone</label><input type="text" id="mpt-fone" placeholder="44 99855 9933" maxlength="14"></div>
@@ -3807,6 +3808,33 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="fecharModal('modal-link-anamnese')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LINK DE CADASTRO -->
+<div class="modal-ov" id="modal-link-cadastro">
+  <div class="modal" style="width:500px">
+    <div class="modal-header">
+      <div class="modal-title">🔗 Link de Cadastro</div>
+      <button class="modal-close" onclick="fecharModal('modal-link-cadastro')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:13px;color:var(--tx2);margin-bottom:16px">
+        Envie este link para o paciente pelo WhatsApp. Ele preenche os dados de cadastro sem precisar de login, e o cadastro é atualizado automaticamente.
+      </div>
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--r8);padding:12px 14px;font-size:13px;font-family:monospace;word-break:break-all;margin-bottom:12px" id="mlc-url"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" onclick="copiarLinkCadastro()">📋 Copiar link</button>
+        <button class="btn btn-ghost btn-sm" onclick="abrirLinkCadastro()">↗ Abrir prévia</button>
+      </div>
+      <div id="mlc-copiado" style="font-size:12px;color:var(--su);margin-top:8px;display:none">✓ Link copiado!</div>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);font-size:12px;color:var(--tx3)">
+        Pode ser reenviado a qualquer momento — o link continua valendo até o cadastro ser completado.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModal('modal-link-cadastro')">Fechar</button>
     </div>
   </div>
 </div>
@@ -7671,6 +7699,31 @@ let pacienteOrigemAgendamentoId=null; // se veio do modal de um agendamento espe
 let pacienteOrigemEraPopover=false; // se veio do popover, reabre o popover ao voltar
 let pacienteOrigemFinSub=null; // se veio do Financeiro, qual sub-aba (fluxo/pagar/folha/receber/comissao/recibos) reabrir ao voltar
 
+// Preenche os inputs da aba "Cadastro" a partir dos dados do paciente.
+// Extraída de abrirModalPt para poder ser chamada novamente após o paciente
+// preencher o cadastro remotamente, pelo link público.
+function _preencherCamposCadastroPt(p){
+  document.getElementById('mpt-nome-edit').value=p.nome||'';
+  document.getElementById('mpt-fone').value=p.fone||'';
+  document.getElementById('mpt-cpf').value=p.cpf||'';
+  document.getElementById('mpt-nasc').value=p.nascimento||'';
+  atualizarIdadeCampo('mpt-nasc','mpt-idade');
+  document.getElementById('mpt-sexo').value=p.sexo||'';
+  document.getElementById('mpt-codigo').value=p.codigo||'';
+  document.getElementById('mpt-origem').value=p.origem||'';
+  document.getElementById('mpt-indic').value=p.indicador||'';
+  document.getElementById('mpt-indic-wrap').style.display=p.origem==='indicacao'?'':'none';
+  document.getElementById('mpt-obs').value=p.obs||'';
+  document.getElementById('mpt-cep').value=p.cep||'';
+  document.getElementById('mpt-cidade').value=p.cidade||'';
+  document.getElementById('mpt-rua').value=p.rua||'';
+  document.getElementById('mpt-numero').value=p.numero||'';
+  document.getElementById('mpt-complemento').value=p.complemento||'';
+  const customWrap=document.getElementById('pp-custom-fields');
+  const camposExtras=camposCadastro.filter(c=>!c.locked);
+  customWrap.innerHTML=camposExtras.length?camposExtras.map(c=>campoPersonalizadoInputHtml(c,'mpt-custom-'+c.id,(p.customFields&&p.customFields[c.id])||'')).join(''):'';
+}
+
 function abrirModalPt(id){
   const p=pacientes.find(x=>x.id===id || String(x.id)===String(id));
   if(!p)return;
@@ -7689,27 +7742,20 @@ function abrirModalPt(id){
   document.getElementById('pp-fone-meta').textContent=p.fone||'Sem telefone cadastrado';
 
   // aba Dados
-  document.getElementById('mpt-nome-edit').value=p.nome||'';
-  document.getElementById('mpt-fone').value=p.fone||'';
-  document.getElementById('mpt-cpf').value=p.cpf||'';
-  document.getElementById('mpt-nasc').value=p.nascimento||'';
-  atualizarIdadeCampo('mpt-nasc','mpt-idade');
-  document.getElementById('mpt-sexo').value=p.sexo||'';
-  document.getElementById('mpt-codigo').value=p.codigo||'';
+  _preencherCamposCadastroPt(p);
   document.getElementById('mpt-situacao').innerHTML=situacaoList.map(s=>`<option value="${s.id}" ${p.situacao===s.id?'selected':''}>${situacaoLabelFmt(s.icone,s.label)}</option>`).join('');
-  document.getElementById('mpt-origem').value=p.origem||'';
-  document.getElementById('mpt-indic').value=p.indicador||'';
-  document.getElementById('mpt-indic-wrap').style.display=p.origem==='indicacao'?'':'none';
-  document.getElementById('mpt-obs').value=p.obs||'';
-  document.getElementById('mpt-cep').value=p.cep||'';
-  document.getElementById('mpt-cidade').value=p.cidade||'';
-  document.getElementById('mpt-rua').value=p.rua||'';
-  document.getElementById('mpt-numero').value=p.numero||'';
-  document.getElementById('mpt-complemento').value=p.complemento||'';
   const cepHintPt=document.getElementById('mpt-cep-hint'); if(cepHintPt) cepHintPt.textContent='';
-  const customWrap=document.getElementById('pp-custom-fields');
-  const camposExtras=camposCadastro.filter(c=>!c.locked);
-  customWrap.innerHTML=camposExtras.length?camposExtras.map(c=>campoPersonalizadoInputHtml(c,'mpt-custom-'+c.id,(p.customFields&&p.customFields[c.id])||'')).join(''):'';
+
+  // link/status de cadastro — envia a qualquer momento, some quando o cadastro estiver completo
+  document.getElementById('pp-cadastro-link-wrap').innerHTML=renderCadastroLinkArea(p);
+  sincronizarCadastroPublico(p.id).then(atualizado=>{
+    if(atualizado){
+      const p2=pacientes.find(x=>x.id===p.id)||p;
+      _preencherCamposCadastroPt(p2);
+      document.getElementById('pp-cadastro-link-wrap').innerHTML=renderCadastroLinkArea(p2);
+      showSaveToast('Cadastro recebido do paciente e atualizado!');
+    }
+  });
 
   // aba Ações programadas
   renderPpAcoes(p);
@@ -12315,6 +12361,7 @@ vincularFechamentoPorClickFora('modal-cargo');
 vincularFechamentoPorClickFora('modal-checkin-item');
 vincularFechamentoPorClickFora('modal-campo-anamnese');
 vincularFechamentoPorClickFora('modal-link-anamnese');
+vincularFechamentoPorClickFora('modal-link-cadastro');
 
 // ══════════════════════════════════════════════════════════════════════
 // BUSCA GLOBAL DE PACIENTE (header)
@@ -12797,6 +12844,261 @@ async function limparAnamnese(pacienteId){
   switchPpArea('anamnese');
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// ── LINK PÚBLICO DE CADASTRO ─────────────────────────────────────────────
+// Mesmo princípio do link de anamnese: o paciente recebe um link, preenche
+// os dados do próprio cadastro sem precisar de login, e o cadastro no
+// sistema é atualizado automaticamente. Diferente da anamnese, o botão de
+// enviar pode ser usado a qualquer momento — ele só desaparece quando o
+// cadastro estiver completo (todos os campos marcados como obrigatórios
+// em Configurações → Cadastro estiverem preenchidos).
+// ═══════════════════════════════════════════════════════════════════════
+
+// Campos do cadastro que não fazem sentido pedir diretamente ao paciente
+// (são de uso interno da clínica: origem do lead e observação interna).
+const CAMPOS_CADASTRO_PUBLICO_OCULTOS = ['origem','obs'];
+// Exceções entre o id do campo em camposCadastro e a propriedade real do paciente.
+const PROP_MAP_CADASTRO = {nasc:'nascimento'};
+
+function _tipoRenderCadastro(c){
+  if(!c.locked) return c.tipo==='lista' ? 'lista' : 'texto';
+  if(c.id==='nasc') return 'data';
+  if(c.id==='sexo') return 'sexo';
+  if(c.id==='fone') return 'texto-mascara-fone';
+  if(c.id==='cpf')  return 'texto-mascara-cpf';
+  if(c.id==='cep')  return 'texto-mascara-cep';
+  return 'texto';
+}
+
+// Congela a definição atual dos campos do cadastro no momento em que o link
+// é gerado — assim, se os campos configuráveis mudarem depois, um link já
+// enviado continua consistente com o que o paciente vê.
+function _camposCadastroParaLinkPublico(){
+  return camposCadastro
+    .filter(c=>!CAMPOS_CADASTRO_PUBLICO_OCULTOS.includes(c.id))
+    .map(c=>({
+      id: c.id,
+      label: c.label,
+      obrigatorio: !!c.obrigatorio,
+      locked: !!c.locked,
+      tipoRender: _tipoRenderCadastro(c),
+      opcoes: c.opcoes || null
+    }));
+}
+
+// ── Verifica se o cadastro do paciente está completo ────────────────────
+// "Completo" = todos os campos marcados como obrigatórios (em Configurações
+// → Cadastro) estão preenchidos. É essa checagem que decide se o botão de
+// enviar link aparece ou não.
+function cadastroCompleto(p){
+  return _camposCadastroParaLinkPublico().every(c=>{
+    if(!c.obrigatorio) return true;
+    if(c.locked){
+      const prop = PROP_MAP_CADASTRO[c.id] || c.id;
+      return !!(p[prop] && String(p[prop]).trim());
+    }
+    return !!(p.customFields && String(p.customFields[c.id]||'').trim());
+  });
+}
+
+function cadastroCamposFaltando(p){
+  return _camposCadastroParaLinkPublico().filter(c=>{
+    if(!c.obrigatorio) return false;
+    if(c.locked){
+      const prop = PROP_MAP_CADASTRO[c.id] || c.id;
+      return !(p[prop] && String(p[prop]).trim());
+    }
+    return !(p.customFields && String(p.customFields[c.id]||'').trim());
+  }).map(c=>c.label);
+}
+
+// ── Área de status/ações exibida no topo da aba Cadastro ────────────────
+function renderCadastroLinkArea(p){
+  const completo = cadastroCompleto(p);
+  const faltando = completo ? [] : cadastroCamposFaltando(p);
+  let html = `<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:12px 14px;background:var(--s2);border-radius:var(--r8)">`;
+  html += completo
+    ? `<span style="font-size:13px;color:var(--su);font-weight:600">✓ Cadastro completo</span>`
+    : `<span style="font-size:13px;color:var(--tx2)">Cadastro incompleto${faltando.length ? ' — faltando: '+esc(faltando.join(', ')) : ''}</span>`;
+  html += `<div style="display:flex;gap:8px;flex-wrap:wrap">`;
+  if(!completo){
+    html += `<button class="btn btn-primary btn-sm" onclick="abrirModalLinkCadastro('${p.id}')">🔗 Enviar link de cadastro</button>`;
+  }
+  html += `<button class="btn btn-ghost btn-sm" onclick="exportarCadastroPDF('${p.id}')">📄 Exportar dados do cadastro</button>`;
+  html += `</div></div>`;
+  return html;
+}
+
+// ── Token/link (mesmo esquema de tokens da anamnese, guardado à parte) ──
+let linksCadastro = carregarLS('sk3-links-cadastro', {});
+function salvarLinksCadastro(){ salvarLS('sk3-links-cadastro', linksCadastro); }
+
+function gerarTokenCadastro(pacienteId){
+  const entrada = linksCadastro[pacienteId];
+  if(entrada && entrada.token) return entrada.token;
+  const token = 'sk-cad-' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+  linksCadastro[pacienteId] = { token, criadoEm: iso(hoje) };
+  salvarLinksCadastro();
+  return token;
+}
+
+function urlCadastro(token){
+  return window.location.href.split('?')[0] + '?cadastro=' + token;
+}
+
+// Publica/atualiza o token no Supabase (tabela genérica dados_sistema),
+// para o paciente poder acessar de qualquer dispositivo, sem login.
+async function publicarTokenCadastro(token, pacienteId){
+  try{
+    const p = pacientes.find(x=>x.id===pacienteId || String(x.id)===String(pacienteId));
+    const payload = {
+      chave: 'cad_' + token,
+      valor: {
+        pacienteId: String(pacienteId),
+        pacienteNome: p ? p.nome : '',
+        campos: _camposCadastroParaLinkPublico(),
+        criadoEm: iso(hoje),
+        preenchidoEm: null,
+        dadosPreenchidos: null
+      }
+    };
+    await supa.from('dados_sistema').upsert(payload, { onConflict: 'chave' });
+  }catch(e){ console.error('Erro ao publicar token de cadastro:', e); }
+}
+
+// ── Modal de link (abrir/copiar/prévia) ──────────────────────────────────
+async function abrirModalLinkCadastro(pacienteId){
+  const token = gerarTokenCadastro(pacienteId);
+  const url = urlCadastro(token);
+  document.getElementById('mlc-url').textContent = url;
+  document.getElementById('mlc-copiado').style.display = 'none';
+  abrirModal('modal-link-cadastro');
+  // Publica/renova o token no Supabase em background
+  await publicarTokenCadastro(token, pacienteId);
+}
+
+function copiarLinkCadastro(){
+  const url = document.getElementById('mlc-url').textContent;
+  navigator.clipboard.writeText(url).then(()=>{
+    document.getElementById('mlc-copiado').style.display = 'block';
+    setTimeout(()=>{ document.getElementById('mlc-copiado').style.display='none'; }, 2500);
+  });
+}
+
+function abrirLinkCadastro(){
+  const url = document.getElementById('mlc-url').textContent;
+  window.open(url, '_blank');
+}
+
+// ── Verifica se o paciente já preencheu o cadastro pelo link (chamado ao abrir a ficha) ──
+async function sincronizarCadastroPublico(pacienteId){
+  try{
+    const entrada = linksCadastro[pacienteId];
+    if(!entrada || !entrada.token) return false; // sem link gerado, nada a verificar
+    if(entrada.sincronizadoEm) return false; // já aplicado anteriormente
+
+    const { data, error } = await supa
+      .from('dados_sistema')
+      .select('valor')
+      .eq('chave', 'cad_' + entrada.token)
+      .single();
+
+    if(error || !data || !data.valor || !data.valor.preenchidoEm) return false;
+
+    const patch = data.valor.dadosPreenchidos || {};
+    const p = pacientes.find(x=>x.id===pacienteId || String(x.id)===String(pacienteId));
+    if(p){
+      p.historico = p.historico || [];
+      const camposAplicados = [];
+      Object.entries(patch.campos||{}).forEach(([prop,valor])=>{ p[prop]=valor; camposAplicados.push(prop); });
+      if(patch.customFields && Object.keys(patch.customFields).length){
+        p.customFields = p.customFields || {};
+        Object.entries(patch.customFields).forEach(([id,valor])=>{ p.customFields[id]=valor; });
+      }
+      p.historico.push({data: iso(hoje), situacao: p.situacao, nota: '📝 Cadastro preenchido pelo paciente via link'});
+      salvarLS('sk3-pacientes', pacientes);
+    }
+    entrada.sincronizadoEm = iso(hoje);
+    salvarLinksCadastro();
+    return true; // houve atualização
+  }catch(e){ console.error('Erro ao sincronizar cadastro:', e); return false; }
+}
+
+// ── Exportar dados do cadastro em PDF ────────────────────────────────────
+function exportarCadastroPDF(pacienteId){
+  // eslint-disable-next-line eqeqeq — id pode ser number no array mas string no onclick
+  const p = pacientes.find(x => x.id == pacienteId);
+  if(!p) return;
+
+  const valorCampo = (c) => {
+    if(c.locked){
+      const prop = PROP_MAP_CADASTRO[c.id] || c.id;
+      const v = p[prop];
+      if(c.id==='nasc') return v ? new Date(v+'T00:00:00').toLocaleDateString('pt-BR') : '—';
+      if(c.id==='sexo') return v==='M' ? 'Masculino' : v==='F' ? 'Feminino' : '—';
+      if(c.id==='origem'){
+        const map={google:'🔍 Google',instagram:'📸 Instagram',indicacao:'🤝 Indicação',outro:'💬 Outro'};
+        return map[v] || '—';
+      }
+      return v || '—';
+    }
+    return (p.customFields && p.customFields[c.id]) || '—';
+  };
+
+  const cabecalho = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #1E3A5F">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:42px;height:42px;background:#1E3A5F;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700;flex-shrink:0">S</div>
+        <div>
+          <div style="font-size:16px;font-weight:700;color:#1E3A5F">Clínica Sekai</div>
+          <div style="font-size:12px;color:#6B7280">Dados de Cadastro</div>
+        </div>
+      </div>
+      <div style="text-align:right;font-size:12px;color:#6B7280">
+        <div><strong style="color:#111827">${esc(p.nome)}</strong></div>
+        <div>Exportado em ${new Date().toLocaleDateString('pt-BR')}</div>
+      </div>
+    </div>`;
+
+  const camposHtml = camposCadastro.map((c,i)=>`
+    <div style="margin-bottom:14px;padding:10px 12px;background:${i%2===0?'#F8FAFC':'#fff'};border-radius:6px;border:1px solid #EEF0F4">
+      <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">${esc(c.label)}</div>
+      <div style="font-size:13px;color:#111827">${esc(String(valorCampo(c)))}</div>
+    </div>`).join('');
+
+  const rodape = `
+    <div style="margin-top:28px;padding-top:14px;border-top:1px solid #EEF0F4;font-size:11px;color:#9CA3AF;text-align:center">
+      Clínica Sekai &nbsp;·&nbsp; Documento gerado em ${new Date().toLocaleDateString('pt-BR')}
+    </div>`;
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head>
+    <meta charset="UTF-8">
+    <title>Cadastro — ${esc(p.nome)}</title>
+    <style>
+      *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:Inter,system-ui,sans-serif;background:#fff;color:#111827;font-size:13px;line-height:1.5;padding:28px 36px;max-width:700px;margin:0 auto}
+      @media print{body{padding:16px 24px}@page{margin:16mm 14mm;size:A4 portrait}}
+    </style>
+  </head><body>
+    ${cabecalho}
+    ${camposHtml}
+    ${rodape}
+  <script>window.onload=()=>window.print();<\/script>
+  </body></html>`;
+
+  // Blob URL — não depende de pop-up, funciona mesmo com bloqueador ativo
+  const blob = new Blob([html], {type: 'text/html; charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
 // ── Configuração de campos (Configurações → Anamnese) ──────────────────
 function renderCfgAnamnese(){
   const lista = document.getElementById('anamnese-campos-lista');
@@ -12964,7 +13266,7 @@ function moverCampoAnamnese(idx, dir){
 // o iniciarModuloAnamnese — a renderização real fica no bloco Supabase.
 function verificarModoAnamnese(){
   const params = new URLSearchParams(window.location.search);
-  return params.has('anamnese');
+  return params.has('anamnese') || params.has('cadastro');
 }
 
 // _carregarAnamnesePublica é definida abaixo no bloco Supabase (versao correta)
@@ -19710,10 +20012,10 @@ const SUPABASE_URL = 'https://bryfvifstvbkiqmjgwdt.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJyeWZ2aWZzdHZia2lxbWpnd2R0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NzIxNzUsImV4cCI6MjA5NzU0ODE3NX0.DJz8OJaj9GC9TGgMELHMwQ3-R9Z4mywg5y_28zlJRGc';
 const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Link público de anamnese não exige login
+// Link público de anamnese ou de cadastro não exige login
 function _ehModoPublicoSemLogin(){
   const params = new URLSearchParams(window.location.search);
-  return params.has('anamnese');
+  return params.has('anamnese') || params.has('cadastro');
 }
 
 // ── Funções públicas de anamnese (rodam sem login, usadas pelo paciente) ──
@@ -19924,6 +20226,196 @@ function _montarAnamneseNaPagina(nomeCompleto, token, pacienteId, campos){
     } catch(e){
       console.error('Erro ao enviar anamnese:',e);
       btn.disabled=false; btn.textContent='Enviar ficha ✓';
+      alert('Erro ao enviar. Verifique sua conexão e tente novamente.');
+    }
+  });
+}
+
+// ── Página pública de CADASTRO (sem login) ───────────────────────────────
+// Mesmo princípio da anamnese pública: token na URL (?cadastro=token) aponta
+// para um registro em dados_sistema (chave 'cad_'+token) contendo os campos
+// a preencher. Ao enviar, grava o resultado no próprio token (para o admin
+// sincronizar depois) e já aplica direto no cadastro do paciente (tabela
+// sk3-pacientes), da mesma forma que a anamnese faz com campos vinculados.
+
+function _renderJaPreenchidaCadastro(nomeCompleto){
+  var nome = (nomeCompleto||'').split(' ')[0] || 'paciente';
+  return '<div style="font-family:Inter,system-ui,sans-serif;max-width:480px;margin:60px auto;padding:24px;text-align:center"><div style="font-size:40px;margin-bottom:16px">✅</div><div style="font-size:16px;font-weight:600;margin-bottom:8px">Cadastro já enviado!</div><div style="font-size:14px;color:#6B7280">Obrigado, '+nome+'. Seus dados já foram recebidos pela clínica.</div></div>';
+}
+
+async function _carregarCadastroPublico(token){
+  try {
+    const { data, error } = await supa
+      .from('dados_sistema')
+      .select('valor')
+      .eq('chave', 'cad_' + token)
+      .single();
+    if(error || !data || !data.valor){
+      document.body.innerHTML = _renderErroAnamnese('Link inválido ou expirado. Solicite um novo link à clínica.');
+      return;
+    }
+    const info = data.valor;
+    if(info.preenchidoEm){
+      document.body.innerHTML = _renderJaPreenchidaCadastro(info.pacienteNome);
+      return;
+    }
+    _montarCadastroNaPagina(info.pacienteNome, token, info.pacienteId, info.campos || []);
+  } catch(e){
+    console.error('Erro cadastro publico:', e);
+    document.body.innerHTML = _renderErroAnamnese('Erro ao carregar. Verifique sua conexao e tente novamente.');
+  }
+}
+
+var _MASK_META_CAD = {
+  fone: { inputType:'tel',  placeholder:'44 99999 9999', maxlength:14 },
+  cpf:  { inputType:'text', placeholder:'000.000.000-00', maxlength:14 },
+  cep:  { inputType:'text', placeholder:'00000-000', maxlength:9 }
+};
+
+function _renderCampoCadastroPublico(c){
+  if(c.tipoRender==='data'){
+    return '<input type="date" id="'+c.id+'">';
+  }
+  if(c.tipoRender==='sexo'){
+    return '<select id="'+c.id+'"><option value="">Selecione...</option><option value="M">Masculino</option><option value="F">Feminino</option></select>';
+  }
+  if(c.tipoRender==='lista'){
+    var opts=(c.opcoes||[]).map(function(o){return '<option value="'+o+'">'+o+'</option>';}).join('');
+    return '<select id="'+c.id+'"><option value="">Selecione...</option>'+opts+'</select>';
+  }
+  if(c.tipoRender && c.tipoRender.indexOf('texto-mascara-')===0){
+    var key = c.tipoRender.replace('texto-mascara-','');
+    var meta = _MASK_META_CAD[key] || {inputType:'text',placeholder:'Escreva aqui...'};
+    return '<input type="'+meta.inputType+'" id="'+c.id+'" placeholder="'+meta.placeholder+'"'+(meta.maxlength?' maxlength="'+meta.maxlength+'"':'')+' data-mask="'+key+'" oninput="_applyMaskCad(this)">';
+  }
+  return '<input type="text" id="'+c.id+'" placeholder="Escreva aqui...">';
+}
+
+function _montarCadastroNaPagina(nomeCompleto, token, pacienteId, campos){
+  var nome = (nomeCompleto||'').split(' ')[0] || '';
+  var saudacao = nome ? 'Olá, ' + nome + '!' : 'Olá!';
+
+  // CSS mobile-first (mesmo visual da anamnese pública)
+  var style = document.createElement('style');
+  style.textContent = [
+    '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}',
+    'body{font-family:Inter,system-ui,sans-serif;background:#F4F5F7;color:#111827;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}',
+    '.an-header{background:#1E3A5F;padding:14px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}',
+    '.an-header-logo{width:32px;height:32px;background:rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0}',
+    '.an-header-title{font-size:15px;font-weight:600;color:#fff}',
+    '.an-container{max-width:560px;margin:0 auto;padding:20px 16px 80px}',
+    '.an-card{background:#fff;border-radius:14px;padding:22px 20px;box-shadow:0 2px 8px rgba(0,0,0,.08)}',
+    '.an-greeting{font-size:20px;font-weight:700;margin-bottom:4px;color:#111827}',
+    '.an-sub{font-size:14px;color:#6B7280;margin-bottom:22px;line-height:1.5}',
+    '.an-label{display:block;font-size:15px;font-weight:600;color:#111827;margin-bottom:10px}',
+    '.an-input{width:100%;padding:13px 14px;border:1.5px solid #DDE0E7;border-radius:10px;font-size:16px;font-family:inherit;background:#fff;color:#111827;transition:border .15s;-webkit-appearance:none;appearance:none}',
+    '.an-input:focus{outline:none;border-color:#1E3A5F;box-shadow:0 0 0 3px rgba(30,58,95,.1)}',
+    '.an-btn-submit{width:100%;padding:16px;background:#1E3A5F;color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:600;cursor:pointer;margin-top:24px;font-family:inherit;-webkit-tap-highlight-color:transparent}',
+    '.an-btn-submit:disabled{opacity:.5;cursor:not-allowed}',
+    '.an-btn-submit:active:not(:disabled){opacity:.85}',
+    '.an-divider{border:none;border-top:1px solid #EEF0F4;margin:20px 0}',
+    '.an-campo-wrap{margin-bottom:22px}',
+    '.an-sucesso{text-align:center;padding:40px 0;display:none}',
+    '.an-sucesso-ic{font-size:56px;margin-bottom:16px}',
+    '.an-sucesso-title{font-size:22px;font-weight:700;margin-bottom:8px}',
+    '.an-sucesso-sub{font-size:15px;color:#6B7280;line-height:1.6}',
+    '@media(max-width:480px){.an-container{padding:14px 12px 80px}.an-card{padding:20px 16px;border-radius:12px}.an-greeting{font-size:19px}}'
+  ].join('');
+  document.head.appendChild(style);
+
+  var camposHtml = '';
+  campos.forEach(function(c){
+    camposHtml += '<div class="an-campo-wrap"><label class="an-label">' + c.label + (c.obrigatorio ? ' <span style="color:#DC2626">*</span>' : '') + '</label>' + _renderCampoCadastroPublico(c) + '</div>';
+  });
+
+  document.body.innerHTML =
+    '<div class="an-header"><div class="an-header-logo">S</div><div class="an-header-title">Clínica Sekai</div></div>' +
+    '<div class="an-container"><div class="an-card">' +
+    '<div id="an-form-area">' +
+    '<div class="an-greeting">' + saudacao + '</div>' +
+    '<div class="an-sub">Complete seu cadastro na clínica. Leva menos de 2 minutos. ✨</div>' +
+    '<hr class="an-divider">' +
+    '<div id="an-campos">' + camposHtml + '</div>' +
+    '<button class="an-btn-submit" type="button" id="an-btn-enviar-cad">Enviar cadastro ✓</button>' +
+    '</div>' +
+    '<div class="an-sucesso" id="an-sucesso-area">' +
+    '<div class="an-sucesso-ic">✅</div>' +
+    '<div class="an-sucesso-title">Cadastro enviado!</div>' +
+    '<div class="an-sucesso-sub">' + (nome ? 'Obrigado, ' + nome + '! Seus' : 'Seus') + ' dados foram recebidos.<br>Até breve!</div>' +
+    '</div></div></div>';
+
+  document.querySelectorAll('#an-campos input[type=text],#an-campos input[type=tel],#an-campos input[type=date],#an-campos select').forEach(function(el){ el.classList.add('an-input'); });
+
+  window._applyMaskCad = function(el){
+    var m = el.dataset.mask, v = el.value.replace(/[^0-9]/g,'');
+    if(m==='fone'){v=v.slice(0,11);el.value=v.length>7?v.slice(0,2)+' '+v.slice(2,7)+' '+v.slice(7):v.length>2?v.slice(0,2)+' '+v.slice(2):v;}
+    else if(m==='cpf'){v=v.slice(0,11);el.value=v.length>9?v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6,9)+'-'+v.slice(9):v.length>6?v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6):v.length>3?v.slice(0,3)+'.'+v.slice(3):v;}
+    else if(m==='cep'){v=v.slice(0,8);el.value=v.length>5?v.slice(0,5)+'-'+v.slice(5):v;}
+  };
+
+  // Mapa da exceção entre id do campo travado e propriedade real do paciente
+  var PROP_MAP_CADASTRO_PUB = { nasc:'nascimento' };
+
+  document.getElementById('an-btn-enviar-cad').addEventListener('click', async function(){
+    var btn = this;
+    // Validação — só os campos marcados como obrigatórios
+    for(var i=0;i<campos.length;i++){
+      var c=campos[i]; if(!c.obrigatorio) continue;
+      var el=document.getElementById(c.id);
+      if(!el || !String(el.value||'').trim()){ alert('Por favor, preencha: '+c.label); return; }
+    }
+    btn.disabled=true; btn.textContent='Enviando...';
+
+    // Coleta respostas
+    var resp={};
+    campos.forEach(function(c){
+      var el=document.getElementById(c.id);
+      resp[c.id] = el ? String(el.value||'').trim() : '';
+    });
+
+    // Monta o patch: campos travados vão direto nas propriedades do paciente,
+    // campos personalizados vão dentro de customFields
+    var patchCampos={}, patchCustom={};
+    campos.forEach(function(c){
+      var valor=resp[c.id]; if(!valor) return;
+      if(c.locked){ patchCampos[PROP_MAP_CADASTRO_PUB[c.id]||c.id]=valor; }
+      else { patchCustom[c.id]=valor; }
+    });
+
+    var agora=new Date();
+    var pem=agora.toLocaleDateString('pt-BR')+' às '+agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+
+    try {
+      // 1. Marca o token como preenchido, guardando o patch para o admin sincronizar
+      var rTok=await supa.from('dados_sistema').select('valor').eq('chave','cad_'+token).single();
+      if(rTok.error) throw rTok.error;
+      var valorToken = rTok.data.valor;
+      valorToken.preenchidoEm = pem;
+      valorToken.dadosPreenchidos = { campos: patchCampos, customFields: patchCustom };
+      var rTok2=await supa.from('dados_sistema').upsert({chave:'cad_'+token, valor:valorToken},{onConflict:'chave'});
+      if(rTok2.error) throw rTok2.error;
+
+      // 2. Atualiza o cadastro do paciente diretamente
+      if(pacienteId){
+        var dsRes=await supa.from('dados_sistema').select('valor').eq('chave','sk3-pacientes').single();
+        if(!dsRes.error && dsRes.data){
+          var lista=dsRes.data.valor;
+          if(Array.isArray(lista)){
+            var idx=lista.findIndex(function(p){return String(p.id)===String(pacienteId);});
+            if(idx!==-1){
+              Object.assign(lista[idx], patchCampos);
+              lista[idx].customFields = Object.assign({}, lista[idx].customFields||{}, patchCustom);
+              await supa.from('dados_sistema').upsert({chave:'sk3-pacientes',valor:lista},{onConflict:'chave'});
+            }
+          }
+        }
+      }
+
+      document.getElementById('an-form-area').style.display='none';
+      document.getElementById('an-sucesso-area').style.display='block';
+    } catch(e){
+      console.error('Erro ao enviar cadastro:',e);
+      btn.disabled=false; btn.textContent='Enviar cadastro ✓';
       alert('Erro ao enviar. Verifique sua conexão e tente novamente.');
     }
   });
@@ -23647,12 +24139,15 @@ function finDesfazerMedicao(medicaoId){
 // ── PONTO DE PARTIDA ────────────────────────────────────────────────
 (async function iniciar(){
   if(_ehModoPublicoSemLogin()){
-    // Modo público: renderiza a anamnese direto, sem ativar o app completo
+    // Modo público: renderiza a anamnese ou o cadastro direto, sem ativar o app completo
     document.getElementById('tela-login').style.display = 'none';
     document.body.style.margin = '0';
     const params = new URLSearchParams(window.location.search);
-    const token = params.get('anamnese');
-    await _carregarAnamnesePublica(token);
+    if(params.has('anamnese')){
+      await _carregarAnamnesePublica(params.get('anamnese'));
+    } else if(params.has('cadastro')){
+      await _carregarCadastroPublico(params.get('cadastro'));
+    }
     return;
   }
   const { data: sessao } = await supa.auth.getSession();
