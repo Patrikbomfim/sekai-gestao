@@ -20432,35 +20432,17 @@ function _montarCadastroNaPagina(nomeCompleto, token, pacienteId, campos){
     var pem=agora.toLocaleDateString('pt-BR')+' às '+agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 
     try {
-      // 1. Marca o registro como preenchido, guardando o patch para o admin sincronizar
+      // Marca o registro como preenchido, guardando o patch para o admin sincronizar.
+      // (Não tentamos gravar direto em sk3-pacientes por aqui: essa tabela é
+      // restrita a usuários autenticados, então o paciente — sem login — não
+      // tem permissão de escrita nela. Os dados ficam guardados aqui e são
+      // aplicados ao cadastro automaticamente quando a clínica abre a ficha
+      // do paciente no sistema.)
       var rTok=await supa.from('anamneses').update({
         respostas: { campos: patchCampos, customFields: patchCustom },
         preenchido_em: pem
       }).eq('token', token);
       if(rTok.error) throw rTok.error;
-
-      // 2. Atualiza o cadastro do paciente diretamente (melhor esforço — se
-      // falhar aqui, a sincronização automática do lado do admin, ao abrir
-      // a ficha do paciente, ainda aplica os dados a partir do passo 1 acima)
-      if(pacienteId){
-        var dsRes=await supa.from('dados_sistema').select('valor').eq('chave','sk3-pacientes').single();
-        if(dsRes.error){
-          console.error('[cadastro] não foi possível ler sk3-pacientes para aplicar direto:', dsRes.error);
-        } else if(dsRes.data){
-          var lista=dsRes.data.valor;
-          if(Array.isArray(lista)){
-            var idx=lista.findIndex(function(p){return String(p.id)===String(pacienteId);});
-            if(idx===-1){
-              console.error('[cadastro] paciente id='+pacienteId+' não encontrado em sk3-pacientes ao aplicar direto.');
-            } else {
-              Object.assign(lista[idx], patchCampos);
-              lista[idx].customFields = Object.assign({}, lista[idx].customFields||{}, patchCustom);
-              var upRes=await supa.from('dados_sistema').upsert({chave:'sk3-pacientes',valor:lista},{onConflict:'chave'});
-              if(upRes.error) console.error('[cadastro] erro ao gravar sk3-pacientes direto:', upRes.error);
-            }
-          }
-        }
-      }
 
       document.getElementById('an-form-area').style.display='none';
       document.getElementById('an-sucesso-area').style.display='block';
