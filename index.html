@@ -12963,6 +12963,9 @@ function urlCadastro(token){
 // porque essa é a que já tem as permissões de acesso público (RLS) liberadas
 // para leitura/escrita por token — dados_sistema é restrita a chaves fixas
 // do sistema e rejeitava a criação de uma chave nova por paciente.
+// Retorna null se deu certo, ou o objeto de erro do Supabase se falhou
+// (o Supabase normalmente NÃO lança exceção em erro de permissão/RLS —
+// ele devolve { error }, então é essencial checar esse campo).
 async function publicarTokenCadastro(token, pacienteId){
   try{
     const p = pacientes.find(x=>x.id===pacienteId || String(x.id)===String(pacienteId));
@@ -12974,8 +12977,10 @@ async function publicarTokenCadastro(token, pacienteId){
       respostas: null,
       preenchido_em: null
     };
-    await supa.from('anamneses').upsert(payload, { onConflict: 'token' });
-  }catch(e){ console.error('Erro ao publicar token de cadastro:', e); }
+    const { error } = await supa.from('anamneses').upsert(payload, { onConflict: 'token' });
+    if(error){ console.error('Erro ao publicar token de cadastro:', error); return error; }
+    return null;
+  }catch(e){ console.error('Erro ao publicar token de cadastro:', e); return e; }
 }
 
 // ── Modal de link (abrir/copiar/prévia) ──────────────────────────────────
@@ -12986,7 +12991,10 @@ async function abrirModalLinkCadastro(pacienteId){
   document.getElementById('mlc-copiado').style.display = 'none';
   abrirModal('modal-link-cadastro');
   // Publica/renova o token no Supabase em background
-  await publicarTokenCadastro(token, pacienteId);
+  const erro = await publicarTokenCadastro(token, pacienteId);
+  if(erro){
+    alert('⚠️ O link foi criado localmente, mas NÃO foi salvo no servidor — o paciente não vai conseguir abrir.\n\nDetalhe técnico (envie ao suporte):\n' + (erro.message || erro.details || JSON.stringify(erro)));
+  }
 }
 
 function copiarLinkCadastro(){
@@ -20266,6 +20274,7 @@ async function _carregarCadastroPublico(token){
       .eq('token', token)
       .single();
     if(error || !data){
+      console.error('Erro ao carregar cadastro público (token '+token+'):', error);
       document.body.innerHTML = _renderErroAnamnese('Link inválido ou expirado. Solicite um novo link à clínica.');
       return;
     }
