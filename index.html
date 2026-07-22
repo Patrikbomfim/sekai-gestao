@@ -12872,18 +12872,33 @@ function _tipoRenderCadastro(c){
 
 // Congela a definição atual dos campos do cadastro no momento em que o link
 // é gerado — assim, se os campos configuráveis mudarem depois, um link já
-// enviado continua consistente com o que o paciente vê.
-function _camposCadastroParaLinkPublico(){
+// enviado continua consistente com o que o paciente vê. Quando um paciente
+// (p) é informado, também embute o valor JÁ CADASTRADO de cada campo, para
+// o formulário público vir pré-preenchido (e o paciente só precise corrigir
+// o que estiver errado, sem reescrever tudo do zero).
+function _camposCadastroParaLinkPublico(p){
   return camposCadastro
     .filter(c=>!CAMPOS_CADASTRO_PUBLICO_OCULTOS.includes(c.id))
-    .map(c=>({
-      id: c.id,
-      label: c.label,
-      obrigatorio: !!c.obrigatorio,
-      locked: !!c.locked,
-      tipoRender: _tipoRenderCadastro(c),
-      opcoes: c.opcoes || null
-    }));
+    .map(c=>{
+      let valorAtual = '';
+      if(p){
+        if(c.locked){
+          const prop = PROP_MAP_CADASTRO[c.id] || c.id;
+          valorAtual = p[prop] || '';
+        } else {
+          valorAtual = (p.customFields && p.customFields[c.id]) || '';
+        }
+      }
+      return {
+        id: c.id,
+        label: c.label,
+        obrigatorio: !!c.obrigatorio,
+        locked: !!c.locked,
+        tipoRender: _tipoRenderCadastro(c),
+        opcoes: c.opcoes || null,
+        valorAtual
+      };
+    });
 }
 
 // Campos que continuam contando como preenchidos mesmo vazios — não é
@@ -12973,7 +12988,7 @@ async function publicarTokenCadastro(token, pacienteId){
       token,
       paciente_id: String(pacienteId),
       paciente_nome: p ? p.nome : '',
-      campos: _camposCadastroParaLinkPublico(),
+      campos: _camposCadastroParaLinkPublico(p),
       respostas: null,
       preenchido_em: null
     };
@@ -13023,21 +13038,27 @@ async function sincronizarCadastroPublico(pacienteId){
       .eq('token', entrada.token)
       .single();
 
-    if(error || !data || !data.preenchido_em) return false;
+    if(error){ console.error('Erro ao buscar cadastro preenchido:', error); return false; }
+    if(!data || !data.preenchido_em) return false; // paciente ainda não preencheu
 
     const patch = data.respostas || {};
+    console.log('[cadastro] patch recebido do paciente:', patch);
     const p = pacientes.find(x=>x.id===pacienteId || String(x.id)===String(pacienteId));
-    if(p){
-      p.historico = p.historico || [];
-      const camposAplicados = [];
-      Object.entries(patch.campos||{}).forEach(([prop,valor])=>{ p[prop]=valor; camposAplicados.push(prop); });
-      if(patch.customFields && Object.keys(patch.customFields).length){
-        p.customFields = p.customFields || {};
-        Object.entries(patch.customFields).forEach(([id,valor])=>{ p.customFields[id]=valor; });
-      }
-      p.historico.push({data: iso(hoje), situacao: p.situacao, nota: '📝 Cadastro preenchido pelo paciente via link'});
-      salvarLS('sk3-pacientes', pacientes);
+    if(!p){
+      console.error('[cadastro] paciente não encontrado localmente (id='+pacienteId+') — não marcando como sincronizado, vai tentar de novo na próxima abertura.');
+      return false; // não marca sincronizadoEm — tenta de novo depois
     }
+    p.historico = p.historico || [];
+    const camposAplicados = [];
+    Object.entries(patch.campos||{}).forEach(([prop,valor])=>{ p[prop]=valor; camposAplicados.push(prop); });
+    if(patch.customFields && Object.keys(patch.customFields).length){
+      p.customFields = p.customFields || {};
+      Object.entries(patch.customFields).forEach(([id,valor])=>{ p.customFields[id]=valor; });
+    }
+    p.historico.push({data: iso(hoje), situacao: p.situacao, nota: '📝 Cadastro preenchido pelo paciente via link'});
+    salvarLS('sk3-pacientes', pacientes);
+    console.log('[cadastro] campos aplicados ao paciente '+p.nome+':', camposAplicados, patch.customFields||{});
+
     entrada.sincronizadoEm = iso(hoje);
     salvarLinksCadastro();
     return true; // houve atualização
@@ -20296,22 +20317,24 @@ var _MASK_META_CAD = {
 };
 
 function _renderCampoCadastroPublico(c){
+  var valPrefill = c.valorAtual != null ? String(c.valorAtual) : '';
+  var escVal = valPrefill.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
   if(c.tipoRender==='data'){
-    return '<input type="date" id="'+c.id+'">';
+    return '<input type="date" id="'+c.id+'" value="'+escVal+'">';
   }
   if(c.tipoRender==='sexo'){
-    return '<select id="'+c.id+'"><option value="">Selecione...</option><option value="M">Masculino</option><option value="F">Feminino</option></select>';
+    return '<select id="'+c.id+'"><option value="">Selecione...</option><option value="M"'+(valPrefill==='M'?' selected':'')+'>Masculino</option><option value="F"'+(valPrefill==='F'?' selected':'')+'>Feminino</option></select>';
   }
   if(c.tipoRender==='lista'){
-    var opts=(c.opcoes||[]).map(function(o){return '<option value="'+o+'">'+o+'</option>';}).join('');
+    var opts=(c.opcoes||[]).map(function(o){return '<option value="'+o+'"'+(o===valPrefill?' selected':'')+'>'+o+'</option>';}).join('');
     return '<select id="'+c.id+'"><option value="">Selecione...</option>'+opts+'</select>';
   }
   if(c.tipoRender && c.tipoRender.indexOf('texto-mascara-')===0){
     var key = c.tipoRender.replace('texto-mascara-','');
     var meta = _MASK_META_CAD[key] || {inputType:'text',placeholder:'Escreva aqui...'};
-    return '<input type="'+meta.inputType+'" id="'+c.id+'" placeholder="'+meta.placeholder+'"'+(meta.maxlength?' maxlength="'+meta.maxlength+'"':'')+' data-mask="'+key+'" oninput="_applyMaskCad(this)">';
+    return '<input type="'+meta.inputType+'" id="'+c.id+'" value="'+escVal+'" placeholder="'+meta.placeholder+'"'+(meta.maxlength?' maxlength="'+meta.maxlength+'"':'')+' data-mask="'+key+'" oninput="_applyMaskCad(this)">';
   }
-  return '<input type="text" id="'+c.id+'" placeholder="Escreva aqui...">';
+  return '<input type="text" id="'+c.id+'" value="'+escVal+'" placeholder="Escreva aqui...">';
 }
 
 function _montarCadastroNaPagina(nomeCompleto, token, pacienteId, campos){
@@ -20356,7 +20379,7 @@ function _montarCadastroNaPagina(nomeCompleto, token, pacienteId, campos){
     '<div class="an-container"><div class="an-card">' +
     '<div id="an-form-area">' +
     '<div class="an-greeting">' + saudacao + '</div>' +
-    '<div class="an-sub">Complete seu cadastro na clínica. Leva menos de 2 minutos. ✨</div>' +
+    '<div class="an-sub">Confira seus dados abaixo — os campos já preenchidos podem ser corrigidos, e você só precisa completar o que estiver faltando. Leva menos de 2 minutos. ✨</div>' +
     '<hr class="an-divider">' +
     '<div id="an-campos">' + camposHtml + '</div>' +
     '<button class="an-btn-submit" type="button" id="an-btn-enviar-cad">Enviar cadastro ✓</button>' +
@@ -20416,17 +20439,24 @@ function _montarCadastroNaPagina(nomeCompleto, token, pacienteId, campos){
       }).eq('token', token);
       if(rTok.error) throw rTok.error;
 
-      // 2. Atualiza o cadastro do paciente diretamente
+      // 2. Atualiza o cadastro do paciente diretamente (melhor esforço — se
+      // falhar aqui, a sincronização automática do lado do admin, ao abrir
+      // a ficha do paciente, ainda aplica os dados a partir do passo 1 acima)
       if(pacienteId){
         var dsRes=await supa.from('dados_sistema').select('valor').eq('chave','sk3-pacientes').single();
-        if(!dsRes.error && dsRes.data){
+        if(dsRes.error){
+          console.error('[cadastro] não foi possível ler sk3-pacientes para aplicar direto:', dsRes.error);
+        } else if(dsRes.data){
           var lista=dsRes.data.valor;
           if(Array.isArray(lista)){
             var idx=lista.findIndex(function(p){return String(p.id)===String(pacienteId);});
-            if(idx!==-1){
+            if(idx===-1){
+              console.error('[cadastro] paciente id='+pacienteId+' não encontrado em sk3-pacientes ao aplicar direto.');
+            } else {
               Object.assign(lista[idx], patchCampos);
               lista[idx].customFields = Object.assign({}, lista[idx].customFields||{}, patchCustom);
-              await supa.from('dados_sistema').upsert({chave:'sk3-pacientes',valor:lista},{onConflict:'chave'});
+              var upRes=await supa.from('dados_sistema').upsert({chave:'sk3-pacientes',valor:lista},{onConflict:'chave'});
+              if(upRes.error) console.error('[cadastro] erro ao gravar sk3-pacientes direto:', upRes.error);
             }
           }
         }
