@@ -13028,38 +13028,55 @@ function abrirLinkCadastro(){
 // ── Verifica se o paciente já preencheu o cadastro pelo link (chamado ao abrir a ficha) ──
 async function sincronizarCadastroPublico(pacienteId){
   try{
-    const entrada = linksCadastro[pacienteId];
-    if(!entrada || !entrada.token) return false; // sem link gerado, nada a verificar
-    if(entrada.sincronizadoEm) return false; // já aplicado anteriormente
-
+    // Busca direto pelo paciente_id + prefixo do token de cadastro, em vez de
+    // depender só do cache local (linksCadastro) para saber qual token
+    // procurar — assim, mesmo que esse cache não tenha sobrevivido entre
+    // sessões/dispositivos, a sincronização ainda encontra o que o paciente
+    // preencheu.
     const { data, error } = await supa
       .from('anamneses')
-      .select('respostas, preenchido_em')
-      .eq('token', entrada.token)
-      .single();
+      .select('token, respostas, preenchido_em')
+      .eq('paciente_id', String(pacienteId))
+      .like('token', 'sk-cad-%')
+      .not('preenchido_em', 'is', null);
 
-    if(error){ console.error('Erro ao buscar cadastro preenchido:', error); return false; }
-    if(!data || !data.preenchido_em) return false; // paciente ainda não preencheu
+    if(error){ console.error('[cadastro] erro ao buscar cadastros preenchidos:', error); return false; }
+    if(!data || !data.length) return false; // paciente ainda não preencheu nada
 
-    const patch = data.respostas || {};
-    console.log('[cadastro] patch recebido do paciente:', patch);
     const p = pacientes.find(x=>x.id===pacienteId || String(x.id)===String(pacienteId));
     if(!p){
-      console.error('[cadastro] paciente não encontrado localmente (id='+pacienteId+') — não marcando como sincronizado, vai tentar de novo na próxima abertura.');
-      return false; // não marca sincronizadoEm — tenta de novo depois
+      console.error('[cadastro] paciente não encontrado localmente (id='+pacienteId+').');
+      return false;
     }
-    p.historico = p.historico || [];
-    const camposAplicados = [];
-    Object.entries(patch.campos||{}).forEach(([prop,valor])=>{ p[prop]=valor; camposAplicados.push(prop); });
-    if(patch.customFields && Object.keys(patch.customFields).length){
-      p.customFields = p.customFields || {};
-      Object.entries(patch.customFields).forEach(([id,valor])=>{ p.customFields[id]=valor; });
-    }
-    p.historico.push({data: iso(hoje), situacao: p.situacao, nota: '📝 Cadastro preenchido pelo paciente via link'});
-    salvarLS('sk3-pacientes', pacientes);
-    console.log('[cadastro] campos aplicados ao paciente '+p.nome+':', camposAplicados, patch.customFields||{});
 
-    entrada.sincronizadoEm = iso(hoje);
+    // Evita reaplicar o mesmo envio mais de uma vez (idempotente, mas assim
+    // não fica reescrevendo o histórico a cada abertura da ficha)
+    const entrada = linksCadastro[pacienteId] = linksCadastro[pacienteId] || {};
+    const jaAplicados = entrada.tokensAplicados || [];
+    const novos = data.filter(row=>!jaAplicados.includes(row.token));
+    if(!novos.length) return false;
+
+    console.log('[cadastro] envios novos encontrados para '+p.nome+':', novos);
+
+    p.historico = p.historico || [];
+    let houveMudanca = false;
+    novos.forEach(row=>{
+      const patch = row.respostas || {};
+      Object.entries(patch.campos||{}).forEach(([prop,valor])=>{ p[prop]=valor; houveMudanca=true; });
+      if(patch.customFields && Object.keys(patch.customFields).length){
+        p.customFields = p.customFields || {};
+        Object.entries(patch.customFields).forEach(([id,valor])=>{ p.customFields[id]=valor; });
+        houveMudanca = true;
+      }
+    });
+
+    if(houveMudanca){
+      p.historico.push({data: iso(hoje), situacao: p.situacao, nota: '📝 Cadastro preenchido pelo paciente via link'});
+      salvarLS('sk3-pacientes', pacientes);
+      console.log('[cadastro] campos aplicados ao paciente '+p.nome);
+    }
+
+    entrada.tokensAplicados = [...jaAplicados, ...novos.map(r=>r.token)];
     salvarLinksCadastro();
     return true; // houve atualização
   }catch(e){ console.error('Erro ao sincronizar cadastro:', e); return false; }
