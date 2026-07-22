@@ -12957,23 +12957,24 @@ function urlCadastro(token){
   return window.location.href.split('?')[0] + '?cadastro=' + token;
 }
 
-// Publica/atualiza o token no Supabase (tabela genérica dados_sistema),
-// para o paciente poder acessar de qualquer dispositivo, sem login.
+// Publica/atualiza o token no Supabase, para o paciente poder acessar de
+// qualquer dispositivo, sem login. Reaproveita a tabela "anamneses" (mesma
+// já usada pelo link de anamnese) em vez da tabela genérica dados_sistema,
+// porque essa é a que já tem as permissões de acesso público (RLS) liberadas
+// para leitura/escrita por token — dados_sistema é restrita a chaves fixas
+// do sistema e rejeitava a criação de uma chave nova por paciente.
 async function publicarTokenCadastro(token, pacienteId){
   try{
     const p = pacientes.find(x=>x.id===pacienteId || String(x.id)===String(pacienteId));
     const payload = {
-      chave: 'cad_' + token,
-      valor: {
-        pacienteId: String(pacienteId),
-        pacienteNome: p ? p.nome : '',
-        campos: _camposCadastroParaLinkPublico(),
-        criadoEm: iso(hoje),
-        preenchidoEm: null,
-        dadosPreenchidos: null
-      }
+      token,
+      paciente_id: String(pacienteId),
+      paciente_nome: p ? p.nome : '',
+      campos: _camposCadastroParaLinkPublico(),
+      respostas: null,
+      preenchido_em: null
     };
-    await supa.from('dados_sistema').upsert(payload, { onConflict: 'chave' });
+    await supa.from('anamneses').upsert(payload, { onConflict: 'token' });
   }catch(e){ console.error('Erro ao publicar token de cadastro:', e); }
 }
 
@@ -13009,14 +13010,14 @@ async function sincronizarCadastroPublico(pacienteId){
     if(entrada.sincronizadoEm) return false; // já aplicado anteriormente
 
     const { data, error } = await supa
-      .from('dados_sistema')
-      .select('valor')
-      .eq('chave', 'cad_' + entrada.token)
+      .from('anamneses')
+      .select('respostas, preenchido_em')
+      .eq('token', entrada.token)
       .single();
 
-    if(error || !data || !data.valor || !data.valor.preenchidoEm) return false;
+    if(error || !data || !data.preenchido_em) return false;
 
-    const patch = data.valor.dadosPreenchidos || {};
+    const patch = data.respostas || {};
     const p = pacientes.find(x=>x.id===pacienteId || String(x.id)===String(pacienteId));
     if(p){
       p.historico = p.historico || [];
@@ -20244,10 +20245,13 @@ function _montarAnamneseNaPagina(nomeCompleto, token, pacienteId, campos){
 
 // ── Página pública de CADASTRO (sem login) ───────────────────────────────
 // Mesmo princípio da anamnese pública: token na URL (?cadastro=token) aponta
-// para um registro em dados_sistema (chave 'cad_'+token) contendo os campos
-// a preencher. Ao enviar, grava o resultado no próprio token (para o admin
-// sincronizar depois) e já aplica direto no cadastro do paciente (tabela
-// sk3-pacientes), da mesma forma que a anamnese faz com campos vinculados.
+// para um registro na tabela "anamneses" (mesma tabela do link de anamnese,
+// reaproveitada aqui pelas colunas genéricas token/campos/respostas/
+// preenchido_em — é ela que já tem a permissão pública de leitura/escrita
+// por token liberada). Ao enviar, grava o resultado no próprio registro
+// (para o admin sincronizar depois) e já aplica direto no cadastro do
+// paciente (tabela sk3-pacientes), da mesma forma que a anamnese faz com
+// campos vinculados.
 
 function _renderJaPreenchidaCadastro(nomeCompleto){
   var nome = (nomeCompleto||'').split(' ')[0] || 'paciente';
@@ -20257,20 +20261,19 @@ function _renderJaPreenchidaCadastro(nomeCompleto){
 async function _carregarCadastroPublico(token){
   try {
     const { data, error } = await supa
-      .from('dados_sistema')
-      .select('valor')
-      .eq('chave', 'cad_' + token)
+      .from('anamneses')
+      .select('*')
+      .eq('token', token)
       .single();
-    if(error || !data || !data.valor){
+    if(error || !data){
       document.body.innerHTML = _renderErroAnamnese('Link inválido ou expirado. Solicite um novo link à clínica.');
       return;
     }
-    const info = data.valor;
-    if(info.preenchidoEm){
-      document.body.innerHTML = _renderJaPreenchidaCadastro(info.pacienteNome);
+    if(data.preenchido_em){
+      document.body.innerHTML = _renderJaPreenchidaCadastro(data.paciente_nome);
       return;
     }
-    _montarCadastroNaPagina(info.pacienteNome, token, info.pacienteId, info.campos || []);
+    _montarCadastroNaPagina(data.paciente_nome, token, data.paciente_id, data.campos || []);
   } catch(e){
     console.error('Erro cadastro publico:', e);
     document.body.innerHTML = _renderErroAnamnese('Erro ao carregar. Verifique sua conexao e tente novamente.');
@@ -20397,14 +20400,12 @@ function _montarCadastroNaPagina(nomeCompleto, token, pacienteId, campos){
     var pem=agora.toLocaleDateString('pt-BR')+' às '+agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 
     try {
-      // 1. Marca o token como preenchido, guardando o patch para o admin sincronizar
-      var rTok=await supa.from('dados_sistema').select('valor').eq('chave','cad_'+token).single();
+      // 1. Marca o registro como preenchido, guardando o patch para o admin sincronizar
+      var rTok=await supa.from('anamneses').update({
+        respostas: { campos: patchCampos, customFields: patchCustom },
+        preenchido_em: pem
+      }).eq('token', token);
       if(rTok.error) throw rTok.error;
-      var valorToken = rTok.data.valor;
-      valorToken.preenchidoEm = pem;
-      valorToken.dadosPreenchidos = { campos: patchCampos, customFields: patchCustom };
-      var rTok2=await supa.from('dados_sistema').upsert({chave:'cad_'+token, valor:valorToken},{onConflict:'chave'});
-      if(rTok2.error) throw rTok2.error;
 
       // 2. Atualiza o cadastro do paciente diretamente
       if(pacienteId){
