@@ -23,6 +23,21 @@
   --shadow-md:0 4px 16px rgba(0,0,0,.06);
 }
 /* ══ MÓDULO FINANCEIRO ══════════════════════════════════════════ */
+/* Mesma identidade viva definida para a Agenda, escopada só ao Financeiro:
+   redeclara as variáveis GLOBAIS de cor (--ac,--su,--da,--wa,--pu e seus tons
+   claros) localmente — como quase todo .fin-* já referencia essas variáveis,
+   isso já muda a cor de praticamente tudo no módulo sem editar regra por regra. */
+#sec-financeiro, .fin-modal-ov{
+  --ac:#2F6FEB;  --acl:#EAF0FF; --act:#1D4FC7;   /* azul vivo (era navy apagado) */
+  --su:#16A34A;  --sul:#E7F7ED;                   /* verde vivo (era verde-escuro) */
+  --da:#EF4444;  --dal:#FDEAEA;                   /* vermelho vivo (era bordô) */
+  --wa:#F2822E;  --wal:#FDF0E4;                   /* laranja vivo (era marrom apagado) */
+  --pu:#8B5CF6;  --pul:#F1ECFF;                   /* roxo vivo (era índigo apagado) */
+  --fin-cta:#F0784F; --fin-cta-d:#D8602F;         /* coral — ação principal, separado do azul geral */
+  --font:'Plus Jakarta Sans','Inter',system-ui,-apple-system,sans-serif;
+  --r16:22px;--r12:16px;--r10:12px;--r8:10px;--r6:8px;--r4:6px;
+  font-family:var(--font);
+}
 .fin-area{display:none}
 .fin-area.on{display:block}
 
@@ -140,7 +155,7 @@
 /* Aba "A pagar total" — etiquetas diferenciando Operacional x Folha */
 .fin-tt-tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
 .fin-tt-tag-oper{background:var(--acl);color:var(--ac)}
-.fin-tt-tag-folha{background:#F3E8FF;color:#7C3AED}
+.fin-tt-tag-folha{background:var(--pul);color:var(--pu)}
 .fin-origem-comissao{background:var(--wal);color:var(--wa)}
 
 /* Tag recorrente */
@@ -154,12 +169,14 @@
 .fin-modal-ov{display:none;position:fixed;inset:0;background:rgba(15,23,42,.3);z-index:400;align-items:center;justify-content:center;backdrop-filter:blur(2px);padding:16px}
 .fin-modal-ov.open{display:flex}
 .fin-modal-box{background:var(--surface);border-radius:var(--r16);width:100%;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.12)}
-.fin-modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 0;flex-shrink:0}
-.fin-modal-title{font-size:15px;font-weight:600;color:var(--tx)}
-.fin-modal-close{background:none;border:none;cursor:pointer;font-size:18px;color:var(--tx3);padding:0;line-height:1;transition:color .1s}
-.fin-modal-close:hover{color:var(--tx)}
+.fin-modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:20px 22px 16px;flex-shrink:0;border-bottom:1px solid var(--border);margin-bottom:4px}
+.fin-modal-title{font-size:17px;font-weight:800;letter-spacing:-.2px;color:var(--tx)}
+.fin-modal-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--tx3);padding:0;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;line-height:1;transition:all .12s}
+.fin-modal-close:hover{background:var(--s2);color:var(--tx)}
 .fin-modal-body{padding:18px 22px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
-.fin-modal-footer{padding:12px 22px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-shrink:0}
+.fin-modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-shrink:0;border-radius:0 0 22px 22px}
+.fin-modal-ov .btn-primary{background:var(--fin-cta,#F0784F);box-shadow:0 2px 8px rgba(240,120,79,.32);border-radius:10px;font-weight:700;border-color:var(--fin-cta,#F0784F)}
+.fin-modal-ov .btn-primary:hover{background:var(--fin-cta-d,#D8602F);border-color:var(--fin-cta-d,#D8602F)}
 
 /* Drawer de filtros financeiros */
 .fin-drawer-ov{display:none;position:fixed;inset:0;background:rgba(15,23,42,.32);z-index:410}
@@ -2588,10 +2605,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
     <!-- Toolbar -->
     <div class="fin-toolbar" style="margin-top:14px">
-      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('pagar')">🔁 Recorrentes cadastrados</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('pagar')"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Recorrentes cadastrados</button>
       <button class="btn btn-ghost btn-sm" onclick="abrirFiltrosFin('pagar')">▤ Filtros<span class="fin-filtros-badge" id="fin-pg-filtros-badge" style="display:none">0</span></button>
       <button class="btn btn-ghost btn-sm" onclick="finLimparFiltros('pagar')">Limpar</button>
-      <button class="btn btn-ghost btn-sm" onclick="exportarFinPDF('pagar')">📄 Exportar em PDF</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportarFinPDF('pagar')"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar em PDF</button>
       <div id="fin-pg-sel-bar" style="display:none;margin-left:auto;display:none;align-items:center;gap:8px">
         <span id="fin-pg-sel-count" style="font-size:12px;color:var(--tx2)">0 selecionados</span>
         <button class="btn btn-sm" style="background:var(--sul);color:var(--su);border-color:var(--su)" onclick="finLiquidarSelecionados('pagar')" data-perm="fin_pagar_editar">✓ Liquidar</button>
@@ -2690,8 +2707,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
     <!-- Toolbar -->
     <div class="fin-toolbar" style="margin-top:14px">
-      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('pagar')">🔁 Recorrentes Operacional</button>
-      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('folha')">🔁 Recorrentes Folha</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('pagar')"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Recorrentes Operacional</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('folha')"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Recorrentes Folha</button>
       <button class="btn btn-ghost btn-sm" onclick="abrirFiltrosFin('folha')">▤ Filtros<span class="fin-filtros-badge" id="fin-fl-filtros-badge" style="display:none">0</span></button>
       <button class="btn btn-ghost btn-sm" onclick="finLimparFiltros('folha')">Limpar</button>
       <div id="fin-fl-sel-bar" style="display:none;align-items:center;gap:8px;margin-left:auto">
@@ -2803,10 +2820,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
     <!-- Toolbar -->
     <div class="fin-toolbar" style="margin-top:14px">
-      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('receber')">🔁 Recorrentes cadastrados</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('receber')"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Recorrentes cadastrados</button>
       <button class="btn btn-ghost btn-sm" onclick="abrirFiltrosFin('receber')">▤ Filtros<span class="fin-filtros-badge" id="fin-rc-filtros-badge" style="display:none">0</span></button>
       <button class="btn btn-ghost btn-sm" onclick="finLimparFiltros('receber')">Limpar</button>
-      <button class="btn btn-ghost btn-sm" onclick="exportarFinPDF('receber')">📄 Exportar em PDF</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportarFinPDF('receber')"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar em PDF</button>
       <div id="fin-rc-sel-bar" style="display:none;align-items:center;gap:8px;margin-left:auto">
         <span id="fin-rc-sel-count" style="font-size:12px;color:var(--tx2)">0 selecionados</span>
         <button class="btn btn-sm" style="background:var(--sul);color:var(--su);border-color:var(--su)" onclick="finLiquidarSelecionados('receber')" data-perm="fin_receber_editar">✓ Liquidar</button>
@@ -2834,7 +2851,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <tbody id="fin-rc-tbody"></tbody>
       </table>
       <div id="fin-rc-empty" class="fin-empty" style="display:none">
-        <div style="font-size:24px;margin-bottom:8px">💰</div>
+        <div style="font-size:24px;margin-bottom:8px"><svg viewBox="0 0 24 24" width="24" height="24" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
         Nenhum título encontrado.
         <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="abrirModalFinLancamento('receber')" data-perm="fin_receber_criar">+ Novo lançamento</button>
       </div>
@@ -2877,9 +2894,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <button type="button" class="btn btn-ghost btn-sm" onclick="rcbIrHoje()">Mês atual</button>
         </div>
         <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px">
-          <button class="btn btn-ghost btn-sm" onclick="abrirModalRcbRecorrentes()">🔁 Recorrentes cadastrados</button>
+          <button class="btn btn-ghost btn-sm" onclick="abrirModalRcbRecorrentes()"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Recorrentes cadastrados</button>
           <button class="btn btn-ghost btn-sm" onclick="rcbBaixarAnexos()" title="Baixar todos os anexos dos lançamentos filtrados">📥 Baixar anexos</button>
-          <button class="btn btn-ghost btn-sm" onclick="rcbExportarPDF()">📄 Exportar PDF</button>
+          <button class="btn btn-ghost btn-sm" onclick="rcbExportarPDF()"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar PDF</button>
           <button class="btn btn-primary btn-sm" onclick="abrirModalRecibo()" data-perm="fin_recibos_criar">+ Novo lançamento</button>
         </div>
       </div>
@@ -2998,7 +3015,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <tbody id="rcb-emit-tbody"></tbody>
         </table>
         <div id="rcb-emit-empty" class="fin-empty" style="display:none">
-          <div style="font-size:24px;margin-bottom:8px">📄</div>
+          <div style="font-size:24px;margin-bottom:8px"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
           Nenhum título encontrado com esse filtro.
         </div>
       </div>
@@ -3061,7 +3078,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <label>Vencimento <span class="req">*</span></label>
           <div class="fin-date-wrap">
             <input type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" data-hidden-id="fin-modal-venc" oninput="finMaskData(this)">
-            <button type="button" class="fin-date-cal-btn" onclick="finAbrirCalendarioData('fin-modal-venc')" title="Abrir calendário" aria-label="Abrir calendário">📅</button>
+            <button type="button" class="fin-date-cal-btn" onclick="finAbrirCalendarioData('fin-modal-venc')" title="Abrir calendário" aria-label="Abrir calendário"><svg viewBox="0 0 24 24" width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="4" width="18" height="18" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></button>
             <input type="date" id="fin-modal-venc" class="fin-date-hidden" tabindex="-1" onchange="finAjustarDataUtil(this);finSincronizarTxtData(this)">
           </div>
         </div>
@@ -22010,7 +22027,7 @@ function finRecRenderAnexos(){
   if(!wrap) return;
   wrap.innerHTML=_finRecAnexosPendentes.map((a,i)=>`
     <div class="fin-anexo-item">
-      <span class="fin-anexo-nome">📄 ${esc(a.nome)}</span>
+      <span class="fin-anexo-nome"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> ${esc(a.nome)}</span>
       <button type="button" class="fin-anexo-rm" onclick="finRecRemoverAnexo(${i})" title="Remover">✕</button>
     </div>`).join('');
 }
@@ -22624,7 +22641,7 @@ function finRenderAnexos(){
   if(!wrap) return;
   wrap.innerHTML=_finAnexosPendentes.map((a,i)=>`
     <div class="fin-anexo-item">
-      <span class="fin-anexo-nome">📄 ${esc(a.nome)}</span>
+      <span class="fin-anexo-nome"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> ${esc(a.nome)}</span>
       <button type="button" class="fin-anexo-rm" onclick="finRemoverAnexo(${i})" title="Remover">✕</button>
     </div>`).join('');
 }
