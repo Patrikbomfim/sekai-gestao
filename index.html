@@ -11,14 +11,15 @@
 :root{
   --bg:#F7F8FA;--surface:#FFFFFF;--s2:#F0F2F5;--border:#E5E7EB;--border-s:#D1D5DB;
   --tx:#0F172A;--tx2:#64748B;--tx3:#94A3B8;
-  --ac:#1E3A5F;--acl:#F0F4F9;--act:#0F1F33;
-  --wa:#7C4A00;--wal:#FEF9EE;
-  --da:#991B1B;--dal:#FFF5F5;
-  --in:#1E3A5F;--inl:#F0F4F9;
-  --pu:#4338CA;--pul:#F3F4FF;
-  --su:#065F46;--sul:#F0FDF6;
-  --r4:4px;--r6:6px;--r8:8px;--r10:10px;--r12:12px;--r16:16px;
-  --font:'Inter',system-ui,-apple-system,sans-serif;
+  --ac:#2F6FEB;--acl:#EAF0FF;--act:#1D4FC7;
+  --wa:#F2822E;--wal:#FDF0E4;
+  --da:#EF4444;--dal:#FDEAEA;
+  --in:#2F6FEB;--inl:#EAF0FF;
+  --pu:#8B5CF6;--pul:#F1ECFF;
+  --su:#16A34A;--sul:#E7F7ED;
+  --cta:#F0784F;--cta-d:#D8602F;
+  --r4:6px;--r6:8px;--r8:10px;--r10:12px;--r12:16px;--r16:22px;
+  --font:'Plus Jakarta Sans','Inter',system-ui,-apple-system,sans-serif;
   --shadow:0 1px 2px rgba(0,0,0,.04);
   --shadow-md:0 4px 16px rgba(0,0,0,.06);
 }
@@ -433,7 +434,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--ac);box-shadow:0 0 0 
 
 input.invalid{border-color:var(--da);background:var(--dal)}
 .btn{padding:7px 16px;border-radius:var(--r8);font-size:12.5px;font-family:var(--font);font-weight:600;cursor:pointer;border:none;transition:all .12s;letter-spacing:-.1px}
-.btn-primary{background:var(--ac);color:#fff;box-shadow:0 1px 3px rgba(30,58,95,.2)}.btn-primary:hover{background:var(--act)}
+.btn-primary{background:var(--cta);color:#fff;box-shadow:0 2px 8px rgba(240,120,79,.3);border-color:var(--cta)}.btn-primary:hover{background:var(--cta-d);border-color:var(--cta-d)}
 .btn-ghost{background:var(--surface);color:var(--tx2);border:1px solid var(--border)}.btn-ghost:hover{background:var(--s2);color:var(--tx)}
 .btn-danger{background:var(--dal);color:var(--da);border:1px solid #FCA5A5}
 .btn-sm{padding:5px 12px;font-size:12px}
@@ -938,17 +939,17 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <button class="subnav-btn" onclick="showCfg('equipe',this)"><span class="nav-ic">◉</span>Equipe</button>
   <button class="subnav-btn" onclick="showCfg('reunioes',this)"><span class="nav-ic">○</span>Reuniões</button>
   <button class="subnav-btn" onclick="showCfg('cadpaciente',this)"><span class="nav-ic">▦</span>Cadastro paciente</button>
-  <button class="subnav-btn" onclick="showCfg('contratos',this)"><span class="nav-ic">📄</span>Contratos</button>
+  <button class="subnav-btn" onclick="showCfg('contratos',this)"><span class="nav-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>Contratos</button>
   <button class="subnav-btn" onclick="showCfg('termos',this)"><span class="nav-ic">✍️</span>Termos</button>
-  <button class="subnav-btn" onclick="showCfg('receitas',this)"><span class="nav-ic">💊</span>Receitas</button>
+  <button class="subnav-btn" onclick="showCfg('receitas',this)"><span class="nav-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="4" y="4" width="16" height="16" rx="8" transform="rotate(45 12 12)"/><path d="M8 16L16 8"/></svg></span>Receitas</button>
   <button class="subnav-btn" onclick="showCfg('atestados',this)"><span class="nav-ic">🩺</span>Atestados</button>
-  <button class="subnav-btn" onclick="showCfg('encaminhamentos',this)"><span class="nav-ic">✉️</span>Encaminhamentos</button>
-  <button class="subnav-btn" onclick="showCfg('empresa',this)"><span class="nav-ic">🏢</span>Empresa</button>
+  <button class="subnav-btn" onclick="showCfg('encaminhamentos',this)"><span class="nav-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 6l10 7 10-7"/></svg></span>Encaminhamentos</button>
+  <button class="subnav-btn" onclick="showCfg('empresa',this)"><span class="nav-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22v-4h6v4M8 6h1M15 6h1M8 10h1M15 10h1M8 14h1M15 14h1"/></svg></span>Empresa</button>
   <button class="subnav-btn" onclick="showCfg('checkin',this)"><span class="nav-ic">▣</span>Rotina</button>
   <button class="subnav-btn" onclick="showCfg('agenda',this)"><span class="nav-ic">◫</span>Agenda</button>
   <button class="subnav-btn" onclick="showCfg('anamnese',this)"><span class="nav-ic">▧</span>Anamnese</button>
   <button class="subnav-btn" onclick="showCfg('dashboard',this)"><span class="nav-ic">▦</span>Dashboard</button>
-  <button class="subnav-btn" onclick="showCfg('tabelas',this)"><span class="nav-ic">💲</span>Tabelas precificação</button>
+  <button class="subnav-btn" onclick="showCfg('tabelas',this)"><span class="nav-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Tabelas precificação</button>
 </nav>
 
 <main class="main">
@@ -959,16 +960,16 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="pg-desc" id="hoje-desc"></div>
   <div id="hoje-modo-visao"></div>
   <div class="g5" style="margin-bottom:18px">
-    <div class="metric"><div class="metric-lbl">🔔 Lembretes</div><div class="metric-val" id="m-mod-lembrete" style="color:var(--ac)">0</div><div class="metric-note">hoje + atrasados</div></div>
-    <div class="metric"><div class="metric-lbl">🔄 Fluxo de ação</div><div class="metric-val" id="m-mod-fluxo" style="color:var(--ac)">0</div><div class="metric-note">hoje + atrasados</div></div>
-    <div class="metric"><div class="metric-lbl">📌 Pendências</div><div class="metric-val" id="m-mod-pendencia" style="color:var(--ac)">0</div><div class="metric-note">hoje + atrasadas</div></div>
+    <div class="metric"><div class="metric-lbl"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Lembretes</div><div class="metric-val" id="m-mod-lembrete" style="color:var(--ac)">0</div><div class="metric-note">hoje + atrasados</div></div>
+    <div class="metric"><div class="metric-lbl"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Fluxo de ação</div><div class="metric-val" id="m-mod-fluxo" style="color:var(--ac)">0</div><div class="metric-note">hoje + atrasados</div></div>
+    <div class="metric"><div class="metric-lbl"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 2a5 5 0 0 0-5 5c0 3 2 4 2 7H9l3 8 3-8h-2c0-3 2-4 2-7a5 5 0 0 0-5-5z"/></svg> Pendências</div><div class="metric-val" id="m-mod-pendencia" style="color:var(--ac)">0</div><div class="metric-note">hoje + atrasadas</div></div>
     <div class="metric" style="cursor:pointer" onclick="irFinDoHome('pagar','hoje')" title="Ver em Financeiro → A pagar operacional">
-      <div class="metric-lbl">💸 Contas a pagar hoje</div>
+      <div class="metric-lbl"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Contas a pagar hoje</div>
       <div class="metric-val" id="m-fin-pagar-hoje" style="color:var(--da)">0</div>
       <div class="metric-note" id="m-fin-pagar-hoje-nota">R$ 0,00</div>
     </div>
     <div class="metric" style="cursor:pointer" onclick="irFinDoHome('receber','hoje')" title="Ver em Financeiro → Contas a receber">
-      <div class="metric-lbl">💰 Contas a receber hoje</div>
+      <div class="metric-lbl"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Contas a receber hoje</div>
       <div class="metric-val" id="m-fin-receber-hoje" style="color:var(--ac)">0</div>
       <div class="metric-note" id="m-fin-receber-hoje-nota">R$ 0,00</div>
     </div>
@@ -986,16 +987,16 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="pg-desc">Planeje com antecedência — ações futuras organizadas por data</div>
   <div id="proximos-modo-visao"></div>
   <div class="g5" style="margin-bottom:18px">
-    <div class="metric"><div class="metric-lbl">🔔 Lembretes</div><div class="metric-val" id="p-mod-lembrete" style="color:var(--ac)">0</div><div class="metric-note">próximos 7 dias</div></div>
-    <div class="metric"><div class="metric-lbl">🔄 Fluxo de ação</div><div class="metric-val" id="p-mod-fluxo" style="color:var(--ac)">0</div><div class="metric-note">próximos 7 dias</div></div>
-    <div class="metric"><div class="metric-lbl">📌 Pendências</div><div class="metric-val" id="p-mod-pendencia" style="color:var(--ac)">0</div><div class="metric-note">próximos 7 dias</div></div>
+    <div class="metric"><div class="metric-lbl"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Lembretes</div><div class="metric-val" id="p-mod-lembrete" style="color:var(--ac)">0</div><div class="metric-note">próximos 7 dias</div></div>
+    <div class="metric"><div class="metric-lbl"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Fluxo de ação</div><div class="metric-val" id="p-mod-fluxo" style="color:var(--ac)">0</div><div class="metric-note">próximos 7 dias</div></div>
+    <div class="metric"><div class="metric-lbl"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 2a5 5 0 0 0-5 5c0 3 2 4 2 7H9l3 8 3-8h-2c0-3 2-4 2-7a5 5 0 0 0-5-5z"/></svg> Pendências</div><div class="metric-val" id="p-mod-pendencia" style="color:var(--ac)">0</div><div class="metric-note">próximos 7 dias</div></div>
     <div class="metric" style="cursor:pointer" onclick="irFinDoHome('pagar','prox7')" title="Ver em Financeiro → A pagar operacional">
-      <div class="metric-lbl">💸 Contas a pagar</div>
+      <div class="metric-lbl"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Contas a pagar</div>
       <div class="metric-val" id="p-fin-pagar-prox7" style="color:var(--da)">0</div>
       <div class="metric-note" id="p-fin-pagar-prox7-nota">R$ 0,00 · próx. 7 dias</div>
     </div>
     <div class="metric" style="cursor:pointer" onclick="irFinDoHome('receber','prox7')" title="Ver em Financeiro → Contas a receber">
-      <div class="metric-lbl">💰 Contas a receber</div>
+      <div class="metric-lbl"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Contas a receber</div>
       <div class="metric-val" id="p-fin-receber-prox7" style="color:var(--ac)">0</div>
       <div class="metric-note" id="p-fin-receber-prox7-nota">R$ 0,00 · próx. 7 dias</div>
     </div>
@@ -1115,9 +1116,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="fin-toolbar" style="margin-bottom:14px">
       <button class="btn btn-ghost btn-sm" onclick="abrirFiltrosPt()">▤ Filtros<span class="fin-filtros-badge" id="pt-filtros-badge" style="display:none">0</span></button>
       <button class="btn btn-ghost btn-sm" onclick="ptFiltrosLimparTudo()">Limpar filtro</button>
-      <button class="btn btn-ghost btn-sm" onclick="exportarPacientesPDF()">📄 Exportar PDF</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportarPacientesPDF()"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar PDF</button>
     </div>
-    <div class="card" id="pt-lista-wrap"><div class="empty"><div class="empty-ic">👥</div>Nenhum paciente cadastrado ainda.<br>Clique em "+ Cadastrar paciente" para começar.</div></div>
+    <div class="card" id="pt-lista-wrap"><div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-5.5 7-5.5s7 2 7 5.5"/><path d="M16 8.5a3 3 0 1 0 0-6"/><path d="M17 14.5c2.8.4 5 2.3 5 5.5"/></svg></div>Nenhum paciente cadastrado ainda.<br>Clique em "+ Cadastrar paciente" para começar.</div></div>
   </div>
 
   <!-- ABA FUNIL (KANBAN) -->
@@ -1196,9 +1197,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
               <label>Origem</label>
               <select id="mpt-origem" onchange="toggleIndicadorEdit()">
                 <option value="">—</option>
-                <option value="google">🔍 Google</option>
-                <option value="instagram">📸 Instagram</option>
-                <option value="indicacao">🤝 Indicação</option>
+                <option value="google"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg> Google</option>
+                <option value="instagram"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M4 8h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="14" r="3.5"/></svg> Instagram</option>
+                <option value="indicacao"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M8 12l3 3 5-5"/><rect x="3" y="9" width="18" height="9" rx="2"/></svg> Indicação</option>
                 <option value="outro">💬 Outro</option>
               </select>
             </div>
@@ -1289,7 +1290,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             </div>
             <div style="display:flex;align-items:center;gap:8px">
               <button class="btn btn-ghost btn-sm" onclick="_prontExportarFichaCompleta()" style="display:flex;align-items:center;gap:5px">
-                <span style="font-size:13px">📄</span> Exportar ficha completa em PDF
+                <span style="font-size:13px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span> Exportar ficha completa em PDF
               </button>
               <button class="btn btn-primary btn-sm" onclick="abrirModalAtendimento()">+ Adicionar atendimento</button>
             </div>
@@ -1433,11 +1434,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="modal-footer" style="justify-content:space-between">
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost" onclick="fecharModalOrcamento()">Cancelar</button>
-        <button class="btn btn-danger btn-sm" id="btn-excluir-orc" onclick="excluirOrcamento()" style="display:none">🗑 Excluir</button>
+        <button class="btn btn-danger btn-sm" id="btn-excluir-orc" onclick="excluirOrcamento()" style="display:none"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-9 0v14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6"/></svg> Excluir</button>
       </div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost" id="btn-gerar-pdf-orc" onclick="gerarPdfOrcamento()" style="display:flex;align-items:center;gap:6px">
-          <span style="font-size:13px">📄</span> Gerar PDF
+          <span style="font-size:13px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span> Gerar PDF
         </button>
         <button class="btn btn-ghost" id="btn-reprovar-orc" onclick="reprovarOrcamento()" style="display:none;background:var(--dal);color:var(--da);border-color:#FCA5A5">✗ Reprovar orçamento</button>
         <button class="btn btn-ghost" id="btn-desaprovar-orc" onclick="desaprovarOrcamento()" style="display:none;background:var(--dal);color:var(--da);border-color:#FCA5A5" title="Remove os títulos gerados e volta o orçamento para 'Em aberto', pra você ajustar valores e aprovar de novo">↩ Desaprovar orçamento</button>
@@ -1453,7 +1454,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="modal" style="width:460px;max-width:96vw">
     <div class="modal-header">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <div class="modal-title">📅 Renegociar vencimento</div>
+        <div class="modal-title"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="4" width="18" height="18" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg> Renegociar vencimento</div>
         <button onclick="fecharModalRenegociar()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--tx3);line-height:1;padding:2px 6px">&times;</button>
       </div>
     </div>
@@ -1486,7 +1487,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="modal" style="width:460px;max-width:96vw">
     <div class="modal-header">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <div class="modal-title">✅ Registrar recebimento</div>
+        <div class="modal-title"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg> Registrar recebimento</div>
         <button onclick="fecharModalReceber()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--tx3);line-height:1;padding:2px 6px">&times;</button>
       </div>
     </div>
@@ -1505,11 +1506,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <label class="lbl">Forma de recebimento</label>
         <select id="receber-forma" class="inp">
           <option value="">Selecionar…</option>
-          <option value="pix">💸 Pix / Transferência</option>
-          <option value="dinheiro">💵 Dinheiro</option>
-          <option value="debito">💳 Cartão de Débito</option>
-          <option value="credito">💳 Cartão de Crédito</option>
-          <option value="boleto">📄 Boleto</option>
+          <option value="pix"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Pix / Transferência</option>
+          <option value="dinheiro"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Dinheiro</option>
+          <option value="debito"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg> Cartão de Débito</option>
+          <option value="credito"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg> Cartão de Crédito</option>
+          <option value="boleto"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Boleto</option>
         </select>
       </div>
     </div>
@@ -1525,7 +1526,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="modal" style="width:460px;max-width:96vw">
     <div class="modal-header">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <div class="modal-title">🧾 Emissão fiscal</div>
+        <div class="modal-title"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg> Emissão fiscal</div>
         <button onclick="fecharModalEmissaoFiscal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--tx3);line-height:1;padding:2px 6px">&times;</button>
       </div>
     </div>
@@ -1556,7 +1557,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="modal" style="width:460px;max-width:96vw">
     <div class="modal-header">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <div class="modal-title" id="rcb-modal-titulo">🧾 Novo lançamento — Recibos</div>
+        <div class="modal-title" id="rcb-modal-titulo"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg> Novo lançamento — Recibos</div>
         <button onclick="fecharModalRecibo()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--tx3);line-height:1;padding:2px 6px">&times;</button>
       </div>
     </div>
@@ -1700,7 +1701,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div id="rcb-recn-drop" class="fin-drop-zone" onclick="document.getElementById('rcb-recn-anexo-input').click()"
           ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')"
           ondrop="rcbRecDropAnexo(event)">
-          <div class="fin-drop-zone-ic">📎</div>
+          <div class="fin-drop-zone-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 11.5l-9.5 9.5a4 4 0 0 1-5.7-5.7l9-9a2.5 2.5 0 0 1 3.6 3.6l-8.9 8.9a1 1 0 0 1-1.5-1.5l8-8"/></svg></div>
           <div style="font-size:12px;color:var(--tx2)">Arraste o arquivo aqui ou clique para escolher</div>
         </div>
         <input type="file" id="rcb-recn-anexo-input" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="rcbRecAnexoSelecionado(this.files)">
@@ -1708,7 +1709,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
     </div>
     <div class="fin-modal-footer">
-      <button class="btn btn-ghost" id="rcb-recn-btn-excluir" onclick="rcbExcluirSerieDoModal()" style="display:none;background:var(--dal);color:var(--da);border-color:#FCA5A5;margin-right:auto" title="Remove os lançamentos futuros; os do mês atual e anteriores são mantidos">🗑 Excluir</button>
+      <button class="btn btn-ghost" id="rcb-recn-btn-excluir" onclick="rcbExcluirSerieDoModal()" style="display:none;background:var(--dal);color:var(--da);border-color:#FCA5A5;margin-right:auto" title="Remove os lançamentos futuros; os do mês atual e anteriores são mantidos"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-9 0v14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6"/></svg> Excluir</button>
       <button class="btn btn-ghost" onclick="fecharModalRcbRecorrenciaNova()">Cancelar</button>
       <button class="btn btn-primary" id="rcb-recn-btn-salvar" onclick="rcbSalvarRecorrenciaNova()">Salvar recorrência</button>
     </div>
@@ -2025,7 +2026,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="pg-title">Pendências</div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-primary btn-sm" onclick="abrirModalNovaPendencia()" data-perm="pendencias_criar">+ Nova pendência</button>
-      <button class="btn btn-ghost" onclick="exportarPendenciasPDF()">📄 Exportar PDF</button>
+      <button class="btn btn-ghost" onclick="exportarPendenciasPDF()"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar PDF</button>
     </div>
   </div>
   <div class="pg-desc">Itens definidos em "até a próxima reunião" — centralizados por responsável</div>
@@ -2375,7 +2376,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <div class="card-sub">Configure os campos que o paciente preencherá antes da consulta. O link gerado não exige login.</div>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-danger btn-sm" onclick="limparTodasAnamnesesBanco()" title="Remove todas as anamneses antigas do banco e do sistema local. Use antes de reconfigurar os campos.">🗑 Limpar todas do banco</button>
+          <button class="btn btn-danger btn-sm" onclick="limparTodasAnamnesesBanco()" title="Remove todas as anamneses antigas do banco e do sistema local. Use antes de reconfigurar os campos."><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-9 0v14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6"/></svg> Limpar todas do banco</button>
           <button class="btn btn-primary btn-sm" onclick="abrirModalCampoAnamnese()">+ Novo campo</button>
         </div>
       </div>
@@ -2635,7 +2636,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <tbody id="fin-pg-tbody"></tbody>
       </table>
       <div id="fin-pg-empty" class="fin-empty" style="display:none">
-        <div style="font-size:24px;margin-bottom:8px">💸</div>
+        <div style="font-size:24px;margin-bottom:8px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
         Nenhum título encontrado.
         <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="abrirModalFinLancamento('pagar')" data-perm="fin_pagar_criar">+ Novo lançamento</button>
       </div>
@@ -2738,7 +2739,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <tbody id="fin-fl-tbody"></tbody>
       </table>
       <div id="fin-fl-empty" class="fin-empty" style="display:none">
-        <div style="font-size:24px;margin-bottom:8px">👥</div>
+        <div style="font-size:24px;margin-bottom:8px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-5.5 7-5.5s7 2 7 5.5"/><path d="M16 8.5a3 3 0 1 0 0-6"/><path d="M17 14.5c2.8.4 5 2.3 5 5.5"/></svg></div>
         Nenhum título encontrado.
         <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="abrirModalFinNovoTotal()" data-perm="fin_folha_criar">+ Novo lançamento</button>
       </div>
@@ -2868,7 +2869,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div id="fin-com-wrap">
       <div class="fin-empty" style="margin-top:40px">
-        <div style="font-size:24px;margin-bottom:8px">🦷</div>
+        <div style="font-size:24px;margin-bottom:8px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 3c-2.5 0-4.5 1.6-4.5 4.2 0 2.4.7 3 .9 6.3.15 2.2.6 5 1.7 5s1.4-2.6 1.6-4.4c.1-.9.4-1.6 1.3-1.6s1.2.7 1.3 1.6c.2 1.8.5 4.4 1.6 4.4s1.55-2.8 1.7-5c.2-3.3.9-3.9.9-6.3C16.5 4.6 14.5 3 12 3z"/></svg></div>
         Selecione uma profissional para ver as comissões pendentes.
       </div>
     </div>
@@ -2905,7 +2906,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap">
         <input type="text" id="rcb-busca" class="inp" style="max-width:280px" placeholder="Buscar por descrição…" list="rcb-desc-datalist" onkeydown="if(event.key==='Enter')rcbBuscar()">
         <datalist id="rcb-desc-datalist"></datalist>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="rcbBuscar()">🔍 Buscar</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="rcbBuscar()"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg> Buscar</button>
         <button type="button" class="btn btn-ghost btn-sm" onclick="rcbLimparFiltro()">Limpar filtro</button>
       </div>
 
@@ -2947,7 +2948,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <tbody id="rcb-tbody"></tbody>
         </table>
         <div id="rcb-empty" class="fin-empty" style="display:none">
-          <div style="font-size:24px;margin-bottom:8px">🧾</div>
+          <div style="font-size:24px;margin-bottom:8px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg></div>
           Nenhum lançamento neste mês.
           <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="abrirModalRecibo()" data-perm="fin_recibos_criar">+ Novo lançamento</button>
         </div>
@@ -3133,7 +3134,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div id="fin-modal-drop" class="fin-drop-zone" onclick="document.getElementById('fin-modal-anexo-input').click()"
           ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')"
           ondrop="finDropAnexo(event)">
-          <div class="fin-drop-zone-ic">📎</div>
+          <div class="fin-drop-zone-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 11.5l-9.5 9.5a4 4 0 0 1-5.7-5.7l9-9a2.5 2.5 0 0 1 3.6 3.6l-8.9 8.9a1 1 0 0 1-1.5-1.5l8-8"/></svg></div>
           <div class="fin-drop-zone-txt">Clique para procurar ou arraste o arquivo aqui</div>
           <div class="fin-drop-zone-sub">PDF, imagem ou documento</div>
         </div>
@@ -3162,7 +3163,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             </div>
           </div>
           <div class="card" style="padding:8px 12px;margin:0;background:var(--wal);border-color:#FDE68A">
-            <div style="font-size:11px;color:var(--wa)">⚠ Serão criados múltiplos títulos com base na frequência e número de repetições informados.</div>
+            <div style="font-size:11px;color:var(--wa)"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> Serão criados múltiplos títulos com base na frequência e número de repetições informados.</div>
           </div>
         </div>
       </div>
@@ -3240,7 +3241,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="btn btn-primary btn-sm" style="align-self:flex-start" onclick="finAbrirModalFornecedorDeLista()">+ cadastrar</button>
       <div id="fin-forn-lista" style="display:flex;flex-direction:column;gap:8px"></div>
       <div id="fin-forn-lista-empty" class="fin-empty" style="display:none">
-        <div style="font-size:24px;margin-bottom:8px">🏢</div>
+        <div style="font-size:24px;margin-bottom:8px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22v-4h6v4M8 6h1M15 6h1M8 10h1M15 10h1M8 14h1M15 14h1"/></svg></div>
         Nenhum fornecedor cadastrado ainda.
       </div>
     </div>
@@ -3528,9 +3529,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="fin-drawer-sec-label">Origem</div>
         <select id="pt-filtro-origem" class="fi">
           <option value="">Todas as origens</option>
-          <option value="google">🔍 Google</option>
-          <option value="instagram">📸 Instagram</option>
-          <option value="indicacao">🤝 Indicação</option>
+          <option value="google"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg> Google</option>
+          <option value="instagram"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M4 8h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="14" r="3.5"/></svg> Instagram</option>
+          <option value="indicacao"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M8 12l3 3 5-5"/><rect x="3" y="9" width="18" height="9" rx="2"/></svg> Indicação</option>
           <option value="outro">💬 Outro</option>
         </select>
       </div>
@@ -3706,7 +3707,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div id="fin-recn-drop" class="fin-drop-zone" onclick="document.getElementById('fin-recn-anexo-input').click()"
           ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')"
           ondrop="finRecDropAnexo(event)">
-          <div class="fin-drop-zone-ic">📎</div>
+          <div class="fin-drop-zone-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 11.5l-9.5 9.5a4 4 0 0 1-5.7-5.7l9-9a2.5 2.5 0 0 1 3.6 3.6l-8.9 8.9a1 1 0 0 1-1.5-1.5l8-8"/></svg></div>
           <div class="fin-drop-zone-txt">Clique para procurar ou arraste o arquivo aqui</div>
           <div class="fin-drop-zone-sub">Este anexo será aplicado a todos os títulos gerados</div>
         </div>
@@ -3757,7 +3758,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
       <div id="rel-conteudo">
         <div style="display:flex;align-items:center;justify-content:center;height:300px;color:var(--tx3);font-size:13px;flex-direction:column;gap:8px">
-          <div style="font-size:28px">📊</div>
+          <div style="font-size:28px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg></div>
           <div>Selecione um indicador ao lado para ver o detalhamento</div>
         </div>
       </div>
@@ -3779,7 +3780,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 
   <div id="emp-vazio" class="card" style="display:none">
-    <div class="empty"><div class="empty-ic">🏢</div>Nenhuma empresa cadastrada ainda.<br><button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="addEmpresaNova()" data-perm="empresa_dados_editar">+ Nova empresa</button></div>
+    <div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22v-4h6v4M8 6h1M15 6h1M8 10h1M15 10h1M8 14h1M15 14h1"/></svg></div>Nenhuma empresa cadastrada ainda.<br><button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="addEmpresaNova()" data-perm="empresa_dados_editar">+ Nova empresa</button></div>
   </div>
 
   <!-- DADOS CADASTRAIS -->
@@ -3869,7 +3870,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <div class="modal-ov" id="modal-link-anamnese">
   <div class="modal" style="width:500px">
     <div class="modal-header">
-      <div class="modal-title">🔗 Link de Anamnese</div>
+      <div class="modal-title"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M9 17H7a5 5 0 0 1 0-10h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><path d="M8 12h8"/></svg> Link de Anamnese</div>
       <button class="modal-close" onclick="fecharModal('modal-link-anamnese')">✕</button>
     </div>
     <div class="modal-body">
@@ -3878,7 +3879,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
       <div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--r8);padding:12px 14px;font-size:13px;font-family:monospace;word-break:break-all;margin-bottom:12px" id="mla-url"></div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-primary btn-sm" onclick="copiarLinkAnamnese()">📋 Copiar link</button>
+        <button class="btn btn-primary btn-sm" onclick="copiarLinkAnamnese()"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg> Copiar link</button>
         <button class="btn btn-ghost btn-sm" onclick="abrirLinkAnamnese()">↗ Abrir prévia</button>
       </div>
       <div id="mla-copiado" style="font-size:12px;color:var(--su);margin-top:8px;display:none">✓ Link copiado!</div>
@@ -3897,7 +3898,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <div class="modal-ov" id="modal-link-cadastro">
   <div class="modal" style="width:500px">
     <div class="modal-header">
-      <div class="modal-title">🔗 Link de Cadastro</div>
+      <div class="modal-title"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M9 17H7a5 5 0 0 1 0-10h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><path d="M8 12h8"/></svg> Link de Cadastro</div>
       <button class="modal-close" onclick="fecharModal('modal-link-cadastro')">✕</button>
     </div>
     <div class="modal-body">
@@ -3906,7 +3907,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
       <div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--r8);padding:12px 14px;font-size:13px;font-family:monospace;word-break:break-all;margin-bottom:12px" id="mlc-url"></div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-primary btn-sm" onclick="copiarLinkCadastro()">📋 Copiar link</button>
+        <button class="btn btn-primary btn-sm" onclick="copiarLinkCadastro()"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg> Copiar link</button>
         <button class="btn btn-ghost btn-sm" onclick="abrirLinkCadastro()">↗ Abrir prévia</button>
       </div>
       <div id="mlc-copiado" style="font-size:12px;color:var(--su);margin-top:8px;display:none">✓ Link copiado!</div>
@@ -6242,7 +6243,7 @@ function gerarAcoesRecontatoCancelamento(){
     if(diasEsc>0 && diasAberto>=diasEsc){
       lista.push({
         id: 'esc_'+ag.id,
-        titulo: `⚠ Escalonamento — recontato em aberto há ${diasAberto} dia(s)`,
+        titulo: `<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> Escalonamento — recontato em aberto há ${diasAberto} dia(s)`,
         tipo: 'lembrete',
         icone: '⏰',
         responsavel: (configRecontato && configRecontato.responsavelEscalonamento) || '',
@@ -6269,7 +6270,7 @@ function isConcluida(a){
 // ── AÇÕES DE LEMBRETES AUTOMÁTICOS (regrasLembretes / lembretesGerados) ──────
 // Converte lembretesGerados para o mesmo formato usado pelas outras ações de
 // modalidade 'lembrete' (confirmação de agendamento e recontato), para que o
-// módulo "Lembretes" e o bloco "🔔 Lembretes" em "Meu dia"/"Próximos 7 dias"
+// módulo "Lembretes" e o bloco "<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Lembretes" em "Meu dia"/"Próximos 7 dias"
 // mostrem sempre o mesmo conjunto de itens e a mesma contagem. Itens descartados
 // não entram (não fazem mais sentido em nenhuma das duas telas).
 function gerarAcoesLembretesGerados(){
@@ -6293,7 +6294,7 @@ function gerarAcoesLembretesGerados(){
 
 // Junta as três origens de "lembrete" (confirmação de agendamento, recontato de
 // cancelamento e lembretes automáticos configurados) num único conjunto — é essa
-// lista que alimenta tanto o bloco "🔔 Lembretes" de Meu dia/Próximos 7 dias quanto
+// lista que alimenta tanto o bloco "<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Lembretes" de Meu dia/Próximos 7 dias quanto
 // o módulo "Lembretes" e seu contador no menu, garantindo que os números batam.
 function gerarTodosLembretes(){
   return gerarAcoesConfirmacaoAgendamento()
@@ -6319,7 +6320,7 @@ function goTo(id, btn){
       // Mostrar feedback visual sem alert intrusivo
       const aviso = document.getElementById('perm-aviso');
       if(aviso){
-        aviso.textContent = `⚠ ${nomeUsuario} não tem permissão para acessar este módulo.`;
+        aviso.textContent = `<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> ${nomeUsuario} não tem permissão para acessar este módulo.`;
         aviso.style.display='block';
         clearTimeout(aviso._t);
         aviso._t = setTimeout(()=>aviso.style.display='none', 3000);
@@ -6393,11 +6394,11 @@ function renderHoje(){
   atualizarCardsFinanceirosHoje();
 
   const c = document.getElementById('hoje-container');
-  if(!total){ c.innerHTML=`<div class="card"><div class="empty"><div class="empty-ic">✅</div>Tudo em dia! Nenhuma ação pendente para hoje.</div></div>`; }
+  if(!total){ c.innerHTML=`<div class="card"><div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg></div>Tudo em dia! Nenhuma ação pendente para hoje.</div></div>`; }
   else{
     let html='';
     if(atrasadas.length){
-      html+=`<div class="sl" style="color:var(--da)">⚠ Atrasadas — atenção imediata</div>`;
+      html+=`<div class="sl" style="color:var(--da)"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> Atrasadas — atenção imediata</div>`;
       html+=renderAcoesPorModalidade(atrasadas,'atrasada');
     }
     if(deHoje.length){
@@ -6415,9 +6416,9 @@ function renderHoje(){
 // de tarefa dentro de um mesmo bloco de data (ex: dentro de "Atrasadas", ou dentro
 // de um dia específico em "Próximos 7 dias").
 const MODALIDADE_INFO = {
-  lembrete:  {label:'🔔 Lembretes'},
-  fluxo:     {label:'🔄 Fluxo de ação'},
-  pendencia: {label:'📌 Pendências'},
+  lembrete:  {label:'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Lembretes'},
+  fluxo:     {label:'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Fluxo de ação'},
+  pendencia: {label:'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 2a5 5 0 0 0-5 5c0 3 2 4 2 7H9l3 8 3-8h-2c0-3 2-4 2-7a5 5 0 0 0-5-5z"/></svg> Pendências'},
 };
 function renderAcoesPorModalidade(lista, tipoCard){
   const grupos = {lembrete:[], fluxo:[], pendencia:[]};
@@ -6447,7 +6448,7 @@ function renderAcaoCard(a, tipo){
   const pillCls = tipo==='atrasada' ? 'p-danger' : tipo==='futura' ? 'p-neutral' : 'p-green';
   const scriptHtml = a.script ? `<div class="ac-script">"${a.script}"</div>` : '';
   const aStr = JSON.stringify(a).replace(/"/g,'&quot;');
-  const pacienteLinha = a.pacienteNome ? `<div class="ac-patient">👤 ${a.pacienteNome} · <span style="color:var(--tx3)">${a.responsavel||''}</span></div>` : `<div class="ac-patient"><span style="color:var(--tx3)">${a.responsavel||'(sem responsável)'}</span></div>`;
+  const pacienteLinha = a.pacienteNome ? `<div class="ac-patient"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg> ${a.pacienteNome} · <span style="color:var(--tx3)">${a.responsavel||''}</span></div>` : `<div class="ac-patient"><span style="color:var(--tx3)">${a.responsavel||'(sem responsável)'}</span></div>`;
   // Confirmação de agendamento e recontato têm uma ação "principal" (que leva direto ao
   // lugar certo do sistema — o agendamento ou o registro de recontato) e, além dela, podem
   // ser concluídas manualmente direto da tela inicial — por isso mostram os dois botões,
@@ -6481,7 +6482,7 @@ function renderAcaoCard(a, tipo){
       ${scriptHtml}
       <div class="ac-meta">
         <span class="pill ${pillCls}">${diasStr}</span>
-        <span class="pill p-neutral">📅 ${fmtDate(a.data)}</span>
+        <span class="pill p-neutral"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="4" width="18" height="18" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg> ${fmtDate(a.data)}</span>
       </div>
     </div>
     ${botaoHtml}
@@ -6648,7 +6649,7 @@ function renderHistoricoAcoes(){
   const el = document.getElementById('hac-lista');
   if(!el) return;
   if(!lista.length){
-    el.innerHTML = `<div class="empty"><div class="empty-ic">📋</div>Nenhum registro encontrado.</div>`;
+    el.innerHTML = `<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg></div>Nenhum registro encontrado.</div>`;
     return;
   }
   const gridCols = '90px 1fr 120px 100px 100px 110px';
@@ -6666,7 +6667,7 @@ function renderHistoricoAcoes(){
       <div style="font-size:12px;color:var(--tx2)">${fmtDate(parseIso(h.concluidaEm))}</div>
       <div>
         <div style="font-size:13px;font-weight:500">${esc(h.acaoTitulo)}</div>
-        <div style="font-size:12px;color:var(--tx2)">👤 ${esc(h.pacienteNome||'—')}</div>
+        <div style="font-size:12px;color:var(--tx2)"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg> ${esc(h.pacienteNome||'—')}</div>
         ${h.motivo?`<div style="font-size:11px;color:var(--da);margin-top:3px">Motivo: ${esc(h.motivo)}</div>`:''}
       </div>
       <div style="font-size:12px;color:var(--tx2)">${esc(h.situacaoLabel||'—')}</div>
@@ -6720,7 +6721,7 @@ function renderAcoesPendentesLista(){
   const el = document.getElementById('acp-lista');
   if(!el) return;
   if(!lista.length){
-    el.innerHTML = `<div class="empty"><div class="empty-ic">✅</div>Nenhuma ação pendente encontrada.</div>`;
+    el.innerHTML = `<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg></div>Nenhuma ação pendente encontrada.</div>`;
     return;
   }
   const hojeStr = iso(hoje);
@@ -6737,10 +6738,10 @@ function renderAcoesPendentesLista(){
     const aStr = JSON.stringify(a).replace(/"/g,'&quot;');
     const sitLabel = a.situacaoId ? getSituacaoLabel(a.situacaoId) : '—';
     return `<div style="display:grid;grid-template-columns:${gridCols};gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:center">
-      <div style="font-size:12px;color:${atrasado?'var(--da)':'var(--tx2)'}">${fmtDate(a.data)}${atrasado?' ⚠':''}</div>
+      <div style="font-size:12px;color:${atrasado?'var(--da)':'var(--tx2)'}">${fmtDate(a.data)}${atrasado?' <svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>':''}</div>
       <div>
         <div style="font-size:13px;font-weight:500">${esc(a.titulo)}</div>
-        <div style="font-size:12px;color:var(--tx2)">👤 ${esc(a.pacienteNome||'—')}</div>
+        <div style="font-size:12px;color:var(--tx2)"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg> ${esc(a.pacienteNome||'—')}</div>
       </div>
       <div style="font-size:12px;color:var(--tx2)">${esc(sitLabel)}</div>
       <div style="font-size:12px;color:var(--tx2)">${esc(a.responsavel||'—')}</div>
@@ -6847,7 +6848,7 @@ function renderLembretes(){
   const wrap = document.getElementById('lemb-lista-wrap');
   if(!wrap) return;
   if(!lista.length){
-    wrap.innerHTML=`<div class="card"><div class="empty"><div class="empty-ic">🔔</div>Nenhum lembrete encontrado.</div></div>`;
+    wrap.innerHTML=`<div class="card"><div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>Nenhum lembrete encontrado.</div></div>`;
     atualizarBadgeLembretes();
     return;
   }
@@ -6912,7 +6913,7 @@ function atualizarBadgeLembretes(){
   const nomeAtual=nomeUsuarioAtual();
   // Mesmo critério usado em "Meu dia" (acaoEhDe/acoesMinhas): só conta o que é
   // realmente meu, hoje + atrasado, e ainda não concluído — para o número bater
-  // exatamente com o card "🔔 Lembretes" da tela inicial.
+  // exatamente com o card "<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Lembretes" da tela inicial.
   const pendentes=gerarTodosLembretes().filter(a=>{
     if(isConcluida(a)) return false;
     if(!a.data || iso(a.data)>hojeStr) return false;
@@ -6948,7 +6949,7 @@ function renderCfgRegrasLembretes(){
   });
 
   if(!regrasLembretes.length){
-    c.innerHTML=`<div class="empty"><div class="empty-ic">🔔</div>Nenhuma regra criada ainda.</div>`;
+    c.innerHTML=`<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>Nenhuma regra criada ainda.</div>`;
     return;
   }
   c.innerHTML = regrasLembretes.map((r,i)=>{
@@ -7025,7 +7026,7 @@ function renderProximos(){
   atualizarCardsFinanceirosProx7();
 
   const c=document.getElementById('proximos-container');
-  if(!futuras.length){c.innerHTML=`<div class="card"><div class="empty"><div class="empty-ic">📅</div>Nenhuma ação nos próximos 7 dias.</div></div>`;return;}
+  if(!futuras.length){c.innerHTML=`<div class="card"><div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="4" width="18" height="18" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>Nenhuma ação nos próximos 7 dias.</div></div>`;return;}
   const grupos={};
   futuras.forEach(a=>{const ds=iso(a.data);if(!grupos[ds])grupos[ds]=[];grupos[ds].push(a);});
   let html='';
@@ -7053,7 +7054,7 @@ function renderAcoesFuturasPorModalidade(lista){
       <span>${MODALIDADE_INFO[mod].label}</span><span class="pill p-neutral" style="font-size:9px">${itens.length}</span>
     </div>`;
     itens.forEach(a=>{
-      const pacienteLinha = a.pacienteNome ? `<div class="ac-patient">👤 ${a.pacienteNome} · <span style="color:var(--tx3)">${a.responsavel||''}</span></div>` : `<div class="ac-patient"><span style="color:var(--tx3)">${a.responsavel||'(sem responsável)'}</span></div>`;
+      const pacienteLinha = a.pacienteNome ? `<div class="ac-patient"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg> ${a.pacienteNome} · <span style="color:var(--tx3)">${a.responsavel||''}</span></div>` : `<div class="ac-patient"><span style="color:var(--tx3)">${a.responsavel||'(sem responsável)'}</span></div>`;
       html+=`<div class="ac-card futura" style="margin-bottom:8px">
         <div class="ac-icon ${icClass(a.icone)}" style="width:30px;height:30px;font-size:14px">${a.icone||"💬"}</div>
         <div class="ac-body"><div class="ac-title">${a.titulo}</div>
@@ -7225,7 +7226,7 @@ function onCpfBlurNovo(el){
 
   const existente=pacientes.find(p=>onlyDigits(p.cpf)===cpf);
   if(existente){
-    if(hint){hint.textContent=`⚠ CPF já cadastrado: ${existente.nome}`;hint.className='input-hint err';}
+    if(hint){hint.textContent=`<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> CPF já cadastrado: ${existente.nome}`;hint.className='input-hint err';}
     preencherFormNovoComExistente(existente);
   }
 }
@@ -7639,8 +7640,8 @@ function renderPacientes(filtro){
   const temFiltroAdv=(()=>{const a=filtrosPtAdv;return !!(a.situacoes.length||a.sexo||a.origem||a.indicador||a.cidade||a.idadeMin!==''||a.idadeMax!==''||a.proximaAcao||a.cadDe||a.cadAte);})();
   if(!lista.length){
     wrap.innerHTML=(termo||temFiltroAdv)
-      ? '<div class="empty"><div class="empty-ic">👥</div>Nenhum paciente encontrado para este filtro.</div>'
-      : '<div class="empty"><div class="empty-ic">👥</div>Nenhum paciente cadastrado ainda.</div>';
+      ? '<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-5.5 7-5.5s7 2 7 5.5"/><path d="M16 8.5a3 3 0 1 0 0-6"/><path d="M17 14.5c2.8.4 5 2.3 5 5.5"/></svg></div>Nenhum paciente encontrado para este filtro.</div>'
+      : '<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-5.5 7-5.5s7 2 7 5.5"/><path d="M16 8.5a3 3 0 1 0 0-6"/><path d="M17 14.5c2.8.4 5 2.3 5 5.5"/></svg></div>Nenhum paciente cadastrado ainda.</div>';
     return;
   }
   const totalPaginas=Math.max(1, Math.ceil(lista.length/PACIENTES_POR_PAGINA));
@@ -7984,7 +7985,7 @@ function renderPpAcoes(p){
   const hojeStr=iso(hoje);
   const wrap=document.getElementById('pp-acoes-wrap');
   if(acoes.length===0){
-    wrap.innerHTML='<div class="empty"><div class="empty-ic">✅</div>Nenhuma ação gerada para este paciente.</div>';
+    wrap.innerHTML='<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg></div>Nenhuma ação gerada para este paciente.</div>';
     return;
   }
   wrap.innerHTML=acoes.map(a=>{
@@ -8012,7 +8013,7 @@ function renderPpHistorico(p){
   const wrap=document.getElementById('pp-historico-wrap');
   const entradas=(p.historico||[]).filter(h=>h.data&&h.data!=='—'&&!h.nota?.includes('(data não informada)'));
   if(!entradas.length){
-    wrap.innerHTML='<div class="empty"><div class="empty-ic">📋</div>Nenhum registro ainda.</div>';
+    wrap.innerHTML='<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg></div>Nenhum registro ainda.</div>';
     return;
   }
   wrap.innerHTML=entradas.slice().map(h=>`<div style="display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border)">
@@ -8027,7 +8028,7 @@ function renderPpLembretes(p){
     .filter(l=>String(l.pacienteId)===String(p.id))
     .slice().sort((a,b)=>a.dataLembrete>b.dataLembrete?1:-1);
   if(!lista.length){
-    wrap.innerHTML='<div class="empty"><div class="empty-ic">🔔</div>Nenhum lembrete gerado para este paciente.</div>';
+    wrap.innerHTML='<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>Nenhum lembrete gerado para este paciente.</div>';
     return;
   }
   const pillMap={pendente:'p-warn',concluido:'p-green',descartado:'p-neutral'};
@@ -9187,11 +9188,11 @@ function _criarModalFormaPagamento(){
       <div class="fl" style="margin-bottom:12px">
         <label>Tipo de pagamento</label>
         <select id="pgto-tipo" onchange="_orcAtualizarCamposPagto()" style="font-size:13px">
-          <option value="dinheiro">💵 Dinheiro</option>
-          <option value="transferencia">🏦 Transferência / Pix</option>
-          <option value="debito">💳 Débito</option>
-          <option value="credito">💳 Crédito</option>
-          <option value="boleto">📄 Boleto</option>
+          <option value="dinheiro"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Dinheiro</option>
+          <option value="transferencia"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 10l9-6 9 6"/><rect x="4" y="10" width="16" height="9" /><path d="M2 21h20"/></svg> Transferência / Pix</option>
+          <option value="debito"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg> Débito</option>
+          <option value="credito"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg> Crédito</option>
+          <option value="boleto"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Boleto</option>
         </select>
       </div>
       <div class="fl" style="margin-bottom:12px">
@@ -9827,7 +9828,7 @@ function _efAtualizarUpload(tipo, dadosAtuais){
     <div style="margin-top:12px">
       <label class="lbl">Anexar ${label}</label>
       ${jaAnexado?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:var(--r6)">
-        <span style="font-size:13px">📎</span>
+        <span style="font-size:13px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 11.5l-9.5 9.5a4 4 0 0 1-5.7-5.7l9-9a2.5 2.5 0 0 1 3.6 3.6l-8.9 8.9a1 1 0 0 1-1.5-1.5l8-8"/></svg></span>
         <span style="font-size:12px;color:#065F46;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${jaAnexado.nome}</span>
         <button onclick="_efRemoverAnexo()" style="font-size:11px;border:none;background:none;color:#991B1B;cursor:pointer;font-weight:600">Remover</button>
       </div>`:''}
@@ -9836,7 +9837,7 @@ function _efAtualizarUpload(tipo, dadosAtuais){
         ondragleave="this.style.background='var(--s2)';this.style.borderColor='var(--border-s)'"
         ondrop="_efOnDrop(event)"
         onclick="document.getElementById('ef-arquivo').click()">
-        <div style="font-size:20px;margin-bottom:4px">📂</div>
+        <div style="font-size:20px;margin-bottom:4px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1H5"/><path d="M3 8l1.5 10a2 2 0 0 0 2 1.8h11a2 2 0 0 0 2-1.8L21 8"/></svg></div>
         <div style="font-size:12px;font-weight:500;color:var(--tx2)">Arraste o arquivo aqui ou <span style="color:var(--ac);text-decoration:underline">clique para escolher</span></div>
         <div style="font-size:11px;color:var(--tx3);margin-top:3px">PDF, JPG ou PNG</div>
       </div>
@@ -9867,7 +9868,7 @@ function _efOnFileChange(input){
 
 function _efMostrarNomeArquivo(nome){
   const el=document.getElementById('ef-file-nome');
-  if(el){ el.style.display='block'; el.textContent='📎 '+nome; }
+  if(el){ el.style.display='block'; el.textContent='<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 11.5l-9.5 9.5a4 4 0 0 1-5.7-5.7l9-9a2.5 2.5 0 0 1 3.6 3.6l-8.9 8.9a1 1 0 0 1-1.5-1.5l8-8"/></svg> '+nome; }
 }
 
 function _efRemoverAnexo(){
@@ -10448,7 +10449,7 @@ function _renderProntPlano(p){
   if(!wrap) return;
   const orcs=_orcamentos().filter(o=>String(o.pacienteId)===String(p.id)&&o.status==='aprovado');
   if(!orcs.length){
-    wrap.innerHTML='<div class="empty"><div class="empty-ic">📋</div><div style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:4px">Nenhum plano de tratamento aprovado</div><div style="font-size:12px;color:var(--tx3)">Aprove um orçamento para ele aparecer aqui como plano de tratamento.</div></div>';
+    wrap.innerHTML='<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg></div><div style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:4px">Nenhum plano de tratamento aprovado</div><div style="font-size:12px;color:var(--tx3)">Aprove um orçamento para ele aparecer aqui como plano de tratamento.</div></div>';
     return;
   }
   const fmtData=d=>{ if(!d) return '—'; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
@@ -10666,11 +10667,11 @@ function _renderProntFicha(p){
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
           <!-- Botão exportar PDF individual -->
           <button onclick="_prontExportarFichaUnica('${f.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--tx2);display:flex;align-items:center;gap:4px" title="Exportar este atendimento em PDF">
-            📄 Exportar PDF
+            <svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar PDF
           </button>
           <!-- Botão anexar arquivo -->
           <label style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:${temAnexo?'#065F46':'var(--tx2)'};display:flex;align-items:center;gap:4px" title="${temAnexo?'Arquivo: '+f.anexoNome:'Anexar PDF assinado'}">
-            📎 ${temAnexo?f.anexoNome.slice(0,18)+(f.anexoNome.length>18?'…':''):'Anexar'}
+            <svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 11.5l-9.5 9.5a4 4 0 0 1-5.7-5.7l9-9a2.5 2.5 0 0 1 3.6 3.6l-8.9 8.9a1 1 0 0 1-1.5-1.5l8-8"/></svg> ${temAnexo?f.anexoNome.slice(0,18)+(f.anexoNome.length>18?'…':''):'Anexar'}
             <input type="file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="_prontAnexarArquivo('${f.id}',this)">
           </label>
           <div style="width:1px;height:18px;background:var(--border)"></div>
@@ -11480,7 +11481,7 @@ function renderCfgModelos(tipo){
   if(!wrap) return;
   const lista=modelosDocumentos.filter(m=>m.tipo===tipo);
   if(!lista.length){
-    wrap.innerHTML='<div class="empty"><div class="empty-ic">📄</div>Nenhum modelo cadastrado ainda.</div>';
+    wrap.innerHTML='<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>Nenhum modelo cadastrado ainda.</div>';
     return;
   }
   wrap.innerHTML=lista.map(m=>`
@@ -12405,7 +12406,7 @@ function salvarAtendimento(){
   if(p) _renderProntFicha(p);
 }
 function renderPpDocumentos(p){
-  document.getElementById('pp-documentos-wrap').innerHTML='<div class="empty"><div class="empty-ic">📄</div>Módulo em configuração.</div>';
+  document.getElementById('pp-documentos-wrap').innerHTML='<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>Módulo em configuração.</div>';
 }
 function renderPpFotos(p){
   document.getElementById('pp-fotos-wrap').innerHTML='<div class="empty"><div class="empty-ic">📷</div>Módulo em configuração.</div>';
@@ -12420,8 +12421,8 @@ function renderPpAgenda(p){
     .filter(a=>String(a.pacienteId)===String(p.id))
     .sort((a,b)=> a.data<b.data?1:a.data>b.data?-1:0);
   if(!lista.length){
-    const debug=todos.length?`<div style="font-size:11px;color:var(--tx3);margin-top:8px;padding:8px;background:var(--s2);border-radius:var(--r6)">⚠️ Encontrados ${todos.length} agendamento(s) pelo nome mas não pelo ID. p.id = <b>${p.id}</b> (${typeof p.id}), pacienteId nos agendamentos: ${todos.map(a=>`<b>${a.pacienteId}</b> (${typeof a.pacienteId})`).join(', ')}</div>`:'';
-    wrap.innerHTML='<div class="empty"><div class="empty-ic">📅</div>Nenhum agendamento encontrado para este paciente.</div>'+debug;
+    const debug=todos.length?`<div style="font-size:11px;color:var(--tx3);margin-top:8px;padding:8px;background:var(--s2);border-radius:var(--r6)"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> Encontrados ${todos.length} agendamento(s) pelo nome mas não pelo ID. p.id = <b>${p.id}</b> (${typeof p.id}), pacienteId nos agendamentos: ${todos.map(a=>`<b>${a.pacienteId}</b> (${typeof a.pacienteId})`).join(', ')}</div>`:'';
+    wrap.innerHTML='<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="4" width="18" height="18" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>Nenhum agendamento encontrado para este paciente.</div>'+debug;
     return;
   }
   const pillMap={agendado:'p-neutral',confirmado:'p-green',realizado:'p-info',faltou:'p-danger',cancelado:'p-neutral'};
@@ -12656,7 +12657,7 @@ async function sincronizarRespostaAnamnese(pacienteId){
       _aplicarCamposCadastroAnamnese(p, respostasRemotas);
       p.historico.push({data: iso(hoje), situacao: p.situacao, nota: '🩺 Anamnese preenchida pelo paciente via link'});
       if(camposPreenchidos.length){
-        p.historico.push({data: iso(hoje), situacao: p.situacao, nota: `📋 Cadastro atualizado a partir da anamnese: ${camposPreenchidos.join(', ')}`});
+        p.historico.push({data: iso(hoje), situacao: p.situacao, nota: `<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg> Cadastro atualizado a partir da anamnese: ${camposPreenchidos.join(', ')}`});
       }
       salvarLS('sk3-pacientes', pacientes);
     }
@@ -12690,21 +12691,21 @@ function renderAbaAnamnese(p){
   if(preenchido){
     html += `<span style="font-size:13px;color:var(--su)">✓ Preenchida em ${preenchido}</span>`;
     html += `<div style="display:flex;gap:8px">
-      <button class="btn btn-ghost btn-sm" onclick="exportarAnamnesePDF('${p.id}')">📄 Exportar PDF</button>
-      <button class="btn btn-ghost btn-sm" onclick="abrirModalLink('${p.id}')">🔗 Ver link</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportarAnamnesePDF('${p.id}')"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar PDF</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalLink('${p.id}')"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M9 17H7a5 5 0 0 1 0-10h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><path d="M8 12h8"/></svg> Ver link</button>
       <button class="btn btn-danger btn-sm" onclick="limparAnamnese('${p.id}')">Limpar respostas</button>
     </div>`;
   } else {
     html += `<span style="font-size:13px;color:var(--tx3)" id="an-status-label">${token ? 'Link gerado — aguardando preenchimento' : 'Anamnese não enviada'}</span>`;
     html += `<div style="display:flex;gap:8px">`;
     if(token){
-      html += `<button class="btn btn-ghost btn-sm" id="an-btn-verificar" onclick="verificarAnamnese('${p.id}')">🔄 Verificar</button>`;
-      html += `<button class="btn btn-ghost btn-sm" onclick="exportarAnamnesePDF('${p.id}')">📄 Imprimir ficha</button>`;
-      html += `<button class="btn btn-ghost btn-sm" onclick="gerarNovoLinkAnamnese('${p.id}')">🔁 Novo link</button>`;
-      html += `<button class="btn btn-primary btn-sm" onclick="abrirModalLink('${p.id}')">🔗 Ver link</button>`;
+      html += `<button class="btn btn-ghost btn-sm" id="an-btn-verificar" onclick="verificarAnamnese('${p.id}')"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Verificar</button>`;
+      html += `<button class="btn btn-ghost btn-sm" onclick="exportarAnamnesePDF('${p.id}')"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Imprimir ficha</button>`;
+      html += `<button class="btn btn-ghost btn-sm" onclick="gerarNovoLinkAnamnese('${p.id}')"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Novo link</button>`;
+      html += `<button class="btn btn-primary btn-sm" onclick="abrirModalLink('${p.id}')"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M9 17H7a5 5 0 0 1 0-10h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><path d="M8 12h8"/></svg> Ver link</button>`;
     } else {
-      html += `<button class="btn btn-ghost btn-sm" onclick="exportarAnamnesePDF('${p.id}')">📄 Imprimir ficha em branco</button>`;
-      html += `<button class="btn btn-primary btn-sm" onclick="abrirModalLink('${p.id}')">🔗 + Gerar link para paciente</button>`;
+      html += `<button class="btn btn-ghost btn-sm" onclick="exportarAnamnesePDF('${p.id}')"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Imprimir ficha em branco</button>`;
+      html += `<button class="btn btn-primary btn-sm" onclick="abrirModalLink('${p.id}')"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M9 17H7a5 5 0 0 1 0-10h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><path d="M8 12h8"/></svg> + Gerar link para paciente</button>`;
     }
     html += `</div>`;
   }
@@ -12719,13 +12720,13 @@ function renderAbaAnamnese(p){
       if(val === undefined && !valCond) return;
       html += `<div style="padding:10px 12px;background:var(--s2);border-radius:var(--r8)">
         <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">${c.label}</div>
-        <div style="font-size:13px;color:var(--tx)">${val !== undefined ? (val === 'sim' ? '✅ Sim' : val === 'nao' ? '❌ Não' : (val||'—')) : '—'}</div>
+        <div style="font-size:13px;color:var(--tx)">${val !== undefined ? (val === 'sim' ? '<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg> Sim' : val === 'nao' ? '<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg> Não' : (val||'—')) : '—'}</div>
         ${valCond ? `<div style="font-size:12px;color:var(--tx2);margin-top:4px;font-style:italic">${valCond}</div>` : ''}
       </div>`;
     });
     html += `</div>`;
   } else if(!preenchido){
-    html += `<div class="empty"><div class="empty-ic">📋</div>${token ? 'Aguardando o paciente preencher o formulário.' : 'Gere um link e envie para o paciente pelo WhatsApp.'}</div>`;
+    html += `<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg></div>${token ? 'Aguardando o paciente preencher o formulário.' : 'Gere um link e envie para o paciente pelo WhatsApp.'}</div>`;
   }
 
   return html;
@@ -12768,8 +12769,8 @@ function exportarAnamnesePDF(pacienteId){
     if(preenchido){
       // Modo preenchida: mostra pergunta + resposta
       let resposta = '—';
-      if(val === 'sim') resposta = '✅ Sim';
-      else if(val === 'nao') resposta = '❌ Não';
+      if(val === 'sim') resposta = '<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg> Sim';
+      else if(val === 'nao') resposta = '<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg> Não';
       else if(val === 'outro') resposta = '— Prefiro não informar';
       else if(val) resposta = val;
 
@@ -12881,7 +12882,7 @@ async function verificarAnamnese(pacienteId){
     switchPpArea('anamnese');
     showSaveToast('Anamnese recebida e cadastro atualizado!');
   } else {
-    if(btn){ btn.disabled = false; btn.textContent = '🔄 Verificar'; }
+    if(btn){ btn.disabled = false; btn.textContent = '<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Verificar'; }
     const lbl = document.getElementById('an-status-label');
     if(lbl){ lbl.textContent = 'Ainda aguardando preenchimento...'; setTimeout(()=>{ lbl.textContent = 'Link gerado — aguardando preenchimento'; }, 2500); }
   }
@@ -13057,9 +13058,9 @@ function renderCadastroLinkArea(p){
     : `<span style="font-size:13px;color:var(--tx2)">Cadastro incompleto${faltando.length ? ' — faltando: '+esc(faltando.join(', ')) : ''}</span>`;
   html += `<div style="display:flex;gap:8px;flex-wrap:wrap">`;
   if(!completo){
-    html += `<button class="btn btn-primary btn-sm" onclick="abrirModalLinkCadastro('${p.id}')">🔗 Enviar link de cadastro</button>`;
+    html += `<button class="btn btn-primary btn-sm" onclick="abrirModalLinkCadastro('${p.id}')"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M9 17H7a5 5 0 0 1 0-10h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><path d="M8 12h8"/></svg> Enviar link de cadastro</button>`;
   }
-  html += `<button class="btn btn-ghost btn-sm" onclick="exportarCadastroPDF('${p.id}')">📄 Exportar dados do cadastro</button>`;
+  html += `<button class="btn btn-ghost btn-sm" onclick="exportarCadastroPDF('${p.id}')"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar dados do cadastro</button>`;
   html += `</div></div>`;
   return html;
 }
@@ -13117,7 +13118,7 @@ async function abrirModalLinkCadastro(pacienteId){
   // Publica/renova o token no Supabase em background
   const erro = await publicarTokenCadastro(token, pacienteId);
   if(erro){
-    alert('⚠️ O link foi criado localmente, mas NÃO foi salvo no servidor — o paciente não vai conseguir abrir.\n\nDetalhe técnico (envie ao suporte):\n' + (erro.message || erro.details || JSON.stringify(erro)));
+    alert('<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> O link foi criado localmente, mas NÃO foi salvo no servidor — o paciente não vai conseguir abrir.\n\nDetalhe técnico (envie ao suporte):\n' + (erro.message || erro.details || JSON.stringify(erro)));
   }
 }
 
@@ -13204,7 +13205,7 @@ function exportarCadastroPDF(pacienteId){
       if(c.id==='nasc') return v ? new Date(v+'T00:00:00').toLocaleDateString('pt-BR') : '—';
       if(c.id==='sexo') return v==='M' ? 'Masculino' : v==='F' ? 'Feminino' : '—';
       if(c.id==='origem'){
-        const map={google:'🔍 Google',instagram:'📸 Instagram',indicacao:'🤝 Indicação',outro:'💬 Outro'};
+        const map={google:'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg> Google',instagram:'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M4 8h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="14" r="3.5"/></svg> Instagram',indicacao:'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M8 12l3 3 5-5"/><rect x="3" y="9" width="18" height="9" rx="2"/></svg> Indicação',outro:'💬 Outro'};
         return map[v] || '—';
       }
       return v || '—';
@@ -13278,7 +13279,7 @@ function renderCfgAnamnese(){
     <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:500">${c.label}${c.obrigatorio?' <span style="color:var(--da);font-size:11px">*</span>':''}</div>
-        <div style="font-size:11px;color:var(--tx3);margin-top:2px">${tipoAnamneseLabel(c.tipo)}${c.condicionalLabel ? ' · se sim: "'+c.condicionalLabel+'"' : ''}${c.vinculoCadastro ? ' · 🔗 preenche "'+vinculoCadastroLabel(c.vinculoCadastro)+'" no cadastro' : ''}</div>
+        <div style="font-size:11px;color:var(--tx3);margin-top:2px">${tipoAnamneseLabel(c.tipo)}${c.condicionalLabel ? ' · se sim: "'+c.condicionalLabel+'"' : ''}${c.vinculoCadastro ? ' · <svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M9 17H7a5 5 0 0 1 0-10h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><path d="M8 12h8"/></svg> preenche "'+vinculoCadastroLabel(c.vinculoCadastro)+'" no cadastro' : ''}</div>
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0">
         ${i>0?`<button class="btn btn-ghost btn-sm" onclick="moverCampoAnamnese(${i},-1)" title="Subir">↑</button>`:''}
@@ -13440,7 +13441,7 @@ function verificarModoAnamnese(){
 
 function renderPaginaAnamneseErro(msg){
   return `<div style="font-family:Inter,system-ui,sans-serif;max-width:480px;margin:60px auto;padding:24px;text-align:center">
-    <div style="font-size:40px;margin-bottom:16px">⚠️</div>
+    <div style="font-size:40px;margin-bottom:16px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
     <div style="font-size:16px;font-weight:600;margin-bottom:8px">Não foi possível carregar</div>
     <div style="font-size:14px;color:#6B7280">${msg}</div>
   </div>`;
@@ -13448,7 +13449,7 @@ function renderPaginaAnamneseErro(msg){
 
 function renderPaginaAnamneseJaPreenchida(p){
   return `<div style="font-family:Inter,system-ui,sans-serif;max-width:480px;margin:60px auto;padding:24px;text-align:center">
-    <div style="font-size:40px;margin-bottom:16px">✅</div>
+    <div style="font-size:40px;margin-bottom:16px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg></div>
     <div style="font-size:16px;font-weight:600;margin-bottom:8px">Anamnese já enviada!</div>
     <div style="font-size:14px;color:#6B7280">Obrigado, ${p.nome.split(' ')[0]}. Suas informações já foram recebidas pela clínica.</div>
   </div>`;
@@ -13513,7 +13514,7 @@ function renderPaginaAnamnesePaciente(p, token, pacienteId, camposParam){
         </form>
       </div>
       <div class="sucesso" id="sucesso-area">
-        <div class="sucesso-ic">✅</div>
+        <div class="sucesso-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg></div>
         <div class="sucesso-title">Ficha enviada!</div>
         <div class="sucesso-sub">Obrigado, ${nome}. Suas informações foram recebidas. Até breve!</div>
       </div>
@@ -13863,7 +13864,7 @@ function renderFluxoContent(){
           </div>
           <input type="file" id="fa-file-${a.id}" multiple style="display:none" onchange="handleFlowAnexos('${a.id}',this.files)">
           <div id="fa-anexos-${a.id}" style="margin-top:8px">
-            ${anexos.map((f,j)=>`<div class="fa-anexo-item"><span>📎</span><span class="nome">${f.nome}</span><span class="tam">${fmtTamanho(f.tamanho)}</span><button type="button" class="fa-anexo-remove" onclick="removeFlowAnexo('${a.id}',${j})" title="Remover">✕</button></div>`).join('')}
+            ${anexos.map((f,j)=>`<div class="fa-anexo-item"><span><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 11.5l-9.5 9.5a4 4 0 0 1-5.7-5.7l9-9a2.5 2.5 0 0 1 3.6 3.6l-8.9 8.9a1 1 0 0 1-1.5-1.5l8-8"/></svg></span><span class="nome">${f.nome}</span><span class="tam">${fmtTamanho(f.tamanho)}</span><button type="button" class="fa-anexo-remove" onclick="removeFlowAnexo('${a.id}',${j})" title="Remover">✕</button></div>`).join('')}
           </div>
         </div>
         <div class="fl fa-body-full" style="flex-direction:row;align-items:center;gap:8px">
@@ -14107,7 +14108,7 @@ function renderUsuarios(){
   const wrap=document.getElementById('usuarios-lista');
   if(!wrap)return;
   if(!usuarios.length){
-    wrap.innerHTML='<div class="empty"><div class="empty-ic">👤</div>Nenhum usuário cadastrado ainda.</div>';
+    wrap.innerHTML='<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></div>Nenhum usuário cadastrado ainda.</div>';
     return;
   }
   const header=`<div style="display:grid;grid-template-columns:1fr 140px 110px;gap:12px;padding:0 0 8px;border-bottom:1px solid var(--border);margin-bottom:4px">
@@ -14313,7 +14314,7 @@ function renderCargos(){
   const wrap=document.getElementById('cargos-lista');
   if(!wrap)return;
   if(!cargos.length){
-    wrap.innerHTML='<div class="empty"><div class="empty-ic">🏷️</div>Nenhum cargo cadastrado ainda.</div>';
+    wrap.innerHTML='<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20.6 12.6L12 21.2 2.8 12 11.4 3.4H20.6z"/><circle cx="16.5" cy="7.5" r="1.2"/></svg></div>Nenhum cargo cadastrado ainda.</div>';
     return;
   }
   wrap.innerHTML=cargos.map(c=>`<div onclick="abrirModalCargo('${c.id}')" style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer;border-radius:var(--r8);transition:background .12s" onmouseenter="this.style.background='var(--s2)';this.style.padding='11px 10px';this.style.margin='0 -10px'" onmouseleave="this.style.background='';this.style.padding='11px 0';this.style.margin=''">
@@ -14530,14 +14531,14 @@ function salvarRitualLinha(){
 
 // ── REUNIÕES — CONFIGURAÇÃO DE TEMPLATES ────────────────────────────────
 const PAUTA_TIPOS={'checklist':'Checklist','indicador':'Indicador numérico','texto':'Anotação geral'};
-const PAUTA_TIPO_ICON={'checklist':'☑','indicador':'📊','texto':'📝'};
+const PAUTA_TIPO_ICON={'checklist':'☑','indicador':'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>','texto':'📝'};
 const PERIODICIDADES=['Diária','Semanal','Quinzenal','Mensal','Trimestral','Semestral','Anual'];
 
 function renderCfgReunioes(){
   const c=document.getElementById('cfg-reunioes-lista');
   if(!c)return;
   if(!reunioesTemplates.length){
-    c.innerHTML=`<div class="empty"><div class="empty-ic">🕐</div>Nenhum tipo de reunião configurado. Clique em "+ Novo tipo de reunião" para começar.</div>`;
+    c.innerHTML=`<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></div>Nenhum tipo de reunião configurado. Clique em "+ Novo tipo de reunião" para começar.</div>`;
     return;
   }
   c.innerHTML=reunioesTemplates.map(t=>`
@@ -14771,7 +14772,7 @@ function abrirOcorrenciaReuniao(id){
   // Pauta
   html+=`<div class="sl">Pauta</div>`;
   if(!o.pauta.length){
-    html+=`<div class="empty" style="padding:14px"><div class="empty-ic">📋</div>Esta reunião não tinha itens de pauta configurados.</div>`;
+    html+=`<div class="empty" style="padding:14px"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg></div>Esta reunião não tinha itens de pauta configurados.</div>`;
   } else {
     o.pauta.forEach(it=>{
       if(it.tipo==='checklist'){
@@ -15132,7 +15133,7 @@ function renderPendencias(){
     const urgPill=urg==='alta'?'p-danger':urg==='media'?'p-warn':'p-green';
     return `<div class="pend-row" style="display:grid;grid-template-columns:${gridCols};gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:center;${podeEditar?'cursor:pointer':''};${p.status==='concluida'?'opacity:.5':''}" ${podeEditar?`onclick="abrirModalEditarPendencia('${p.ocorrenciaId}','${p.id}',${p.avulsa})"`:''}">
     <div style="font-size:12px;color:var(--tx2)">${fmtDate(parseIso(p.reuniaoData))}</div>
-    <div style="font-size:13px;${p.status==='concluida'?'text-decoration:line-through':''}">${p.texto}${p.pacienteNome?`<div style="font-size:11px;color:var(--tx3);font-weight:400">👤 ${esc(p.pacienteNome)}</div>`:''}</div>
+    <div style="font-size:13px;${p.status==='concluida'?'text-decoration:line-through':''}">${p.texto}${p.pacienteNome?`<div style="font-size:11px;color:var(--tx3);font-weight:400"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg> ${esc(p.pacienteNome)}</div>`:''}</div>
     <div style="font-size:12px;color:var(--tx2)">${p.avulsa?'<span class="pill p-neutral">Avulsa</span>':p.reuniaoNome}</div>
     <div><span class="pill ${urgPill}" style="font-size:10px">${urgenciaLabel[urg]}</span></div>
     <div style="font-size:12px;color:var(--tx2)">${p.criadoPorNome||'—'}</div>
@@ -15414,7 +15415,7 @@ function renderDesmarcados(){
   const wrap=document.getElementById('desm-lista-wrap');
   if(!wrap) return;
   if(!lista.length){
-    wrap.innerHTML=`<div class="empty"><div class="empty-ic">✅</div>Nenhum paciente desmarcado em aberto. Tudo recontatado.</div>`;
+    wrap.innerHTML=`<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg></div>Nenhum paciente desmarcado em aberto. Tudo recontatado.</div>`;
     atualizarBadgeDesmarcados();
     return;
   }
@@ -15570,7 +15571,7 @@ function renderCheckinHoje(){
   const registroDia=(checkinRegistros[hojeStr]||{})[usuarioAtualId]||{};
 
   let html=`<div class="card">
-    <div class="card-title">✅ Rotina do dia</div>
+    <div class="card-title"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg> Rotina do dia</div>
     <div class="card-sub" style="margin-bottom:10px">Confirme as tarefas do seu turno</div>
     <div class="fg">`;
 
@@ -15672,7 +15673,7 @@ function moverCheckinItem(cargoId, itemId, direcao){
 function renderCheckinTemplates(){
   const wrap=document.getElementById('checkin-templates-lista');
   if(!wrap)return;
-  if(!cargos.length){ wrap.innerHTML='<div class="empty"><div class="empty-ic">🏷️</div>Nenhum cargo cadastrado ainda.</div>'; return; }
+  if(!cargos.length){ wrap.innerHTML='<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20.6 12.6L12 21.2 2.8 12 11.4 3.4H20.6z"/><circle cx="16.5" cy="7.5" r="1.2"/></svg></div>Nenhum cargo cadastrado ainda.</div>'; return; }
 
   wrap.innerHTML=cargos.map(c=>{
     const itens=checkinTemplates[c.id]||[];
@@ -15699,7 +15700,7 @@ function renderCheckinTemplates(){
         <span onclick="abrirModalCheckinItem('${c.id}','${it.id}')" style="cursor:pointer"><span class="pill p-neutral">${periodicidadeLabel(it)}</span></span>
         <span onclick="abrirModalCheckinItem('${c.id}','${it.id}')" style="color:var(--tx3);font-size:12px;text-align:center;cursor:pointer">✎</span>
       </div>`).join('')
-      : '<div class="empty" style="padding:12px 10px"><div class="empty-ic">✅</div>Nenhuma tarefa para este cargo ainda.</div>'
+      : '<div class="empty" style="padding:12px 10px"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg></div>Nenhuma tarefa para este cargo ainda.</div>'
     ) : '';
 
     return `<div style="margin-bottom:6px;border:1px solid var(--border);border-radius:var(--r8);overflow:hidden">
@@ -15901,7 +15902,7 @@ function renderCheckinAtribuicoes(){
   if(!wrap)return;
 
   if(!checkinAtribuicoes.length){
-    wrap.innerHTML='<div class="empty"><div class="empty-ic">📊</div>Nenhum usuário atribuído ainda. Use os campos abaixo para atribuir.</div>';
+    wrap.innerHTML='<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg></div>Nenhum usuário atribuído ainda. Use os campos abaixo para atribuir.</div>';
   } else {
     wrap.innerHTML=checkinAtribuicoes.map((a,i)=>{
       const u=usuarios.find(x=>x.id===a.usuarioId);
@@ -15958,7 +15959,7 @@ function showCfg(sub, btn){
     const aviso = document.getElementById('perm-aviso');
     if(aviso){
       const nome = usuarios.find(u=>u.id===usuarioAtualId)?.nome || 'este usuário';
-      aviso.textContent = `⚠ ${nome} não tem permissão para acessar esta configuração.`;
+      aviso.textContent = `<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> ${nome} não tem permissão para acessar esta configuração.`;
       aviso.style.display='block';
       clearTimeout(aviso._t);
       aviso._t = setTimeout(()=>aviso.style.display='none', 3000);
@@ -16231,9 +16232,9 @@ function iconeCampoEmpresa(c){
   if(k.includes('registro')||k.includes('crea')||k.includes('cro')) return '🛡️';
   if(k.includes('rua')||k.includes('logradouro')||k.includes('bairro')||k.includes('cep')||k.includes('numero')||k.includes('número')||k.includes('cidade')||k.includes('endere')) return '📍';
   if(k.includes('telefone')||k.includes('whats')||k.includes('fone')) return '📞';
-  if(k.includes('mail')) return '✉️';
-  if(k.includes('pix')) return '💳';
-  if(k.includes('banco')||k.includes('agencia')||k.includes('agência')||k.includes('conta')) return '🏦';
+  if(k.includes('mail')) return '<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 6l10 7 10-7"/></svg>';
+  if(k.includes('pix')) return '<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>';
+  if(k.includes('banco')||k.includes('agencia')||k.includes('agência')||k.includes('conta')) return '<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 10l9-6 9 6"/><rect x="4" y="10" width="16" height="9" /><path d="M2 21h20"/></svg>';
   return '▫️';
 }
 
@@ -16261,7 +16262,7 @@ function renderEmpresaCards(){
     const cnpj=(e.dados['cnpj']||'').trim();
     const on=e.id===empresaAtualId;
     return `<div class="emp-card${on?' on':''}" onclick="selecionarEmpresa('${e.id}')">
-      <div class="emp-card-ic">🏢</div>
+      <div class="emp-card-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22v-4h6v4M8 6h1M15 6h1M8 10h1M15 10h1M8 14h1M15 14h1"/></svg></div>
       <div class="emp-card-body">
         <div class="emp-card-title">${esc(razao)}</div>
         ${fantasia?`<div class="emp-card-sub">${esc(fantasia)}</div>`:''}
@@ -16360,21 +16361,21 @@ function renderEmpresaPreview(){
     }).join('');
   wrap.innerHTML=`
     <div class="emp-preview-head">
-      <div class="emp-preview-ic">🏢</div>
+      <div class="emp-preview-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22v-4h6v4M8 6h1M15 6h1M8 10h1M15 10h1M8 14h1M15 14h1"/></svg></div>
       <div>
         <div class="emp-preview-title">${esc(fantasia||razao)}</div>
         ${fantasia?`<div class="emp-preview-sub">${esc(razao)}</div>`:''}
       </div>
     </div>
-    <div class="emp-preview-body">${linhas||'<div class="empty" style="padding:24px"><div class="empty-ic">📋</div>Preencha os dados ao lado para gerar o cartão.</div>'}</div>
-    <div class="emp-preview-foot"><button class="btn btn-ghost btn-sm" onclick="copiarCartaoEmpresa()" id="emp-btn-copiar">📋 Copiar texto</button></div>
+    <div class="emp-preview-body">${linhas||'<div class="empty" style="padding:24px"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg></div>Preencha os dados ao lado para gerar o cartão.</div>'}</div>
+    <div class="emp-preview-foot"><button class="btn btn-ghost btn-sm" onclick="copiarCartaoEmpresa()" id="emp-btn-copiar"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg> Copiar texto</button></div>
   `;
 }
 
 function gerarTextoCartaoEmpresa(e){
   if(!e) return '';
   const titulo=(e.dados['nomeFantasia']||'').trim()||(e.dados['razaoSocial']||'').trim()||'Empresa';
-  const linhas=[`🏢 ${titulo}`,''];
+  const linhas=[`<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22v-4h6v4M8 6h1M15 6h1M8 10h1M15 10h1M8 14h1M15 14h1"/></svg> ${titulo}`,''];
   camposEmpresa.forEach(c=>{
     const valor=(e.dados[c.id]||'').toString().trim();
     if(!valor) return;
@@ -16410,12 +16411,12 @@ function renderEmpresaAnexosTab(){
     const arquivos=e.anexos[p.id]||[];
     return `<div class="card">
       <div class="emp-pasta-head">
-        <div><span style="font-weight:700;font-size:13px">📁 ${esc(p.nome)}</span> <span style="font-size:11px;color:var(--tx3)">${arquivos.length} doc${arquivos.length===1?'':'s'}</span></div>
+        <div><span style="font-weight:700;font-size:13px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> ${esc(p.nome)}</span> <span style="font-size:11px;color:var(--tx3)">${arquivos.length} doc${arquivos.length===1?'':'s'}</span></div>
         ${podeCriar?`<button class="btn btn-primary btn-sm" onclick="document.getElementById('emp-file-${p.id}').click()">+ Documento</button>
         <input type="file" id="emp-file-${p.id}" multiple style="display:none" onchange="handleEmpresaAnexo('${p.id}',this.files)">`:''}
       </div>
       <div style="margin-top:10px">
-        ${arquivos.length?arquivos.map((f,j)=>`<div class="fa-anexo-item"><span>📎</span><a class="nome" href="${f.dados}" download="${esc(f.nome)}" style="color:var(--tx);text-decoration:none" title="Baixar">${esc(f.nome)}</a><span class="tam">${fmtTamanho(f.tamanho)}</span>${podeExcluir?`<button type="button" class="fa-anexo-remove" onclick="removeEmpresaAnexoArquivo('${p.id}',${j})" title="Remover">✕</button>`:''}</div>`).join(''):'<div style="font-size:12px;color:var(--tx3);padding:6px 0">Nenhum documento nesta pasta.</div>'}
+        ${arquivos.length?arquivos.map((f,j)=>`<div class="fa-anexo-item"><span><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 11.5l-9.5 9.5a4 4 0 0 1-5.7-5.7l9-9a2.5 2.5 0 0 1 3.6 3.6l-8.9 8.9a1 1 0 0 1-1.5-1.5l8-8"/></svg></span><a class="nome" href="${f.dados}" download="${esc(f.nome)}" style="color:var(--tx);text-decoration:none" title="Baixar">${esc(f.nome)}</a><span class="tam">${fmtTamanho(f.tamanho)}</span>${podeExcluir?`<button type="button" class="fa-anexo-remove" onclick="removeEmpresaAnexoArquivo('${p.id}',${j})" title="Remover">✕</button>`:''}</div>`).join(''):'<div style="font-size:12px;color:var(--tx3);padding:6px 0">Nenhum documento nesta pasta.</div>'}
       </div>
     </div>`;
   }).join('');
@@ -16612,7 +16613,7 @@ function renderCfgPastasEmpresa(){
   if(!lista)return;
   lista.innerHTML=pastasEmpresa.map((p,i)=>`
     <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
-      <span style="font-size:14px">📁</span>
+      <span style="font-size:14px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
       <input type="text" value="${esc(p.nome)}" style="flex:1;font-size:13px;padding:6px 10px" onfocus="_mostrarBotaoSalvar()" oninput="updatePastaEmpresaNome(${i},this.value)" placeholder="Nome da pasta">
       <button class="btn btn-danger btn-sm" onclick="removePastaEmpresa(${i})" style="padding:4px 8px">✕</button>
     </div>
@@ -16736,7 +16737,7 @@ function valorColunaPaciente(p,col){
     return `<span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nomeComCodigo(p)}</span>`;
   }
   if(col.campoId==='origem'){
-    const origemLabel={'google':'🔍 Google','instagram':'📸 Instagram','indicacao':'🤝 Indicação','outro':'💬 Outro'};
+    const origemLabel={'google':'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg> Google','instagram':'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M4 8h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="14" r="3.5"/></svg> Instagram','indicacao':'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M8 12l3 3 5-5"/><rect x="3" y="9" width="18" height="9" rx="2"/></svg> Indicação','outro':'💬 Outro'};
     return origemLabel[p.origem]||'—';
   }
   return raw?raw:'<span style="color:var(--tx3)">—</span>';
@@ -16801,7 +16802,7 @@ function renderCfgRegrasConfirmacao(){
   if(!c) return;
   const podeEditar = temPerm('agenda_gerenciar');
   if(!regrasConfirmacaoAgendamento.length){
-    c.innerHTML = `<div class="empty"><div class="empty-ic">🔔</div>Nenhuma regra cadastrada ainda. Clique em "+ Nova regra" para criar a primeira.</div>`;
+    c.innerHTML = `<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>Nenhuma regra cadastrada ainda. Clique em "+ Nova regra" para criar a primeira.</div>`;
     return;
   }
   c.innerHTML = regrasConfirmacaoAgendamento.map(r=>{
@@ -16909,7 +16910,7 @@ function renderListaRegrasRecontato(){
   if(!c) return;
   const podeEditar = temPerm('agenda_gerenciar');
   if(!regrasRecontatoCancelamento.length){
-    c.innerHTML = `<div class="empty"><div class="empty-ic">🔁</div>Nenhuma regra cadastrada ainda. Clique em "+ Nova regra" para criar a primeira.</div>`;
+    c.innerHTML = `<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>Nenhuma regra cadastrada ainda. Clique em "+ Nova regra" para criar a primeira.</div>`;
     return;
   }
   c.innerHTML = regrasRecontatoCancelamento.map(r=>{
@@ -17286,7 +17287,7 @@ function renderCfgDisponibilidade(){
   const lista=document.getElementById('cfg-disponibilidade-lista');
   if(!lista)return;
   if(!disponibilidade.length){
-    lista.innerHTML=`<div class="empty"><div class="empty-ic">🕐</div>Nenhum horário configurado. Adicione a grade semanal de cada profissional.</div>`;
+    lista.innerHTML=`<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></div>Nenhum horário configurado. Adicione a grade semanal de cada profissional.</div>`;
     return;
   }
   // agrupar por usuário
@@ -19649,7 +19650,7 @@ function renderCfgDashboard(){
   if(!wrap) return;
   const disponiveis = todosIndicadoresDisponiveis();
   if(!disponiveis.length){
-    wrap.innerHTML = '<div class="empty"><div class="empty-ic">📊</div>Nenhum indicador disponível. Configure indicadores no Check-in diário primeiro.</div>';
+    wrap.innerHTML = '<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg></div>Nenhum indicador disponível. Configure indicadores no Check-in diário primeiro.</div>';
     return;
   }
   // sincroniza config com indicadores existentes
@@ -19974,7 +19975,7 @@ function renderRelatorios(){
       const key = d.cargoId + '__' + d.itemId;
       const ativo = _relIndicadorSelecionado === key;
       html += `<button onclick="abrirRelatorio('${key}')" style="display:flex;align-items:center;gap:8px;width:100%;padding:7px 14px;border:none;background:${ativo?'var(--acl)':'none'};color:${ativo?'var(--ac)':'var(--tx2)'};font-size:12px;font-weight:${ativo?'600':'400'};cursor:pointer;text-align:left;border-left:${ativo?'2px solid var(--ac)':'2px solid transparent'};font-family:var(--font)">
-        <span style="font-size:11px">${d.tipo==='formulario'?'📋':d.tipo==='registro'?'🏷':d.tipo==='moeda'?'💰':d.tipo==='simnao'?'✅':'📊'}</span>
+        <span style="font-size:11px">${d.tipo==='formulario'?'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg>':d.tipo==='registro'?'🏷':d.tipo==='moeda'?'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>':d.tipo==='simnao'?'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg>':'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>'}</span>
         ${d.itemLabel}
       </button>`;
     });
@@ -20051,7 +20052,7 @@ function abrirRelatorio(key, resetFiltro){
       if(it && it.campos) campos = it.campos;
     });
     if(!entradas.length){
-      conteudo.innerHTML = `<div class="card"><div class="card-title">${d.itemLabel}</div><div class="card-sub">${d.cargoNome} · Formulário</div><div class="empty" style="padding:32px 0"><div class="empty-ic">📋</div>Nenhum registro encontrado</div></div>`;
+      conteudo.innerHTML = `<div class="card"><div class="card-title">${d.itemLabel}</div><div class="card-sub">${d.cargoNome} · Formulário</div><div class="empty" style="padding:32px 0"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg></div>Nenhum registro encontrado</div></div>`;
       return;
     }
     // agrupa por data
@@ -20093,7 +20094,7 @@ function abrirRelatorio(key, resetFiltro){
   // Para indicadores numéricos/sim-não/etc — histórico por dia filtrado
   const todasDatas = relDatasNoFiltro.filter(dt => checkinRegistros[dt]).sort().reverse();
   if(!todasDatas.length){
-    conteudo.innerHTML = `<div class="card"><div class="card-title">${d.itemLabel}</div><div class="card-sub">${d.cargoNome} · ${tipoLabel[d.tipo]||d.tipo}</div><div class="empty" style="padding:32px 0"><div class="empty-ic">📊</div>Nenhum dado registrado</div></div>`;
+    conteudo.innerHTML = `<div class="card"><div class="card-title">${d.itemLabel}</div><div class="card-sub">${d.cargoNome} · ${tipoLabel[d.tipo]||d.tipo}</div><div class="empty" style="padding:32px 0"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg></div>Nenhum dado registrado</div></div>`;
     return;
   }
 
@@ -20114,7 +20115,7 @@ function abrirRelatorio(key, resetFiltro){
       if(d.tipo==='moeda') exibVal = 'R$ '+parseFloat(String(e.val).replace(',','.')).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
       else if(d.tipo==='percentual') exibVal = e.val+'%';
       else if(d.tipo==='escala') exibVal = e.val+' / 5';
-      else if(d.tipo==='simnao') exibVal = e.val==='sim'?'✅ Sim':'❌ Não';
+      else if(d.tipo==='simnao') exibVal = e.val==='sim'?'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg> Sim':'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg> Não';
       const n = parseFloat(String(e.val).replace(',','.'));
       if(!isNaN(n)){ totalGeral += n; countGeral++; }
       rows += `<div style="display:grid;grid-template-columns:120px 1fr 120px;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border)">
@@ -20226,12 +20227,12 @@ async function _carregarAnamnesePublica(token){
 }
 
 function _renderErroAnamnese(msg){
-  return '<div style="font-family:Inter,system-ui,sans-serif;max-width:480px;margin:60px auto;padding:24px;text-align:center"><div style="font-size:40px;margin-bottom:16px">⚠️</div><div style="font-size:16px;font-weight:600;margin-bottom:8px">Não foi possível carregar</div><div style="font-size:14px;color:#6B7280">'+msg+'</div></div>';
+  return '<div style="font-family:Inter,system-ui,sans-serif;max-width:480px;margin:60px auto;padding:24px;text-align:center"><div style="font-size:40px;margin-bottom:16px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div><div style="font-size:16px;font-weight:600;margin-bottom:8px">Não foi possível carregar</div><div style="font-size:14px;color:#6B7280">'+msg+'</div></div>';
 }
 
 function _renderJaPreenchidaAnamnese(nomeCompleto){
   const nome = (nomeCompleto||'').split(' ')[0] || 'paciente';
-  return '<div style="font-family:Inter,system-ui,sans-serif;max-width:480px;margin:60px auto;padding:24px;text-align:center"><div style="font-size:40px;margin-bottom:16px">✅</div><div style="font-size:16px;font-weight:600;margin-bottom:8px">Anamnese já enviada!</div><div style="font-size:14px;color:#6B7280">Obrigado, '+nome+'. Suas informações já foram recebidas pela clínica.</div></div>';
+  return '<div style="font-family:Inter,system-ui,sans-serif;max-width:480px;margin:60px auto;padding:24px;text-align:center"><div style="font-size:40px;margin-bottom:16px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg></div><div style="font-size:16px;font-weight:600;margin-bottom:8px">Anamnese já enviada!</div><div style="font-size:14px;color:#6B7280">Obrigado, '+nome+'. Suas informações já foram recebidas pela clínica.</div></div>';
 }
 
 // Metadados de mascara por campo de cadastro vinculado
@@ -20321,14 +20322,14 @@ function _montarAnamneseNaPagina(nomeCompleto, token, pacienteId, campos){
     '<div class="an-greeting">' + saudacao + '</div>' +
     '<div class="an-sub">Preencha sua ficha antes da consulta. Leva menos de 2 minutos. ✨</div>' +
     '<div style="background:#EBF0F7;border-left:3px solid #1E3A5F;border-radius:8px;padding:12px 14px;margin-bottom:18px;font-size:14px;color:#374151;line-height:1.6">' +
-    '📋 <strong>Sobre esta ficha:</strong> A anamnese é importante para que possamos te conhecer melhor e garantir um tratamento seguro e personalizado. Caso se sinta desconfortável em mencionar alguma situação por escrito, fique à vontade para comentar pessoalmente com a Dra. no momento da consulta.' +
+    '<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg> <strong>Sobre esta ficha:</strong> A anamnese é importante para que possamos te conhecer melhor e garantir um tratamento seguro e personalizado. Caso se sinta desconfortável em mencionar alguma situação por escrito, fique à vontade para comentar pessoalmente com a Dra. no momento da consulta.' +
     '</div>' +
     '<hr class="an-divider">' +
     '<div id="an-campos">' + camposHtml + '</div>' +
     '<button class="an-btn-submit" type="button" id="an-btn-enviar">Enviar ficha ✓</button>' +
     '</div>' +
     '<div class="an-sucesso" id="an-sucesso-area">' +
-    '<div class="an-sucesso-ic">✅</div>' +
+    '<div class="an-sucesso-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg></div>' +
     '<div class="an-sucesso-title">Ficha enviada!</div>' +
     '<div class="an-sucesso-sub">' + (nome ? 'Obrigado, ' + nome + '! Suas' : 'Suas') + ' informações foram recebidas.<br>Até breve!</div>' +
     '</div></div></div>';
@@ -20427,7 +20428,7 @@ function _montarAnamneseNaPagina(nomeCompleto, token, pacienteId, campos){
 
 function _renderJaPreenchidaCadastro(nomeCompleto){
   var nome = (nomeCompleto||'').split(' ')[0] || 'paciente';
-  return '<div style="font-family:Inter,system-ui,sans-serif;max-width:480px;margin:60px auto;padding:24px;text-align:center"><div style="font-size:40px;margin-bottom:16px">✅</div><div style="font-size:16px;font-weight:600;margin-bottom:8px">Cadastro já enviado!</div><div style="font-size:14px;color:#6B7280">Obrigado, '+nome+'. Seus dados já foram recebidos pela clínica.</div></div>';
+  return '<div style="font-family:Inter,system-ui,sans-serif;max-width:480px;margin:60px auto;padding:24px;text-align:center"><div style="font-size:40px;margin-bottom:16px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg></div><div style="font-size:16px;font-weight:600;margin-bottom:8px">Cadastro já enviado!</div><div style="font-size:14px;color:#6B7280">Obrigado, '+nome+'. Seus dados já foram recebidos pela clínica.</div></div>';
 }
 
 async function _carregarCadastroPublico(token){
@@ -20528,7 +20529,7 @@ function _montarCadastroNaPagina(nomeCompleto, token, pacienteId, campos){
     '<button class="an-btn-submit" type="button" id="an-btn-enviar-cad">Enviar cadastro ✓</button>' +
     '</div>' +
     '<div class="an-sucesso" id="an-sucesso-area">' +
-    '<div class="an-sucesso-ic">✅</div>' +
+    '<div class="an-sucesso-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg></div>' +
     '<div class="an-sucesso-title">Cadastro enviado!</div>' +
     '<div class="an-sucesso-sub">' + (nome ? 'Obrigado, ' + nome + '! Seus' : 'Seus') + ' dados foram recebidos.<br>Até breve!</div>' +
     '</div></div></div>';
@@ -21055,9 +21056,9 @@ function finVerAnexoTitulo(id){
 function _finAnexoIconHtml(t){
   const anexo=_finAnexoDoTitulo(t);
   if(!anexo){
-    return `<span style="font-size:14px;color:var(--tx3);opacity:.35" title="Sem anexo">📎</span>`;
+    return `<span style="font-size:14px;color:var(--tx3);opacity:.35" title="Sem anexo"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 11.5l-9.5 9.5a4 4 0 0 1-5.7-5.7l9-9a2.5 2.5 0 0 1 3.6 3.6l-8.9 8.9a1 1 0 0 1-1.5-1.5l8-8"/></svg></span>`;
   }
-  return `<button type="button" class="btn btn-sm" style="padding:3px 7px;background:#ECFDF5;border-color:#6EE7B7;color:#065F46" onclick="event.stopPropagation();finVerAnexoTitulo('${t.id}')" title="Ver anexo">📎</button>`;
+  return `<button type="button" class="btn btn-sm" style="padding:3px 7px;background:#ECFDF5;border-color:#6EE7B7;color:#065F46" onclick="event.stopPropagation();finVerAnexoTitulo('${t.id}')" title="Ver anexo"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 11.5l-9.5 9.5a4 4 0 0 1-5.7-5.7l9-9a2.5 2.5 0 0 1 3.6 3.6l-8.9 8.9a1 1 0 0 1-1.5-1.5l8-8"/></svg></button>`;
 }
 
 // ── Navegação entre submódulos ────────────────────────────────────────
@@ -21067,7 +21068,7 @@ function showFinSub(sub, btn){
     const aviso = document.getElementById('perm-aviso');
     if(aviso){
       const nome = usuarios.find(u=>u.id===usuarioAtualId)?.nome || 'este usuário';
-      aviso.textContent = `⚠ ${nome} não tem permissão para acessar esta aba.`;
+      aviso.textContent = `<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> ${nome} não tem permissão para acessar esta aba.`;
       aviso.style.display='block';
       clearTimeout(aviso._t);
       aviso._t = setTimeout(()=>aviso.style.display='none', 3000);
@@ -22560,10 +22561,10 @@ function finAtualizarDivergenciaParcelas(){
     el.innerHTML=`✓ Soma das parcelas confere com o valor do título: <strong>${_finFmt(soma)}</strong>`;
   } else if(diff<0){
     el.classList.add('falta');
-    el.innerHTML=`⚠ Faltam <strong>${_finFmt(Math.abs(diff))}</strong> para completar o valor do título (soma atual: ${_finFmt(soma)} de ${_finFmt(_finParcelasValorTitulo)})`;
+    el.innerHTML=`<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> Faltam <strong>${_finFmt(Math.abs(diff))}</strong> para completar o valor do título (soma atual: ${_finFmt(soma)} de ${_finFmt(_finParcelasValorTitulo)})`;
   } else {
     el.classList.add('excedente');
-    el.innerHTML=`⚠ Parcelas excedem o valor do título em <strong>${_finFmt(diff)}</strong> (soma atual: ${_finFmt(soma)} de ${_finFmt(_finParcelasValorTitulo)})`;
+    el.innerHTML=`<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> Parcelas excedem o valor do título em <strong>${_finFmt(diff)}</strong> (soma atual: ${_finFmt(soma)} de ${_finFmt(_finParcelasValorTitulo)})`;
   }
   if(btn){
     btn.disabled=!ok;
@@ -22724,7 +22725,7 @@ function _rcbFmtData(iso){
   const d=parseIso(iso);
   return d?`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`:'—';
 }
-function _rcbTipoLbl(tipo){ return tipo==='nota_fiscal'?'📘 Nota Fiscal':'🧾 Recibo'; }
+function _rcbTipoLbl(tipo){ return tipo==='nota_fiscal'?'📘 Nota Fiscal':'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg> Recibo'; }
 
 function _rcbValorColuna(r, campo){
   if(campo==='valor') return r.valor||0;
@@ -22780,7 +22781,7 @@ function _rcbLinhaHtml(r){
   const podeEditar=souAdministradorReal()||temPerm('fin_recibos_editar');
   const podeExcluir=souAdministradorReal()||temPerm('fin_recibos_excluir');
   const anexoBtn=r.anexo
-    ?`<button type="button" class="btn btn-sm" style="background:#ECFDF5;border-color:#6EE7B7;color:#065F46" onclick="event.stopPropagation();rcbVerAnexo('${r.id}')" title="Ver anexo">📎</button>`
+    ?`<button type="button" class="btn btn-sm" style="background:#ECFDF5;border-color:#6EE7B7;color:#065F46" onclick="event.stopPropagation();rcbVerAnexo('${r.id}')" title="Ver anexo"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 11.5l-9.5 9.5a4 4 0 0 1-5.7-5.7l9-9a2.5 2.5 0 0 1 3.6 3.6l-8.9 8.9a1 1 0 0 1-1.5-1.5l8-8"/></svg></button>`
     :'—';
   const recorrIc=r.recorrente?`<span class="fin-recorr-ic" title="Recorrente">⟳</span>`:'';
   const previsto = r.liquidado===false;
@@ -22791,7 +22792,7 @@ function _rcbLinhaHtml(r){
   const acoes = `<div style="display:flex;gap:4px;align-items:center">
         ${previsto&&podeEditar?`<button type="button" class="btn btn-sm" style="white-space:nowrap;background:var(--sul);color:var(--su);border-color:var(--su)" onclick="event.stopPropagation();rcbLiquidar('${r.id}')" title="Confirmar recebimento da nota/recibo">Liquidar</button>`:''}
         ${!previsto&&r.liquidadoEm&&podeEditar?`<button type="button" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();rcbDesfazerLiquidacao('${r.id}')" title="Voltar para Previsto">↺</button>`:''}
-        ${podeExcluir?`<button type="button" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();excluirRecibo('${r.id}')" title="Excluir">🗑</button>`:''}
+        ${podeExcluir?`<button type="button" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();excluirRecibo('${r.id}')" title="Excluir"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-9 0v14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6"/></svg></button>`:''}
       </div>`;
   const rowClick = podeEditar
     ? ` onclick="abrirModalRecibo('${r.id}')" style="cursor:pointer"`
@@ -23006,7 +23007,7 @@ function _rcbRecRenderAnexoLista(){
   const wrap=document.getElementById('rcb-recn-anexo-lista');
   if(!wrap) return;
   wrap.innerHTML=_rcbRecAnexoPendente
-    ? `<div class="fin-anexo-item"><span class="fin-anexo-nome">📄 ${esc(_rcbRecAnexoPendente.nome)}</span><button type="button" class="fin-anexo-rm" onclick="rcbRecRemoverAnexoPendente()" title="Remover">✕</button></div>`
+    ? `<div class="fin-anexo-item"><span class="fin-anexo-nome"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> ${esc(_rcbRecAnexoPendente.nome)}</span><button type="button" class="fin-anexo-rm" onclick="rcbRecRemoverAnexoPendente()" title="Remover">✕</button></div>`
     : '';
 }
 
@@ -23416,7 +23417,7 @@ function abrirModalRecibo(id){
   _rcbEditId=id||null;
   _rcbAnexoPendente=null;
   document.getElementById('rcb-modal-id').value=id||'';
-  document.getElementById('rcb-modal-titulo').textContent=id?'🧾 Editar lançamento — Recibos':'🧾 Novo lançamento — Recibos';
+  document.getElementById('rcb-modal-titulo').textContent=id?'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg> Editar lançamento — Recibos':'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg> Novo lançamento — Recibos';
 
   const dataEl=document.getElementById('rcb-data');
   const tipoEl=document.getElementById('rcb-tipo');
@@ -23482,7 +23483,7 @@ function _rcbAtualizarUpload(anexoAtual){
   wrap.innerHTML=`
     <label class="lbl">Anexar arquivo (NF ou recibo)</label>
     ${jaAnexado?`<div style="display:flex;align-items:center;gap:8px;margin:6px 0 8px;padding:8px 10px;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:var(--r6)">
-      <span style="font-size:13px">📎</span>
+      <span style="font-size:13px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 11.5l-9.5 9.5a4 4 0 0 1-5.7-5.7l9-9a2.5 2.5 0 0 1 3.6 3.6l-8.9 8.9a1 1 0 0 1-1.5-1.5l8-8"/></svg></span>
       <span style="font-size:12px;color:#065F46;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(jaAnexado.nome)}</span>
       <button type="button" onclick="rcbRemoverAnexo()" style="font-size:11px;border:none;background:none;color:#991B1B;cursor:pointer;font-weight:600">Remover</button>
     </div>`:''}
@@ -23491,7 +23492,7 @@ function _rcbAtualizarUpload(anexoAtual){
       ondragleave="this.style.background='var(--s2)';this.style.borderColor='var(--border-s)'"
       ondrop="rcbOnDrop(event)"
       onclick="document.getElementById('rcb-arquivo').click()">
-      <div style="font-size:20px;margin-bottom:4px">📂</div>
+      <div style="font-size:20px;margin-bottom:4px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1H5"/><path d="M3 8l1.5 10a2 2 0 0 0 2 1.8h11a2 2 0 0 0 2-1.8L21 8"/></svg></div>
       <div style="font-size:12px;font-weight:500;color:var(--tx2)">Arraste o arquivo aqui ou <span style="color:var(--ac);text-decoration:underline">clique para escolher</span></div>
       <div style="font-size:11px;color:var(--tx3);margin-top:3px">PDF, JPG ou PNG</div>
     </div>
@@ -23702,7 +23703,7 @@ function abrirModalFinLiquidar(ids, tipo){
   const aviso=document.getElementById('fin-liq-aviso');
   if(jaLiq.length&&aviso){
     aviso.style.display='block';
-    aviso.innerHTML=`<div class="card" style="padding:10px 14px;background:var(--wal);border-color:#FDE68A;margin-bottom:0"><div style="font-size:12px;color:var(--wa)">⚠ ${jaLiq.length} título(s) já liquidados serão ignorados. Apenas ${pendentes.length} serão processados.</div></div>`;
+    aviso.innerHTML=`<div class="card" style="padding:10px 14px;background:var(--wal);border-color:#FDE68A;margin-bottom:0"><div style="font-size:12px;color:var(--wa)"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> ${jaLiq.length} título(s) já liquidados serão ignorados. Apenas ${pendentes.length} serão processados.</div></div>`;
   } else if(aviso){ aviso.style.display='none'; }
 
   if(!pendentes.length){ alert('Nenhum título a liquidar entre os selecionados.'); return; }
@@ -23931,7 +23932,7 @@ function renderFinComissao(){
   const nomes=[...new Set(execs.map(i=>i.execProfissional).filter(Boolean))].sort();
 
   if(!nomes.length){
-    wrap.innerHTML=`<div class="fin-empty" style="margin-top:40px"><div style="font-size:24px;margin-bottom:8px">🦷</div>Nenhum procedimento executado ainda no plano de tratamento dos pacientes.</div>`;
+    wrap.innerHTML=`<div class="fin-empty" style="margin-top:40px"><div style="font-size:24px;margin-bottom:8px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 3c-2.5 0-4.5 1.6-4.5 4.2 0 2.4.7 3 .9 6.3.15 2.2.6 5 1.7 5s1.4-2.6 1.6-4.4c.1-.9.4-1.6 1.3-1.6s1.2.7 1.3 1.6c.2 1.8.5 4.4 1.6 4.4s1.55-2.8 1.7-5c.2-3.3.9-3.9.9-6.3C16.5 4.6 14.5 3 12 3z"/></svg></div>Nenhum procedimento executado ainda no plano de tratamento dos pacientes.</div>`;
     return;
   }
 
@@ -23962,7 +23963,7 @@ function finSelecionarProf(btn, nome){
   if(!conteudo) return;
 
   if(!procedimentosExec.length){
-    conteudo.innerHTML=`<div class="fin-empty"><div style="font-size:24px;margin-bottom:8px">✅</div>Nenhum procedimento executado por <strong>${esc(nome)}</strong> encontrado.</div>`;
+    conteudo.innerHTML=`<div class="fin-empty"><div style="font-size:24px;margin-bottom:8px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg></div>Nenhum procedimento executado por <strong>${esc(nome)}</strong> encontrado.</div>`;
     return;
   }
 
@@ -23996,7 +23997,7 @@ function finSelecionarProf(btn, nome){
           </tr>`).join('')}
         </tbody>
       </table>
-    </div>`:'<div class="card" style="padding:12px 16px;margin-bottom:16px"><div style="font-size:12px;color:var(--su)">✅ Todos os procedimentos já foram medidos.</div></div>'}
+    </div>`:'<div class="card" style="padding:12px 16px;margin-bottom:16px"><div style="font-size:12px;color:var(--su)"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg> Todos os procedimentos já foram medidos.</div></div>'}
     <div style="margin-top:8px">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);margin-bottom:8px">Histórico de medições (${medicoes.length})</div>
       ${!medicoes.length?'<div class="fin-empty" style="padding:24px"><div style="font-size:12px">Nenhuma medição lançada ainda para esta profissional.</div></div>':`
