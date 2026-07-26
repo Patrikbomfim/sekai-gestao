@@ -89,9 +89,6 @@
 .og-hero-value{font-size:30px;font-weight:800;letter-spacing:-.8px;line-height:1.1}
 .og-hero-sub{font-size:12px;color:var(--tx3);margin-top:6px}
 .og-hero-blue .og-hero-sub{opacity:.9}
-.og-hero.og-conv-alta .og-hero-value{color:var(--su)}
-.og-hero.og-conv-media .og-hero-value{color:var(--wa)}
-.og-hero.og-conv-baixa .og-hero-value{color:var(--da)}
 
 /* Faixas de idade (orçamentos em aberto por tempo de espera) */
 .og-faixa{flex:1;min-width:150px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r10);padding:12px 14px;cursor:pointer;transition:box-shadow .14s,transform .1s,border-color .12s}
@@ -1237,17 +1234,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <button class="btn btn-primary btn-sm" onclick="renderOrcamentosGeral()" style="height:34px">Listar</button>
   </div>
 
-  <!-- HERO: Potencial de Vendas + Taxa de Conversão -->
-  <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin-bottom:14px">
+  <!-- HERO: Potencial de Vendas -->
+  <div style="margin-bottom:14px">
     <div class="og-hero og-hero-blue">
       <div class="og-hero-label">💰 Potencial de Vendas <span style="font-weight:400;opacity:.85">— em aberto, aguardando decisão</span></div>
       <div class="og-hero-value" id="og-hero-potencial">R$ 0,00</div>
       <div class="og-hero-sub" id="og-hero-potencial-sub">0 orçamento(s) · idade média de 0 dias</div>
-    </div>
-    <div class="og-hero" id="og-hero-conversao-wrap">
-      <div class="og-hero-label">🎯 Taxa de Conversão <span style="font-weight:400;opacity:.85">— no período</span></div>
-      <div class="og-hero-value" id="og-hero-conversao">—</div>
-      <div class="og-hero-sub" id="og-hero-conversao-sub">0 aprovado(s) de 0 decidido(s)</div>
     </div>
   </div>
 
@@ -9721,21 +9713,6 @@ function renderOrcamentosGeral(){
   document.getElementById('og-hero-potencial').textContent = 'R$ ' + fmtMoeda(somaPotencial);
   document.getElementById('og-hero-potencial-sub').textContent = `${abertos.length} orçamento(s) · idade média de ${idadeMedia.toFixed(1).replace('.0','')} dia(s)`;
 
-  // ── HERO: Taxa de Conversão (aprovados ÷ decididos, no período) ─────────
-  const aprovadosCount = baseFiltrada.filter(o=>o.status==='aprovado').length;
-  const reprovadosCount = baseFiltrada.filter(o=>o.status==='reprovado').length;
-  const decididos = aprovadosCount + reprovadosCount;
-  const taxaConv = decididos ? (aprovadosCount/decididos*100) : null;
-  const heroConvWrap = document.getElementById('og-hero-conversao-wrap');
-  heroConvWrap.classList.remove('og-conv-alta','og-conv-media','og-conv-baixa');
-  if(taxaConv===null){
-    document.getElementById('og-hero-conversao').textContent = '—';
-  } else {
-    document.getElementById('og-hero-conversao').textContent = taxaConv.toFixed(1).replace('.',',') + '%';
-    heroConvWrap.classList.add(taxaConv>=60?'og-conv-alta':(taxaConv>=40?'og-conv-media':'og-conv-baixa'));
-  }
-  document.getElementById('og-hero-conversao-sub').textContent = `${aprovadosCount} aprovado(s) de ${decididos} decidido(s)`;
-
   // ── Faixas de idade (só entre os orçamentos em aberto) ───────────────────
   ['0-3','4-7','8-15','15+'].forEach(faixa=>{
     const doFaixa = abertos.filter(o=>o.faixa===faixa);
@@ -10352,8 +10329,13 @@ function _renderOrcPagamentos(){
     wrap.innerHTML='<div style="text-align:center;padding:14px;font-size:12px;color:var(--tx3);background:var(--s2);border-radius:var(--r8)">Nenhuma forma de pagamento adicionada.<br>Voc\u00ea pode criar op\u00e7\u00f5es para o paciente escolher.</div>';
     return;
   }
-  const valorFechadoSugestoes=_orcPagamentos.reduce((s,pg)=>s+((pg.valorTotal||0)*(1-(pg.desconto||0)/100)),0);
-  _atualizarTotalFechado(valorFechadoSugestoes);
+  // As formas de pagamento aqui são OPÇÕES alternativas para o paciente escolher (dinheiro,
+  // crédito, boleto...) — cada uma representa o valor total do orçamento por aquela via, não
+  // uma parte de um total maior. Por isso não somamos entre elas: o "valor final da proposta"
+  // só existe de fato depois que o paciente escolhe uma opção e o orçamento é aprovado (ali sim
+  // os títulos gerados são somados, no bloco acima). Antes disso, escondemos esse resumo agregado
+  // para não sugerir um total que não existe.
+  _atualizarTotalFechado(null);
   const tipoLabel={dinheiro:'Dinheiro',transferencia:'Transfer\u00eancia',debito:'D\u00e9bito',credito:'Cr\u00e9dito',boleto:'Boleto'};
   const tipoIcon={dinheiro:'\ud83d\udcb5',transferencia:'\ud83c\udfe6',debito:'\ud83d\udcb3',credito:'\ud83d\udcb3',boleto:'\ud83d\udcc4'};
   wrap.innerHTML=_orcPagamentos.map((pg,i)=>{
