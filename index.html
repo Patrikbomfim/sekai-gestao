@@ -11999,6 +11999,616 @@ Fone: <b>{{clinica.telefone}}</b> — E-mail: <b>{{clinica.email}}</b></div>
   <div style="flex:1;text-align:center">{{assinatura:testemunha2}}<br>_______________________________<br>Testemunha 2 — RG:</div>
 </div>`,
   },
+  {
+    id:'modelo_termo_sekai_1',
+    tipo:'termo',
+    nome:'TERMO DE BISFOSFONATO SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[],
+    conteudo:`<div style="margin-bottom:16px">Prezado(a) <b>{{paciente.nome}}</b></div>
+<div style="margin-bottom:16px">De acordo com as publicações científicas que integram a "literatura médico-odontológica", considerando a possibilidade de efeitos colaterais sobre os ossos maxilares, torna-se extremamente importante saber se você faz ou fez uso de um dos medicamentos abaixo relacionados, a base de BISFOSFONATOS: ÁCIDO ZOLEDRÔNICO, ALENDRONATO, CLODRONATO, ETIDRONATO, IBANDRONATO, PAMIDRONATO, RESIDRONATO ("remédio para os ossos"):</div>
+<div style="margin-bottom:16px;columns:2;column-gap:24px">
+( ) ÁCIDO ALENDRÔNICO&nbsp;&nbsp;&nbsp;( ) IBANDRONATO DE SÓDIO<br>
+( ) ÁCIDO ZOLEDRÔNICO&nbsp;&nbsp;&nbsp;( ) MINUSORB<br>
+( ) ACLASTA&nbsp;&nbsp;&nbsp;( ) OSSOMAX<br>
+( ) ACTONEL&nbsp;&nbsp;&nbsp;( ) OSTENAN<br>
+( ) ALENDIL&nbsp;&nbsp;&nbsp;( ) OSTEOBAN<br>
+( ) ALENDIL CÁLCIO D&nbsp;&nbsp;&nbsp;( ) OSTEOBLOCK<br>
+( ) ALENDRONATO SÓDICO&nbsp;&nbsp;&nbsp;( ) OSTEOFAR<br>
+( ) BLAZTERE&nbsp;&nbsp;&nbsp;( ) OSTEOFORM<br>
+( ) BONALEN&nbsp;&nbsp;&nbsp;( ) OSTEORAL<br>
+( ) BONEFÓS&nbsp;&nbsp;&nbsp;( ) OSTEOTEC<br>
+( ) BONEPREV&nbsp;&nbsp;&nbsp;( ) OSTEOTRAT<br>
+( ) BONVIVA&nbsp;&nbsp;&nbsp;( ) PAMIDROM<br>
+( ) BONVIVA IV&nbsp;&nbsp;&nbsp;( ) PAMIDRONATO DISSÓDICO<br>
+( ) CLEVERON&nbsp;&nbsp;&nbsp;( ) RECALFE<br>
+( ) ENDRONAX&nbsp;&nbsp;&nbsp;( ) RESIDRONATO SÓDICO<br>
+( ) ENDROSTAN&nbsp;&nbsp;&nbsp;( ) RESIDROSS<br>
+( ) ENDROX&nbsp;&nbsp;&nbsp;( ) RISONATO<br>
+( ) FAULDPAMI&nbsp;&nbsp;&nbsp;( ) TEROST<br>
+( ) FOSAMAX&nbsp;&nbsp;&nbsp;( ) ZOLIBBS<br>
+( ) FOSAMAX D&nbsp;&nbsp;&nbsp;( ) ZOMETA
+</div>
+<div style="margin-bottom:16px">( ) Esclareço que utilizo ou utilizei o(s) medicamento(s) acima entre parênteses.<br>
+( ) Declaro para todos os fins que não utilizo e nem utilizei nenhum dos medicamentos listados acima.</div>
+<div style="text-align:right;margin-bottom:40px">{{data_hoje_extenso}}</div>
+<div style="text-align:center">{{assinatura:paciente}}<br>________________________________________________<br>Nome do Responsável — CPF: <b>{{paciente.cpf}}</b></div>`,
+  },
+  {
+    id:'modelo_termo_sekai_2',
+    tipo:'termo',
+    nome:'TERMO DE CLAREAMENTO DENTAL SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Cirurgiã-dentista responsável', tipo:'profissional', opcoes:[]},
+      {token:'manual.tipo_clareamento', label:'Tipo de clareamento', tipo:'selecao', opcoes:['Clareamento caseiro','Clareamento de consultório']},
+      {token:'manual.horas_uso', label:'Período de uso das moldeiras (horas, se caseiro)', tipo:'texto', opcoes:[], opcional:true},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">TERMO DE CONSENTIMENTO LIVRE E ESCLARECIDO: CLAREAMENTO DENTAL</div>
+<div style="margin-bottom:16px">Você irá se submeter ao tratamento de <b>{{manual.tipo_clareamento}}</b> e saiba que estas são as formas mais seguras para a sua saúde.</div>
+<div style="margin-bottom:16px">O clareamento caseiro é realizado com moldeiras, por um período determinado pelo profissional. Os géis empregados são de baixa concentração, os efeitos colaterais reduzidos, assim como possíveis danos pulpares (sensibilidade). Já o clareamento de consultório utiliza géis de maior concentração e será marcado 1 sessão por semana, com duração de aproximadamente 1h30min, ficando a critério do paciente, junto com a orientação do profissional, a quantidade (não ultrapassando 3 sessões). Os tratamentos necessitam de alguns cuidados. Leia atentamente as instruções abaixo.</div>
+<div style="margin-bottom:16px"><b>Clareamento caseiro:</b> passe primeiro o fio dental e depois escove os dentes antes de iniciar o clareamento; coloque uma gota do gel clareador dentro de cada espaço da placa referente a cada dente, conforme orientação prévia; remova o excesso do gel que extravasar da moldeira com cotonete ou gaze (NÃO ENGOLIR); com a moldeira na boca, não se alimente e nem ingira líquidos; guarde a seringa do gel clareador na gaveta (longe da luz); respeite o período de uso (<b>{{manual.horas_uso}}</b> horas); ao retirar as moldeiras, não escove os dentes logo em seguida, nem ingira líquidos — faça bochecho com água várias vezes e, no final, use o enxaguante bucal (Fluoreto de sódio 0,05% por 30 segundos ou Elmex Sensitive) para remover o gosto do gel, aguardando pelo menos 40 minutos para escovar os dentes; durante todo o tratamento, evite bebidas ácidas (vinhos, sucos artificiais, refrigerantes, isotônicos, energéticos); não fume; nunca lave a moldeira com água fervente — lave com água corrente, seque e guarde no porta-moldeiras; se houver sensibilidade no dente e/ou incômodo na gengiva, interrompa o clareamento e comunique o profissional imediatamente.</div>
+<div style="margin-bottom:16px"><b>Clareamento de consultório:</b> durante todo o tratamento, evite bebidas ácidas (vinhos, sucos artificiais, refrigerantes, isotônicos, energéticos); não fume.</div>
+<div style="margin-bottom:16px">Durante ambos os tratamentos, você poderá observar um aumento das manchas brancas nos dentes, devido às áreas de hipoplasia/fluorose já existentes. Ao término do tratamento, há uma diminuição dessas áreas. Respeite as reconsultas programadas (semanalmente) — o acompanhamento profissional é a chave para sua segurança e resultados satisfatórios. O efeito colateral mais frequente é uma sensibilidade branda dos dentes às mudanças de temperatura, mais comum na primeira hora após a remoção da moldeira; é passageira e atribuída ao fato de os clareadores "transitarem" com facilidade através do esmalte dental.</div>
+<div style="margin-bottom:16px"><b>Orientações finais:</b> 1. O intervalo para o próximo clareamento é de no mínimo 12 meses; 2. Manter visitas constantes à clínica (de 6 em 6 meses após o clareamento) para realização de profilaxia (limpeza profissional).</div>
+<div style="margin-bottom:16px">Declaro que o profissional me explicou todos os itens acima e não restaram dúvidas sobre o tratamento clareador que irei iniciar. Sei que o resultado não é permanente e que não depende do profissional e material empregado, podendo haver recidiva da coloração do dente com o passar do tempo, dependendo dos meus hábitos alimentares, tabagismo e estilo de vida, quando poderá haver necessidade do retoque do clareamento.</div>
+<div style="text-align:right;margin-bottom:40px">Maringá-PR, {{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>________________________________<br>Assinatura Paciente/Responsável<br><b>{{paciente.nome}}</b></div>
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>________________________________<br>Cirurgiã-dentista<br><b>{{manual.profissional_cro}}</b></div>
+</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_3',
+    tipo:'termo',
+    nome:'TERMO DE COBRANÇA E AVISO DE PROTESTO SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.valor_devido', label:'Valor do débito', tipo:'moeda', opcoes:[]},
+      {token:'manual.valor_devido_extenso', label:'Valor do débito por extenso', tipo:'texto', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">NOTIFICAÇÃO EXTRAJUDICIAL DE COBRANÇA E AVISO DE PROTESTO</div>
+<div style="margin-bottom:16px">A <b>{{clinica.razao_social}}</b>, pessoa jurídica de direito privado, estabelecida à {{clinica.endereco}}, inscrita no CNPJ sob nº <b>{{clinica.cnpj}}</b>, neste ato representada por sua sócia administradora, LETÍCIA YUKI KAWANICHI, vem, por meio da presente, NOTIFICAR:</div>
+<div style="margin-bottom:16px">Nome do Paciente: <b>{{paciente.nome}}</b><br>CPF: <b>{{paciente.cpf}}</b><br>Endereço: <b>{{paciente.endereco}}</b></div>
+<div style="font-weight:700;text-align:center;margin-bottom:8px">ASSUNTO: COBRANÇA DE DÉBITO E AVISO DE PROTESTO</div>
+<div style="margin-bottom:16px">Consta em nossos registros a existência de débito em aberto referente ao Contrato de Prestação de Serviços Odontológicos firmado entre as partes, cujo valor atualizado até a presente data corresponde a <b>R$ {{manual.valor_devido}}</b> (<b>{{manual.valor_devido_extenso}}</b>).</div>
+<div style="margin-bottom:16px">Apesar das tentativas de contato e cobrança amigável realizadas pela clínica, o referido débito permanece pendente de pagamento.</div>
+<div style="margin-bottom:16px">Dessa forma, fica o(a) NOTIFICADO(A) formalmente constituído(a) em mora, nos termos da legislação vigente, para que efetue a quitação integral do débito no prazo improrrogável de <b>07 (sete) dias úteis</b> contados do recebimento desta notificação. O pagamento deverá ser realizado por meio de PIX, transferência bancária ou outro meio previamente acordado com a clínica.</div>
+<div style="margin-bottom:16px"><b>Dados para pagamento:</b><br>{{clinica.razao_social}}<br>CNPJ: {{clinica.cnpj}}<br>PIX: {{clinica.cnpj}}</div>
+<div style="font-weight:700;text-align:center;margin-bottom:8px">AVISO DE PROTESTO E MEDIDAS CABÍVEIS</div>
+<div style="margin-bottom:16px">Na hipótese de não ocorrer a regularização do débito dentro do prazo acima estipulado, a {{clinica.razao_social}} adotará as medidas administrativas e judiciais cabíveis para recuperação do crédito, incluindo, mas não se limitando a: protesto do débito junto ao Cartório de Protesto de Títulos; inclusão do nome do devedor nos órgãos de proteção ao crédito (SPC e Serasa), quando legalmente cabível; cobrança judicial do débito, acrescida de custas processuais, honorários advocatícios, juros, correção monetária e demais encargos legais.</div>
+<div style="margin-bottom:16px">Esta notificação serve como aviso formal e constitui o devedor em mora para todos os fins de direito.</div>
+<div style="text-align:center;margin-bottom:40px">Maringá-PR, {{data_hoje_extenso}}</div>
+<div style="text-align:center">{{assinatura:profissional}}<br>________________________________________________<br><b>{{clinica.razao_social}}</b><br>LETÍCIA YUKI KAWANICHI<br>Representante Legal</div>
+<div style="text-align:center;margin-top:24px">Resp. Técnica: Leticia Yuki Kawanichi CRO 25.191-PR<br>{{clinica.endereco}}<br>Contato: {{clinica.telefone}}</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_4',
+    tipo:'termo',
+    nome:'TERMO DE CONSENTIMENTO DE IMAGENS SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">Termo de Consentimento Livre e Esclarecido para obtenção e utilização de imagens</div>
+<div style="margin-bottom:16px">Eu, <b>{{paciente.nome}}</b>, {{paciente.estado_civil}}, {{paciente.profissao}}, RG <b>{{paciente.rg}}</b>, CPF <b>{{paciente.cpf}}</b>, residente {{paciente.endereco}}, autorizo a <b>{{clinica.razao_social}}</b> e sua responsável técnica Dra. Letícia Yuki Kawanichi, CRO: 25.191-PR, localizada na {{clinica.endereco}}, a utilizar as imagens obtidas durante o meu tratamento odontológico, sejam elas digitalizadas ou impressas, para a finalidade de registros, documentação odontológica, pesquisas, cursos, publicações em livros, revistas científicas, álbuns, aulas, congressos, galerias e/ou fóruns odontológicos, ou ainda em quaisquer outros meios de comunicação, inclusive redes sociais, desde que respeitadas as normativas do Conselho Federal de Odontologia.</div>
+<div style="margin-bottom:16px">Em nenhum momento meu nome será citado, somente as iniciais, caso necessário. Consinto também que as imagens de meus exames, como radiografias, tomografias computadorizadas, ressonâncias magnéticas, ultrassons, eletromiografias, histopatológicos (exame no microscópio da peça cirúrgica retirada) e outros, sejam utilizadas e divulgadas.</div>
+<div style="margin-bottom:16px">A utilização deste material não gera nenhum compromisso de ressarcimento, a qualquer preceito, por parte do cirurgião-dentista. Este consentimento pode ser revogado, sem qualquer ônus ou prejuízo à minha pessoa, a meu pedido ou solicitação, desde que a revogação ocorra antes da publicação.</div>
+<div style="margin-bottom:16px">Fui esclarecido de que não receberei nenhum ressarcimento ou pagamento pelo uso das minhas imagens/documentos e também compreendi que o cirurgião-dentista e a equipe de profissionais que me atende e atenderá durante todo o tratamento não terá qualquer tipo de ganhos financeiros com a exposição da minha imagem nas referidas publicações, salvo casos publicitários.</div>
+<div style="text-align:right;margin-bottom:40px">Maringá-PR, {{data_hoje_extenso}}</div>
+<div style="text-align:center;margin-bottom:24px">{{assinatura:paciente}}<br>___________________________________<br>Paciente/Responsável<br><b>{{paciente.nome}}</b><br>CPF: {{paciente.cpf}}</div>
+<div style="text-align:center">{{assinatura:profissional}}<br>________________________________<br>{{clinica.razao_social}}<br>Dra. Letícia Yuki Kawanichi CRO: 25.191-PR</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_5',
+    tipo:'termo',
+    nome:'TERMO DE CIRURGIA PERIODONTAL SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Cirurgião-dentista responsável', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">TERMO DE CONSENTIMENTO LIVRE E ESCLARECIDO PARA CIRURGIAS PERIODONTAIS</div>
+<div style="margin-bottom:16px">Por este instrumento declaro, para efeitos éticos e legais, que eu <b>{{paciente.nome}}</b>, CPF: <b>{{paciente.cpf}}</b>, recebi todas as informações e esclarecimentos a respeito dos procedimentos cirúrgicos a que vou me submeter para realizar cirurgia periodontal, e estou de acordo com os termos abaixo relacionados:</div>
+<div style="margin-bottom:16px">1- Declaro que estou ciente dos custos envolvidos nos procedimentos citados e concordo com os mesmos.<br>
+2- Esclareço que recebi todas as informações necessárias sobre a finalidade e os tipos de procedimentos para a realização da cirurgia, bem como fui amplamente informado(a) sobre possíveis riscos e complicações relacionados, e sobre possíveis métodos alternativos de tratamento, se há algum.<br>
+3- Declaro ter sido orientado sobre a utilização de medicação pré (quando necessária) e pós-operatória, bem como sobre todos os cuidados que devo seguir após a cirurgia e durante o tempo de espera até a completa recuperação dos tecidos envolvidos. Comprometo-me a retornar periodicamente após o término do tratamento para avaliação da(s) região(ões) tratada(s).<br>
+4- Declarei ao cirurgião-dentista, durante a anamnese, todas as informações relevantes sobre minha saúde física e mental, incluindo reações alérgicas, doenças pré-existentes ou qualquer outra condição anormal em relação à minha saúde. Declaro que se, por esquecimento ou livre e espontânea vontade, omiti alguma informação mesmo não a julgando importante, assumo o risco de tal ato.<br>
+5- O cirurgião-dentista explicou-me que há certos riscos inerentes e potenciais em qualquer plano de tratamento ou procedimentos cirúrgicos, incluindo: desconforto pós-operatório e edema, que podem durar alguns dias; sangramento prolongado; injúrias aos dentes adjacentes, próteses ou restaurações; estiramento da comissura labial com consequente laceração e equimose; infecção pós-operatória, que pode exigir tratamento adicional; restrição da abertura de boca durante a recuperação; injúria ao nervo subjacente à região da cirurgia, resultando em dormência ou formigamento do lábio, queixo, bochecha, gengiva, dentes e/ou língua do lado operado, que pode persistir por semanas, meses, ou, em raras circunstâncias, permanentemente.<br>
+6- Se qualquer condição não prevista acima ocorrer durante a cirurgia, confio no julgamento do cirurgião-dentista para realizar procedimentos adicionais ou diferentes daqueles que me foram explicados, e solicito e autorizo fazer o que for aconselhável. Fui esclarecido que, devido às diferenças individuais entre os pacientes, há possibilidade de insucesso, recidiva ou retratamento, a despeito dos cuidados tomados.</div>
+<div style="margin-bottom:16px">Concordo em cooperar completamente com as recomendações que me foram passadas no pós-operatório, entendendo que qualquer falta de cooperação pode resultar em diminuição dos ótimos resultados.</div>
+<div style="margin-bottom:16px">Certifico que tive oportunidade de ler e entender completamente os termos e palavras contidas no texto acima e me foram dadas explicações referentes a ele.</div>
+<div style="text-align:right;margin-bottom:40px">Maringá-PR, {{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>_____________________________<br>Paciente ou Responsável<br><b>{{paciente.nome}}</b><br>CPF: {{paciente.cpf}}</div>
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>_____________________________<br>Clínica: {{clinica.razao_social}}<br>Profissional: <b>{{manual.profissional_cro}}</b></div>
+</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_6',
+    tipo:'termo',
+    nome:'TERMO DE DESISTÊNCIA DO TRATAMENTO SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Cirurgião(a)-dentista responsável', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">TERMO DE INTERRUPÇÃO VOLUNTÁRIA DO TRATAMENTO ODONTOLÓGICO</div>
+<div style="margin-bottom:16px">Eu, <b>{{paciente.nome}}</b>, portador(a) do RG: <b>{{paciente.rg}}</b>, CPF: <b>{{paciente.cpf}}</b>, residente na {{paciente.endereco}}, declaro para os devidos fins, que estou desistindo e interrompendo o tratamento proposto pelo(a) Cirurgião(a)-Dentista <b>{{manual.profissional_cro}}</b> e sua equipe, por motivos estritamente pessoais, eximindo o(a) referido(a) profissional de qualquer responsabilidade ou ressarcimento a partir dessa data.</div>
+<div style="margin-bottom:16px">Declaro estar ciente dos riscos inerentes à interrupção do tratamento abaixo relacionado e assumo a responsabilidade por esse ato, não tendo nada a mais a reclamar. Firmo o presente Termo, que vai devidamente assinado em duas vias, tendo recebido uma cópia.</div>
+<div style="margin-bottom:16px"><b>Tratamento interrompido:</b><br>{{orcamento.itens}}</div>
+<div style="text-align:right;margin-bottom:40px">Maringá-PR, {{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px;margin-bottom:24px">
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>____________________________<br>Assinatura Paciente/Responsável</div>
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>____________________________<br><b>{{manual.profissional_cro}}</b></div>
+</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:testemunha1}}<br>______________________________<br>Testemunha 1<br>Nome:<br>CPF:<br>RG:</div>
+  <div style="flex:1;text-align:center">{{assinatura:testemunha2}}<br>_______________________________<br>Testemunha 2<br>Nome:<br>CPF:<br>RG:</div>
+</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_7',
+    tipo:'termo',
+    nome:'TERMO DE EXODONTIAS E CIRURGIAS BUCAIS SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Profissional responsável', tipo:'profissional', opcoes:[]},
+      {token:'manual.dentes_extracao', label:'Dente(s)/região da exodontia', tipo:'texto', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">Termo de consentimento livre e esclarecido para cirurgias odontológicas</div>
+<div style="margin-bottom:16px">Eu, <b>{{paciente.nome}}</b>, CPF: <b>{{paciente.cpf}}</b>, autorizo as profissionais da clínica Sekai, sob responsabilidade de <b>{{manual.profissional_cro}}</b>, a realizar-me o procedimento denominado extração (retirada) do(s) dente(s). O procedimento consiste na exodontia do(s) <b>{{manual.dentes_extracao}}</b>.</div>
+<div style="margin-bottom:16px">Saliento ainda que o procedimento acima referido foi detalhado e explicado verbalmente pelo dentista de forma que entendi perfeitamente a natureza, característica, alcances e limitações do procedimento. Fui claramente informado(a) e concordei com sua realização ciente dos riscos e resultados negativos que possam ocorrer. Todas as minhas dúvidas pré e pós-operatórias foram esclarecidas e o cirurgião-dentista explicou-me que há certos riscos inerentes e potenciais em qualquer plano de tratamento ou procedimento cirúrgico, e que os riscos operatórios podem incluir os seguintes sintomas e efeitos adversos: dor, formigamento na face e/ou na língua (devido à proximidade do nervo), inchaço, hematomas (manchas roxas), sensibilidade, dificuldade de abertura de boca, ferida no canto da boca, aftas, alteração de hálito, incômodo ao mastigar e/ou falar, recessão gengival, entre outros problemas.</div>
+<div style="margin-bottom:16px">Também o dentista me esclareceu sobre os cuidados que devo observar para evitar agravamento do meu quadro clínico, destacando: logo após o procedimento — morder firme a gaze por 30 minutos (é normal sentir gosto de sangue nas primeiras horas; caso ocorra, morder firmemente uma gaze por 30 minutos e ligar no consultório avisando o ocorrido — não tentar parar o sangramento com bochechos, isso só piora); inchaço é comum, especialmente se uma extensa área foi operada, desaparecendo após 3-4 dias (aplicar compressa de gelo intermitente, 10 minutos com/10 sem, durante 2 horas, nas primeiras 48h, sempre com um pano de proteção); em casos raros pode ocorrer parestesia ou paralisia da face, temporária, com recuperação em semanas ou meses; não fumar em hipótese alguma durante a cicatrização (cerca de 7 dias); nas primeiras 72 horas não cuspir, bochechar forte, usar canudo ou fazer sucção, evitar esforço físico e permanecer em repouso; permanecer com a cabeça mais elevada que o corpo ao deitar-se; higienização com enxaguante bucal (Periogard ou outro) recomendado por 7 dias, escovar os dentes e usar fio dental normalmente (menos no local operado); dieta fria e pastosa nos primeiros 3 dias, evitando sementes, alimentos crocantes e bebida alcoólica durante a recuperação; não realizar esforço físico até a retirada dos pontos (7 dias); comprometo-me a retornar no prazo máximo de 10 dias para remoção dos pontos.</div>
+<div style="margin-bottom:16px">Fui devidamente orientado(a) pela equipe da clínica que, em casos de sedação medicamentosa, devo comparecer ao procedimento acompanhado(a) por um responsável de confiança, que deverá estar presente após o término do procedimento para auxiliar no retorno para casa, em virtude dos possíveis efeitos residuais da sedação (sonolência, tontura, desorientação e diminuição dos reflexos). Declaro estar ciente de que a clínica SEKAI ODONTOLOGIA E CLÍNICA INTEGRADA não se responsabiliza por quaisquer incidentes ou acidentes ocorridos caso as orientações fornecidas não sejam rigorosamente seguidas, sendo de minha responsabilidade garantir o cumprimento dessas orientações.</div>
+<div style="margin-bottom:16px">Declarei ao cirurgião-dentista, durante a anamnese, todas as informações relevantes sobre minha saúde física e mental, incluindo reações alérgicas, doenças pré-existentes ou qualquer outra condição anormal em relação à minha saúde. Declaro que se, por esquecimento ou livre e espontânea vontade, omiti alguma informação mesmo não a julgando importante, assumo o risco de tal ato.</div>
+<div style="margin-bottom:16px">Declaro que li e entendi as informações prestadas pelo profissional verbalmente e as acima consignadas, e não restou qualquer dúvida com relação ao procedimento, seus riscos, intercorrências e consequências. Comprometo-me a procurar o profissional em caso de agravamento do meu estado de saúde. Termo contém 2 páginas e me foi entregue uma cópia.</div>
+<div style="text-align:right;margin-bottom:40px">Maringá-PR, {{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>__________________________________<br>Paciente ou Responsável<br><b>{{paciente.nome}}</b></div>
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>__________________________________<br>Cirurgião-dentista/ CRO-PR<br><b>{{manual.profissional_cro}}</b></div>
+</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_8',
+    tipo:'termo',
+    nome:'TERMO DE IMPLANTES DENTÁRIOS SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Profissional responsável', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">Termo de consentimento livre e esclarecido para Implantes dentários</div>
+<div style="margin-bottom:16px">Eu, <b>{{paciente.nome}}</b>, RG <b>{{paciente.rg}}</b>, CPF <b>{{paciente.cpf}}</b>, autorizo Dr(a). <b>{{manual.profissional_cro}}</b> a realizar os seguintes tratamentos em minha pessoa:</div>
+<div style="margin-bottom:16px">{{orcamento.itens}}</div>
+<div style="margin-bottom:16px"><b>FAVOR, LER COM ATENÇÃO AS INFORMAÇÕES ABAIXO:</b></div>
+<div style="margin-bottom:16px"><b>1.</b> O implante dentário é um meio artificial para substituir uma ou mais raízes perdidas ou ausentes, servindo de base estável para a futura prótese (unitária, múltipla, protocolo ou sobredentadura). O implante se adere ao osso por osseointegração — processo natural onde osso e implante se integram, dando estabilidade à prótese. Não ocorre a formação dos receptores de sensibilidade que existiam no dente natural, exigindo mais cuidado na higienização das próteses sobre implante.</div>
+<div style="margin-bottom:16px"><b>2. Quando os implantes são utilizados?</b> Situações como perda de um único dente, espaços protéticos amplos, falta de suporte ósseo adequado, extremos livres ou ausência total dos dentes.</div>
+<div style="margin-bottom:16px"><b>3. Quanto tempo pode durar um implante?</b> O material é extremamente resistente, mas fratura por cargas oclusais excessivas não é impossível. Problemas que envolvem a perda de um dente natural também podem ocorrer com o implante (causas locais, sistêmicas, sobrecarga e trauma oclusal).</div>
+<div style="margin-bottom:16px"><b>4. Cuidados a serem observados pelo paciente:</b> seguir as instruções pré e pós-operatórias; não usar prótese sobre a área operada sem autorização; dieta líquida nos primeiros 2 dias; não fumar nem ingerir álcool durante a cicatrização; tomar a medicação prescrita conforme horário, dosagem e tempo determinados.</div>
+<div style="margin-bottom:16px"><b>5. Riscos possíveis:</b> desconforto pós-operatório e edema; hemorragia prolongada; danos a dentes/restaurações/próteses próximas; infecção pós-operatória (custos adicionais); trauma nos afastadores causando feridas nos lábios/comissuras; abertura de boca reduzida por alguns dias; fratura maxilo-mandibular; parestesia ou paresia facial (temporária ou permanente, em casos raros); abertura do seio maxilar; reações alérgicas a medicamentos/anestesia; problemas de ATM; problemas no mecanismo de osseointegração.</div>
+<div style="margin-bottom:16px">Uma vez iniciado o tratamento, é importante finalizá-lo, incluindo a reconstrução protética, que deve ocorrer entre 5 a 8 meses da instalação. A quebra da sequência pode acarretar a perda do implante. A continuidade por outro profissional isenta a clínica de responsabilidade futura.</div>
+<div style="margin-bottom:16px"><b>6. Vantagens do tratamento:</b> maior conforto, maior eficácia mastigatória, não danifica os dentes vizinhos.</div>
+<div style="margin-bottom:16px"><b>7. Esclarecimentos específicos:</b> o implante osseointegrado é um cilindro/cone de titânio rosqueável; a osseointegração demora em média 2 a 6 meses; a fase de planejamento é cobrada independentemente da realização; são necessários exames complementares (panorâmica e/ou tomografia), custeados pelo paciente; pode ser necessário enxerto ósseo previamente à instalação (aguardar 4 meses na região anterior e 6 meses em molares); o índice de sucesso é de 96,5% em média; pacientes com distúrbios sistêmicos (diabetes, hipertensão, doenças autoimunes, hemofilia, etc.) devem estar com a saúde controlada e ter parecer médico; doença periodontal ativa contraindica a instalação até controle da infecção; pacientes em fase de crescimento não podem receber implantes; pacientes em tratamento ortodôntico devem finalizá-lo ou ter autorização do ortodontista; após 3-4 meses é realizada a 2ª fase cirúrgica (instalação do cicatrizador), podendo se estender a 6 meses em casos com enxerto; sobre os implantes podem ser feitas próteses fixas (aparafusadas ou cimentadas) ou removíveis; pacientes com bruxismo devem tratar esse hábito, pois a sobrecarga oclusal pode comprometer a estabilidade; após a instalação, consultas de revisão anuais são fundamentais; a correta higienização é primordial (periimplantite é a causa mais comum de perda do implante); o fumo é um dos principais fatores de insucesso na osseointegração; em casos de troca de profissional na fase protética, o profissional de origem fica isento de responsabilidade; dependendo do caso, cirurgias de enxertia/instalação podem ser feitas em ambiente hospitalar sob anestesia geral; nos primeiros meses podem ocorrer fraturas de bordo da prótese/dentes/barra do protocolo, devido ao período de acomodação de cada paciente.</div>
+<div style="margin-bottom:16px">Fui devidamente orientado(a) pela equipe da clínica que, em casos de sedação medicamentosa, devo comparecer acompanhado(a) por um responsável de confiança, presente após o procedimento para auxiliar no retorno para casa, em virtude dos possíveis efeitos residuais da sedação. Declaro estar ciente de que a clínica SEKAI ODONTOLOGIA E CLÍNICA INTEGRADA não se responsabiliza por incidentes decorrentes do não cumprimento dessas orientações.</div>
+<div style="margin-bottom:16px">Estou ciente de que para o sucesso do tratamento terei que comparecer nos dias e horas marcados — faltas serão submetidas à multa no valor de uma consulta, e em caso de impossibilidade de comparecer, comprometo-me a avisar com 12 horas de antecedência. Admito os riscos supracitados e permito a realização dos procedimentos necessários para tentar solucionar situações imprevisíveis e/ou emergenciais.</div>
+<div style="margin-bottom:16px">Declaro que li e entendi todas as informações acima (04 páginas). Tive a oportunidade de esclarecer todas as dúvidas com o profissional e compreendi todas as informações constantes neste documento, antes de sua assinatura.</div>
+<div style="text-align:right;margin-bottom:40px">{{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>___________________________________<br>Assinatura Paciente/Responsável</div>
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>_____________________________________<br><b>{{manual.profissional_cro}}</b></div>
+</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_9',
+    tipo:'termo',
+    nome:'TERMO DE RESCISÃO CONTRATUAL E DEVOLUÇÃO DE VALORES',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.valor_devolvido', label:'Valor devolvido', tipo:'moeda', opcoes:[]},
+      {token:'manual.valor_devolvido_extenso', label:'Valor devolvido por extenso', tipo:'texto', opcoes:[]},
+      {token:'manual.procedimentos_cancelados', label:'Procedimentos contratados que ficam cancelados', tipo:'texto', opcoes:[]},
+      {token:'manual.forma_devolucao', label:'Forma de devolução (ex: via PIX)', tipo:'texto', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">TERMO DE RESCISÃO CONTRATUAL</div>
+<div style="margin-bottom:16px">A <b>{{clinica.razao_social}}</b>, pessoa jurídica de direito privado, estabelecida e sediada em Maringá-PR, à {{clinica.endereco}}, devidamente inscrita no CNPJ/MF sob nº <b>{{clinica.cnpj}}</b>, representada por sua sócia administradora LETÍCIA YUKI KAWANICHI, brasileira, casada, cirurgiã-dentista, portadora da Cédula de Identidade CPF 058.489.879-71, DECLARA que está DEVOLVENDO, neste ato, em moeda corrente do país, a quantia líquida de <b>R$ {{manual.valor_devolvido}}</b> (<b>{{manual.valor_devolvido_extenso}}</b>) a <b>{{paciente.nome}}</b>, portador do CPF <b>{{paciente.cpf}}</b>, denominado RECEBEDOR.</div>
+<div style="margin-bottom:16px">A devolução, combinada e acordada por ambas as partes, ficou da seguinte forma: aplicação de multa correspondente a 20% do valor integral do tratamento, conforme estipulado em contrato; cancelamento dos procedimentos que permaneceram pendentes de execução (<b>{{manual.procedimentos_cancelados}}</b>); devolução <b>{{manual.forma_devolucao}}</b> no valor de <b>R$ {{manual.valor_devolvido}}</b> (<b>{{manual.valor_devolvido_extenso}}</b>).</div>
+<div style="margin-bottom:16px">A devolução dos valores ocorre em razão da decisão do paciente, aqui denominado RECEBEDOR, por motivos pessoais, de não realizar os procedimentos já contratados acima descritos.</div>
+<div style="margin-bottom:16px">O paciente aqui denominado RECEBEDOR declara que foi devidamente atendido pela CLÍNICA, tendo recebido todas as orientações, explicações e cuidados necessários quanto ao(s) tratamento(s) realizado(s), e encontra-se plenamente satisfeito com os serviços prestados e os resultados obtidos, não tendo qualquer reclamação, dúvida, pendência ou reivindicação a fazer em relação à CLÍNICA ou a seus profissionais.</div>
+<div style="margin-bottom:16px">E declara-se ciente dos cuidados necessários após o término do tratamento feito, conforme orientações recebidas, e dá plena, geral e irrevogável quitação de todas as obrigações da CLÍNICA, nada mais tendo a exigir, seja a que título for, judicial ou extrajudicialmente, relativamente aos atendimentos prestados.</div>
+<div style="margin-bottom:16px">O presente termo é firmado por livre e espontânea vontade das partes, em caráter irrevogável e irretratável, produzindo todos os efeitos legais. E, por estarem assim justas e acordadas, firmam o presente termo em duas vias de igual teor e forma.</div>
+<div style="text-align:right;margin-bottom:40px">{{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>___________________________________________________<br><b>{{paciente.nome}}</b>, CPF <b>{{paciente.cpf}}</b><br>RECEBEDOR</div>
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>____________________________________________________<br>{{clinica.razao_social}}<br>LETÍCIA YUKI KAWANICHI<br>DECLARANTE</div>
+</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_10',
+    tipo:'termo',
+    nome:'TERMO DE SEDAÇÃO COM ÓXIDO NITROSO',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Profissional responsável pela sedação', tipo:'profissional', opcoes:[]},
+      {token:'manual.nivel_sedacao', label:'Procedimento proposto', tipo:'selecao', opcoes:['Sedação mínima','Sedação moderada']},
+      {token:'manual.nome_paciente_sedado', label:'Nome do paciente que será sedado (se diferente do responsável que assina)', tipo:'texto', opcoes:[], opcional:true},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">TERMO DE CONSENTIMENTO INFORMADO PARA SEDAÇÃO ODONTOLÓGICA</div>
+<div style="margin-bottom:16px">Eu, <b>{{paciente.nome}}</b>, CPF: <b>{{paciente.cpf}}</b>, como paciente ou pai/mãe ou responsável legal por <b>{{manual.nome_paciente_sedado}}</b>, dou meu consentimento para o uso de anestésicos locais ou drogas sedativas que <b>{{manual.profissional_cro}}</b> possa ter julgado necessário na ficha de exame do paciente, como foi explicado a mim previamente. Foi me orientado e esclarecido todas as dúvidas a respeito da sedação e compreendi que posso recusar este procedimento, sendo resguardadas outras opções.</div>
+<div style="margin-bottom:16px">Procedimento proposto: <b>{{manual.nivel_sedacao}}</b><br>
+Técnica utilizada: sedação inalatória com oxigênio e óxido nitroso<br>
+Protocolo utilizado: SEDAÇÃO COM ÓXIDO NITROSO E OXIGÊNIO</div>
+<div style="margin-bottom:16px">Fui esclarecido sobre os cuidados pré e pós-sedativos, e declaro que irei seguir as orientações verbais e por escrito a mim fornecidas. Também fui esclarecido que os riscos associados à sedação são aspiração de conteúdo gástrico, dificuldade de respiração durante o atendimento, efeito contrário, mal-estar, náuseas/vômitos, alteração dos batimentos cardíacos, reação alérgica (ao sedativo) e sedação prolongada, durante mais tempo que o previsto.</div>
+<div style="margin-bottom:16px">Eu também entendi que outros riscos mais sérios, incluindo parada respiratória e/ou cardiovascular, confusão mental, e até óbito, podem ocorrer raramente, mas que a equipe odontológica está empenhada e capacitada em prevenir os problemas mais graves, pois estou ciente de que a prática odontológica não é uma ciência exata, e reconheço que não é possível que o profissional me ofereça garantia sobre os riscos envolvidos.</div>
+<div style="margin-bottom:16px">Foi esclarecido sobre as doses e planos terapêuticos e que, a qualquer momento, posso desistir do atendimento, sem que me haja prejuízos no planejamento odontológico proposto. Alternativas oferecidas incluem: tentativa de controle da ansiedade não farmacológico (pode gerar danos, inclusive psicológicos); sedação profunda com médico anestesista (riscos semelhantes); anestesia geral em hospital (contém riscos inerentes à anestesia geral, com equipe e suporte necessário, maiores investimentos).</div>
+<div style="text-align:right;margin-bottom:40px">{{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>____________________________<br>Paciente/Responsável</div>
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>__________________________<br><b>{{manual.profissional_cro}}</b></div>
+</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_11',
+    tipo:'termo',
+    nome:'TERMO DE TRATAMENTO PERIODONTAL SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Profissional responsável', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">CONSENTIMENTO INFORMADO PARA TRATAMENTOS PERIODONTAIS</div>
+<div style="margin-bottom:16px">Por este instrumento declaro, para efeitos éticos e legais, que eu <b>{{paciente.nome}}</b> recebi todas as informações e esclarecimentos a respeito dos tratamentos periodontais a que vou me submeter, e estou de acordo com os termos abaixo relacionados:</div>
+<div style="margin-bottom:16px">1- Declaro que estou ciente dos custos envolvidos nos procedimentos citados e concordo com os mesmos.<br>
+2- Esclareço que recebi todas as informações necessárias sobre a finalidade e os tipos de procedimentos para a realização do tratamento periodontal, fui amplamente informado(a) sobre possíveis riscos e complicações relacionados, e sobre possíveis métodos alternativos de tratamento, se há algum.<br>
+3- Declaro ter sido orientado sobre a utilização de medicação pré (quando necessária) e pós tratamento, bem como sobre todos os cuidados que devo seguir após o tratamento e durante o tempo de espera até a completa recuperação dos tecidos envolvidos. Comprometo-me a retornar periodicamente após o término do tratamento para avaliação da(s) região(ões) tratada(s).<br>
+4- Declarei ao cirurgião-dentista, durante a anamnese, todas as informações relevantes sobre minha saúde física e mental, incluindo reações alérgicas, doenças pré-existentes ou qualquer outra condição anormal em relação à minha saúde. Declaro que se, por esquecimento ou livre e espontânea vontade, omiti alguma informação mesmo não a julgando importante, assumo o risco de tal ato.<br>
+5- O cirurgião-dentista explicou-me que há certos riscos inerentes e potenciais em qualquer plano de tratamento ou procedimentos, incluindo injúrias aos dentes adjacentes, próteses ou restaurações, podendo ocorrer perda dentária durante o tratamento periodontal, pois o mesmo depende inteiramente da contribuição do paciente.<br>
+6- Se qualquer condição não prevista acima ocorrer durante a cirurgia/tratamento, confio no julgamento do cirurgião-dentista para realizar procedimentos adicionais ou diferentes daqueles que me foram explicados, e solicito e autorizo fazer o que for aconselhável. Fui esclarecido que, devido às diferenças individuais entre os pacientes, há possibilidade de insucesso, recidiva ou retratamento, a despeito dos cuidados tomados.</div>
+<div style="margin-bottom:16px">Concordo em cooperar completamente com as recomendações que me foram passadas no pós-operatório, entendendo que qualquer falta de cooperação pode resultar em diminuição dos ótimos resultados.</div>
+<div style="margin-bottom:16px">Certifico que tive oportunidade de ler e entender completamente os termos e palavras contidas no texto acima e me foram dadas explicações referentes a ele.</div>
+<div style="text-align:right;margin-bottom:40px">{{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>_______________________________________<br><b>{{paciente.nome}}</b></div>
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>______________________________________<br><b>{{manual.profissional_cro}}</b></div>
+</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_12',
+    tipo:'termo',
+    nome:'TERMO ENDODONTIA (CANAL) SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Profissional responsável', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">TERMO DE CONSENTIMENTO LIVRE E ESCLARECIDO DE ENDODONTIA (CANAL)</div>
+<div style="margin-bottom:16px">Eu, <b>{{paciente.nome}}</b>, CPF: <b>{{paciente.cpf}}</b>, RG: <b>{{paciente.rg}}</b>, autorizo o tratamento endodôntico do(s) dente(s) indicado(s) no contrato/guia em anexo e outros procedimentos complementares que o Cirurgião Dentista julgar necessários ou aconselháveis para atingir os objetivos do plano de tratamento, conforme critérios técnicos de indicação, oportunidade e viabilidade:</div>
+<div style="margin-bottom:16px">{{orcamento.itens}}</div>
+<div style="margin-bottom:16px">Entendo que o propósito do tratamento é a limpeza e desinfecção dos canais contaminados e a obturação do sistema em três dimensões, evitando a reinfecção e promovendo a cura da patogênese. O dentista avisou-me que, se esta situação persistir sem tratamento, minha condição bucal atual irá provavelmente piorar com o tempo, e os riscos podem incluir, mas não são limitados a: desconforto, doença periodontal, mal oclusão, fratura, mobilidade patológica, perda dos dentes e/ou perda de osso, abscesso, endocardite bacteriana e até a morte.</div>
+<div style="margin-bottom:16px">Os riscos do tratamento incluem, mas não são limitados aos seguintes: quebra do dente e até a perda do mesmo; em caso de perfuração do canal radicular com instrumentos, poderá necessitar de intervenção cirúrgica ou, em último caso, a extração; fratura de instrumentos (cabe ao dentista decidir se tenta a retirada); extravasamento de material obturador; processo inflamatório e dor (pericementite); injúria aos dentes adjacentes, próteses ou restaurações; escurecimento do dente; calcificação do canal; desconforto pós-operatório, edema, hematoma e dor por horas ou alguns dias; mobilidade e/ou reabsorção radicular; infecção pós-operatória; estiramento da comissura labial com equimose e laceração; restrição da abertura de boca (trismo); comprometimento periodontal e ósseo; recidiva (índice de insucesso de 5 a 10% nos tratamentos e de 15 a 40% nos retratamentos, podendo ser necessário retratamento, cirurgia na raiz ou extração); restaurações altas podem comprometer o sucesso; agravamento de condição patológica existente; irritação, periodontite, gengivite e/ou sangramento; imagem radiográfica imprecisa, dando margem a interpretação equivocada.</div>
+<div style="margin-bottom:16px">Se qualquer condição não prevista acima ocorrer durante o tratamento, confio no julgamento do profissional para procedimentos adicionais ou diferentes daqueles que me foram explicados, e solicito e autorizo fazer o que for aconselhável. Não pode ser dada garantia do tratamento de canal, pois embora tenha índice elevado de sucesso, ainda é um procedimento biológico com riscos naturais dependentes não só do endodontista, mas também de fatores do organismo do paciente, da correta restauração e dos cuidados do paciente.</div>
+<div style="margin-bottom:16px">Devido às diferenças individuais entre pacientes, há possibilidade de risco de insucesso, recidiva, retratamento seletivo ou piora das condições presentes, a despeito dos cuidados tomados. É opinião do Cirurgião Dentista que a terapia será benéfica e que, sem a realização do tratamento, poderá ocorrer agravamento das condições atuais. Tive a oportunidade de discutir com o cirurgião minha história médica, inclusive todos os problemas sérios e/ou injúrias.</div>
+<div style="margin-bottom:16px">Concordo em cooperar completamente com as recomendações do Cirurgião Dentista enquanto estiver sob seus cuidados, entendendo que qualquer falta de cooperação pode resultar em diminuição dos resultados. Estou ciente de que, ao término do procedimento, é necessário realizar a reabilitação (direta ou indireta) do(s) dente(s) tratado(s) no prazo de 30 dias, sob pena de fratura, retratamento ou perda do dente. Caso o dente não seja restaurado dentro desse prazo e ocorra recontaminação do canal, o retratamento será cobrado. Os honorários da reabilitação não estão inclusos no tratamento endodôntico e devem ser contratados à parte.</div>
+<div style="margin-bottom:16px">Por fim, comprometo-me a realizar consultas periódicas de acompanhamento (proservação). Por livre iniciativa, aceito correr os riscos supramencionados e dou permissão/autorização voluntária para que o procedimento seja realizado da forma exposta neste termo, incluindo os procedimentos necessários para tentar solucionar situações imprevisíveis e/ou emergenciais.</div>
+<div style="margin-bottom:16px">Certifico que tive a oportunidade de ler e entender completamente os termos e palavras contidas no texto acima e me foram dadas explicações referentes a ele, e que todos os itens ou declarações foram preenchidos no momento, também declaro que sei ler e escrever português.</div>
+<div style="text-align:right;margin-bottom:40px">{{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>_______________________________<br><b>{{paciente.nome}}</b>, CPF: <b>{{paciente.cpf}}</b></div>
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>______________________________<br>Profissional<br><b>{{manual.profissional_cro}}</b></div>
+</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_13',
+    tipo:'termo',
+    nome:'TERMO MINI IMPLANTES ORTO SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Profissional responsável', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">TERMO DE CONSENTIMENTO LIVRE E ESCLARECIDO PARA O USO DE MINI IMPLANTES ORTODÔNTICOS</div>
+<div style="margin-bottom:16px">Eu, <b>{{paciente.nome}}</b>, inscrito(a) no CPF nº <b>{{paciente.cpf}}</b>, residente e domiciliado(a) em {{paciente.endereco}}, declaro que fui devidamente informado(a) por <b>{{manual.profissional_cro}}</b> sobre a necessidade, os benefícios, os riscos e os cuidados relacionados ao uso de mini implantes ortodônticos como parte do meu tratamento ortodôntico.</div>
+<div style="margin-bottom:16px">Os mini implantes são pequenos parafusos de titânio inseridos na maxila ou mandíbula, que servem como ancoragem temporária para auxiliar na movimentação dentária durante o tratamento ortodôntico.</div>
+<div style="margin-bottom:16px"><b>1. Informações gerais:</b> fui informado(a) de que os mini implantes são utilizados como técnica auxiliar em meu tratamento e que sua inserção é feita por procedimento cirúrgico minimamente invasivo, sob anestesia local.<br>
+<b>2. Benefícios esperados:</b> entendo que o uso dos mini implantes pode proporcionar maior eficiência no controle do movimento dentário e resultados mais previsíveis e rápidos, evitando tratamentos mais complexos.<br>
+<b>3. Procedimento:</b> envolve a inserção de um ou mais mini implantes nas regiões adequadas para ancoragem, podendo provocar desconforto temporário e dor leve a moderada, controlável com analgésicos comuns.<br>
+<b>4. Riscos potenciais:</b> infecção no local do implante; desconforto ou dor durante e após a inserção; perda de estabilidade do implante (soltura ou mobilidade); danos a dentes adjacentes, raízes ou estruturas anatômicas próximas; reação alérgica ao material do implante (embora rara).<br>
+<b>5. Cuidados pós-procedimento:</b> manter boa higiene bucal; evitar pressão excessiva ou traumas no local; comparecer às consultas de acompanhamento para monitorar o implante e o progresso do tratamento.<br>
+<b>6. Alternativas:</b> fui informado(a) que existem alternativas ao uso de mini implantes, como dispositivos de ancoragem tradicionais (elásticos, molas e outros acessórios), que, embora menos eficazes em alguns casos, podem ser viáveis.<br>
+<b>7. Consentimento:</b> estou ciente de que a colocação de mini implantes ortodônticos é uma parte opcional do meu tratamento e que posso recusar o uso a qualquer momento, sem prejuízo no atendimento, compreendendo que a recusa poderá limitar os resultados esperados ou prolongar a duração do tratamento.</div>
+<div style="margin-bottom:16px">Tive a oportunidade de fazer perguntas, que foram todas respondidas de forma clara e satisfatória. Declaro, portanto, estar ciente dos benefícios, riscos e alternativas ao procedimento proposto.</div>
+<div style="margin-bottom:16px"><b>Autorização:</b> autorizo, de forma livre e esclarecida, a realização da colocação de mini implantes ortodônticos conforme descrito acima. Afirmo que não me restaram dúvidas e recebi a cópia deste documento (contém 2 páginas).</div>
+<div style="text-align:right;margin-bottom:40px">{{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>_________________________________<br>Assinatura do(a) Profissional<br><b>{{manual.profissional_cro}}</b></div>
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>_____________________________<br>Assinatura do(a) Paciente ou Responsável (se menor de idade)<br><b>{{paciente.nome}}</b></div>
+</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_14',
+    tipo:'termo',
+    nome:'TERMO ORTODONTIA CONVENCIONAL SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Profissional responsável', tipo:'profissional', opcoes:[]},
+      {token:'manual.tempo_estimado', label:'Tempo estimado do tratamento (meses)', tipo:'texto', opcoes:[]},
+      {token:'manual.tipo_aparelho', label:'Aparelho escolhido (ortopédico/removível/fixo — tipo)', tipo:'texto', opcoes:[]},
+      {token:'manual.valor_total_ortodontia', label:'Valor total do tratamento', tipo:'moeda', opcoes:[]},
+      {token:'manual.forma_pagamento_ortodontia', label:'Forma de pagamento (entrada + parcelas)', tipo:'texto', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">Contrato de Prestação de Serviços Odontológicos — Tratamento Ortodôntico</div>
+<div style="margin-bottom:16px"><b>01 - Das partes:</b> de um lado <b>{{paciente.nome}}</b>, portador(a) do CPF: <b>{{paciente.cpf}}</b>, RG: <b>{{paciente.rg}}</b>, residente na {{paciente.endereco}}, declarado simplesmente paciente, e de outro lado a {{clinica.razao_social}}, CNPJ: {{clinica.cnpj}}, com endereço comercial na {{clinica.endereco}}, declarada como Clínica, têm entre si, como justo e contratado, o seguinte:</div>
+<div style="margin-bottom:16px"><b>02 - Da documentação ortodôntica:</b> deverá ser providenciada pelo paciente assim que solicitada, tanto no início, durante ou no término do tratamento. Só poderá ser retirada do consultório após o consentimento do ortodontista. A pasta inicial está inclusa no tratamento, devendo o paciente ficar responsável pela documentação final.</div>
+<div style="margin-bottom:16px"><b>03 - Das consultas:</b> o paciente deverá comparecer a todos os horários marcados para a manutenção do aparelho ortodôntico. As consultas serão marcadas de acordo com a necessidade de cada caso, sendo mais frequentes no início. O tempo estimado do tratamento é de aproximadamente <b>{{manual.tempo_estimado}}</b> meses.</div>
+<div style="margin-bottom:16px"><b>04 - Das contenções finais e outros aparelhos removíveis:</b> serão cobradas ao fim do tratamento (modelo e forma de pagamento escolhidos no dia da moldagem final). Deverão ser usadas conforme recomendação para diminuir recidivas, que não são de responsabilidade do ortodontista. Em caso de quebra, dano ou desaparecimento do aparelho fixo/removível e acessórios, novos serão confeccionados e cobrados à parte.</div>
+<div style="margin-bottom:16px"><b>05 -</b> O paciente que se ausentar do tratamento por 3 (três) meses consecutivos terá automaticamente cancelado o seu contrato, só podendo retornar após reavaliação e assinatura de novo contrato. Falta de colaboração pode levar à interrupção temporária ou definitiva do tratamento, sem reembolso. No caso de aparelho fixo, peças descoladas devem ser guardadas e trazidas na próxima consulta.</div>
+<div style="margin-bottom:16px"><b>06 -</b> Paciente e responsável ficam avisados que a não colaboração (higienização, quebras, uso indevido, desrespeito às recomendações) poderá afetar o resultado do tratamento e favorecer cáries, manchas e doenças gengivais, não sendo essas consequências de responsabilidade do ortodontista. O paciente deverá fazer semestralmente uma consulta com o dentista clínico para avaliação.</div>
+<div style="margin-bottom:16px"><b>07 -</b> Poderá ser necessária avaliação fonoaudiológica para correção de disfunções (deglutição atípica, sucção de polegar/chupeta, etc.), com custos à parte e acertados com a fonoaudióloga; o ortodontista não tem responsabilidade sobre essa terapia.</div>
+<div style="margin-bottom:16px"><b>08 -</b> O paciente poderá renunciar o contrato a qualquer momento, desde que efetue o pagamento das mensalidades correspondentes até a data de rescisão, não cabendo à clínica responsabilidade pelo tratamento interrompido. Em caso de pagamento total do tratamento, será descontado das parcelas pagas mais 30% referente ao custo do profissional (diagnóstico, água, luz, secretária, material de consumo, impostos), sendo o restante ressarcido via PIX ou transferência bancária.</div>
+<div style="margin-bottom:16px"><b>09 -</b> O paciente que avisar com antecedência terá direito a remarcar sua consulta no mesmo mês; faltas sem aviso prévio de 12 horas acarretam multa de R$ 80,00 referente ao horário reservado, sem direito a remarcação no mesmo mês.</div>
+<div style="margin-bottom:16px"><b>10 -</b> O paciente autoriza o uso de suas imagens para fins publicitários e científicos (aulas, palestras, livros), sendo avisado previamente pelo ortodontista.</div>
+<div style="margin-bottom:16px"><b>11 - Do pagamento:</b> sempre em dinheiro, boletos registrados, cartão de crédito ou venda recorrente. Atraso acarreta suspensão imediata da prestação de serviços. Boleto não compensado em 7 dias autoriza protesto e inclusão no SPC, com aplicação das multas e correções legais. Em caso de troca/cancelamento do cartão (venda recorrente), o paciente deve avisar imediatamente a clínica.</div>
+<div style="margin-bottom:16px"><b>12 -</b> O presente contrato tem duração de 12 (doze) meses, podendo ser prorrogado automaticamente pelos períodos necessários à finalização do tratamento. O valor combinado é do tratamento completo, não mensalidades.</div>
+<div style="margin-bottom:16px"><b>13 - O investimento:</b> Aparelho escolhido: <b>{{manual.tipo_aparelho}}</b>. Valor total do tratamento: <b>R$ {{manual.valor_total_ortodontia}}</b>. Forma de pagamento: <b>{{manual.forma_pagamento_ortodontia}}</b>. Para início do tratamento, deverá ser pago à clínica o valor combinado na entrada (à vista), sendo as demais parcelas em boleto ou cartão. Será emitido recibo ou nota fiscal, segundo solicitação do paciente ou responsável.</div>
+<div style="margin-bottom:16px"><b>14 -</b> Após a remoção do aparelho e colocação das contenções, serão necessárias mais 3 (três) consultas de controle antes da alta ortodôntica: a primeira um mês após a colocação, as demais a cada dois meses. Os retornos estão inclusos no tratamento; demais procedimentos (limpezas, restaurações etc.) são pagos à parte.</div>
+<div style="margin-bottom:16px"><b>15 -</b> A documentação ortodôntica poderá ser solicitada pelo paciente ao final do tratamento, ficando sob sua custódia a partir de então. O paciente recebe o manual de recomendação de uso do aparelho ortodôntico (abaixo), que fica ciente e de acordo com os padrões de procedimento especificados pela clínica, fazendo parte integrante deste instrumento.</div>
+
+<div style="page-break-before:always;text-align:center;font-weight:700;margin-bottom:16px">Manual de recomendação de uso do aparelho ortodôntico</div>
+<div style="margin-bottom:16px">O presente contrato rege as relações entre o paciente signatário e o profissional contratado para a realização de tratamento ortodôntico em <b>{{paciente.nome}}</b>, CPF: <b>{{paciente.cpf}}</b>, <b>{{manual.profissional_cro}}</b>, cirurgiã-dentista, com endereço profissional na {{clinica.endereco}}, nos seguintes termos:</div>
+<div style="margin-bottom:16px"><b>1 – Do tratamento / 1.1 Obrigações do paciente:</b> a) cuidados com a higiene bucal, conforme orientação profissional; b) cuidados com quebras do aparelho, seguindo orientação quanto ao consumo de alimentos; c) comparecimento aos horários de consulta previamente estabelecidos — o resultado do tratamento está vinculado a esse comparecimento.</div>
+<div style="margin-bottom:16px"><b>1.2 – Direitos e obrigações do profissional:</b> a) elaborar um Plano de Tratamento adequado; b) estimar a duração do tratamento, considerando a variabilidade do caso; c) apresentar sala clínica adequada aos conceitos de desinfecção e assepsia, com instrumentos esterilizados.</div>
+<div style="margin-bottom:16px"><b>2 – Do investimento / 2.1 Fatores que podem aumentar o custo:</b> a) reposição de peças quebradas será acrescida à parcela do tratamento; b) faltas sem aviso prévio de 12 horas poderão ser acrescidas como hora clínica (R$ 80,00), pagas antes da próxima consulta; c) atraso na mensalidade incide em juros de 1% e multa de 2% sobre o valor da manutenção mensal, podendo o tratamento ser suspenso até quitação.</div>
+<div style="margin-bottom:16px"><b>2.2 Itens não incluídos no orçamento inicial:</b> a) indicação de outros profissionais e documentação radiológica complementar; b) remoção do aparelho a pedido do cliente para ocasiões determinadas acarreta taxa de remoção/reinstalação, podendo comprometer o prazo do tratamento.</div>
+<div style="margin-bottom:16px"><b>3 – Riscos inerentes ao tratamento:</b> a) a falta de colaboração do paciente pode trazer riscos à saúde oral e geral, limitar os objetivos planejados e causar sequelas irreversíveis, podendo determinar o cancelamento do tratamento; b) lesões de cárie e manchas brancas resultam da falta de higiene, não do aparelho; c) faltas frequentes dificultam o controle do aparelho e atrasam o tratamento; d) pode ocorrer reabsorção radicular como efeito colateral; e) estalos, ruídos e dores na ATM que já existiam antes do tratamento não têm relação com o mesmo.</div>
+<div style="margin-bottom:16px"><b>4 – Atendimento:</b> a) o ortodontista tentará obedecer ao horário marcado, com flexibilidade para procedimentos não previstos; b) alterações de horário devem ser comunicadas com antecedência; c) problemas com o aparelho ou dúvidas podem ser atendidos em horários extras.</div>
+<div style="margin-bottom:16px"><b>5 – Quanto à documentação:</b> a) o dever de guarda da documentação ortodôntica cabe ao profissional, para acompanhamento e estudo; b) a retirada deve ser comunicada com 10 dias de antecedência, mediante recibo discriminado.</div>
+<div style="margin-bottom:16px"><b>6 – Desistência do tratamento:</b> a) pacientes ou responsáveis podem desistir a qualquer tempo, sendo responsáveis pelo pagamento do valor devido até o momento; b) será lavrado termo rescisório com justificativa; c) em caso de pagamento total, será descontado das parcelas pagas mais 30% do custo do profissional, sendo o restante ressarcido via PIX ou transferência.</div>
+<div style="margin-bottom:16px"><b>7 – Do inadimplemento, descumprimento e multa:</b> a) inadimplemento incide multa de 2%, juros de 1% ao mês e correção monetária, acrescidos de custas processuais e 20% de honorários advocatícios em caso de cobrança judicial; b) descumprimento de qualquer cláusula gera multa de 10% do valor do contrato para a parte prejudicada.</div>
+<div style="margin-bottom:16px"><b>8 – Planejamento técnico do caso / prazo:</b> o caso será planejado conforme dados do exame clínico e complementares, explicado em linguagem coloquial e anotado na ficha clínica. As contenções finais não estão inclusas no orçamento; tempo de tratamento e custos de entrada/parcelas foram combinados no Contrato de Prestação de Serviços. O plano de tratamento pode sofrer alterações a critério do profissional, sendo explicitado ao paciente. O tratamento só inicia após concordância do paciente/responsável. Autorizo o uso da documentação ortodôntica (fotos, radiografias, exames) para consulta profissional, pesquisa, educação, revistas e fins publicitários/científicos, sendo avisado previamente.</div>
+<div style="margin-bottom:16px">Declaro estar ciente das condições para o adequado progresso do tratamento, bem como concordante com o planejamento proposto — limites, riscos e benefícios — a mim explicados. As partes elegem o foro de Maringá (PR) para dirimir qualquer dúvida resultante deste contrato, e assinam o presente em 02 (duas) vias.</div>
+<div style="text-align:right;margin-bottom:40px">{{data_hoje_extenso}}</div>
+<div style="text-align:center;margin-bottom:16px">{{assinatura:paciente}}<br>__________________________________<br><b>{{paciente.nome}}</b></div>
+<div style="text-align:center;margin-bottom:16px">{{assinatura:profissional}}<br>___________________________________<br>Profissional: <b>{{manual.profissional_cro}}</b></div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:testemunha1}}<br>____________________________<br>Testemunha 1<br>Nome:<br>CPF:</div>
+  <div style="flex:1;text-align:center">{{assinatura:testemunha2}}<br>_____________________________<br>Testemunha 2<br>Nome:<br>CPF:</div>
+</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_15',
+    tipo:'termo',
+    nome:'TERMO PORCELANAS (coroas, facetas, onlay) SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Cirurgião Dentista responsável', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">TERMO DE CONSENTIMENTO LIVRE E ESCLARECIDO PARA COROAS, FACETAS E LENTES DE CONTATO (LAMINADOS)</div>
+<div style="margin-bottom:16px">Eu, <b>{{paciente.nome}}</b>, CPF <b>{{paciente.cpf}}</b>, RG <b>{{paciente.rg}}</b>, autorizo a confecção das próteses conforme indicado no contrato/guia em anexo e outros procedimentos complementares que o Cirurgião Dentista <b>{{manual.profissional_cro}}</b> julgar necessários ou aconselháveis para atingir os objetivos do plano de tratamento. Declaro ter sido informado que o tratamento tem por objetivo a substituição das partes perdidas das estruturas naturais dos dentes e da gengiva, restabelecendo a capacidade de mastigação e fala, além de devolver a estética dos dentes e da face. Existem limitações e indicações para cada caso, e li atentamente os itens abaixo:</div>
+<div style="margin-bottom:16px"><b>1) Coroas totais (próteses fixas) ou parciais (onlay, inlay, overlay):</b> são necessários desgastes do dente com brocas para obter o formato correto do remanescente dentário, podendo acarretar necessidade de tratamento/retratamento de canal em caso de comprometimento ou proximidade com a polpa. Nem sempre é possível acertar exatamente a cor do dente natural. Poderá ser necessário o uso de provisórios, que podem se soltar — em caso de provisório solto, não tentar colar em casa, retornar ao consultório. A oportunidade final para mudanças (forma, cor, ajuste) é antes da cimentação; após, mudanças serão cobradas. Atrasos excessivos podem ocasionar movimentação dentária, exigindo refazer a peça, com custo adicional.</div>
+<div style="margin-bottom:16px"><b>2) Núcleos metálicos e pinos estéticos:</b> em caso de remoção/substituição de pinos intra-radiculares, existe possibilidade de fratura da raiz devido à parede remanescente já existente. Em caso de fratura próxima à furca, o dente poderá ser considerado condenado, necessitando extração e substituição por implante ou outro procedimento.</div>
+<div style="margin-bottom:16px"><b>3) Facetas em porcelana e lentes de contato:</b> podem ser necessários desgastes do dente (dependendo da cor da dentina), com possível necessidade de tratamento/retratamento de canal. Nas lentes de contato o preparo é mínimo, mas não é possível alterar a cor de dentes muito escurecidos, com limitações em casos de bruxismo/apertamento. Durante 10-15 dias pode-se usar provisórios/mock-ups, que podem se soltar ou quebrar. A oportunidade final para mudanças é antes da cimentação; peças cimentadas com insatisfação posterior não geram responsabilidade ao profissional, e retratamentos são cobrados à parte.</div>
+<div style="margin-bottom:16px">Estou ciente que para o sucesso do tratamento terei que comparecer nos dias e horas marcados — faltas serão submetidas à multa no valor de uma consulta, e em caso de impossibilidade de comparecer, comprometo-me a avisar com 12 horas de antecedência. Durante o tratamento poderá ser indicado uso de anestésico local, com riscos de desmaio, dificuldade de respiração, reação alérgica, desconforto, inchaço, equimose, infecção e dormência prolongada. Quando necessário, serei encaminhado a outras especialidades, não inclusas no orçamento da prótese. Estou ciente que podem ocorrer situações não diagnosticadas neste momento, exigindo alterações no plano de tratamento.</div>
+<div style="margin-bottom:16px">Após a entrega, serão necessárias consultas anuais de manutenção (valor de uma consulta) para garantir a longevidade da prótese — a limpeza não está inclusa. O profissional não se responsabiliza por falhas (trincas, lascamentos, fraturas, pigmentação) por falta de cuidado/manutenção do paciente. Pacientes com parafunção devem usar placa oclusal rígida; fratura por falta de uso da placa não gera responsabilidade ao profissional. A troca da prótese depende dos cuidados diários e da manutenção (porcelanas em média 8 a 10 anos).</div>
+<div style="margin-bottom:16px">Admito os riscos supracitados e permito a realização dos procedimentos necessários para tentar solucionar situações imprevisíveis e/ou emergenciais.</div>
+<div style="margin-bottom:16px">Declaro que as informações que prestei são verdadeiras e que li e entendi as informações acima (total de 3 páginas). Autorizo a realização do meu tratamento, tive a oportunidade de esclarecer todas as dúvidas e compreendi todas as informações antes de sua assinatura. Apesar de estar plenamente satisfeito(a) com as informações recebidas, RESERVO-ME o direito de revogar este consentimento a qualquer momento.</div>
+<div style="text-align:right;margin-bottom:40px">{{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>_____________________________________<br>Assinatura Paciente/Responsável<br><b>{{paciente.nome}}</b></div>
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>___________________________________<br>Cirurgiã-Dentista/CRO-PR<br><b>{{manual.profissional_cro}}</b></div>
+</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_16',
+    tipo:'termo',
+    nome:'TERMO PRÓTESE REMOVÍVEL (PT E PPR) SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Profissional responsável', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">Termo de consentimento livre e esclarecido para próteses removíveis</div>
+<div style="margin-bottom:16px">Eu, <b>{{paciente.nome}}</b>, RG <b>{{paciente.rg}}</b>, CPF <b>{{paciente.cpf}}</b>, autorizo Dr(a). <b>{{manual.profissional_cro}}</b> a realizar os seguintes tratamentos protéticos em minha pessoa:</div>
+<div style="margin-bottom:16px">{{orcamento.itens}}</div>
+<div style="margin-bottom:16px">O paciente declara ter sido informado que o tratamento protético tem por objetivo a substituição das partes perdidas das estruturas naturais dos dentes e da gengiva, restabelecendo a capacidade de mastigação e fala, além de devolver a estética. Existem limitações e indicações para cada caso, e li atentamente os itens abaixo:</div>
+<div style="margin-bottom:16px"><b>A. Prótese Parcial Removível retida a grampo (PPR):</b> serão necessários desgastes dos dentes para confecção de nichos de apoio; falta de higienização correta acarreta cárie, doença periodontal e outras complicações, de responsabilidade do paciente. A estética pode ficar comprometida pelos grampos metálicos, e a prótese nem sempre permanece totalmente firme, dependendo do osso remanescente e dos dentes-pilares. Quando possível, pode-se planejar prótese sem grampo (com encaixe Microfix), cobrada separadamente. Após prova dos dentes em cera e autorização para acrilização, não será possível trocar forma/cor — mudança posterior será cobrada à parte. Após a entrega, consultas anuais de manutenção são cobradas à parte; reembasamentos, radiografias e limpeza não estão inclusos. O profissional não se responsabiliza por falhas por falta de cuidado do paciente. Troca a cada 5 anos ou quando recomendado.</div>
+<div style="margin-bottom:16px"><b>B. Prótese Total Removível:</b> a retenção depende da quantidade de osso, fluxo salivar, questões psicológicas e formato do arco — mandíbulas com pouco osso podem não estabilizar a prótese, necessitando tratamentos complementares. Rebordo irregular pode necessitar cirurgia pré-protética (não inclusa no orçamento); se não realizada por opção do paciente, problemas de adaptação não são de responsabilidade do profissional. Após prova em cera e autorização para acrilização, não será possível trocar forma/cor. Consultas anuais de manutenção são cobradas à parte; reembasamentos e radiografias não estão inclusos. Troca a cada 5 anos ou quando recomendado.</div>
+<div style="margin-bottom:16px">Durante o tratamento poderá ser indicado uso de anestésico local, com riscos de desmaio, dificuldade de respiração, reação alérgica, desconforto, inchaço, equimose, infecção e dormência prolongada. Quando necessário, o paciente será encaminhado a outras especialidades, não inclusas no orçamento da prótese. Estou ciente que podem ocorrer situações não diagnosticadas neste momento, exigindo alterações no plano de tratamento, e que o profissional explicou a maneira correta de higienização.</div>
+<div style="margin-bottom:16px">Estou ciente que para o sucesso do tratamento terei que comparecer nos dias e horas marcados — faltas serão submetidas à multa no valor de uma consulta, e em caso de impossibilidade de comparecer, comprometo-me a avisar com 12 horas de antecedência. Admito os riscos supracitados e permito a realização dos procedimentos necessários para tentar solucionar situações imprevisíveis e/ou emergenciais.</div>
+<div style="margin-bottom:16px">Declaro que li e entendi todas as informações acima. Tive a oportunidade de esclarecer todas as dúvidas com o profissional e compreendi todas as informações constantes neste documento, antes de sua assinatura.</div>
+<div style="text-align:right;margin-bottom:40px">{{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>_________________________________<br>Paciente/Responsável<br><b>{{paciente.nome}}</b></div>
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>____________________________________<br><b>{{manual.profissional_cro}}</b></div>
+</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_17',
+    tipo:'termo',
+    nome:'TERMO PRÓTESE SOBRE IMPLANTE OU PROTOCOLO SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Profissional responsável', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">Termo de consentimento livre e esclarecido para próteses sobre implantes</div>
+<div style="margin-bottom:16px">Eu, <b>{{paciente.nome}}</b>, RG <b>{{paciente.rg}}</b>, CPF <b>{{paciente.cpf}}</b>, autorizo Dr(a). <b>{{manual.profissional_cro}}</b> a realizar os seguintes tratamentos protéticos em minha pessoa:</div>
+<div style="margin-bottom:16px">{{orcamento.itens}}</div>
+<div style="margin-bottom:16px">O paciente declara ter sido informado que o tratamento protético tem por objetivo a substituição das partes perdidas das estruturas naturais dos dentes e da gengiva, restabelecendo mastigação, fala e estética. Existem limitações e indicações para cada caso, e li atentamente os itens abaixo:</div>
+<div style="margin-bottom:16px">A prótese sobre implante não é igual ao dente com raiz, devido a características biológicas diferentes — devem-se evitar alimentos muito duros, abrir tampas de garrafa, sobrecarga nas próteses, e usar placa oclusal quando diagnosticado bruxismo/apertamento. Na perda de dentes da frente da maxila, com perda óssea significativa e sem possibilidade de enxerto em bloco, os implantes e futuras próteses ficam mais palatinizados, alterando o perfil do paciente (lábio mais murcho), com dentes mais compridos e maior volume vestibular para compensar — o paciente está ciente dessas limitações anatômicas, incluindo possíveis espaços negros ou falta de papila. Na perda de dentes da frente da mandíbula sem dentes do fundo bilateralmente, pode-se indicar Protocolo (fixo) ou Sobredentadura (removível), com vantagens e desvantagens do Plano de Tratamento escolhido. A sobredentadura não fica rígida como o protocolo, apenas tem maior retenção que a prótese total convencional; caso não se adapte e deseje trocar para fixa, será orçada a colocação de mais implantes e nova prótese.</div>
+<div style="margin-bottom:16px">Em determinados casos, o profissional poderá unir as próteses sobre implantes para melhor estabilidade, exigindo passador de fio/Superfloss e escovas interdentais (e Irrigador oral em protocolos) para correta higienização. Existe possibilidade do parafuso espanar ou soltar por hábitos parafuncionais (bruxismo, apertamento, roer unha, etc.) ou pelo tempo — há necessidade de placa oclusal, e componentes/parafusos danificados são cobrados à parte da manutenção anual. A durabilidade não depende só do material ou técnica, mas da higienização diária; fumar pode prejudicar os implantes.</div>
+<div style="margin-bottom:16px">Durante o tratamento poderá ser indicado uso de anestésico local, com riscos de desmaio, dificuldade de respiração, reação alérgica, desconforto, inchaço, equimose, infecção e dormência prolongada. Quando necessário, o paciente será encaminhado a outras especialidades, não inclusas no orçamento da prótese. Após prova da porcelana/dentes em cera e autorização para instalação/acrilização, não será possível trocar forma/cor — mudança será cobrada à parte. O profissional não se responsabiliza por falhas por falta de cuidado/manutenção. A troca da prótese acrílica ocorre a cada 5 anos e das porcelanas a cada 8 a 10 anos, ou quando recomendado.</div>
+<div style="margin-bottom:16px">Após a entrega, serão necessárias consultas semestrais de manutenção e limpeza profissional (profilaxia), cobradas à parte. Reembasamentos, radiografias panorâmicas/tomografias não estão inclusos na manutenção.</div>
+<div style="margin-bottom:16px">Estou ciente que para o sucesso do tratamento terei que comparecer nos dias e horas marcados — faltas serão submetidas à multa no valor de uma consulta, e em caso de impossibilidade de comparecer, comprometo-me a avisar com 12 horas de antecedência. Admito os riscos supracitados e permito a realização dos procedimentos necessários para tentar solucionar situações imprevisíveis e/ou emergenciais.</div>
+<div style="margin-bottom:16px">Declaro que li e entendi todas as informações acima (03 páginas). Tive a oportunidade de esclarecer todas as dúvidas com o profissional e compreendi todas as informações constantes neste documento, antes de sua assinatura.</div>
+<div style="text-align:right;margin-bottom:40px">{{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>_________________________________<br>Paciente/Responsável<br><b>{{paciente.nome}}</b></div>
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>__________________________________<br>Cirurgiã-Dentista/CRO-PR<br><b>{{manual.profissional_cro}}</b></div>
+</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_18',
+    tipo:'termo',
+    nome:'TERMO REMOÇÃO APARELHO DE ORTO SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Profissional responsável', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">TERMO DE CONSENTIMENTO LIVRE E ESCLARECIDO PARA REMOÇÃO DE APARELHO ORTODÔNTICO</div>
+<div style="margin-bottom:16px">Eu, <b>{{paciente.nome}}</b>, portador(a) do RG nº <b>{{paciente.rg}}</b>, CPF nº <b>{{paciente.cpf}}</b>, residente e domiciliado(a) em {{paciente.endereco}}, declaro que fui devidamente informado(a) pelo(a) profissional <b>{{manual.profissional_cro}}</b> sobre o procedimento de remoção do aparelho ortodôntico.</div>
+<div style="margin-bottom:16px">Fui esclarecido(a) sobre os seguintes pontos:</div>
+<div style="margin-bottom:16px"><b>Motivo da remoção:</b> a remoção será realizada devido à conclusão do tratamento ortodôntico, indicação profissional ou solicitação do paciente.<br>
+<b>Procedimento:</b> envolve a retirada dos bráquetes, bandas, fios e acessórios, podendo ocorrer leve sensibilidade nos dentes e necessidade de polimento do esmalte dentário.<br>
+<b>Riscos e efeitos colaterais:</b> o processo pode causar desconforto, sensibilidade dentária temporária, pequenas fraturas do esmalte e necessidade de ajustes posteriores.<br>
+<b>Uso de contenção:</b> após a remoção, é essencial o uso de contenção ortodôntica para manter os dentes na posição correta e evitar recidivas. Fui informado(a) sobre a importância do acompanhamento periódico.<br>
+<b>Cuidados pós-remoção:</b> manter boa higiene bucal, comparecer às consultas de acompanhamento e seguir todas as orientações do(a) ortodontista para preservar os resultados.<br>
+<b>Consequências da não adesão:</b> caso não utilize corretamente a contenção ou não realize os acompanhamentos necessários, posso estar sujeito(a) a movimentações dentárias indesejadas, comprometendo os resultados.</div>
+<div style="margin-bottom:16px">Assumo integral responsabilidade sobre a retirada do aparelho antes do tempo, por livre escolha ou quando a instalação foi realizada por outro profissional, isentando o(a) atual profissional de qualquer responsabilidade sobre o tratamento até agora e no pós-tratamento.</div>
+<div style="margin-bottom:16px">Declaro que todas as minhas dúvidas foram esclarecidas, que recebi explicações detalhadas sobre o procedimento e que concordo com a remoção do aparelho ortodôntico de forma voluntária, isentando o(a) profissional de qualquer responsabilidade decorrente da não adesão às recomendações pós-tratamento. Por estar de acordo, assino o presente termo.</div>
+<div style="text-align:right;margin-bottom:40px">Maringá-PR, {{data_hoje_extenso}}</div>
+<div style="text-align:center;margin-bottom:24px">{{assinatura:paciente}}<br>__________________________________________<br>Paciente ou Responsável<br><b>{{paciente.nome}}</b></div>
+<div style="text-align:center">{{assinatura:profissional}}<br>__________________________________________<br>Profissional Responsável<br><b>{{manual.profissional_cro}}</b></div>`,
+  },
+  {
+    id:'modelo_termo_sekai_19',
+    tipo:'termo',
+    nome:'TERMO DE BICHECTOMIA SEKAI',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Profissional responsável', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">TERMO DE CONSENTIMENTO LIVRE E ESCLARECIDO PARA BICHECTOMIA</div>
+<div style="font-weight:700;margin-bottom:8px">1. IDENTIFICAÇÃO DAS PARTES</div>
+<div style="margin-bottom:16px">Paciente: <b>{{paciente.nome}}</b>, Data de Nascimento: <b>{{paciente.nascimento}}</b>, CPF: <b>{{paciente.cpf}}</b>, Endereço: {{paciente.endereco}}<br>
+Profissional Responsável: <b>{{manual.profissional_cro}}</b>, Endereço da Clínica: {{clinica.endereco}}</div>
+<div style="font-weight:700;margin-bottom:8px">2. DESCRIÇÃO DO PROCEDIMENTO</div>
+<div style="margin-bottom:16px">A bichectomia é um procedimento cirúrgico estético que visa a remoção das bolsas de gordura (chamadas de "bolsas de Bichat") localizadas nas bochechas, realizada para melhorar o contorno facial, proporcionando um efeito mais esculpido e definido.</div>
+<div style="font-weight:700;margin-bottom:8px">3. OBJETIVO DO PROCEDIMENTO</div>
+<div style="margin-bottom:16px">Reduzir o volume das bochechas, melhorando o contorno facial e proporcionando o perfil estético desejado pelo paciente.</div>
+<div style="font-weight:700;margin-bottom:8px">4. RISCOS E COMPLICAÇÕES POTENCIAIS</div>
+<div style="margin-bottom:16px">Todo procedimento cirúrgico envolve riscos e possíveis complicações, entre elas: infecção; hemorragia; edema (inchaço); dor e desconforto; cicatrização inadequada; alterações temporárias ou permanentes na sensibilidade; reações adversas à anestesia; assimetria facial; resultados estéticos insatisfatórios.</div>
+<div style="font-weight:700;margin-bottom:8px">5. ALTERNATIVAS AO PROCEDIMENTO</div>
+<div style="margin-bottom:16px">Métodos não invasivos ou menos invasivos, como preenchimentos dérmicos, contornos com maquiagem e técnicas de modelagem facial sem cirurgia, devem ser discutidos e avaliados.</div>
+<div style="font-weight:700;margin-bottom:8px">6. BENEFÍCIOS ESPERADOS</div>
+<div style="margin-bottom:16px">Melhoria do contorno facial, aumento da definição das maçãs do rosto e aparência facial mais esculpida.</div>
+<div style="font-weight:700;margin-bottom:8px">7. INSTRUÇÕES PRÉ E PÓS-OPERATÓRIAS</div>
+<div style="margin-bottom:16px"><b>Pré-operatório:</b> evitar uso de medicamentos anticoagulantes conforme orientação; realizar exames laboratoriais e de imagem se solicitado; seguir orientações específicas do profissional.<br>
+<b>Pós-operatório:</b> manter a área operada limpa e seca; seguir recomendações para controle da dor e uso de medicações; evitar atividades físicas intensas e exposição ao sol nas áreas tratadas; comparecer a todas as consultas de acompanhamento.</div>
+<div style="font-weight:700;margin-bottom:8px">8. CONSENTIMENTO</div>
+<div style="margin-bottom:16px">Eu, <b>{{paciente.nome}}</b>, declaro que o procedimento foi devidamente explicado quanto aos seus benefícios, riscos, complicações e alternativas possíveis, tive a oportunidade de fazer perguntas, respondidas satisfatoriamente, em linguagem compreensível. Estou ciente que em procedimentos cirúrgicos como o citado podem ocorrer complicações gerais como sangramento, infecção, edema, hematoma, trismo (dificuldade de abrir a boca), paralisia facial, entre outros.</div>
+<div style="margin-bottom:16px">Paralisia facial é a perda temporária ou permanente dos movimentos da face ocasionada por trauma/lesão no nervo facial, causando distorção nas expressões e movimentos fisiológicos — em cirurgia de bichectomia é uma possível complicação, podendo ocorrer trauma no nervo facial com a retirada da bola de Bichat. O tratamento é feito por medicamentos, nova cirurgia, fisioterapia e aplicações de laser; caso ocorra, o paciente será encaminhado a um especialista, sendo responsável pelos custos do tratamento. A paralisia pode ser temporária (três a quatro meses) ou permanente.</div>
+<div style="margin-bottom:16px">Fui devidamente orientado(a) pela equipe da clínica que, em casos de sedação medicamentosa, devo comparecer ao procedimento acompanhado(a) por um responsável de confiança, que deverá estar presente após o término do procedimento para auxiliar no retorno para casa, em virtude dos possíveis efeitos residuais da sedação (sonolência, tontura, desorientação e diminuição dos reflexos). Declaro estar ciente de que a clínica SEKAI ODONTOLOGIA E CLÍNICA INTEGRADA não se responsabiliza por quaisquer incidentes ou acidentes ocorridos caso as orientações fornecidas não sejam rigorosamente seguidas, sendo de minha responsabilidade garantir o cumprimento dessas orientações.</div>
+<div style="margin-bottom:16px">Autorizo o cirurgião-dentista identificado neste termo, bem como seus assistentes, a intervir no procedimento, e autorizo qualquer outro procedimento, exame, tratamento e/ou cirurgia, incluindo transfusão de sangue, em situações imprevistas que necessitem de cuidados diferentes dos inicialmente propostos. Declaro que a ficha de anamnese foi por mim preenchida e assinada, correspondendo à verdade dos fatos, especialmente quanto às minhas condições de saúde geral e bucal, não tendo omitido dado quanto a doenças pré-existentes ou uso de medicamentos que possam interferir no planejamento e andamento do tratamento.</div>
+<div style="margin-bottom:16px">Estou ciente de que a odontologia não é uma ciência exata e que os resultados esperados podem não se concretizar em face da resposta biológica do meu organismo e de minha colaboração, bem como da própria limitação da ciência, comprometendo-se a profissional a utilizar as técnicas e materiais adequados à execução do plano de tratamento proposto e aprovado, assumindo responsabilidade pelos serviços prestados, resguardando minha privacidade e o necessário sigilo profissional, além de zelar por minha saúde e dignidade.</div>
+<div style="text-align:right;margin-bottom:40px">Maringá-PR, {{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>_____________________________<br>Assinatura do Paciente<br><b>{{paciente.nome}}</b></div>
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>______________________________<br>Assinatura do Profissional<br><b>{{manual.profissional_cro}}</b></div>
+</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_20',
+    tipo:'termo',
+    nome:'ORIENTAÇÕES E CUIDADOS COM A PLACA RÍGIDA',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Profissional responsável', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">ORIENTAÇÕES E CUIDADOS COM A PLACA RÍGIDA</div>
+<div style="margin-bottom:16px">Paciente: <b>{{paciente.nome}}</b> — CPF: <b>{{paciente.cpf}}</b></div>
+<div style="margin-bottom:16px">Agora que você está com a sua placa em mãos, leia atentamente as orientações abaixo:</div>
+<div style="margin-bottom:16px">Como a dentista já explicou, é importante manter a higienização da placa em dia — isso evita que ela se manche, fique com pigmentos e evita formação de tártaro. Faça a limpeza com uma escova macia e sabão neutro (ou pasta de dente de baixa abrasividade) logo ao acordar. Segure na palma da mão, de maneira firme, e lave na pia — nunca higienize durante o banho, pois isso aumenta a chance de derrubar e quebrar a placa, ocasionando a perda da garantia dela. Não esqueça de higienizar os dentes e gengiva, com fio dental e escova de cerdas extra macia.</div>
+<div style="margin-bottom:16px"><b>1) Desinfecção a cada 15 dias</b> (Corega Tabs ou outros produtos), conforme orientado pela profissional. <b>Como fazer:</b> coloque água filtrada morna (nunca quente) em um recipiente que cubra totalmente a placa, e utilize uma das opções:<br>
+<b>A)</b> 1 pastilha Corega Tabs — deixe borbulhar, coloque a placa por pelo menos 5 minutos, escove por dentro e por fora com a própria água, enxague, seque e guarde no porta-moldeira.<br>
+<b>B)</b> 1 colher de sopa de bicarbonato de sódio — deixe borbulhar, coloque a placa por pelo menos 30 minutos (não use a solução ou o pó puro para escovar — pode manchar), depois lave com sabão neutro ou pasta, enxague, seque e guarde.<br>
+<b>C)</b> 3 gotas de hipoclorito (água sanitária) — deixe de molho por 3 minutos (não exagere na quantidade, pode manchar), depois lave com sabão neutro ou pasta, enxague, seque e guarde. Jogue fora o restante da solução em qualquer uma das opções.</div>
+<div style="margin-bottom:16px"><b>2)</b> Nos primeiros dias é normal estranhar o volume da placa e sentir dificuldade para falar ou fechar os lábios — a nova dimensão de mordida exige adaptação da musculatura, que pode levar de 4 a 6 semanas. Tenha paciência e persistência, e converse com o profissional em caso de dúvida.<br>
+<b>3)</b> Alguns dentes podem ficar sensíveis no início. Se a placa estiver muito apertada, avise o profissional — não fique muito tempo sem usá-la, pois pode ocorrer movimentação dos dentes e perda do encaixe. Reembasamentos são cobrados à parte.<br>
+<b>4)</b> No início do uso pode ocorrer aumento na salivação, que se normaliza com o tempo.<br>
+<b>5)</b> Não falte às consultas de retorno — são importantes para a adaptação (podem variar de 14 dias a meses). Se possível, avise por mensagem.<br>
+<b>6)</b> A placa rígida necessita ser substituída após um período (5 a 7 anos, dependendo do indivíduo), devido ao desgaste e manchamento do uso diário. Reembasamento, ajuste oclusal ou troca da placa podem ser indicados, não inclusos no orçamento, sendo pagos separadamente.<br>
+<b>7)</b> Sempre guarde a placa no porta-moldeira do consultório — nunca em guardanapo (pode ir para o lixo) ou no bolso (pode quebrar). Ao lavar, segure firme na palma da mão, evitando derrubá-la, sob pena de perda da garantia.</div>
+<div style="margin-bottom:16px">Boa adaptação e conte com a gente nesse processo! Até breve.</div>
+<div style="text-align:right;margin-bottom:40px">{{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>_________________________________<br><b>{{manual.profissional_cro}}</b></div>
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>__________________________________<br>Paciente ou Responsável<br><b>{{paciente.nome}}</b></div>
+</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_21',
+    tipo:'termo',
+    nome:'ORIENTAÇÃO PÓS-TRATAMENTO COM PRÓTESES TOTAIS OU PARCIAIS',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Profissional responsável', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">ORIENTAÇÃO PÓS-TRATAMENTO COM PRÓTESES TOTAIS OU PARCIAIS</div>
+<div style="margin-bottom:16px">Paciente: <b>{{paciente.nome}}</b> — CPF: <b>{{paciente.cpf}}</b></div>
+<div style="margin-bottom:16px">Agora que você está com a sua prótese em mãos, leia atentamente as orientações abaixo:</div>
+<div style="margin-bottom:16px">É importante manter a higienização das próteses em dia — isso evita que manchem, peguem pigmentos e formem tártaro. Caso o biofilme/placa não seja removido das próteses e gengiva, podem ocorrer candidíase, hiperplasia inflamatória, estomatite e mau hálito. Faça a limpeza com escova macia e sabão neutro (ou pasta de baixa abrasividade) após cada refeição, higienizando também a língua e a gengiva.</div>
+<div style="margin-bottom:16px"><b>1) Desinfecção a cada 15 dias</b> (Corega Tabs ou outros produtos). Para prótese total, as opções A, B ou C abaixo; para prótese parcial com grampo metálico, apenas A ou B (o hipoclorito da opção C corrói o metal). Coloque água filtrada morna (nunca quente) cobrindo totalmente a prótese:<br>
+<b>A)</b> 1 pastilha Corega Tabs, deixar borbulhar, colocar a prótese por 5 minutos, escovar com a própria água, enxaguar, secar e guardar.<br>
+<b>B)</b> 1 colher de sopa de bicarbonato de sódio, deixar borbulhar, 30 minutos de molho (não usar o pó puro com creme dental para escovar), depois lavar com sabão neutro/pasta, enxaguar, secar e guardar.<br>
+<b>C)</b> 3 gotas de hipoclorito, 30 minutos de molho na prótese total (sem exagerar na quantidade), depois lavar com sabão neutro/pasta, enxaguar, secar e guardar. Jogue fora o restante da solução em qualquer opção.</div>
+<div style="margin-bottom:16px"><b>2)</b> É fundamental remover as próteses para dormir, evitando proliferação de microrganismos na gengiva e mucosas e permitindo a recuperação do trauma físico do uso.<br>
+<b>3)</b> A retenção das próteses depende da quantidade de osso e do tipo de gengiva, podendo se alterar com o tempo e necessitar reembasamentos — converse com o profissional quando perceber isso.<br>
+<b>4)</b> Nos primeiros dias é normal estranhar o volume e sentir dificuldade para falar/se alimentar; a adaptação da musculatura geralmente leva algumas semanas.<br>
+<b>5)</b> Após a instalação, coma alimentos macios e cortados em pedaços pequenos, mastigando dos dois lados — alimentos duros podem sobrecarregar os rebordos e ferir a gengiva. O período de adaptação geralmente leva de 6 a 8 semanas.<br>
+<b>6)</b> Fale o máximo possível em voz alta, praticando fonemas dentais, labiais, linguais, guturais e palatais por cerca de 10 minutos a 1 hora por dia — isso acelera a adaptação fonética.<br>
+<b>7)</b> Alguns pontos podem ficar doloridos no início; se a dor for suportável, não retire as próteses até a próxima consulta para reavaliação — nunca volte à consulta usando as próteses antigas, isso atrasa o ajuste da nova.<br>
+<b>8)</b> No início do uso pode ocorrer aumento na salivação, que se normaliza com o tempo.<br>
+<b>9)</b> Não falte às consultas de retorno (podem variar de 14 dias a meses) — se possível, avise por mensagem.<br>
+<b>10)</b> As próteses necessitam ser substituídas após um período (5 a 7 anos, dependendo do indivíduo) devido a mudanças ósseas e gengivais, podendo ficar frouxas ou causar lesões nos tecidos moles — reembasamento, ajuste oclusal ou troca podem ser indicados, não inclusos no orçamento, pagos separadamente. Pode também ocorrer pigmentação, manchamento e desgaste, levando à diminuição da dimensão vertical e queilite angular.<br>
+<b>11)</b> Sempre guarde as próteses nas caixinhas do consultório — nunca em guardanapo (pode ir para o lixo) ou no bolso (pode quebrar). Segure firme na palma da mão ao lavar, evitando derrubá-las, sob pena de perda da garantia.</div>
+<div style="margin-bottom:16px">Boa adaptação e conte com a gente nesse processo! Até breve.</div>
+<div style="text-align:right;margin-bottom:40px">Maringá-PR, {{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>______________________________<br><b>{{manual.profissional_cro}}</b></div>
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>________________________________<br>Paciente ou Responsável<br><b>{{paciente.nome}}</b></div>
+</div>`,
+  },
+  {
+    id:'modelo_termo_sekai_22',
+    tipo:'termo',
+    nome:'ORIENTAÇÃO DE CUIDADOS PÓS-OPERATÓRIOS',
+    ativo:true,
+    criadoEm:'2026-07-26',
+    camposManuais:[
+      {token:'manual.profissional_cro', label:'Cirurgião(ã)-dentista responsável', tipo:'profissional', opcoes:[]},
+    ],
+    conteudo:`<div style="text-align:center;font-weight:700;margin-bottom:16px">ORIENTAÇÃO DE CUIDADOS PÓS-OPERATÓRIOS</div>
+<div style="margin-bottom:16px">Paciente: <b>{{paciente.nome}}</b></div>
+<div style="margin-bottom:16px">Você foi submetido(a) a uma intervenção cirúrgica. Para uma boa cicatrização e recuperação, é importante seguir as instruções abaixo:</div>
+<div style="margin-bottom:16px"><b>1.</b> Quando a anestesia perder o efeito, você não deve sentir dor, apenas leve desconforto — os analgésicos prescritos serão suficientes.<br>
+<b>2.</b> Inchaço é comum, especialmente em áreas extensas, desaparecendo em 3-4 dias. Se excessivo, ligue no consultório. Ao chegar em casa, aplique compressa de gelo intermitente (10 min com/10 sem) sobre a área durante 2 horas, nas primeiras 48h.<br>
+<b>3.</b> Ao dormir, mantenha a cabeça mais elevada que o corpo (2 travesseiros), virado para o teto ou para o lado oposto ao da cirurgia.<br>
+<b>4.</b> É comum sangue misturado à saliva nas primeiras 4-5 horas. Se o sangramento for além disso, morder firmemente uma gaze em formato de U por 30 minutos (sem retirar antes) e ligar para o consultório. Não tente parar o sangramento com bochechos — isso piora. Não use canudos nem faça sucção; se houve levantamento de seio maxilar, espirre com a boca aberta.<br>
+<b>5.</b> Nas primeiras 72 horas, evite alimentos quentes e sólidos — prefira sorvete, sopas em temperatura ambiente, peixe, ovos. Evite cítricos, comidas condimentadas, pão francês, chips e sementes.<br>
+<b>6.</b> Não fume — o calor atrapalha a cicatrização e causa dor/inchaço; fumantes têm 4x mais problemas de gengiva. Se não conseguir parar, aguarde ao menos 7 dias (vale para narguilé, cigarro eletrônico, cachimbo e fumo).<br>
+<b>7.</b> Nos 3 primeiros dias, evite esforço excessivo (sol, trabalho pesado, esportes). Se houve levantamento de seio maxilar, não assoe o nariz nem use canudo por 1 semana, e espirre com a boca aberta.<br>
+<b>8.</b> Se prescrito antibiótico, tome conforme a receita até o fim, sem interromper.<br>
+<b>9.</b> Não ingira álcool nem substâncias prejudiciais durante a cicatrização.<br>
+<b>10.</b> Manter a área operada livre de placa bacteriana é fundamental — use o enxaguante bucal (Periogard ou outro) conforme a receita, com enxágue leve de 60 segundos (sem bochechos fortes); os tecidos ficarão sensíveis para escova/fio dental por um tempo, sendo necessário retornar ao consultório para limpeza especializada durante pelo menos 4 semanas após a cirurgia.</div>
+<div style="margin-bottom:16px">Se outro problema ou dúvida surgir, ligue a qualquer hora para o consultório.</div>
+<div style="margin-bottom:16px">Declaro que li e entendi todas as informações acima. Tive a oportunidade de esclarecer todas as dúvidas com o profissional e compreendi todas as informações constantes neste documento, antes de sua assinatura.</div>
+<div style="text-align:right;margin-bottom:40px">Maringá-PR, {{data_hoje_extenso}}</div>
+<div style="display:flex;gap:40px">
+  <div style="flex:1;text-align:center">{{assinatura:paciente}}<br>______________________<br>Paciente ou Responsável<br><b>{{paciente.nome}}</b></div>
+  <div style="flex:1;text-align:center">{{assinatura:profissional}}<br>__________________________<br>Cirurgião(ã)-Dentista<br><b>{{manual.profissional_cro}}</b></div>
+</div>`,
+  },
 ];
 // Carrega os modelos salvos no navegador; se algum modelo novo foi adicionado
 // ao seed (nesta atualização do sistema) e ainda não existe no que já está
