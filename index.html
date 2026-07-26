@@ -1214,16 +1214,17 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <div id="sec-orcamentosgeral" class="sec">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
     <div class="pg-title">Orçamentos</div>
+    <button class="btn btn-ghost btn-sm" onclick="ogAbrirModalIndicacoes()">👥 Quem indicou</button>
   </div>
 
   <!-- Filtros -->
-  <div style="display:grid;grid-template-columns:repeat(4,1fr) auto;gap:10px;align-items:end;margin-bottom:16px">
-    <div class="fl"><label>De</label><input type="date" id="og-filtro-de" onchange="renderOrcamentosGeral()"></div>
-    <div class="fl"><label>Até</label><input type="date" id="og-filtro-ate" onchange="renderOrcamentosGeral()"></div>
-    <div class="fl"><label>Profissional</label>
+  <div style="display:flex;gap:10px;align-items:end;margin-bottom:16px;flex-wrap:wrap">
+    <div class="fl" style="width:140px"><label>De</label><input type="date" id="og-filtro-de" onchange="renderOrcamentosGeral()"></div>
+    <div class="fl" style="width:140px"><label>Até</label><input type="date" id="og-filtro-ate" onchange="renderOrcamentosGeral()"></div>
+    <div class="fl" style="width:200px"><label>Profissional</label>
       <select id="og-filtro-profissional" onchange="renderOrcamentosGeral()"><option value="">Todos</option></select>
     </div>
-    <div class="fl"><label>Status</label>
+    <div class="fl" style="width:150px"><label>Status</label>
       <select id="og-filtro-status" onchange="ogSetStatus(this.value)">
         <option value="">Todos</option>
         <option value="aprovado">Aprovado</option>
@@ -1931,6 +1932,19 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="btn btn-ghost" onclick="fecharModalAprovarOrcamento()">Cancelar</button>
       <button class="btn btn-primary" onclick="confirmarAprovacaoOrcamento()" style="background:var(--su);border-color:var(--su)">Confirmar aprovação e gerar títulos</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL: Quem indicou (ranking de indicadores a partir dos orçamentos aprovados) -->
+<div class="modal-ov" id="modal-og-indicacoes">
+  <div class="modal" style="width:640px;max-width:96vw;max-height:85vh">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="modal-title">👥 Quem indicou</div>
+        <button onclick="fecharModal('modal-og-indicacoes')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--tx3);line-height:1;padding:2px 6px">&times;</button>
+      </div>
+    </div>
+    <div class="modal-body" id="modal-og-indicacoes-body" style="overflow-y:auto;max-height:calc(85vh - 70px)"></div>
   </div>
 </div>
 
@@ -8873,6 +8887,8 @@ function voltarParaPacientes(){
     goTo('financeiro', btnFin);
     const sub = pacienteOrigemFinSub||'receber';
     showFinSub(sub, document.getElementById('fin-sub-'+sub));
+  } else if(pacienteOrigemTab==='orcamentosgeral'){
+    goTo('orcamentosgeral', document.getElementById('navbtn-orcamentosgeral'));
   } else {
     goTo('pacientes', document.getElementById('navbtn-pacientes'));
   }
@@ -9687,7 +9703,26 @@ function _ogPopularFiltros(todos){
   }
 }
 
+// Preenche De/Até com o primeiro e o último dia do mês atual, na primeira vez que o
+// módulo é aberto (só se os campos estiverem vazios — não sobrescreve escolha do usuário)
+let _ogFiltrosDataInit = false;
+function _ogInicializarFiltroData(){
+  if(_ogFiltrosDataInit) return;
+  const deEl = document.getElementById('og-filtro-de');
+  const ateEl = document.getElementById('og-filtro-ate');
+  if(deEl && ateEl && !deEl.value && !ateEl.value){
+    const d = new Date(iso(hoje)+'T00:00:00');
+    const primeiro = new Date(d.getFullYear(), d.getMonth(), 1);
+    const ultimo = new Date(d.getFullYear(), d.getMonth()+1, 0);
+    const fmt = dt => `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+    deEl.value = fmt(primeiro);
+    ateEl.value = fmt(ultimo);
+  }
+  _ogFiltrosDataInit = true;
+}
+
 function renderOrcamentosGeral(){
+  _ogInicializarFiltroData();
   const de = document.getElementById('og-filtro-de')?.value || '';
   const ate = document.getElementById('og-filtro-ate')?.value || '';
   const profFiltro = document.getElementById('og-filtro-profissional')?.value || '';
@@ -9854,12 +9889,52 @@ function ogAbrirOrcamento(pacId, orcId){
   if(navPac) navPac.classList.add('on');
   const layout=document.querySelector('.layout');
   if(layout) layout.classList.remove('has-subnav');
-  pacienteOrigemTab='pacientes';
+  pacienteOrigemTab='orcamentosgeral';
   abrirModalPt(pacId);
   setTimeout(()=>{
     switchPpArea('orcamento');
     abrirModalOrcamento(pacId, orcId);
   }, 60);
+}
+
+// ── "Quem indicou" — ranking de indicadores a partir dos orçamentos APROVADOS ──
+// (só orçamentos aprovados contam, pois é aí que a indicação vira negócio de verdade)
+function ogAbrirModalIndicacoes(){
+  const fmtMoeda = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+  const aprovados = _orcamentos().filter(o=>_ogStatusNorm(o.status)==='aprovado' && o.indicacao && o.indicacao.nome);
+
+  const porIndicador = {};
+  aprovados.forEach(o=>{
+    const chave = o.indicacao.nome;
+    if(!porIndicador[chave]) porIndicador[chave] = {nome:chave, tipo:o.indicacao.tipo, count:0, valor:0, pacientes:[]};
+    porIndicador[chave].count++;
+    porIndicador[chave].valor += (o.itens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+    const p = pacientes.find(x=>String(x.id)===String(o.pacienteId));
+    if(p) porIndicador[chave].pacientes.push(p.nome);
+  });
+
+  const ranking = Object.values(porIndicador).sort((a,b)=>b.valor-a.valor);
+  const tagMap={paciente:'Paciente',usuario:'Equipe',fornecedor:'Fornecedor',indicador:'Indicador'};
+  const body = document.getElementById('modal-og-indicacoes-body');
+
+  if(!ranking.length){
+    body.innerHTML = '<div class="og-panel-empty" style="padding:20px 4px">Nenhum orçamento aprovado com indicação registrada até agora. Ao aprovar um orçamento, marque "Sim" em Indicação para começar a rastrear.</div>';
+  } else {
+    const totalGeral = ranking.reduce((s,r)=>s+r.valor,0);
+    body.innerHTML = `
+      <div style="font-size:12px;color:var(--tx3);margin-bottom:14px">${ranking.length} indicador(es) · R$ ${fmtMoeda(totalGeral)} em orçamentos aprovados gerados por indicação</div>
+      ${ranking.map(r=>`
+        <div style="border:1px solid var(--border);border-radius:var(--r10);padding:12px 14px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+            <div style="font-size:13.5px;font-weight:700;color:var(--tx)">${esc(r.nome)} <span class="fin-ac-tag fin-ac-tag-${r.tipo==='paciente'?'paciente':r.tipo==='usuario'?'usuario':'fornecedor'}" style="margin-left:6px">${tagMap[r.tipo]||'Indicador'}</span></div>
+            <div style="font-size:15px;font-weight:700;color:var(--su)">R$ ${fmtMoeda(r.valor)}</div>
+          </div>
+          <div style="font-size:11.5px;color:var(--tx3);margin-top:4px">${r.count} orçamento(s) aprovado(s) · pacientes indicados: ${r.pacientes.map(esc).join(', ')}</div>
+        </div>
+      `).join('')}
+    `;
+  }
+  abrirModal('modal-og-indicacoes');
 }
 
 let _orcModalPacId=null;
@@ -11287,6 +11362,101 @@ const _APROV_TIPOS=[
   {v:'parcelado_boleto',   l:'Boleto parcelado'},
 ];
 
+// ── INDICAÇÃO — quem indicou o paciente deste orçamento ────────────────────
+// Cadastro leve, só para indicadores avulsos que não são paciente/equipe/fornecedor
+// (ex: um amigo, familiar, alguém da comunidade). Fica pesquisável junto com o resto.
+function _indicadores(){ return carregarLS('sk3-indicadores', []); }
+function _salvarIndicadores(list){ salvarLS('sk3-indicadores', list); }
+
+// Junta todos os "tipos de gente" do sistema numa lista única de busca: pacientes,
+// equipe (dentistas/secretária/etc, todos ficam em "usuarios"), fornecedores e
+// indicadores avulsos já cadastrados anteriormente.
+function _ogContatosTodos(){
+  const p=(typeof pacientes!=='undefined'?pacientes:carregarLS('sk3-pacientes',[])).map(x=>({tipo:'paciente',id:x.id,nome:x.nome}));
+  const u=(typeof usuarios!=='undefined'?usuarios:carregarLS('sk3-usuarios',[])).map(x=>({tipo:'usuario',id:x.id,nome:x.nome}));
+  const f=(typeof fornecedores!=='undefined'?fornecedores:carregarLS('sk3-fornecedores',[])).map(x=>({tipo:'fornecedor',id:x.id,nome:x.nome}));
+  const ind=_indicadores().map(x=>({tipo:'indicador',id:x.id,nome:x.nome}));
+  return [...p,...u,...f,...ind].filter(c=>c.nome);
+}
+
+let _aprovIndicadorSelecionado=null; // {tipo,id,nome} do indicador escolhido para este orçamento
+let _aprovIndicadorBuscaResultados=[];
+
+function _aprovToggleIndicacao(v){
+  const wrap=document.getElementById('aprov-indicacao-wrap');
+  if(wrap) wrap.style.display = v==='sim' ? '' : 'none';
+  if(v!=='sim'){
+    _aprovLimparIndicador();
+    const buscaEl=document.getElementById('aprov-indicacao-busca');
+    if(buscaEl) buscaEl.value='';
+  }
+}
+
+function _aprovBuscarIndicador(termo){
+  const dd=document.getElementById('aprov-indicacao-dropdown');
+  if(!dd) return;
+  if(_aprovIndicadorSelecionado && termo!==_aprovIndicadorSelecionado.nome){
+    _aprovIndicadorSelecionado=null;
+    const sel=document.getElementById('aprov-indicacao-sel');
+    if(sel) sel.classList.remove('on');
+  }
+  const t=(termo||'').trim().toLowerCase();
+  if(!t){ dd.classList.remove('open'); return; }
+  const todos=_ogContatosTodos();
+  const filtrados=todos.filter(c=>(c.nome||'').toLowerCase().includes(t)).slice(0,10);
+  _aprovIndicadorBuscaResultados=filtrados;
+  const tagMap={paciente:'Paciente',usuario:'Equipe',fornecedor:'Fornecedor',indicador:'Indicador'};
+  let html = filtrados.map((c,i)=>`
+    <div class="fin-ac-item" onmousedown="_aprovSelecionarIndicadorAC(${i})">
+      <span class="fin-ac-item-nome">${esc(c.nome)}</span>
+      <span class="fin-ac-tag fin-ac-tag-${c.tipo==='paciente'?'paciente':c.tipo==='usuario'?'usuario':'fornecedor'}">${tagMap[c.tipo]}</span>
+    </div>`).join('');
+  const termoEsc=esc(termo).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  html += `<div class="fin-ac-item" style="color:var(--ac);font-weight:600" onmousedown="_aprovAdicionarNovoIndicador('${termoEsc}')">+ Adicionar "${esc(termo)}" como novo indicador</div>`;
+  dd.innerHTML = html;
+  dd.classList.add('open');
+}
+
+function _aprovSelecionarIndicadorAC(idx){
+  const c=_aprovIndicadorBuscaResultados[idx];
+  if(!c) return;
+  _aprovIndicadorSelecionado={tipo:c.tipo,id:c.id,nome:c.nome};
+  const buscaEl=document.getElementById('aprov-indicacao-busca');
+  if(buscaEl) buscaEl.value=c.nome;
+  const dd=document.getElementById('aprov-indicacao-dropdown');
+  if(dd) dd.classList.remove('open');
+  const tagMap={paciente:'Paciente',usuario:'Equipe',fornecedor:'Fornecedor',indicador:'Indicador'};
+  const txt=document.getElementById('aprov-indicacao-sel-txt');
+  if(txt) txt.textContent=`Indicado por: ${c.nome} (${tagMap[c.tipo]})`;
+  const sel=document.getElementById('aprov-indicacao-sel');
+  if(sel) sel.classList.add('on');
+}
+
+// Cria um indicador avulso novo (não é paciente/equipe/fornecedor) e já o seleciona
+function _aprovAdicionarNovoIndicador(nome){
+  nome=(nome||'').trim();
+  if(!nome) return;
+  const novo={id:'ind_'+Date.now(), nome};
+  const list=_indicadores();
+  list.push(novo);
+  _salvarIndicadores(list);
+  _aprovIndicadorSelecionado={tipo:'indicador', id:novo.id, nome:novo.nome};
+  const buscaEl=document.getElementById('aprov-indicacao-busca');
+  if(buscaEl) buscaEl.value=novo.nome;
+  const dd=document.getElementById('aprov-indicacao-dropdown');
+  if(dd) dd.classList.remove('open');
+  const txt=document.getElementById('aprov-indicacao-sel-txt');
+  if(txt) txt.textContent=`Indicado por: ${novo.nome} (novo indicador cadastrado)`;
+  const sel=document.getElementById('aprov-indicacao-sel');
+  if(sel) sel.classList.add('on');
+}
+
+function _aprovLimparIndicador(){
+  _aprovIndicadorSelecionado=null;
+  const sel=document.getElementById('aprov-indicacao-sel');
+  if(sel) sel.classList.remove('on');
+}
+
 function abrirModalAprovarOrcamento(){
   if(!_orcModalId){ alert('Salve o orçamento antes de aprovar.'); return; }
   const orc=_orcamentos().find(o=>o.id===_orcModalId);
@@ -11295,6 +11465,8 @@ function abrirModalAprovarOrcamento(){
   _orcAprovarParcelasTemp=[];
   
   _aprovEntradas=[];
+  // Pré-carrega indicação já registrada (caso o orçamento esteja sendo reaprovado)
+  _aprovIndicadorSelecionado = orc.indicacao ? {...orc.indicacao} : null;
   _aprovRenderModal(orc,total);
   document.getElementById('modal-aprovar-orc').classList.add('open');
 }
@@ -11316,6 +11488,30 @@ function _aprovRenderModal(orc,totalOrc){
       </div>
     </div>
 
+    <!-- Indicação -->
+    <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Indicação</div>
+      <div class="fl" style="max-width:260px;margin-bottom:8px">
+        <label>Este paciente foi indicado por alguém?</label>
+        <select id="aprov-indicacao-teve" onchange="_aprovToggleIndicacao(this.value)">
+          <option value="nao">Não</option>
+          <option value="sim">Sim</option>
+        </select>
+      </div>
+      <div id="aprov-indicacao-wrap" style="display:none">
+        <div class="fin-ac-wrap" style="max-width:380px">
+          <input type="text" id="aprov-indicacao-busca" placeholder="Buscar paciente, dentista, funcionário, fornecedor..." autocomplete="off"
+            oninput="_aprovBuscarIndicador(this.value)" onfocus="_aprovBuscarIndicador(this.value)"
+            onblur="setTimeout(()=>{const dd=document.getElementById('aprov-indicacao-dropdown'); if(dd)dd.classList.remove('open')},160)">
+          <div id="aprov-indicacao-dropdown" class="fin-ac-dropdown"></div>
+        </div>
+        <div id="aprov-indicacao-sel" class="fin-parte-sel" style="max-width:380px">
+          <span id="aprov-indicacao-sel-txt"></span>
+          <button type="button" class="fin-parte-sel-clear" onclick="_aprovLimparIndicador()" title="Remover">✕</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Formas de pagamento -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div style="font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em">Forma de pagamento</div>
@@ -11325,7 +11521,26 @@ function _aprovRenderModal(orc,totalOrc){
     <div id="aprov-saldo-aviso" style="margin-bottom:10px"></div>
     <div id="aprov-preview-titulos" style="border-top:1px solid var(--border);padding-top:14px"></div>
   `;
-  setTimeout(()=>_aprovRenderEntradas(),0);
+  // Restaura estado da indicação (select, campo de busca e chip selecionado) após o modal renderizar
+  setTimeout(()=>{
+    _aprovRenderEntradas();
+    const selTeve = document.getElementById('aprov-indicacao-teve');
+    const wrap = document.getElementById('aprov-indicacao-wrap');
+    if(_aprovIndicadorSelecionado){
+      if(selTeve) selTeve.value='sim';
+      if(wrap) wrap.style.display='';
+      const buscaEl=document.getElementById('aprov-indicacao-busca');
+      if(buscaEl) buscaEl.value=_aprovIndicadorSelecionado.nome;
+      const tagMap={paciente:'Paciente',usuario:'Equipe',fornecedor:'Fornecedor',indicador:'Indicador'};
+      const selTxt=document.getElementById('aprov-indicacao-sel-txt');
+      if(selTxt) selTxt.textContent=`Indicado por: ${_aprovIndicadorSelecionado.nome} (${tagMap[_aprovIndicadorSelecionado.tipo]||'Indicador'})`;
+      const sel=document.getElementById('aprov-indicacao-sel');
+      if(sel) sel.classList.add('on');
+    } else {
+      if(selTeve) selTeve.value='nao';
+      if(wrap) wrap.style.display='none';
+    }
+  },0);
 }
 
 function _aprovChangeDescGlobal(val){ /* desconto global removido — mantido para evitar erros de referência */ }
@@ -11592,6 +11807,7 @@ function confirmarAprovacaoOrcamento(){
       list[idx].valorTabela=totalTabela;
       list[idx].descontoPorc=descPorc;
       list[idx].valorFechado=valFechado;
+      list[idx].indicacao = _aprovIndicadorSelecionado ? {..._aprovIndicadorSelecionado} : null;
     }
     _salvarOrcamentos(list);
   });
