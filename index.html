@@ -42,6 +42,11 @@
 .fin-area{display:none}
 .fin-area.on{display:block}
 
+/* ══ PLANEJAMENTO — campos/blocos editáveis (Remuneração e Funções) ══ */
+.plan-editable{outline:none;border-radius:var(--r6);transition:box-shadow .12s,background .12s;cursor:text}
+.plan-editable:hover{background:var(--s2)}
+.plan-editable:focus{box-shadow:0 0 0 2px var(--ac);background:var(--surface)}
+
 /* Cards de resumo */
 .fin-cards-row{display:flex;gap:12px;flex-wrap:wrap}
 .fin-card{flex:1;min-width:130px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r10);padding:14px 16px;box-shadow:var(--shadow)}
@@ -957,6 +962,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="subnav-title">Planejamento</div>
   <button class="subnav-btn on" onclick="showPlanejamento('remuneracao',this)">Remuneração</button>
   <button class="subnav-btn" onclick="showPlanejamento('funcoes',this)">Funções</button>
+  <button class="subnav-btn" onclick="showPlanejamento('referencias',this)">Referências</button>
   <button class="subnav-btn" onclick="showPlanejamento('painel_beatriz',this)">Painel Beatriz</button>
   <button class="subnav-btn" onclick="showPlanejamento('painel_ingrid',this)">Painel Ingrid</button>
   <button class="subnav-btn" onclick="showPlanejamento('painel_leticia',this)">Painel Leticia</button>
@@ -2092,7 +2098,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div id="plan-remuneracao" class="plan-sub">
     <div class="card">
       <div style="font-size:15px;font-weight:700;margin-bottom:12px">Secretária</div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px">
+      <table id="rem-tbl-secretaria" class="plan-editable" contenteditable="true" style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px">
         <tr><td style="padding:6px 10px 6px 0;color:var(--tx2);width:140px">Fixo</td><td style="padding:6px 0">R$ 2.300/mês — pago se faturamento da clínica ficar abaixo de R$ 90.000 (piso)</td></tr>
         <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Variável</td><td style="padding:6px 0">Se faturamento ≥ R$ 90.000: 3,5% sobre o total faturado (substitui o fixo, não soma) + R$ 20,00 por 1ª consulta agendada (lead novo ou reativação, sem diferenciação)</td></tr>
         <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Lógica</td><td style="padding:6px 0">Comissão sobre faturamento coletivo — incentiva ela a torcer e ajudar no fechamento de qualquer profissional, sem competição interna</td></tr>
@@ -2100,7 +2106,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div class="card">
       <div style="font-size:15px;font-weight:700;margin-bottom:12px">Dra. Leticia (sócia)</div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <table id="rem-tbl-leticia" class="plan-editable" contenteditable="true" style="width:100%;border-collapse:collapse;font-size:13px">
         <tr><td style="padding:6px 10px 6px 0;color:var(--tx2);width:140px">Fixo</td><td style="padding:6px 0">Não há</td></tr>
         <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Variável</td><td style="padding:6px 0">30% sobre os procedimentos que executa — não muda por forma de pagamento, à vista, parcelado ou nota fiscal</td></tr>
         <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Lógica</td><td style="padding:6px 0">Como sócia, o interesse em orçamento parado e resultado geral já vem do lucro da sociedade — não recebe incentivo extra por isso</td></tr>
@@ -2108,7 +2114,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div class="card">
       <div style="font-size:15px;font-weight:700;margin-bottom:12px">Fernanda (gestora + dentista)</div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <table id="rem-tbl-fernanda" class="plan-editable" contenteditable="true" style="width:100%;border-collapse:collapse;font-size:13px">
         <tr><td style="padding:6px 10px 6px 0;color:var(--tx2);width:140px">Fixo</td><td style="padding:6px 0">R$ 1.500/mês pela função de gestão</td></tr>
         <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Variável</td><td style="padding:6px 0">30% sobre os procedimentos que executa (atendimento) + 15% sobre o lucro da empresa (lucro = executado − custo do período)</td></tr>
         <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Atenção</td><td style="padding:6px 0">Ela também apura e lança os números que definem o próprio lucro — cálculo automático no sistema reduz o conflito de interesse</td></tr>
@@ -2116,7 +2122,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div class="card">
       <div style="font-size:15px;font-weight:700;margin-bottom:12px">Auxiliar-dentista (Indrid)</div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <table id="rem-tbl-auxiliar" class="plan-editable" contenteditable="true" style="width:100%;border-collapse:collapse;font-size:13px">
         <tr><td style="padding:6px 10px 6px 0;color:var(--tx2);width:140px">Fixo</td><td style="padding:6px 0">R$ 2.500/mês</td></tr>
         <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Variável</td><td style="padding:6px 0">Valor fixo por procedimento — Restauração R$ 100 / Clareamento R$ 80 / Limpeza R$ 50 (0,5% sobre faturamento coletivo acima de 90k: em pausa por ora)</td></tr>
         <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Transição</td><td style="padding:6px 0">Ao atingir autonomia formal (validada por Leticia/Patrik), passa a receber tabela de profissional e deixa de receber o fixo</td></tr>
@@ -2128,7 +2134,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div id="plan-funcoes" class="plan-sub" style="display:none">
     <div class="card">
       <div style="font-size:15px;font-weight:700;margin-bottom:8px">Secretária (Beatriz)</div>
-      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.9;color:var(--tx)">
+      <ul id="func-list-beatriz" class="plan-editable" contenteditable="true" style="margin:0;padding-left:18px;font-size:13px;line-height:1.9;color:var(--tx)">
         <li>Recepcionar pacientes e separar fichas antes do atendimento</li>
         <li>Agendamentos (leads e pacientes da base)</li>
         <li>Atendimento WhatsApp</li>
@@ -2139,7 +2145,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div class="card">
       <div style="font-size:15px;font-weight:700;margin-bottom:8px">Dra. Leticia (sócia)</div>
-      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.9;color:var(--tx)">
+      <ul id="func-list-leticia" class="plan-editable" contenteditable="true" style="margin:0;padding-left:18px;font-size:13px;line-height:1.9;color:var(--tx)">
         <li>Avaliação clínica</li>
         <li>Apresentação e aprovação de orçamento + forma de pagamento</li>
         <li>Atualização de prontuário</li>
@@ -2149,7 +2155,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div class="card">
       <div style="font-size:15px;font-weight:700;margin-bottom:8px">Fernanda (gestora + dentista)</div>
-      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.9;color:var(--tx)">
+      <ul id="func-list-fernanda" class="plan-editable" contenteditable="true" style="margin:0;padding-left:18px;font-size:13px;line-height:1.9;color:var(--tx)">
         <li>Auditar financeiro semanalmente (contas a pagar/receber, fluxo de caixa, emissão fiscal) — autonomia para agir</li>
         <li>Auditar agenda e follow-up diariamente — cobra a secretária diretamente</li>
         <li>Auditar qualidade do WhatsApp semanalmente por amostragem — corrige e treina a secretária</li>
@@ -2161,7 +2167,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div class="card">
       <div style="font-size:15px;font-weight:700;margin-bottom:8px">Auxiliar-dentista (Indrid)</div>
-      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.9;color:var(--tx)">
+      <ul id="func-list-auxiliar" class="plan-editable" contenteditable="true" style="margin:0;padding-left:18px;font-size:13px;line-height:1.9;color:var(--tx)">
         <li>Auxiliar Fernanda e Leticia em atendimentos</li>
         <li>Esterilizar e preparar materiais e ferramentas</li>
         <li>Ligar e desligar equipamentos (autoclave, compressor, bomba a vácuo)</li>
@@ -2171,7 +2177,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div class="card">
       <div style="font-size:15px;font-weight:700;margin-bottom:8px">Patrik (sócio-gestor)</div>
-      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.9;color:var(--tx)">
+      <ul id="func-list-patrik" class="plan-editable" contenteditable="true" style="margin:0;padding-left:18px;font-size:13px;line-height:1.9;color:var(--tx)">
         <li>Definir estratégia e padrão de gestão — não executa operação</li>
         <li>Decidir ajustes estruturais (preço, equipe, posicionamento) a partir das reuniões</li>
         <li>Garantir que Fernanda tenha clareza para executar o checklist de gestão</li>
@@ -2180,12 +2186,26 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div class="card" style="background:var(--s2)">
       <div style="font-size:15px;font-weight:700;margin-bottom:8px">Rotina de reuniões</div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <table id="func-tbl-reunioes" class="plan-editable" contenteditable="true" style="width:100%;border-collapse:collapse;font-size:13px">
         <tr><td style="padding:6px 10px 6px 0;color:var(--tx2);width:220px">Equipe geral</td><td style="padding:6px 0">Semanal · todos · alinhamento e comunicados, não é fórum de cobrança individual</td></tr>
         <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Fernanda + Patrik</td><td style="padding:6px 0">Semanal · gestão geral (financeiro, agenda, follow-up, whatsapp) — Fernanda traz o porquê e as ações já tomadas</td></tr>
         <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Fernanda + Leticia + Patrik</td><td style="padding:6px 0">Quinzenal · estratégia de tráfego/marketing</td></tr>
         <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Revisão mensal</td><td style="padding:6px 0">Patrik · tendência de faturamento, ocupação e conversão · ajuste estrutural</td></tr>
       </table>
+    </div>
+  </div>
+
+  <!-- REFERÊNCIAS -->
+  <div id="plan-referencias" class="plan-sub" style="display:none">
+    <div class="card" style="max-width:520px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px">Referências de cálculo</div>
+      <div style="font-size:12.5px;color:var(--tx2);margin-bottom:20px">Esses valores alimentam as métricas do módulo de Planejamento (barra de faturamento vs. piso, indicador de ocupação de agenda, etc.).</div>
+
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Piso de faturamento (R$/mês)</label>
+      <input id="plan-ref-piso" type="number" step="100" min="0" placeholder="Ex: 90000" style="width:100%;height:38px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:14px;font-family:var(--font);margin-bottom:18px" onblur="_planSalvarReferencias()">
+
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Taxa mínima de ocupação de agenda (%)</label>
+      <input id="plan-ref-ocupacao-min" type="number" step="1" min="0" max="100" placeholder="Ex: 60" style="width:100%;height:38px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:14px;font-family:var(--font)" onblur="_planSalvarReferencias()">
     </div>
   </div>
 
@@ -5377,6 +5397,52 @@ function _comSalvarImediato(fn){
   try{ fn(); } finally{ _bypassQueue=false; }
 }
 function carregarLS(k,def){ try{const v=localStorage.getItem(k);return v?JSON.parse(v):JSON.parse(JSON.stringify(def));}catch(e){return JSON.parse(JSON.stringify(def));} }
+
+// ── PLANEJAMENTO: blocos editáveis (Remuneração / Funções) + Referências ──
+// Cada tabela/lista marcada com .plan-editable vira "contenteditable" e seu
+// conteúdo (innerHTML) é salvo/restaurado via o mesmo mecanismo de LS+Supabase
+// já usado no resto do sistema (salvarLS → fila → botão flutuante "Salvar").
+const PLAN_EDITAVEIS_IDS = [
+  'rem-tbl-secretaria','rem-tbl-leticia','rem-tbl-fernanda','rem-tbl-auxiliar',
+  'func-list-beatriz','func-list-leticia','func-list-fernanda','func-list-auxiliar','func-list-patrik','func-tbl-reunioes'
+];
+function _planCarregarEditaveis(){
+  PLAN_EDITAVEIS_IDS.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    const salvo=carregarLS('sk3-plan-'+id, null);
+    if(salvo!==null) el.innerHTML=salvo;
+    if(!el._planListenerOk){
+      el.addEventListener('blur', ()=>{ salvarLS('sk3-plan-'+id, el.innerHTML); });
+      el._planListenerOk=true;
+    }
+  });
+}
+
+// Referências usadas para alimentar as métricas do módulo (piso de faturamento,
+// taxa mínima de ocupação de agenda). Valores padrão refletem os exemplos
+// já usados nos painéis do Planejamento.
+function planGetReferencias(){
+  return carregarLS('sk3-plan-referencias', { pisoFaturamento: 90000, taxaOcupacaoMinima: 60 });
+}
+function _planSalvarReferencias(){
+  const elPiso=document.getElementById('plan-ref-piso');
+  const elOcup=document.getElementById('plan-ref-ocupacao-min');
+  const piso=parseFloat(elPiso ? elPiso.value : '')||0;
+  const ocup=parseFloat(elOcup ? elOcup.value : '')||0;
+  salvarLS('sk3-plan-referencias', { pisoFaturamento: piso, taxaOcupacaoMinima: ocup });
+}
+function _planCarregarReferencias(){
+  const ref=planGetReferencias();
+  const elPiso=document.getElementById('plan-ref-piso');
+  const elOcup=document.getElementById('plan-ref-ocupacao-min');
+  if(elPiso) elPiso.value = ref.pisoFaturamento;
+  if(elOcup) elOcup.value = ref.taxaOcupacaoMinima;
+}
+function _planInicializar(){
+  _planCarregarEditaveis();
+  _planCarregarReferencias();
+}
 
 // Avisar (sem salvar sozinho) se houver alterações pendentes ao fechar/recarregar a página
 window.addEventListener('beforeunload', (e)=>{
@@ -21006,6 +21072,7 @@ async function _carregarDadosEAtivar(){
   if(meuId) localStorage.setItem('sk3-usuario-atual', JSON.stringify(meuId));
 
   await ativarAppOriginal();
+  _planInicializar();
   _mostrarApp();
 }
 
