@@ -47,6 +47,13 @@
 .plan-editable:hover{background:var(--s2)}
 .plan-editable:focus{box-shadow:0 0 0 2px var(--ac);background:var(--surface)}
 
+/* Chips de sala em Referências — classe própria (não depende de --ag-acc,
+   que só existe dentro de #sec-agenda) para o estado "selecionado" ficar
+   sempre visível, com moldura + preenchimento claro. */
+.plan-sala-chip{font-size:12.5px;font-weight:600;padding:7px 16px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;color:var(--tx2);transition:all .12s}
+.plan-sala-chip:hover{border-color:var(--border-s);background:var(--s2)}
+.plan-sala-chip.on{border-color:var(--ac);background:var(--acl);color:var(--ac);box-shadow:inset 0 0 0 1px var(--ac)}
+
 /* Cards de resumo */
 .fin-cards-row{display:flex;gap:12px;flex-wrap:wrap}
 .fin-card{flex:1;min-width:130px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r10);padding:14px 16px;box-shadow:var(--shadow)}
@@ -2250,23 +2257,47 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div style="font-size:12.5px;color:var(--tx2);margin-bottom:14px">Escolha quais salas entram no cálculo de ocupação de agenda. Uma sala desativada aqui não conta nem como capacidade, nem como uso — independente do cadastro em Configurações → Salas.</div>
       <div id="plan-ref-salas-lista" style="display:flex;flex-wrap:wrap;gap:8px"></div>
     </div>
+
+    <div class="card" style="max-width:520px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px">Remuneração fixa</div>
+      <div style="font-size:12.5px;color:var(--tx2);margin-bottom:16px">Valor fixo mensal de cada colaboradora, usado no cálculo de remuneração acumulada dos painéis individuais.</div>
+
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Beatriz (secretária)</label>
+      <input id="plan-ref-fixo-beatriz" type="number" step="50" min="0" placeholder="Ex: 2300" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:14px" onblur="_planSalvarReferencias()">
+
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Fernanda (gestora + dentista)</label>
+      <input id="plan-ref-fixo-fernanda" type="number" step="50" min="0" placeholder="Ex: 1500" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:14px" onblur="_planSalvarReferencias()">
+
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Ingrid (auxiliar-dentista)</label>
+      <input id="plan-ref-fixo-ingrid" type="number" step="50" min="0" placeholder="Ex: 2500" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font)" onblur="_planSalvarReferencias()">
+    </div>
   </div>
 
   <!-- PAINEL BEATRIZ (SECRETÁRIA) -->
   <div id="plan-painel_beatriz" class="plan-sub" style="display:none">
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-        <span style="font-size:14px;font-weight:700">Faturamento do mês</span>
-        <span style="font-size:12px;color:var(--tx2)">Piso: R$ 90.000</span>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px">
+        <div class="fin-card">
+          <div class="fin-card-label">Faturamento do mês</div>
+          <div class="fin-card-value" id="pb-fat-atual">R$ 70.200</div>
+          <div class="fin-card-sub" id="pb-fat-sub">de R$ 90.000 (piso) — faltam R$ 19.800</div>
+          <div style="height:8px;border-radius:6px;background:var(--s2);overflow:hidden;margin-top:8px">
+            <div id="pb-fat-bar" style="height:100%;width:78%;border-radius:6px;background:var(--su)"></div>
+          </div>
+        </div>
+        <div class="fin-card">
+          <div class="fin-card-label">Ocupação de agenda</div>
+          <div class="fin-card-value" id="pb-ocup-atual">64%</div>
+          <div class="fin-card-sub" id="pb-ocup-sub">piso de 60% — faltam 0 p.p.</div>
+          <div style="height:8px;border-radius:6px;background:var(--s2);overflow:hidden;margin-top:8px">
+            <div id="pb-ocup-bar" style="height:100%;width:64%;border-radius:6px;background:var(--su)"></div>
+          </div>
+        </div>
       </div>
-      <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden;margin-bottom:6px">
-        <div style="height:100%;width:78%;border-radius:6px;background:var(--su)"></div>
-      </div>
-      <div style="font-size:12px;color:var(--tx2);margin-bottom:16px">R$ 70.200 de R$ 90.000 — comissão ativa a partir do piso</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
-        <div class="fin-card"><div class="fin-card-label">Comissão acumulada</div><div class="fin-card-value">R$ 0</div></div>
-        <div class="fin-card fin-card-green"><div class="fin-card-label">Bônus agendamento</div><div class="fin-card-value">R$ 340</div></div>
-        <div class="fin-card fin-card-blue"><div class="fin-card-label">Ocupação de agenda</div><div class="fin-card-value">64%</div></div>
+        <div class="fin-card"><div class="fin-card-label">Remuneração por faturamento</div><div class="fin-card-value" id="pb-rem-faturamento">R$ 0</div></div>
+        <div class="fin-card fin-card-green"><div class="fin-card-label">Bônus por agendamentos</div><div class="fin-card-value" id="pb-bonus-agendamentos">R$ 340</div></div>
+        <div class="fin-card fin-card-blue"><div class="fin-card-label">Remuneração acumulada</div><div class="fin-card-value" id="pb-remuneracao-acumulada">R$ 2.300</div></div>
       </div>
       <div style="font-size:13px;font-weight:700;margin-bottom:8px">Orçamentos em aberto por urgência</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -5488,7 +5519,8 @@ function planGetReferencias(){
       segSex: { inicio:'08:00', fim:'18:00', intervaloInicio:'12:00', intervaloFim:'13:30' },
       sabado: { inicio:'08:00', fim:'12:00' }
     },
-    salasConsideradas: ['sala1','sala4']
+    salasConsideradas: ['sala1','sala4'],
+    remuneracaoFixa: { beatriz: 2300, fernanda: 1500, ingrid: 2500 }
   };
   const salvo = carregarLS('sk3-plan-referencias', null);
   if(!salvo) return def;
@@ -5499,14 +5531,15 @@ function planGetReferencias(){
       segSex: { ...def.horarioUtil.segSex, ...((salvo.horarioUtil||{}).segSex||{}) },
       sabado: { ...def.horarioUtil.sabado, ...((salvo.horarioUtil||{}).sabado||{}) }
     },
-    salasConsideradas: (salvo.salasConsideradas && salvo.salasConsideradas.length) ? salvo.salasConsideradas : def.salasConsideradas
+    salasConsideradas: (salvo.salasConsideradas && salvo.salasConsideradas.length) ? salvo.salasConsideradas : def.salasConsideradas,
+    remuneracaoFixa: { ...def.remuneracaoFixa, ...(salvo.remuneracaoFixa||{}) }
   };
 }
 function _planSalvarReferencias(){
   const v=id=>{ const el=document.getElementById(id); return el?el.value:''; };
   const piso=parseFloat(v('plan-ref-piso'))||0;
   const ocup=parseFloat(v('plan-ref-ocupacao-min'))||0;
-  const salasConsideradas=[...document.querySelectorAll('#plan-ref-salas-lista .chip-toggle.on')].map(b=>b.dataset.sala);
+  const salasConsideradas=[...document.querySelectorAll('#plan-ref-salas-lista .plan-sala-chip.on')].map(b=>b.dataset.sala);
   salvarLS('sk3-plan-referencias', {
     pisoFaturamento: piso,
     taxaOcupacaoMinima: ocup,
@@ -5514,10 +5547,16 @@ function _planSalvarReferencias(){
       segSex: { inicio:v('plan-ref-hu-ss-ini')||'08:00', fim:v('plan-ref-hu-ss-fim')||'18:00', intervaloInicio:v('plan-ref-hu-ss-int-ini')||'12:00', intervaloFim:v('plan-ref-hu-ss-int-fim')||'13:30' },
       sabado: { inicio:v('plan-ref-hu-sab-ini')||'08:00', fim:v('plan-ref-hu-sab-fim')||'12:00' }
     },
-    salasConsideradas
+    salasConsideradas,
+    remuneracaoFixa: {
+      beatriz: parseFloat(v('plan-ref-fixo-beatriz'))||0,
+      fernanda: parseFloat(v('plan-ref-fixo-fernanda'))||0,
+      ingrid: parseFloat(v('plan-ref-fixo-ingrid'))||0
+    }
   });
-  // Recalcula na hora o card de ocupação do Painel Patrik, caso esteja aberto
+  // Recalcula na hora os painéis que dependem dessas referências, caso estejam abertos
   if(typeof _planPatrikPeriodoMudou==='function') _planPatrikPeriodoMudou();
+  if(typeof _planAtualizarPainelBeatriz==='function') _planAtualizarPainelBeatriz();
 }
 function _planToggleSalaReferencia(btn){
   btn.classList.toggle('on');
@@ -5528,7 +5567,7 @@ function _planRenderSalasReferencia(ref){
   if(!wrap || typeof salas==='undefined') return;
   wrap.innerHTML = salas.map(s=>{
     const on = ref.salasConsideradas.includes(s.id);
-    return `<button type="button" class="chip-toggle${on?' on':''}" data-sala="${s.id}" onclick="_planToggleSalaReferencia(this)">${esc(s.nome)}</button>`;
+    return `<button type="button" class="plan-sala-chip${on?' on':''}" data-sala="${s.id}" onclick="_planToggleSalaReferencia(this)">${esc(s.nome)}</button>`;
   }).join('');
 }
 function _planCarregarReferencias(){
@@ -5542,6 +5581,9 @@ function _planCarregarReferencias(){
   set('plan-ref-hu-ss-int-fim', ref.horarioUtil.segSex.intervaloFim);
   set('plan-ref-hu-sab-ini', ref.horarioUtil.sabado.inicio);
   set('plan-ref-hu-sab-fim', ref.horarioUtil.sabado.fim);
+  set('plan-ref-fixo-beatriz', ref.remuneracaoFixa.beatriz);
+  set('plan-ref-fixo-fernanda', ref.remuneracaoFixa.fernanda);
+  set('plan-ref-fixo-ingrid', ref.remuneracaoFixa.ingrid);
   _planRenderSalasReferencia(ref);
 }
 
@@ -5574,6 +5616,59 @@ function planCalcularOcupacao(dataIniISO, dataFimISO){
   }).reduce((soma,a)=> soma + Math.max(0, horaParaMin(a.horaFim)-horaParaMin(a.horaInicio)), 0);
   const pct = minutosDisponiveis>0 ? Math.round((minutosOcupados/minutosDisponiveis)*100) : 0;
   return { pct, minutosDisponiveis, minutosOcupados };
+}
+
+// Primeiro e último dia do mês corrente, em 'YYYY-MM-DD' — usado pelos painéis
+// individuais (Beatriz, Fernanda, Ingrid, Leticia), que são sempre mensais e
+// não têm filtro de período.
+function _planMesAtualDatas(){
+  const hoje=new Date();
+  const de=new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  const ate=new Date(hoje.getFullYear(), hoje.getMonth()+1, 0);
+  return { de:_finIso(de), ate:_finIso(ate) };
+}
+
+// Atualiza os cards do Painel Beatriz com base nas Referências (piso de
+// faturamento, taxa mínima de ocupação, remuneração fixa) e na ocupação real
+// de agenda do mês corrente. O faturamento do mês e o bônus por agendamentos
+// ainda são valores de exemplo — a conectar quando o indicador financeiro
+// real for plugado a este painel.
+function _planAtualizarPainelBeatriz(){
+  const painel=document.getElementById('plan-painel_beatriz');
+  if(!painel) return;
+  const ref=planGetReferencias();
+  const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val; };
+  const fmtMoeda=n=>'R$ '+Math.round(n).toLocaleString('pt-BR');
+
+  // Faturamento do mês vs. piso (faturamento em si ainda é exemplo)
+  const piso=ref.pisoFaturamento;
+  const faturamentoAtual=70200;
+  const pctFat = piso>0 ? Math.min(100, Math.round((faturamentoAtual/piso)*100)) : 0;
+  const faltaFat = Math.max(0, piso-faturamentoAtual);
+  set('pb-fat-atual', fmtMoeda(faturamentoAtual));
+  set('pb-fat-sub', faltaFat>0 ? `de ${fmtMoeda(piso)} (piso) — faltam ${fmtMoeda(faltaFat)}` : `piso de ${fmtMoeda(piso)} atingido`);
+  const barFat=document.getElementById('pb-fat-bar');
+  if(barFat){ barFat.style.width=pctFat+'%'; barFat.style.background = faturamentoAtual>=piso ? 'var(--su)' : 'var(--wa)'; }
+
+  // Ocupação de agenda (mês corrente) vs. taxa mínima — cálculo real
+  const {de,ate}=_planMesAtualDatas();
+  const ocup=planCalcularOcupacao(de,ate).pct;
+  const metaOcup=ref.taxaOcupacaoMinima;
+  const faltaOcup=Math.max(0, metaOcup-ocup);
+  set('pb-ocup-atual', ocup+'%');
+  set('pb-ocup-sub', faltaOcup>0 ? `piso de ${metaOcup}% — faltam ${faltaOcup} p.p.` : `piso de ${metaOcup}% atingido`);
+  const barOcup=document.getElementById('pb-ocup-bar');
+  if(barOcup){ barOcup.style.width=Math.min(100,ocup)+'%'; barOcup.style.background = ocup>=metaOcup ? 'var(--su)' : 'var(--wa)'; }
+
+  // Remuneração por faturamento + bônus + remuneração acumulada (fórmula real,
+  // usando o piso e a remuneração fixa das Referências; faturamento e bônus
+  // ainda são exemplo)
+  const remuneracaoPorFaturamento = faturamentoAtual>=piso ? faturamentoAtual*0.035 : 0;
+  const bonusAgendamentos = 340;
+  const remuneracaoAcumulada = faturamentoAtual>=piso ? (remuneracaoPorFaturamento+bonusAgendamentos) : ref.remuneracaoFixa.beatriz;
+  set('pb-rem-faturamento', fmtMoeda(remuneracaoPorFaturamento));
+  set('pb-bonus-agendamentos', fmtMoeda(bonusAgendamentos));
+  set('pb-remuneracao-acumulada', fmtMoeda(remuneracaoAcumulada));
 }
 
 // Traduz a seleção do filtro de período do Painel Patrik em datas 'YYYY-MM-DD'.
@@ -5618,6 +5713,7 @@ function _planInicializar(){
   _planCarregarEditaveis();
   _planCarregarReferencias();
   if(typeof _planPatrikPeriodoMudou==='function') _planPatrikPeriodoMudou();
+  if(typeof _planAtualizarPainelBeatriz==='function') _planAtualizarPainelBeatriz();
 }
 
 // Avisar (sem salvar sozinho) se houver alterações pendentes ao fechar/recarregar a página
@@ -16443,6 +16539,7 @@ function showPlanejamento(sub, btn){
   if(el) el.style.display='block';
   if(btn) btn.classList.add('on');
   if(sub==='painel_patrik' && typeof _planPatrikPeriodoMudou==='function') _planPatrikPeriodoMudou();
+  if(sub==='painel_beatriz' && typeof _planAtualizarPainelBeatriz==='function') _planAtualizarPainelBeatriz();
 }
 
 function showCfg(sub, btn){
