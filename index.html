@@ -81,6 +81,48 @@
 .fin-card-blue .fin-card-value{color:var(--ac)}
 .fin-card-amber .fin-card-value{color:var(--wa)}
 
+/* ORÇAMENTOS — VISÃO GERAL: hero cards (Potencial de Vendas / Taxa de Conversão) */
+.og-hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--r10);padding:18px 20px;box-shadow:var(--shadow)}
+.og-hero-blue{background:linear-gradient(135deg,var(--ac) 0%,#1d4ed8 100%);border-color:transparent}
+.og-hero-blue .og-hero-label,.og-hero-blue .og-hero-value,.og-hero-blue .og-hero-sub{color:#fff}
+.og-hero-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);margin-bottom:8px}
+.og-hero-value{font-size:30px;font-weight:800;letter-spacing:-.8px;line-height:1.1}
+.og-hero-sub{font-size:12px;color:var(--tx3);margin-top:6px}
+.og-hero-blue .og-hero-sub{opacity:.9}
+.og-hero.og-conv-alta .og-hero-value{color:var(--su)}
+.og-hero.og-conv-media .og-hero-value{color:var(--wa)}
+.og-hero.og-conv-baixa .og-hero-value{color:var(--da)}
+
+/* Faixas de idade (orçamentos em aberto por tempo de espera) */
+.og-faixa{flex:1;min-width:150px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r10);padding:12px 14px;cursor:pointer;transition:box-shadow .14s,transform .1s,border-color .12s}
+.og-faixa:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.og-faixa.on{border-width:2px}
+.og-faixa-lbl{font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.og-faixa-val{font-size:17px;font-weight:700;color:var(--tx)}
+.og-faixa-count{font-size:11px;color:var(--tx3);margin-top:2px}
+.og-faixa-ok{border-left:4px solid var(--su)}
+.og-faixa-ok.on{border-color:var(--su);background:var(--sul)}
+.og-faixa-morno{border-left:4px solid var(--ac)}
+.og-faixa-morno.on{border-color:var(--ac);background:var(--acl)}
+.og-faixa-frio{border-left:4px solid var(--wa)}
+.og-faixa-frio.on{border-color:var(--wa);background:var(--wal)}
+.og-faixa-gelado{border-left:4px solid var(--da)}
+.og-faixa-gelado.on{border-color:var(--da);background:var(--dal)}
+.og-faixa-gelado .og-faixa-val{color:var(--da)}
+
+/* Painéis de insight (ranking profissional / motivos de reprovação) */
+.og-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r10);padding:14px 16px;box-shadow:var(--shadow)}
+.og-panel-title{font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.og-panel-empty{font-size:12px;color:var(--tx3);padding:8px 0}
+.og-rank-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.og-rank-row:last-child{border-bottom:none}
+.og-rank-nome{flex:1;font-size:12.5px;color:var(--tx);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.og-rank-bar-wrap{flex:1;height:7px;background:var(--s2);border-radius:6px;overflow:hidden;min-width:60px}
+.og-rank-bar-fill{height:100%;border-radius:6px}
+.og-rank-pct{font-size:12.5px;font-weight:700;min-width:42px;text-align:right}
+.og-rank-motivo-nome{flex:1;font-size:12.5px;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.og-rank-motivo-count{font-size:11px;font-weight:700;color:var(--da);background:var(--dal);padding:2px 9px;border-radius:20px}
+
 /* Fluxo de caixa grid */
 .fin-fluxo-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .fin-fluxo-titulo{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--tx2);margin-bottom:10px;display:flex;align-items:center;gap:6px}
@@ -1178,7 +1220,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 
   <!-- Filtros -->
-  <div style="display:grid;grid-template-columns:repeat(5,1fr) auto;gap:10px;align-items:end;margin-bottom:16px">
+  <div style="display:grid;grid-template-columns:repeat(4,1fr) auto;gap:10px;align-items:end;margin-bottom:16px">
     <div class="fl"><label>De</label><input type="date" id="og-filtro-de" onchange="renderOrcamentosGeral()"></div>
     <div class="fl"><label>Até</label><input type="date" id="og-filtro-ate" onchange="renderOrcamentosGeral()"></div>
     <div class="fl"><label>Profissional</label>
@@ -1192,10 +1234,48 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <option value="reprovado">Reprovado</option>
       </select>
     </div>
-    <div class="fl"><label>Clínica</label>
-      <select id="og-filtro-clinica" onchange="renderOrcamentosGeral()"><option value="">Todas</option></select>
-    </div>
     <button class="btn btn-primary btn-sm" onclick="renderOrcamentosGeral()" style="height:34px">Listar</button>
+  </div>
+
+  <!-- HERO: Potencial de Vendas + Taxa de Conversão -->
+  <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin-bottom:14px">
+    <div class="og-hero og-hero-blue">
+      <div class="og-hero-label">💰 Potencial de Vendas <span style="font-weight:400;opacity:.85">— em aberto, aguardando decisão</span></div>
+      <div class="og-hero-value" id="og-hero-potencial">R$ 0,00</div>
+      <div class="og-hero-sub" id="og-hero-potencial-sub">0 orçamento(s) · idade média de 0 dias</div>
+    </div>
+    <div class="og-hero" id="og-hero-conversao-wrap">
+      <div class="og-hero-label">🎯 Taxa de Conversão <span style="font-weight:400;opacity:.85">— no período</span></div>
+      <div class="og-hero-value" id="og-hero-conversao">—</div>
+      <div class="og-hero-sub" id="og-hero-conversao-sub">0 aprovado(s) de 0 decidido(s)</div>
+    </div>
+  </div>
+
+  <!-- Faixas de idade dos orçamentos EM ABERTO — quanto mais tempo parado, mais frio -->
+  <div style="margin-bottom:16px">
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Orçamentos em aberto por tempo de espera</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap" id="og-faixas-row">
+      <div class="og-faixa og-faixa-ok" data-faixa="0-3" onclick="ogSetFaixaIdade('0-3')">
+        <div class="og-faixa-lbl">Até 3 dias</div>
+        <div class="og-faixa-val" id="og-faixa-val-0-3">R$ 0,00</div>
+        <div class="og-faixa-count" id="og-faixa-count-0-3">0 orçamento(s)</div>
+      </div>
+      <div class="og-faixa og-faixa-morno" data-faixa="4-7" onclick="ogSetFaixaIdade('4-7')">
+        <div class="og-faixa-lbl">4 a 7 dias</div>
+        <div class="og-faixa-val" id="og-faixa-val-4-7">R$ 0,00</div>
+        <div class="og-faixa-count" id="og-faixa-count-4-7">0 orçamento(s)</div>
+      </div>
+      <div class="og-faixa og-faixa-frio" data-faixa="8-15" onclick="ogSetFaixaIdade('8-15')">
+        <div class="og-faixa-lbl">8 a 15 dias</div>
+        <div class="og-faixa-val" id="og-faixa-val-8-15">R$ 0,00</div>
+        <div class="og-faixa-count" id="og-faixa-count-8-15">0 orçamento(s)</div>
+      </div>
+      <div class="og-faixa og-faixa-gelado" data-faixa="15+" onclick="ogSetFaixaIdade('15+')">
+        <div class="og-faixa-lbl">⚠️ Mais de 15 dias</div>
+        <div class="og-faixa-val" id="og-faixa-val-15+">R$ 0,00</div>
+        <div class="og-faixa-count" id="og-faixa-count-15+">0 orçamento(s)</div>
+      </div>
+    </div>
   </div>
 
   <!-- Cards resumo -->
@@ -1219,6 +1299,18 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="fin-card-label">Total</div>
       <div class="fin-card-value" id="og-val-total">R$ 0,00</div>
       <div class="fin-card-sub" id="og-sub-total">0 orçamento(s) · Ticket médio R$ 0,00</div>
+    </div>
+  </div>
+
+  <!-- Insights: ranking por profissional + principais motivos de reprovação -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+    <div class="og-panel">
+      <div class="og-panel-title">Conversão por profissional</div>
+      <div id="og-ranking-prof"></div>
+    </div>
+    <div class="og-panel">
+      <div class="og-panel-title">Principais motivos de reprovação</div>
+      <div id="og-ranking-motivos"></div>
     </div>
   </div>
 
@@ -9516,6 +9608,7 @@ function orcamentoMudarStatus(orcId,novoStatus,pacId){
 // ORÇAMENTOS — VISÃO GERAL (agrupa todos os orçamentos de todos os pacientes)
 // ══════════════════════════════════════════════════════════════════════
 let _ogFiltroStatus = '';
+let _ogFaixaIdade = null; // null | '0-3' | '4-7' | '8-15' | '15+' — só se aplica quando status==='aberto'
 let _ogOrdem = { campo:'data', dir:'desc' };
 
 function _ogStatusNorm(s){
@@ -9531,14 +9624,29 @@ function _ogComoConheceu(p){
   return map[p.origem] || p.origem;
 }
 
+// Faixa de tempo de espera de um orçamento em aberto, a partir dos dias desde a criação
+function _ogFaixaDe(dias){
+  if(dias<=3) return '0-3';
+  if(dias<=7) return '4-7';
+  if(dias<=15) return '8-15';
+  return '15+';
+}
+
 // Junta cada orçamento com os dados do paciente dono dele
 function _ogTodos(){
+  const hojeMs = new Date(iso(hoje)+'T00:00:00').getTime();
   return _orcamentos().map(o=>{
     const p = pacientes.find(x=>String(x.id)===String(o.pacienteId));
     const status = _ogStatusNorm(o.status);
     const valor = (o.itens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
     const dataCriacao = o.dataCriacao || o.data || '';
     const data = (status==='aprovado'||status==='reprovado') ? (o.dataDecisao||dataCriacao) : dataCriacao;
+    let idadeDias = null, faixa = null;
+    if(status==='aberto' && dataCriacao){
+      const criadoMs = new Date(dataCriacao+'T00:00:00').getTime();
+      idadeDias = Math.max(0, Math.round((hojeMs-criadoMs)/86400000));
+      faixa = _ogFaixaDe(idadeDias);
+    }
     return {
       id:o.id, pacienteId:o.pacienteId,
       dataCriacao, data, status,
@@ -9549,15 +9657,26 @@ function _ogTodos(){
       valor,
       obs: o.obs || '',
       comoConheceu: _ogComoConheceu(p),
-      clinica: o.clinica || '',
+      idadeDias, faixa,
     };
   });
 }
 
 function ogSetStatus(v){
   _ogFiltroStatus = v || '';
+  if(_ogFiltroStatus!=='aberto') _ogFaixaIdade = null; // faixas só fazem sentido dentro de "Em aberto"
   const sel = document.getElementById('og-filtro-status');
   if(sel) sel.value = _ogFiltroStatus;
+  renderOrcamentosGeral();
+}
+
+// Clique numa faixa de idade (0-3 / 4-7 / 8-15 / 15+): força o status "Em aberto" e filtra por essa faixa.
+// Clicar de novo na mesma faixa remove o filtro de faixa (mantém o status aberto).
+function ogSetFaixaIdade(faixa){
+  _ogFiltroStatus = 'aberto';
+  const sel = document.getElementById('og-filtro-status');
+  if(sel) sel.value = 'aberto';
+  _ogFaixaIdade = (_ogFaixaIdade===faixa) ? null : faixa;
   renderOrcamentosGeral();
 }
 
@@ -9574,54 +9693,131 @@ function _ogPopularFiltros(todos){
     selProf.innerHTML = '<option value="">Todos</option>' + nomes.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
     selProf.dataset.pop='1';
   }
-  const selCli = document.getElementById('og-filtro-clinica');
-  if(selCli && !selCli.dataset.pop){
-    const clinicas = [...new Set(todos.map(o=>o.clinica).filter(Boolean))].sort();
-    selCli.innerHTML = '<option value="">Todas</option>' + clinicas.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
-    selCli.dataset.pop='1';
-  }
 }
 
 function renderOrcamentosGeral(){
   const de = document.getElementById('og-filtro-de')?.value || '';
   const ate = document.getElementById('og-filtro-ate')?.value || '';
   const profFiltro = document.getElementById('og-filtro-profissional')?.value || '';
-  const cliFiltro = document.getElementById('og-filtro-clinica')?.value || '';
 
   const todos = _ogTodos();
   _ogPopularFiltros(todos);
 
-  // Filtra por período/profissional/clínica (SEM status) — usado pelos cards,
+  // Filtra por período/profissional (SEM status) — usado pelos cards e pelos insights,
   // que sempre mostram a composição completa do período selecionado.
   const baseFiltrada = todos.filter(o=>{
     if(de && (o.data||'') < de) return false;
     if(ate && (o.data||'') > ate) return false;
     if(profFiltro && o.profissional !== profFiltro) return false;
-    if(cliFiltro && o.clinica !== cliFiltro) return false;
     return true;
   });
 
-  // Cards
+  const fmtMoeda = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+
+  // ── HERO: Potencial de Vendas (soma do que está em aberto) ──────────────
+  const abertos = baseFiltrada.filter(o=>o.status==='aberto');
+  const somaPotencial = abertos.reduce((s,o)=>s+o.valor,0);
+  const idadeMedia = abertos.length ? (abertos.reduce((s,o)=>s+(o.idadeDias||0),0)/abertos.length) : 0;
+  document.getElementById('og-hero-potencial').textContent = 'R$ ' + fmtMoeda(somaPotencial);
+  document.getElementById('og-hero-potencial-sub').textContent = `${abertos.length} orçamento(s) · idade média de ${idadeMedia.toFixed(1).replace('.0','')} dia(s)`;
+
+  // ── HERO: Taxa de Conversão (aprovados ÷ decididos, no período) ─────────
+  const aprovadosCount = baseFiltrada.filter(o=>o.status==='aprovado').length;
+  const reprovadosCount = baseFiltrada.filter(o=>o.status==='reprovado').length;
+  const decididos = aprovadosCount + reprovadosCount;
+  const taxaConv = decididos ? (aprovadosCount/decididos*100) : null;
+  const heroConvWrap = document.getElementById('og-hero-conversao-wrap');
+  heroConvWrap.classList.remove('og-conv-alta','og-conv-media','og-conv-baixa');
+  if(taxaConv===null){
+    document.getElementById('og-hero-conversao').textContent = '—';
+  } else {
+    document.getElementById('og-hero-conversao').textContent = taxaConv.toFixed(1).replace('.',',') + '%';
+    heroConvWrap.classList.add(taxaConv>=60?'og-conv-alta':(taxaConv>=40?'og-conv-media':'og-conv-baixa'));
+  }
+  document.getElementById('og-hero-conversao-sub').textContent = `${aprovadosCount} aprovado(s) de ${decididos} decidido(s)`;
+
+  // ── Faixas de idade (só entre os orçamentos em aberto) ───────────────────
+  ['0-3','4-7','8-15','15+'].forEach(faixa=>{
+    const doFaixa = abertos.filter(o=>o.faixa===faixa);
+    const soma = doFaixa.reduce((s,o)=>s+o.valor,0);
+    document.getElementById('og-faixa-val-'+faixa).textContent = 'R$ ' + fmtMoeda(soma);
+    document.getElementById('og-faixa-count-'+faixa).textContent = `${doFaixa.length} orçamento(s)`;
+  });
+  document.querySelectorAll('#og-faixas-row .og-faixa').forEach(el=>{
+    el.classList.toggle('on', _ogFiltroStatus==='aberto' && (el.dataset.faixa||'')===_ogFaixaIdade);
+  });
+
+  // ── Cards de status ──────────────────────────────────────────────────────
   const porStatus = st => baseFiltrada.filter(o=>o.status===st);
   const setCard = (st, elVal, elSub) => {
     const lista = st===null ? baseFiltrada : porStatus(st);
     const soma = lista.reduce((s,o)=>s+o.valor,0);
     const ticket = lista.length ? soma/lista.length : 0;
-    document.getElementById(elVal).textContent = 'R$ ' + soma.toLocaleString('pt-BR',{minimumFractionDigits:2});
-    document.getElementById(elSub).textContent = `${lista.length} orçamento(s) · Ticket médio R$ ${ticket.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+    document.getElementById(elVal).textContent = 'R$ ' + fmtMoeda(soma);
+    document.getElementById(elSub).textContent = `${lista.length} orçamento(s) · Ticket médio R$ ${fmtMoeda(ticket)}`;
   };
   setCard('aprovado','og-val-aprovado','og-sub-aprovado');
   setCard('aberto','og-val-aberto','og-sub-aberto');
   setCard('reprovado','og-val-reprovado','og-sub-reprovado');
   setCard(null,'og-val-total','og-sub-total');
 
-  // Marca visualmente o card ativo (reaproveita a classe .on já usada no Financeiro)
   document.querySelectorAll('#og-cards-row .fin-card-clickable').forEach(c=>{
     c.classList.toggle('on', (c.dataset.status||'')===_ogFiltroStatus);
   });
 
-  // Lista da tabela: aqui SIM aplica o filtro de status
+  // ── Ranking por profissional: taxa de conversão + valor aprovado ─────────
+  {
+    const porProf = {};
+    baseFiltrada.forEach(o=>{
+      if(o.status!=='aprovado' && o.status!=='reprovado') return;
+      if(!o.profissional) return;
+      if(!porProf[o.profissional]) porProf[o.profissional] = {aprovado:0, decidido:0, valorAprovado:0};
+      porProf[o.profissional].decidido++;
+      if(o.status==='aprovado'){ porProf[o.profissional].aprovado++; porProf[o.profissional].valorAprovado += o.valor; }
+    });
+    const linhas = Object.entries(porProf)
+      .map(([nome,d])=>({nome, taxa: d.decidido ? (d.aprovado/d.decidido*100) : 0, valorAprovado:d.valorAprovado, decidido:d.decidido}))
+      .sort((a,b)=>b.valorAprovado-a.valorAprovado);
+    const wrap = document.getElementById('og-ranking-prof');
+    if(!linhas.length){
+      wrap.innerHTML = '<div class="og-panel-empty">Nenhum orçamento decidido (aprovado/reprovado) neste período.</div>';
+    } else {
+      wrap.innerHTML = linhas.map(l=>{
+        const cor = l.taxa>=60?'var(--su)':(l.taxa>=40?'var(--wa)':'var(--da)');
+        return `<div class="og-rank-row">
+          <div class="og-rank-nome">${esc(l.nome)}</div>
+          <div class="og-rank-bar-wrap"><div class="og-rank-bar-fill" style="width:${l.taxa.toFixed(0)}%;background:${cor}"></div></div>
+          <div class="og-rank-pct" style="color:${cor}">${l.taxa.toFixed(0)}%</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // ── Principais motivos de reprovação ──────────────────────────────────────
+  {
+    const reprovados = baseFiltrada.filter(o=>o.status==='reprovado');
+    const contagem = {};
+    reprovados.forEach(o=>{
+      const m = (o.motivo||'').trim() || 'Sem motivo registrado';
+      contagem[m] = (contagem[m]||0)+1;
+    });
+    const linhas = Object.entries(contagem).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const wrap = document.getElementById('og-ranking-motivos');
+    if(!linhas.length){
+      wrap.innerHTML = '<div class="og-panel-empty">Nenhum orçamento reprovado neste período.</div>';
+    } else {
+      wrap.innerHTML = linhas.map(([motivo,count])=>`<div class="og-rank-row">
+        <div class="og-rank-motivo-nome">${esc(motivo)}</div>
+        <div class="og-rank-motivo-count">${count}</div>
+      </div>`).join('');
+    }
+  }
+
+  // ── Lista da tabela: aplica status + faixa de idade ──────────────────────
   let lista = baseFiltrada.filter(o=>!_ogFiltroStatus || o.status===_ogFiltroStatus);
+  if(_ogFiltroStatus==='aberto' && _ogFaixaIdade){
+    lista = lista.filter(o=>o.faixa===_ogFaixaIdade);
+  }
 
   // Ordenação (clique no cabeçalho)
   const { campo, dir } = _ogOrdem;
@@ -9652,15 +9848,15 @@ function renderOrcamentosGeral(){
     reprovado: {lbl:'Reprovado', cor:'#991B1B', bg:'#FEF2F2'},
   };
   const fmtDataBR = d => { if(!d) return '—'; const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
-  const fmtMoeda = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
 
   tbody.innerHTML = lista.map(o=>{
     const cfg = statusCfg[o.status] || statusCfg.aberto;
     const foneDigits = o.telefone ? onlyDigits(o.telefone) : '';
     const waLink = foneDigits ? `<a href="https://wa.me/55${foneDigits}" target="_blank" title="WhatsApp" style="color:#25D366;text-decoration:none;margin-left:5px">●</a>` : '';
+    const idadeTag = o.status==='aberto' && o.idadeDias!==null ? ` <span style="font-size:10px;color:var(--tx3)">(${o.idadeDias}d)</span>` : '';
     return `<tr>
       <td>${fmtDataBR(o.dataCriacao)}</td>
-      <td>${fmtDataBR(o.data)}</td>
+      <td>${fmtDataBR(o.data)}${idadeTag}</td>
       <td><span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;color:${cfg.cor};background:${cfg.bg}">${cfg.lbl}</span></td>
       <td>${esc(o.motivo)||'—'}</td>
       <td><button class="btn btn-ghost btn-sm" onclick="ogAbrirOrcamento('${o.pacienteId}','${o.id}')" title="Abrir orçamento">↗</button></td>
