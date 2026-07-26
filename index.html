@@ -2319,9 +2319,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
-        <div class="fin-card"><div class="fin-card-label">Remuneração por faturamento</div><div class="fin-card-value" id="pb-rem-faturamento">R$ 0</div></div>
+        <div class="fin-card"><div class="fin-card-label">Remuneração</div><div class="fin-card-value" id="pb-rem-faturamento">R$ 0</div></div>
         <div class="fin-card fin-card-green"><div class="fin-card-label">Bônus por agendamentos</div><div class="fin-card-value" id="pb-bonus-agendamentos">R$ 340</div></div>
-        <div class="fin-card fin-card-blue"><div class="fin-card-label">Remuneração acumulada</div><div class="fin-card-value" id="pb-remuneracao-acumulada">R$ 2.300</div></div>
+        <div class="fin-card"><div class="fin-card-label">Comissão por indicação</div><div class="fin-card-value" id="pb-comissao-indicacao">R$ 0</div></div>
+        <div class="fin-card fin-card-blue"><div class="fin-card-label">Valor total</div><div class="fin-card-value" id="pb-valor-total">R$ 2.300</div></div>
       </div>
       <div style="font-size:13px;font-weight:700;margin-bottom:8px">Orçamentos em aberto por urgência</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -2337,8 +2338,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div id="plan-painel_ingrid" class="plan-sub" style="display:none">
     <div class="card">
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
-        <div class="fin-card fin-card-blue"><div class="fin-card-label">Procedimentos no mês</div><div class="fin-card-value">14</div></div>
-        <div class="fin-card fin-card-green"><div class="fin-card-label">Valor acumulado</div><div class="fin-card-value">R$ 1.180</div></div>
+        <div class="fin-card fin-card-blue"><div class="fin-card-label">Remuneração</div><div class="fin-card-value" id="pi-remuneracao">R$ 2.500</div></div>
+        <div class="fin-card"><div class="fin-card-label">Procedimentos realizados</div><div class="fin-card-value" id="pi-procedimentos">R$ 1.180</div></div>
+        <div class="fin-card"><div class="fin-card-label">Comissão por indicação</div><div class="fin-card-value" id="pi-comissao-indicacao">R$ 0</div></div>
+        <div class="fin-card fin-card-green"><div class="fin-card-label">Valor acumulado</div><div class="fin-card-value" id="pi-valor-acumulado">R$ 3.680</div></div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
         <span style="font-size:14px;font-weight:700">Ocupação de agenda</span>
@@ -2360,11 +2363,13 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden;margin-bottom:16px">
         <div style="height:100%;width:73%;border-radius:6px;background:var(--ac)"></div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:12px">
         <div class="fin-card fin-card-green"><div class="fin-card-label">Comissão a receber</div><div class="fin-card-value">R$ 23.940</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
         <div class="fin-card"><div class="fin-card-label">Lucro da clínica</div><div class="fin-card-value">R$ 19.800</div></div>
         <div class="fin-card"><div class="fin-card-label">Ticket médio</div><div class="fin-card-value">R$ 3.850</div></div>
-        <div class="fin-card fin-card-blue"><div class="fin-card-label">ROI tráfego</div><div class="fin-card-value">3,2x</div></div>
+        <div class="fin-card"><div class="fin-card-label">Comissão por indicação</div><div class="fin-card-value" id="pl-comissao-indicacao">R$ 0</div></div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
         <span style="font-size:14px;font-weight:700">Ocupação de agenda</span>
@@ -2394,8 +2399,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div style="height:100%;width:73%;border-radius:6px;background:var(--ac)"></div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
-        <div class="fin-card fin-card-green"><div class="fin-card-label">Comissão a receber</div><div class="fin-card-value">R$ 6.780</div></div>
-        <div class="fin-card"><div class="fin-card-label">Lucro + 15%</div><div class="fin-card-value">R$ 2.970</div></div>
+        <div class="fin-card fin-card-green"><div class="fin-card-label">Comissão a receber</div><div class="fin-card-value" id="pf-comissao-receber">R$ 6.780</div></div>
+        <div class="fin-card"><div class="fin-card-label">Lucro + 15%</div><div class="fin-card-value" id="pf-lucro-15">R$ 2.970</div></div>
+        <div class="fin-card"><div class="fin-card-label">Comissão por indicação</div><div class="fin-card-value" id="pf-comissao-indicacao">R$ 0</div></div>
+        <div class="fin-card fin-card-blue"><div class="fin-card-label">Valor total</div><div class="fin-card-value" id="pf-valor-total">R$ 9.750</div></div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
         <span style="font-size:14px;font-weight:700">Ocupação de agenda</span>
@@ -5579,6 +5586,8 @@ function _planSalvarReferencias(){
   // Recalcula na hora os painéis que dependem dessas referências, caso estejam abertos
   if(typeof _planPatrikPeriodoMudou==='function') _planPatrikPeriodoMudou();
   if(typeof _planAtualizarPainelBeatriz==='function') _planAtualizarPainelBeatriz();
+  if(typeof _planAtualizarPainelIngrid==='function') _planAtualizarPainelIngrid();
+  if(typeof _planAtualizarPainelFernanda==='function') _planAtualizarPainelFernanda();
 }
 function _planToggleSalaReferencia(btn){
   btn.classList.toggle('on');
@@ -5684,15 +5693,55 @@ function _planAtualizarPainelBeatriz(){
   const barOcup=document.getElementById('pb-ocup-bar');
   if(barOcup){ barOcup.style.width=Math.min(100,ocup)+'%'; barOcup.style.background = ocup>=metaOcup ? 'var(--su)' : 'var(--wa)'; }
 
-  // Remuneração por faturamento + bônus + remuneração acumulada (fórmula real,
-  // usando o piso e a remuneração fixa das Referências; faturamento e bônus
-  // ainda são exemplo)
-  const remuneracaoPorFaturamento = faturamentoAtual>=piso ? faturamentoAtual*(ref.comissoes.beatrizPctFaturamento/100) : 0;
+  // Remuneração: fixo se o faturamento ficar abaixo do piso; comissão % sobre
+  // faturamento (Referências) se atingir ou superar o piso — não soma os dois.
+  // Bônus, comissão por indicação e faturamento em si ainda são exemplo.
+  const remuneracao = faturamentoAtual>=piso ? faturamentoAtual*(ref.comissoes.beatrizPctFaturamento/100) : ref.remuneracaoFixa.beatriz;
   const bonusAgendamentos = 340;
-  const remuneracaoAcumulada = faturamentoAtual>=piso ? (remuneracaoPorFaturamento+bonusAgendamentos) : ref.remuneracaoFixa.beatriz;
-  set('pb-rem-faturamento', fmtMoeda(remuneracaoPorFaturamento));
+  const comissaoIndicacao = 0;
+  const valorTotal = remuneracao + bonusAgendamentos + comissaoIndicacao;
+  set('pb-rem-faturamento', fmtMoeda(remuneracao));
   set('pb-bonus-agendamentos', fmtMoeda(bonusAgendamentos));
-  set('pb-remuneracao-acumulada', fmtMoeda(remuneracaoAcumulada));
+  set('pb-comissao-indicacao', fmtMoeda(comissaoIndicacao));
+  set('pb-valor-total', fmtMoeda(valorTotal));
+}
+
+// Atualiza os cards do Painel Ingrid. Remuneração vem de verdade das
+// Referências (remuneração fixa); procedimentos realizados e comissão por
+// indicação ainda são exemplo/placeholder, a conectar depois.
+function _planAtualizarPainelIngrid(){
+  const painel=document.getElementById('plan-painel_ingrid');
+  if(!painel) return;
+  const ref=planGetReferencias();
+  const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val; };
+  const fmtMoeda=n=>'R$ '+Math.round(n).toLocaleString('pt-BR');
+
+  const remuneracao = ref.remuneracaoFixa.ingrid;
+  const procedimentosRealizados = 1180;
+  const comissaoIndicacao = 0;
+  const valorAcumulado = remuneracao + procedimentosRealizados + comissaoIndicacao;
+  set('pi-remuneracao', fmtMoeda(remuneracao));
+  set('pi-procedimentos', fmtMoeda(procedimentosRealizados));
+  set('pi-comissao-indicacao', fmtMoeda(comissaoIndicacao));
+  set('pi-valor-acumulado', fmtMoeda(valorAcumulado));
+}
+
+// Atualiza os cards do Painel Fernanda. Comissão a receber, lucro e comissão
+// por indicação ainda são exemplo/placeholder — o valor total já soma os três.
+function _planAtualizarPainelFernanda(){
+  const painel=document.getElementById('plan-painel_fernanda');
+  if(!painel) return;
+  const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val; };
+  const fmtMoeda=n=>'R$ '+Math.round(n).toLocaleString('pt-BR');
+
+  const comissaoReceber = 6780;
+  const lucro15 = 2970;
+  const comissaoIndicacao = 0;
+  const valorTotal = comissaoReceber + lucro15 + comissaoIndicacao;
+  set('pf-comissao-receber', fmtMoeda(comissaoReceber));
+  set('pf-lucro-15', fmtMoeda(lucro15));
+  set('pf-comissao-indicacao', fmtMoeda(comissaoIndicacao));
+  set('pf-valor-total', fmtMoeda(valorTotal));
 }
 
 // Traduz a seleção do filtro de período do Painel Patrik em datas 'YYYY-MM-DD'.
@@ -5850,6 +5899,8 @@ function _planInicializar(){
   _planCarregarReferencias();
   if(typeof _planPatrikPeriodoMudou==='function') _planPatrikPeriodoMudou();
   if(typeof _planAtualizarPainelBeatriz==='function') _planAtualizarPainelBeatriz();
+  if(typeof _planAtualizarPainelIngrid==='function') _planAtualizarPainelIngrid();
+  if(typeof _planAtualizarPainelFernanda==='function') _planAtualizarPainelFernanda();
 }
 
 // Avisar (sem salvar sozinho) se houver alterações pendentes ao fechar/recarregar a página
@@ -16676,6 +16727,8 @@ function showPlanejamento(sub, btn){
   if(btn) btn.classList.add('on');
   if(sub==='painel_patrik' && typeof _planPatrikPeriodoMudou==='function') _planPatrikPeriodoMudou();
   if(sub==='painel_beatriz' && typeof _planAtualizarPainelBeatriz==='function') _planAtualizarPainelBeatriz();
+  if(sub==='painel_ingrid' && typeof _planAtualizarPainelIngrid==='function') _planAtualizarPainelIngrid();
+  if(sub==='painel_fernanda' && typeof _planAtualizarPainelFernanda==='function') _planAtualizarPainelFernanda();
 }
 
 function showCfg(sub, btn){
