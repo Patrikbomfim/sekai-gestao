@@ -5243,6 +5243,7 @@ function aplicarPermissoesNav(){
     if(!m) return;
     const sec = m[1];
     if(sec==='hoje'||sec==='proximos'||sec==='melhorias') return; // sempre visível
+    if(sec==='planejamento'){ btn.style.display = souAdministradorReal() ? '' : 'none'; return; } // só administrador vê
 
     const regra = mapa[sec];
     const temAcesso = Array.isArray(regra) ? regra.some(p=>perms.has(p)) : perms.has(regra||'');
@@ -6556,6 +6557,8 @@ function goTo(id, btn){
     if(id==='config'){
       const cfgPerms=['cfg_usuarios_ver','cfg_cargos_ver','cfg_equipe_ver','cfg_reunioes_ver','cfg_cadpaciente_ver','cfg_empresa_ver'];
       semAcesso = !cfgPerms.some(p=>temPerm(p));
+    } else if(id==='planejamento'){
+      semAcesso = !souAdministradorReal();
     } else {
       const permNecessaria = PERM_SECAO[id];
       semAcesso = permNecessaria && (Array.isArray(permNecessaria) ? !permNecessaria.some(p=>temPerm(p)) : !temPerm(permNecessaria));
