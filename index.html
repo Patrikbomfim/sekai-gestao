@@ -2207,6 +2207,49 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Taxa mínima de ocupação de agenda (%)</label>
       <input id="plan-ref-ocupacao-min" type="number" step="1" min="0" max="100" placeholder="Ex: 60" style="width:100%;height:38px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:14px;font-family:var(--font)" onblur="_planSalvarReferencias()">
     </div>
+
+    <div class="card" style="max-width:520px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px">Horário útil da agenda</div>
+      <div style="font-size:12.5px;color:var(--tx2);margin-bottom:16px">Janela de atendimento usada para calcular a ocupação. Altere livremente sempre que o horário de funcionamento mudar.</div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:8px">Segunda a sexta</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div>
+          <label style="display:block;font-size:11px;color:var(--tx3);margin-bottom:3px">Início</label>
+          <input id="plan-ref-hu-ss-ini" type="time" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font)" onchange="_planSalvarReferencias()">
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;color:var(--tx3);margin-bottom:3px">Fim</label>
+          <input id="plan-ref-hu-ss-fim" type="time" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font)" onchange="_planSalvarReferencias()">
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;color:var(--tx3);margin-bottom:3px">Intervalo — início</label>
+          <input id="plan-ref-hu-ss-int-ini" type="time" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font)" onchange="_planSalvarReferencias()">
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;color:var(--tx3);margin-bottom:3px">Intervalo — fim</label>
+          <input id="plan-ref-hu-ss-int-fim" type="time" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font)" onchange="_planSalvarReferencias()">
+        </div>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:8px">Sábado</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="display:block;font-size:11px;color:var(--tx3);margin-bottom:3px">Início</label>
+          <input id="plan-ref-hu-sab-ini" type="time" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font)" onchange="_planSalvarReferencias()">
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;color:var(--tx3);margin-bottom:3px">Fim</label>
+          <input id="plan-ref-hu-sab-fim" type="time" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font)" onchange="_planSalvarReferencias()">
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="max-width:520px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px">Salas consideradas na ocupação</div>
+      <div style="font-size:12.5px;color:var(--tx2);margin-bottom:14px">Escolha quais salas entram no cálculo de ocupação de agenda. Uma sala desativada aqui não conta nem como capacidade, nem como uso — independente do cadastro em Configurações → Salas.</div>
+      <div id="plan-ref-salas-lista" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
   </div>
 
   <!-- PAINEL BEATRIZ (SECRETÁRIA) -->
@@ -2320,9 +2363,22 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <!-- PAINEL PATRIK (GERAL) -->
   <div id="plan-painel_patrik" class="plan-sub" style="display:none">
     <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+        <select id="pp-periodo-sel" class="fin-select" onchange="_planPatrikPeriodoMudou()">
+          <option value="mes_atual">Este mês</option>
+          <option value="mes_passado">Mês passado</option>
+          <option value="ano_atual">Este ano</option>
+          <option value="custom">Personalizado</option>
+        </select>
+        <div id="pp-periodo-custom" style="display:none;gap:8px;align-items:center">
+          <input type="date" id="pp-periodo-de" class="fin-input-date" onchange="_planPatrikPeriodoMudou()">
+          <span style="font-size:12px;color:var(--tx3)">até</span>
+          <input type="date" id="pp-periodo-ate" class="fin-input-date" onchange="_planPatrikPeriodoMudou()">
+        </div>
+      </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
-        <div class="fin-card fin-card-green"><div class="fin-card-label">Recebido no mês</div><div class="fin-card-value">R$ 87.400</div></div>
-        <div class="fin-card fin-card-red"><div class="fin-card-label">Pago no mês</div><div class="fin-card-value">R$ 61.200</div></div>
+        <div class="fin-card fin-card-green"><div class="fin-card-label">Recebido no período</div><div class="fin-card-value">R$ 87.400</div></div>
+        <div class="fin-card fin-card-red"><div class="fin-card-label">Pago no período</div><div class="fin-card-value">R$ 61.200</div></div>
         <div class="fin-card fin-card-green"><div class="fin-card-label">Fluxo de caixa</div><div class="fin-card-value">+ R$ 26.200</div></div>
         <div class="fin-card"><div class="fin-card-label">Margem líquida</div><div class="fin-card-value">30%</div></div>
         <div class="fin-card fin-card-blue"><div class="fin-card-label">Orçamentos fechados</div><div class="fin-card-value">R$ 54.000</div></div>
@@ -2331,8 +2387,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="fin-card"><div class="fin-card-label">Taxa de conversão</div><div class="fin-card-value">42%</div></div>
         <div class="fin-card"><div class="fin-card-label">Ticket médio</div><div class="fin-card-value">R$ 3.850</div></div>
         <div class="fin-card fin-card-green"><div class="fin-card-label">ROI marketing</div><div class="fin-card-value">3,2x</div></div>
-        <div class="fin-card fin-card-blue"><div class="fin-card-label">Ocupação de agenda</div><div class="fin-card-value">71%</div></div>
-        <div class="fin-card"><div class="fin-card-label">1ª consultas no mês</div><div class="fin-card-value">18</div></div>
+        <div class="fin-card fin-card-blue"><div class="fin-card-label">Ocupação de agenda</div><div class="fin-card-value" id="pp-card-ocupacao">71%</div></div>
+        <div class="fin-card"><div class="fin-card-label">1ª consultas no período</div><div class="fin-card-value">18</div></div>
       </div>
     </div>
   </div>
@@ -5419,29 +5475,149 @@ function _planCarregarEditaveis(){
   });
 }
 
-// Referências usadas para alimentar as métricas do módulo (piso de faturamento,
-// taxa mínima de ocupação de agenda). Valores padrão refletem os exemplos
-// já usados nos painéis do Planejamento.
+// Referências usadas para alimentar as métricas do módulo: piso de faturamento,
+// taxa mínima de ocupação de agenda, horário útil (janela de atendimento) e quais
+// salas entram no cálculo de ocupação. Valores padrão refletem os exemplos já
+// usados nos painéis do Planejamento. Merge defensivo com os defaults para não
+// quebrar quem já tinha salvo a versão antiga (só piso + taxa) desse objeto.
 function planGetReferencias(){
-  return carregarLS('sk3-plan-referencias', { pisoFaturamento: 90000, taxaOcupacaoMinima: 60 });
+  const def = {
+    pisoFaturamento: 90000,
+    taxaOcupacaoMinima: 60,
+    horarioUtil: {
+      segSex: { inicio:'08:00', fim:'18:00', intervaloInicio:'12:00', intervaloFim:'13:30' },
+      sabado: { inicio:'08:00', fim:'12:00' }
+    },
+    salasConsideradas: ['sala1','sala4']
+  };
+  const salvo = carregarLS('sk3-plan-referencias', null);
+  if(!salvo) return def;
+  return {
+    pisoFaturamento: salvo.pisoFaturamento ?? def.pisoFaturamento,
+    taxaOcupacaoMinima: salvo.taxaOcupacaoMinima ?? def.taxaOcupacaoMinima,
+    horarioUtil: {
+      segSex: { ...def.horarioUtil.segSex, ...((salvo.horarioUtil||{}).segSex||{}) },
+      sabado: { ...def.horarioUtil.sabado, ...((salvo.horarioUtil||{}).sabado||{}) }
+    },
+    salasConsideradas: (salvo.salasConsideradas && salvo.salasConsideradas.length) ? salvo.salasConsideradas : def.salasConsideradas
+  };
 }
 function _planSalvarReferencias(){
-  const elPiso=document.getElementById('plan-ref-piso');
-  const elOcup=document.getElementById('plan-ref-ocupacao-min');
-  const piso=parseFloat(elPiso ? elPiso.value : '')||0;
-  const ocup=parseFloat(elOcup ? elOcup.value : '')||0;
-  salvarLS('sk3-plan-referencias', { pisoFaturamento: piso, taxaOcupacaoMinima: ocup });
+  const v=id=>{ const el=document.getElementById(id); return el?el.value:''; };
+  const piso=parseFloat(v('plan-ref-piso'))||0;
+  const ocup=parseFloat(v('plan-ref-ocupacao-min'))||0;
+  const salasConsideradas=[...document.querySelectorAll('#plan-ref-salas-lista .chip-toggle.on')].map(b=>b.dataset.sala);
+  salvarLS('sk3-plan-referencias', {
+    pisoFaturamento: piso,
+    taxaOcupacaoMinima: ocup,
+    horarioUtil: {
+      segSex: { inicio:v('plan-ref-hu-ss-ini')||'08:00', fim:v('plan-ref-hu-ss-fim')||'18:00', intervaloInicio:v('plan-ref-hu-ss-int-ini')||'12:00', intervaloFim:v('plan-ref-hu-ss-int-fim')||'13:30' },
+      sabado: { inicio:v('plan-ref-hu-sab-ini')||'08:00', fim:v('plan-ref-hu-sab-fim')||'12:00' }
+    },
+    salasConsideradas
+  });
+  // Recalcula na hora o card de ocupação do Painel Patrik, caso esteja aberto
+  if(typeof _planPatrikPeriodoMudou==='function') _planPatrikPeriodoMudou();
+}
+function _planToggleSalaReferencia(btn){
+  btn.classList.toggle('on');
+  _planSalvarReferencias();
+}
+function _planRenderSalasReferencia(ref){
+  const wrap=document.getElementById('plan-ref-salas-lista');
+  if(!wrap || typeof salas==='undefined') return;
+  wrap.innerHTML = salas.map(s=>{
+    const on = ref.salasConsideradas.includes(s.id);
+    return `<button type="button" class="chip-toggle${on?' on':''}" data-sala="${s.id}" onclick="_planToggleSalaReferencia(this)">${esc(s.nome)}</button>`;
+  }).join('');
 }
 function _planCarregarReferencias(){
   const ref=planGetReferencias();
-  const elPiso=document.getElementById('plan-ref-piso');
-  const elOcup=document.getElementById('plan-ref-ocupacao-min');
-  if(elPiso) elPiso.value = ref.pisoFaturamento;
-  if(elOcup) elOcup.value = ref.taxaOcupacaoMinima;
+  const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.value=val; };
+  set('plan-ref-piso', ref.pisoFaturamento);
+  set('plan-ref-ocupacao-min', ref.taxaOcupacaoMinima);
+  set('plan-ref-hu-ss-ini', ref.horarioUtil.segSex.inicio);
+  set('plan-ref-hu-ss-fim', ref.horarioUtil.segSex.fim);
+  set('plan-ref-hu-ss-int-ini', ref.horarioUtil.segSex.intervaloInicio);
+  set('plan-ref-hu-ss-int-fim', ref.horarioUtil.segSex.intervaloFim);
+  set('plan-ref-hu-sab-ini', ref.horarioUtil.sabado.inicio);
+  set('plan-ref-hu-sab-fim', ref.horarioUtil.sabado.fim);
+  _planRenderSalasReferencia(ref);
 }
+
+// Calcula a ocupação de agenda (%) num período [dataIniISO,dataFimISO], usando
+// o horário útil e as salas configuradas em Referências, contra os agendamentos
+// reais (exclui cancelados). dataIniISO/dataFimISO no formato 'YYYY-MM-DD'.
+function planCalcularOcupacao(dataIniISO, dataFimISO){
+  const ref = planGetReferencias();
+  const salasIds = ref.salasConsideradas;
+  const hu = ref.horarioUtil;
+  let minutosDisponiveis = 0;
+  const dIni = new Date(dataIniISO+'T00:00:00');
+  const dFim = new Date(dataFimISO+'T00:00:00');
+  for(let d=new Date(dIni); d<=dFim; d.setDate(d.getDate()+1)){
+    const dow = d.getDay(); // 0=domingo … 6=sábado
+    let minutosDia = 0;
+    if(dow>=1 && dow<=5){
+      const ini=horaParaMin(hu.segSex.inicio), fim=horaParaMin(hu.segSex.fim);
+      const intIni=horaParaMin(hu.segSex.intervaloInicio), intFim=horaParaMin(hu.segSex.intervaloFim);
+      minutosDia = Math.max(0,(fim-ini) - Math.max(0,intFim-intIni));
+    } else if(dow===6){
+      minutosDia = Math.max(0, horaParaMin(hu.sabado.fim) - horaParaMin(hu.sabado.inicio));
+    }
+    minutosDisponiveis += minutosDia * salasIds.length;
+  }
+  const minutosOcupados = (typeof agendamentos!=='undefined' ? agendamentos : []).filter(a=>{
+    if(a.status==='cancelado') return false;
+    if(!salasIds.includes(a.salaId)) return false;
+    return a.data >= dataIniISO && a.data <= dataFimISO;
+  }).reduce((soma,a)=> soma + Math.max(0, horaParaMin(a.horaFim)-horaParaMin(a.horaInicio)), 0);
+  const pct = minutosDisponiveis>0 ? Math.round((minutosOcupados/minutosDisponiveis)*100) : 0;
+  return { pct, minutosDisponiveis, minutosOcupados };
+}
+
+// Traduz a seleção do filtro de período do Painel Patrik em datas 'YYYY-MM-DD'.
+// Mostra/esconde os campos de data personalizada conforme a opção escolhida.
+function _planPatrikPeriodoParaDatas(){
+  const sel=document.getElementById('pp-periodo-sel');
+  const custom=document.getElementById('pp-periodo-custom');
+  const valor = sel ? sel.value : 'mes_atual';
+  if(custom) custom.style.display = (valor==='custom') ? 'inline-flex' : 'none';
+  const hoje=new Date();
+  let de, ate;
+  if(valor==='mes_passado'){
+    de=new Date(hoje.getFullYear(), hoje.getMonth()-1, 1);
+    ate=new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+  } else if(valor==='ano_atual'){
+    de=new Date(hoje.getFullYear(), 0, 1);
+    ate=new Date(hoje.getFullYear(), 11, 31);
+  } else if(valor==='custom'){
+    const deEl=document.getElementById('pp-periodo-de'), ateEl=document.getElementById('pp-periodo-ate');
+    de = (deEl && deEl.value) ? new Date(deEl.value+'T00:00:00') : new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    ate = (ateEl && ateEl.value) ? new Date(ateEl.value+'T00:00:00') : new Date(hoje.getFullYear(), hoje.getMonth()+1, 0);
+  } else { // mes_atual (padrão)
+    de=new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    ate=new Date(hoje.getFullYear(), hoje.getMonth()+1, 0);
+  }
+  return { de:_finIso(de), ate:_finIso(ate) };
+}
+
+// Recalcula os cards do Painel Patrik (por ora, "Ocupação de agenda") para o
+// período selecionado no filtro. As demais métricas do painel ainda são
+// valores de exemplo, a conectar quando os indicadores reais forem plugados.
+function _planPatrikPeriodoMudou(){
+  const painel=document.getElementById('plan-painel_patrik');
+  if(!painel) return;
+  const {de,ate}=_planPatrikPeriodoParaDatas();
+  const r=planCalcularOcupacao(de,ate);
+  const el=document.getElementById('pp-card-ocupacao');
+  if(el) el.textContent = r.pct+'%';
+}
+
 function _planInicializar(){
   _planCarregarEditaveis();
   _planCarregarReferencias();
+  if(typeof _planPatrikPeriodoMudou==='function') _planPatrikPeriodoMudou();
 }
 
 // Avisar (sem salvar sozinho) se houver alterações pendentes ao fechar/recarregar a página
@@ -16266,6 +16442,7 @@ function showPlanejamento(sub, btn){
   const el=document.getElementById('plan-'+sub);
   if(el) el.style.display='block';
   if(btn) btn.classList.add('on');
+  if(sub==='painel_patrik' && typeof _planPatrikPeriodoMudou==='function') _planPatrikPeriodoMudou();
 }
 
 function showCfg(sub, btn){
