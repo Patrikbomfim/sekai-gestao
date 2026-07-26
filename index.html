@@ -916,6 +916,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <button class="nav-btn" onclick="goTo('relatorios',this)">Relatórios</button>
   <div class="slb-label">Gestão</div>
   <button class="nav-btn" onclick="goTo('dashboard',this)">Dashboard</button>
+  <button class="nav-btn" onclick="goTo('planejamento',this)">Planejamento</button>
   <div class="slb-label">Sistema</div>
   <button class="nav-btn" onclick="goTo('melhorias',this)"><span class="nav-ic">🛠</span>Melhorias para o sistema</button>
   <button class="nav-btn" onclick="goTo('rituais',this)">Rituais</button>
@@ -950,6 +951,17 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <button class="subnav-btn" onclick="showCfg('anamnese',this)"><span class="nav-ic">▧</span>Anamnese</button>
   <button class="subnav-btn" onclick="showCfg('dashboard',this)"><span class="nav-ic">▦</span>Dashboard</button>
   <button class="subnav-btn" onclick="showCfg('tabelas',this)"><span class="nav-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Tabelas precificação</button>
+</nav>
+
+<nav class="subnav" id="planejamento-subnav">
+  <div class="subnav-title">Planejamento</div>
+  <button class="subnav-btn on" onclick="showPlanejamento('remuneracao',this)">Remuneração</button>
+  <button class="subnav-btn" onclick="showPlanejamento('funcoes',this)">Funções</button>
+  <button class="subnav-btn" onclick="showPlanejamento('painel_beatriz',this)">Painel Beatriz</button>
+  <button class="subnav-btn" onclick="showPlanejamento('painel_ingrid',this)">Painel Ingrid</button>
+  <button class="subnav-btn" onclick="showPlanejamento('painel_leticia',this)">Painel Leticia</button>
+  <button class="subnav-btn" onclick="showPlanejamento('painel_fernanda',this)">Painel Fernanda</button>
+  <button class="subnav-btn" onclick="showPlanejamento('painel_patrik',this)">Painel Patrik (geral)</button>
 </nav>
 
 <main class="main">
@@ -2068,6 +2080,242 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 
   <div id="melhorias-lista"></div>
+</div>
+
+
+<!-- PLANEJAMENTO -->
+<div id="sec-planejamento" class="sec">
+  <div class="pg-title">Planejamento</div>
+  <div class="pg-desc">Remuneração, funções e painéis individuais — espaço de trabalho para ajustar antes de liberar para a equipe. Valores dos painéis são exemplo, a conectar com os indicadores reais do sistema.</div>
+
+  <!-- REMUNERAÇÃO -->
+  <div id="plan-remuneracao" class="plan-sub">
+    <div class="card">
+      <div style="font-size:15px;font-weight:700;margin-bottom:12px">Secretária</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px">
+        <tr><td style="padding:6px 10px 6px 0;color:var(--tx2);width:140px">Fixo</td><td style="padding:6px 0">R$ 2.300/mês — pago se faturamento da clínica ficar abaixo de R$ 90.000 (piso)</td></tr>
+        <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Variável</td><td style="padding:6px 0">Se faturamento ≥ R$ 90.000: 3,5% sobre o total faturado (substitui o fixo, não soma) + R$ 20,00 por 1ª consulta agendada (lead novo ou reativação, sem diferenciação)</td></tr>
+        <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Lógica</td><td style="padding:6px 0">Comissão sobre faturamento coletivo — incentiva ela a torcer e ajudar no fechamento de qualquer profissional, sem competição interna</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div style="font-size:15px;font-weight:700;margin-bottom:12px">Dra. Leticia (sócia)</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tr><td style="padding:6px 10px 6px 0;color:var(--tx2);width:140px">Fixo</td><td style="padding:6px 0">Não há</td></tr>
+        <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Variável</td><td style="padding:6px 0">30% sobre os procedimentos que executa — não muda por forma de pagamento, à vista, parcelado ou nota fiscal</td></tr>
+        <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Lógica</td><td style="padding:6px 0">Como sócia, o interesse em orçamento parado e resultado geral já vem do lucro da sociedade — não recebe incentivo extra por isso</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div style="font-size:15px;font-weight:700;margin-bottom:12px">Fernanda (gestora + dentista)</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tr><td style="padding:6px 10px 6px 0;color:var(--tx2);width:140px">Fixo</td><td style="padding:6px 0">R$ 1.500/mês pela função de gestão</td></tr>
+        <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Variável</td><td style="padding:6px 0">30% sobre os procedimentos que executa (atendimento) + 15% sobre o lucro da empresa (lucro = executado − custo do período)</td></tr>
+        <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Atenção</td><td style="padding:6px 0">Ela também apura e lança os números que definem o próprio lucro — cálculo automático no sistema reduz o conflito de interesse</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div style="font-size:15px;font-weight:700;margin-bottom:12px">Auxiliar-dentista (Indrid)</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tr><td style="padding:6px 10px 6px 0;color:var(--tx2);width:140px">Fixo</td><td style="padding:6px 0">R$ 2.500/mês</td></tr>
+        <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Variável</td><td style="padding:6px 0">Valor fixo por procedimento — Restauração R$ 100 / Clareamento R$ 80 / Limpeza R$ 50 (0,5% sobre faturamento coletivo acima de 90k: em pausa por ora)</td></tr>
+        <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Transição</td><td style="padding:6px 0">Ao atingir autonomia formal (validada por Leticia/Patrik), passa a receber tabela de profissional e deixa de receber o fixo</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- FUNÇÕES -->
+  <div id="plan-funcoes" class="plan-sub" style="display:none">
+    <div class="card">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px">Secretária (Beatriz)</div>
+      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.9;color:var(--tx)">
+        <li>Recepcionar pacientes e separar fichas antes do atendimento</li>
+        <li>Agendamentos (leads e pacientes da base)</li>
+        <li>Atendimento WhatsApp</li>
+        <li>Follow-up de orçamentos — monitora e contata, escala para Leticia/Fernanda quando precisa de reforço técnico</li>
+        <li>Lançamento e baixa de contas a pagar/receber, baixa de recebíveis (aluguéis)</li>
+        <li>Controle de laboratório (encaminhar, receber, cobrar)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px">Dra. Leticia (sócia)</div>
+      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.9;color:var(--tx)">
+        <li>Avaliação clínica</li>
+        <li>Apresentação e aprovação de orçamento + forma de pagamento</li>
+        <li>Atualização de prontuário</li>
+        <li>Execução do orçamento (procedimentos)</li>
+        <li>Participação ativa em tráfego/marketing — reuniões, campanhas e sugestões com a gestora de tráfego</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px">Fernanda (gestora + dentista)</div>
+      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.9;color:var(--tx)">
+        <li>Auditar financeiro semanalmente (contas a pagar/receber, fluxo de caixa, emissão fiscal) — autonomia para agir</li>
+        <li>Auditar agenda e follow-up diariamente — cobra a secretária diretamente</li>
+        <li>Auditar qualidade do WhatsApp semanalmente por amostragem — corrige e treina a secretária</li>
+        <li>Acompanhar tráfego semanalmente (campanha ativa, verba, ROI)</li>
+        <li>Medir a comissão das dentistas no sistema e fazer a conciliação bancária</li>
+        <li>Liderar a reunião de equipe</li>
+        <li>Atendimento clínico próprio (30% produção)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px">Auxiliar-dentista (Indrid)</div>
+      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.9;color:var(--tx)">
+        <li>Auxiliar Fernanda e Leticia em atendimentos</li>
+        <li>Esterilizar e preparar materiais e ferramentas</li>
+        <li>Ligar e desligar equipamentos (autoclave, compressor, bomba a vácuo)</li>
+        <li>Controle e compra de estoque</li>
+        <li>Atender sozinha: restauração, limpeza e clareamento</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px">Patrik (sócio-gestor)</div>
+      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.9;color:var(--tx)">
+        <li>Definir estratégia e padrão de gestão — não executa operação</li>
+        <li>Decidir ajustes estruturais (preço, equipe, posicionamento) a partir das reuniões</li>
+        <li>Garantir que Fernanda tenha clareza para executar o checklist de gestão</li>
+        <li>Participar ativamente de decisões de tráfego/marketing com Leticia</li>
+      </ul>
+    </div>
+    <div class="card" style="background:var(--s2)">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px">Rotina de reuniões</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tr><td style="padding:6px 10px 6px 0;color:var(--tx2);width:220px">Equipe geral</td><td style="padding:6px 0">Semanal · todos · alinhamento e comunicados, não é fórum de cobrança individual</td></tr>
+        <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Fernanda + Patrik</td><td style="padding:6px 0">Semanal · gestão geral (financeiro, agenda, follow-up, whatsapp) — Fernanda traz o porquê e as ações já tomadas</td></tr>
+        <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Fernanda + Leticia + Patrik</td><td style="padding:6px 0">Quinzenal · estratégia de tráfego/marketing</td></tr>
+        <tr><td style="padding:6px 10px 6px 0;color:var(--tx2)">Revisão mensal</td><td style="padding:6px 0">Patrik · tendência de faturamento, ocupação e conversão · ajuste estrutural</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- PAINEL BEATRIZ (SECRETÁRIA) -->
+  <div id="plan-painel_beatriz" class="plan-sub" style="display:none">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+        <span style="font-size:14px;font-weight:700">Faturamento do mês</span>
+        <span style="font-size:12px;color:var(--tx2)">Piso: R$ 90.000</span>
+      </div>
+      <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden;margin-bottom:6px">
+        <div style="height:100%;width:78%;border-radius:6px;background:var(--su)"></div>
+      </div>
+      <div style="font-size:12px;color:var(--tx2);margin-bottom:16px">R$ 70.200 de R$ 90.000 — comissão ativa a partir do piso</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
+        <div class="fin-card"><div class="fin-card-label">Comissão acumulada</div><div class="fin-card-value">R$ 0</div></div>
+        <div class="fin-card fin-card-green"><div class="fin-card-label">Bônus agendamento</div><div class="fin-card-value">R$ 340</div></div>
+        <div class="fin-card fin-card-blue"><div class="fin-card-label">Ocupação de agenda</div><div class="fin-card-value">64%</div></div>
+      </div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px">Orçamentos em aberto por urgência</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span style="background:var(--s2);color:var(--tx2);font-size:12px;padding:4px 10px;border-radius:20px">3 dias · 4</span>
+        <span style="background:var(--wal);color:var(--wa);font-size:12px;padding:4px 10px;border-radius:20px">7 dias · 2</span>
+        <span style="background:var(--dal);color:var(--da);font-size:12px;padding:4px 10px;border-radius:20px">15 dias · 1</span>
+        <span style="background:var(--dal);color:var(--da);font-size:12px;padding:4px 10px;border-radius:20px">30 dias · 1</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL INGRID (AUXILIAR) -->
+  <div id="plan-painel_ingrid" class="plan-sub" style="display:none">
+    <div class="card">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
+        <div class="fin-card fin-card-blue"><div class="fin-card-label">Procedimentos no mês</div><div class="fin-card-value">14</div></div>
+        <div class="fin-card fin-card-green"><div class="fin-card-label">Valor acumulado</div><div class="fin-card-value">R$ 1.180</div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+        <span style="font-size:14px;font-weight:700">Ocupação de agenda</span>
+        <span style="font-size:12px;color:var(--tx2)">38%</span>
+      </div>
+      <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden">
+        <div style="height:100%;width:38%;border-radius:6px;background:var(--wa)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL LETICIA -->
+  <div id="plan-painel_leticia" class="plan-sub" style="display:none">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+        <span style="font-size:14px;font-weight:700">Faturamento vs meta</span>
+        <span style="font-size:12px;color:var(--tx2)">R$ 87.400 / R$ 120.000</span>
+      </div>
+      <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden;margin-bottom:16px">
+        <div style="height:100%;width:73%;border-radius:6px;background:var(--ac)"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
+        <div class="fin-card fin-card-green"><div class="fin-card-label">Comissão a receber</div><div class="fin-card-value">R$ 23.940</div></div>
+        <div class="fin-card"><div class="fin-card-label">Lucro da clínica</div><div class="fin-card-value">R$ 19.800</div></div>
+        <div class="fin-card"><div class="fin-card-label">Ticket médio</div><div class="fin-card-value">R$ 3.850</div></div>
+        <div class="fin-card fin-card-blue"><div class="fin-card-label">ROI tráfego</div><div class="fin-card-value">3,2x</div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+        <span style="font-size:14px;font-weight:700">Ocupação de agenda</span>
+        <span style="font-size:12px;color:var(--tx2)">71%</span>
+      </div>
+      <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden;margin-bottom:16px">
+        <div style="height:100%;width:71%;border-radius:6px;background:var(--su)"></div>
+      </div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px">Orçamentos em aberto por urgência</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span style="background:var(--s2);color:var(--tx2);font-size:12px;padding:4px 10px;border-radius:20px">3 dias · 4</span>
+        <span style="background:var(--wal);color:var(--wa);font-size:12px;padding:4px 10px;border-radius:20px">7 dias · 2</span>
+        <span style="background:var(--dal);color:var(--da);font-size:12px;padding:4px 10px;border-radius:20px">15 dias · 1</span>
+        <span style="background:var(--dal);color:var(--da);font-size:12px;padding:4px 10px;border-radius:20px">30 dias · 1</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL FERNANDA -->
+  <div id="plan-painel_fernanda" class="plan-sub" style="display:none">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+        <span style="font-size:14px;font-weight:700">Faturamento vs meta</span>
+        <span style="font-size:12px;color:var(--tx2)">R$ 87.400 / R$ 120.000</span>
+      </div>
+      <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden;margin-bottom:16px">
+        <div style="height:100%;width:73%;border-radius:6px;background:var(--ac)"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
+        <div class="fin-card fin-card-green"><div class="fin-card-label">Comissão a receber</div><div class="fin-card-value">R$ 6.780</div></div>
+        <div class="fin-card"><div class="fin-card-label">Lucro + 15%</div><div class="fin-card-value">R$ 2.970</div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+        <span style="font-size:14px;font-weight:700">Ocupação de agenda</span>
+        <span style="font-size:12px;color:var(--tx2)">71%</span>
+      </div>
+      <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden;margin-bottom:16px">
+        <div style="height:100%;width:71%;border-radius:6px;background:var(--su)"></div>
+      </div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px">Status dos eixos que audita</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span style="background:var(--sul);color:var(--su);font-size:12px;padding:4px 10px;border-radius:20px">Financeiro</span>
+        <span style="background:var(--wal);color:var(--wa);font-size:12px;padding:4px 10px;border-radius:20px">Agenda</span>
+        <span style="background:var(--sul);color:var(--su);font-size:12px;padding:4px 10px;border-radius:20px">Follow-up</span>
+        <span style="background:var(--dal);color:var(--da);font-size:12px;padding:4px 10px;border-radius:20px">Whatsapp</span>
+        <span style="background:var(--sul);color:var(--su);font-size:12px;padding:4px 10px;border-radius:20px">Tráfego</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL PATRIK (GERAL) -->
+  <div id="plan-painel_patrik" class="plan-sub" style="display:none">
+    <div class="card">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
+        <div class="fin-card fin-card-green"><div class="fin-card-label">Recebido no mês</div><div class="fin-card-value">R$ 87.400</div></div>
+        <div class="fin-card fin-card-red"><div class="fin-card-label">Pago no mês</div><div class="fin-card-value">R$ 61.200</div></div>
+        <div class="fin-card fin-card-green"><div class="fin-card-label">Fluxo de caixa</div><div class="fin-card-value">+ R$ 26.200</div></div>
+        <div class="fin-card"><div class="fin-card-label">Margem líquida</div><div class="fin-card-value">30%</div></div>
+        <div class="fin-card fin-card-blue"><div class="fin-card-label">Orçamentos fechados</div><div class="fin-card-value">R$ 54.000</div></div>
+        <div class="fin-card fin-card-amber"><div class="fin-card-label">Tratamento a realizar</div><div class="fin-card-value">R$ 31.500</div></div>
+        <div class="fin-card fin-card-blue"><div class="fin-card-label">Procedimentos executados</div><div class="fin-card-value">R$ 79.800</div></div>
+        <div class="fin-card"><div class="fin-card-label">Taxa de conversão</div><div class="fin-card-value">42%</div></div>
+        <div class="fin-card"><div class="fin-card-label">Ticket médio</div><div class="fin-card-value">R$ 3.850</div></div>
+        <div class="fin-card fin-card-green"><div class="fin-card-label">ROI marketing</div><div class="fin-card-value">3,2x</div></div>
+        <div class="fin-card fin-card-blue"><div class="fin-card-label">Ocupação de agenda</div><div class="fin-card-value">71%</div></div>
+        <div class="fin-card"><div class="fin-card-label">1ª consultas no mês</div><div class="fin-card-value">18</div></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 
@@ -6329,9 +6577,10 @@ function goTo(id, btn){
   document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('on'));
   document.getElementById('sec-'+id).classList.add('on');
   if(btn) btn.classList.add('on');
-  document.querySelector('.layout').classList.toggle('has-subnav', id==='config' || id==='financeiro');
+  document.querySelector('.layout').classList.toggle('has-subnav', id==='config' || id==='financeiro' || id==='planejamento');
   document.getElementById('financeiro-subnav').classList.toggle('subnav-ativo', id==='financeiro');
   document.getElementById('config-subnav').classList.toggle('subnav-ativo', id==='config');
+  document.getElementById('planejamento-subnav').classList.toggle('subnav-ativo', id==='planejamento');
   if(btn && btn.classList.contains('nav-btn')) colapsarMenuLateral();
   if(id==='hoje') renderHoje();
   if(id==='proximos') renderProximos();
@@ -15942,6 +16191,14 @@ function removeCheckinAtribuicao(i){
 }
 
 // ── CONFIGURAÇÕES ────────────────────────────────────────────────────────
+function showPlanejamento(sub, btn){
+  document.querySelectorAll('.plan-sub').forEach(s=>s.style.display='none');
+  document.querySelectorAll('#planejamento-subnav .subnav-btn').forEach(t=>t.classList.remove('on'));
+  const el=document.getElementById('plan-'+sub);
+  if(el) el.style.display='block';
+  if(btn) btn.classList.add('on');
+}
+
 function showCfg(sub, btn){
   const cfgPermMapa = {
     usuarios:'cfg_usuarios_ver', cargos:'cfg_cargos_ver', equipe:'cfg_equipe_ver',
