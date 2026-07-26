@@ -2275,9 +2275,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
 
     <div class="card" style="max-width:520px">
-      <div style="font-size:15px;font-weight:700;margin-bottom:4px">Remuneração fixa</div>
-      <div style="font-size:12.5px;color:var(--tx2);margin-bottom:16px">Valor fixo mensal de cada colaboradora, usado no cálculo de remuneração acumulada dos painéis individuais.</div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px">Remuneração</div>
+      <div style="font-size:12.5px;color:var(--tx2);margin-bottom:16px">Valores fixos e percentuais de comissão de cada colaboradora, usados no cálculo de remuneração dos painéis individuais.</div>
 
+      <div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:8px">Remuneração fixa</div>
       <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Beatriz (secretária)</label>
       <input id="plan-ref-fixo-beatriz" type="number" step="50" min="0" placeholder="Ex: 2300" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:14px" onblur="_planSalvarReferencias()">
 
@@ -2285,7 +2286,14 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <input id="plan-ref-fixo-fernanda" type="number" step="50" min="0" placeholder="Ex: 1500" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:14px" onblur="_planSalvarReferencias()">
 
       <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Ingrid (auxiliar-dentista)</label>
-      <input id="plan-ref-fixo-ingrid" type="number" step="50" min="0" placeholder="Ex: 2500" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font)" onblur="_planSalvarReferencias()">
+      <input id="plan-ref-fixo-ingrid" type="number" step="50" min="0" placeholder="Ex: 2500" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:18px" onblur="_planSalvarReferencias()">
+
+      <div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:8px;padding-top:14px;border-top:1px solid var(--border)">Comissões</div>
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">% comissão sobre faturamento — Beatriz</label>
+      <input id="plan-ref-com-beatriz-fat" type="number" step="0.1" min="0" max="100" placeholder="Ex: 3,5" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:14px" onblur="_planSalvarReferencias()">
+
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">% comissão sobre lucro — Fernanda</label>
+      <input id="plan-ref-com-fernanda-lucro" type="number" step="0.1" min="0" max="100" placeholder="Ex: 15" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font)" onblur="_planSalvarReferencias()">
     </div>
   </div>
 
@@ -5528,7 +5536,8 @@ function planGetReferencias(){
       sabado: { inicio:'08:00', fim:'12:00' }
     },
     salasConsideradas: ['sala1','sala4'],
-    remuneracaoFixa: { beatriz: 2300, fernanda: 1500, ingrid: 2500 }
+    remuneracaoFixa: { beatriz: 2300, fernanda: 1500, ingrid: 2500 },
+    comissoes: { beatrizPctFaturamento: 3.5, fernandaPctLucro: 15 }
   };
   const salvo = carregarLS('sk3-plan-referencias', null);
   if(!salvo) return def;
@@ -5540,7 +5549,8 @@ function planGetReferencias(){
       sabado: { ...def.horarioUtil.sabado, ...((salvo.horarioUtil||{}).sabado||{}) }
     },
     salasConsideradas: (salvo.salasConsideradas && salvo.salasConsideradas.length) ? salvo.salasConsideradas : def.salasConsideradas,
-    remuneracaoFixa: { ...def.remuneracaoFixa, ...(salvo.remuneracaoFixa||{}) }
+    remuneracaoFixa: { ...def.remuneracaoFixa, ...(salvo.remuneracaoFixa||{}) },
+    comissoes: { ...def.comissoes, ...(salvo.comissoes||{}) }
   };
 }
 function _planSalvarReferencias(){
@@ -5560,6 +5570,10 @@ function _planSalvarReferencias(){
       beatriz: parseFloat(v('plan-ref-fixo-beatriz'))||0,
       fernanda: parseFloat(v('plan-ref-fixo-fernanda'))||0,
       ingrid: parseFloat(v('plan-ref-fixo-ingrid'))||0
+    },
+    comissoes: {
+      beatrizPctFaturamento: parseFloat(v('plan-ref-com-beatriz-fat'))||0,
+      fernandaPctLucro: parseFloat(v('plan-ref-com-fernanda-lucro'))||0
     }
   });
   // Recalcula na hora os painéis que dependem dessas referências, caso estejam abertos
@@ -5592,6 +5606,8 @@ function _planCarregarReferencias(){
   set('plan-ref-fixo-beatriz', ref.remuneracaoFixa.beatriz);
   set('plan-ref-fixo-fernanda', ref.remuneracaoFixa.fernanda);
   set('plan-ref-fixo-ingrid', ref.remuneracaoFixa.ingrid);
+  set('plan-ref-com-beatriz-fat', ref.comissoes.beatrizPctFaturamento);
+  set('plan-ref-com-fernanda-lucro', ref.comissoes.fernandaPctLucro);
   _planRenderSalasReferencia(ref);
 }
 
@@ -5671,7 +5687,7 @@ function _planAtualizarPainelBeatriz(){
   // Remuneração por faturamento + bônus + remuneração acumulada (fórmula real,
   // usando o piso e a remuneração fixa das Referências; faturamento e bônus
   // ainda são exemplo)
-  const remuneracaoPorFaturamento = faturamentoAtual>=piso ? faturamentoAtual*0.035 : 0;
+  const remuneracaoPorFaturamento = faturamentoAtual>=piso ? faturamentoAtual*(ref.comissoes.beatrizPctFaturamento/100) : 0;
   const bonusAgendamentos = 340;
   const remuneracaoAcumulada = faturamentoAtual>=piso ? (remuneracaoPorFaturamento+bonusAgendamentos) : ref.remuneracaoFixa.beatriz;
   set('pb-rem-faturamento', fmtMoeda(remuneracaoPorFaturamento));
