@@ -11,13 +11,13 @@
 :root{
   --bg:#F7F8FA;--surface:#FFFFFF;--s2:#F0F2F5;--border:#E5E7EB;--border-s:#D1D5DB;
   --tx:#0F172A;--tx2:#64748B;--tx3:#94A3B8;
-  --ac:#2F6FEB;--acl:#EAF0FF;--act:#1D4FC7;
-  --wa:#F2822E;--wal:#FDF0E4;
-  --da:#EF4444;--dal:#FDEAEA;
-  --in:#2F6FEB;--inl:#EAF0FF;
-  --pu:#8B5CF6;--pul:#F1ECFF;
-  --su:#16A34A;--sul:#E7F7ED;
-  --cta:#F0784F;--cta-d:#D8602F;
+  --ac:#43474D;--acl:#EDEEEF;--act:#2E3136;
+  --wa:#B8571F;--wal:#FBEBE0;
+  --da:#DC2626;--dal:#FDEAEA;
+  --in:#0F5C61;--inl:#E6EEEE;
+  --pu:#0F5C61;--pul:#E6EEEE;
+  --su:#1E8A5F;--sul:#E7F5EF;
+  --cta:#B8964F;--cta-d:#9C7D3F;
   --r4:6px;--r6:8px;--r8:10px;--r10:12px;--r12:16px;--r16:22px;
   --font:'Plus Jakarta Sans','Inter',system-ui,-apple-system,sans-serif;
   --shadow:0 1px 2px rgba(0,0,0,.04);
@@ -29,12 +29,12 @@
    claros) localmente — como quase todo .fin-* já referencia essas variáveis,
    isso já muda a cor de praticamente tudo no módulo sem editar regra por regra. */
 #sec-financeiro, .fin-modal-ov{
-  --ac:#2F6FEB;  --acl:#EAF0FF; --act:#1D4FC7;   /* azul vivo (era navy apagado) */
-  --su:#16A34A;  --sul:#E7F7ED;                   /* verde vivo (era verde-escuro) */
-  --da:#EF4444;  --dal:#FDEAEA;                   /* vermelho vivo (era bordô) */
-  --wa:#F2822E;  --wal:#FDF0E4;                   /* laranja vivo (era marrom apagado) */
-  --pu:#8B5CF6;  --pul:#F1ECFF;                   /* roxo vivo (era índigo apagado) */
-  --fin-cta:#F0784F; --fin-cta-d:#D8602F;         /* coral — ação principal, separado do azul geral */
+  --ac:#43474D;  --acl:#EDEEEF; --act:#2E3136;   /* chumbo — accent principal (opção A aprovada) */
+  --su:#1E8A5F;  --sul:#E7F5EF;                   /* esmeralda — sucesso */
+  --da:#DC2626;  --dal:#FDEAEA;                   /* vermelho — perigo/atraso (semântico, mantido) */
+  --wa:#B8571F;  --wal:#FBEBE0;                   /* laranja escuro — alerta */
+  --pu:#0F5C61;  --pul:#E6EEEE;                   /* petróleo (era roxo) */
+  --fin-cta:#B8964F; --fin-cta-d:#9C7D3F;         /* dourado envelhecido — ação principal (opção A aprovada) */
   --font:'Plus Jakarta Sans','Inter',system-ui,-apple-system,sans-serif;
   --r16:22px;--r12:16px;--r10:12px;--r8:10px;--r6:8px;--r4:6px;
   font-family:var(--font);
@@ -176,8 +176,8 @@
 .fin-modal-close:hover{background:var(--s2);color:var(--tx)}
 .fin-modal-body{padding:18px 22px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
 .fin-modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-shrink:0;border-radius:0 0 22px 22px}
-.fin-modal-ov .btn-primary{background:var(--fin-cta,#F0784F);box-shadow:0 2px 8px rgba(240,120,79,.32);border-radius:10px;font-weight:700;border-color:var(--fin-cta,#F0784F)}
-.fin-modal-ov .btn-primary:hover{background:var(--fin-cta-d,#D8602F);border-color:var(--fin-cta-d,#D8602F)}
+.fin-modal-ov .btn-primary{background:var(--fin-cta,#B8964F);box-shadow:0 2px 8px rgba(184,150,79,.35);border-radius:10px;font-weight:700;border-color:var(--fin-cta,#B8964F)}
+.fin-modal-ov .btn-primary:hover{background:var(--fin-cta-d,#9C7D3F);border-color:var(--fin-cta-d,#9C7D3F)}
 
 /* Drawer de filtros financeiros */
 .fin-drawer-ov{display:none;position:fixed;inset:0;background:rgba(15,23,42,.32);z-index:410}
@@ -434,7 +434,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--ac);box-shadow:0 0 0 
 
 input.invalid{border-color:var(--da);background:var(--dal)}
 .btn{padding:7px 16px;border-radius:var(--r8);font-size:12.5px;font-family:var(--font);font-weight:600;cursor:pointer;border:none;transition:all .12s;letter-spacing:-.1px}
-.btn-primary{background:var(--cta);color:#fff;box-shadow:0 2px 8px rgba(240,120,79,.3);border-color:var(--cta)}.btn-primary:hover{background:var(--cta-d);border-color:var(--cta-d)}
+.btn-primary{background:var(--cta);color:#fff;box-shadow:0 2px 8px rgba(184,150,79,.35);border-color:var(--cta)}.btn-primary:hover{background:var(--cta-d);border-color:var(--cta-d)}
 .btn-ghost{background:var(--surface);color:var(--tx2);border:1px solid var(--border)}.btn-ghost:hover{background:var(--s2);color:var(--tx)}
 .btn-danger{background:var(--dal);color:var(--da);border:1px solid #FCA5A5}
 .btn-sm{padding:5px 12px;font-size:12px}
@@ -556,8 +556,8 @@ input.invalid{border-color:var(--da);background:var(--dal)}
    Esses modais/popover ficam fora de #sec-agenda no DOM (são overlays soltos),
    então repetimos as variáveis aqui — mantém o escopo restrito só a estes IDs. */
 #modal-agendamento, #modal-bloqueio, #modal-link-agenda, #modal-eventos-recorrentes, #modal-agenda-prof, #modal-disponibilidade, #ag-popover{
-  --ag-acc:#2F6FEB; --ag-acc-d:#1D4FC7; --ag-acc-soft:#EAF0FF;
-  --ag-cta:#F0784F; --ag-cta-d:#D8602F;
+  --ag-acc:#43474D; --ag-acc-d:#2E3136; --ag-acc-soft:#EDEEEF;
+  --ag-cta:#B8964F; --ag-cta-d:#9C7D3F;
   --font:'Plus Jakarta Sans','Inter',system-ui,-apple-system,sans-serif;
   font-family:var(--font);
 }
@@ -584,7 +584,7 @@ input.invalid{border-color:var(--da);background:var(--dal)}
   border-color:var(--ag-acc);box-shadow:0 0 0 3px rgba(47,111,235,.14)
 }
 #modal-agendamento .btn-primary, #modal-bloqueio .btn-primary, #modal-link-agenda .btn-primary, #modal-eventos-recorrentes .btn-primary, #modal-agenda-prof .btn-primary, #modal-disponibilidade .btn-primary, #ag-popover .btn-primary{
-  background:var(--ag-cta);box-shadow:0 2px 8px rgba(240,120,79,.32);border-radius:10px;font-weight:700;border-color:var(--ag-cta)
+  background:var(--ag-cta);box-shadow:0 2px 8px rgba(184,150,79,.35);border-radius:10px;font-weight:700;border-color:var(--ag-cta)
 }
 #modal-agendamento .btn-primary:hover, #modal-bloqueio .btn-primary:hover, #modal-link-agenda .btn-primary:hover, #modal-eventos-recorrentes .btn-primary:hover, #modal-agenda-prof .btn-primary:hover, #modal-disponibilidade .btn-primary:hover, #ag-popover .btn-primary:hover{
   background:var(--ag-cta-d);border-color:var(--ag-cta-d)
@@ -718,9 +718,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
    Estas variáveis substituem localmente var(--ac)/(--acl)/(--act) apenas
    dentro de #sec-agenda, sem alterar a paleta usada pelo resto do sistema. */
 #sec-agenda{
-  --ag-acc:#2F6FEB;      /* azul vivo — accent principal da agenda */
-  --ag-acc-d:#1D4FC7;    /* hover/variante escura do accent */
-  --ag-acc-soft:#EAF0FF; /* tom claro sólido (não transparente) p/ destaques sutis */
+  --ag-acc:#43474D;      /* chumbo — accent principal da agenda (opção A aprovada) */
+  --ag-acc-d:#2E3136;    /* hover/variante escura do accent */
+  --ag-acc-soft:#EDEEEF; /* tom claro sólido (não transparente) p/ destaques sutis */
   --font:'Plus Jakarta Sans','Inter',system-ui,-apple-system,sans-serif;
   font-family:var(--font);
 }
@@ -5319,10 +5319,10 @@ let indicacoesMes = carregarLS('sk3-indicacoes', 0);
 
 // ── AGENDA — estado ──────────────────────────────────────────────────
 const SALAS_PADRAO = [
-  {id:'sala1',nome:'Sala 01',cor:'#2F6FEB',ativa:true},
-  {id:'sala2',nome:'Sala 02',cor:'#F2822E',ativa:true},
-  {id:'sala3',nome:'Sala 03',cor:'#16A34A',ativa:true},
-  {id:'sala4',nome:'Sala 04',cor:'#8B5CF6',ativa:true},
+  {id:'sala1',nome:'Sala 01',cor:'#43474D',ativa:true},
+  {id:'sala2',nome:'Sala 02',cor:'#1E8A5F',ativa:true},
+  {id:'sala3',nome:'Sala 03',cor:'#0F5C61',ativa:true},
+  {id:'sala4',nome:'Sala 04',cor:'#1A1B1E',ativa:true},
 ];
 let salas = carregarLS('sk3-salas', SALAS_PADRAO);
 // migração (v2, forçada uma única vez): a versão anterior só migrava se a cor batesse
@@ -5330,11 +5330,11 @@ let salas = carregarLS('sk3-salas', SALAS_PADRAO);
 // com cache antigo. Agora força as 4 salas padrão para a paleta viva uma única vez,
 // controlado por flag, e não mexe mais depois disso (preserva customização futura).
 (function migrarCoresSalasParaPaletaViva(){
-  if(carregarLS('sk3-salas-paleta-viva-v2', false)) return;
-  const FORCAR = {sala1:'#2F6FEB', sala2:'#F2822E', sala3:'#16A34A', sala4:'#8B5CF6'};
+  if(carregarLS('sk3-salas-paleta-viva-v3', false)) return;
+  const FORCAR = {sala1:'#43474D', sala2:'#1E8A5F', sala3:'#0F5C61', sala4:'#1A1B1E'};
   salas.forEach(s=>{ if(FORCAR[s.id]) s.cor = FORCAR[s.id]; });
   salvarLS('sk3-salas', salas);
-  salvarLS('sk3-salas-paleta-viva-v2', true);
+  salvarLS('sk3-salas-paleta-viva-v3', true);
 })();
 
 // agendaProfissionais: {usuarioId, salasIds:[], cor, granularidadeMin, ativo}
@@ -5361,23 +5361,23 @@ let tagsAgendamento = carregarLS('sk3-tags-agendamento', [
 // linksAgenda: {id, nome, slug, modo:'profissional'|'escolha', usuarioId, profissionaisPermitidos:[], salasPermitidas:[], diasSemana:[], horaInicio, horaFim, dataValidadeFim, ativo}
 let linksAgenda = carregarLS('sk3-links-agenda', []);
 
-const CORES_AGENDA = ['#2F6FEB','#F2822E','#16A34A','#8B5CF6','#EF4444','#06B6D4','#EC4899','#F59E0B','#14B8A6','#6366F1','#65A30D','#E11D48','#0EA5E9','#A855F7','#10B981','#F97316','#D946EF','#9333EA'];
+const CORES_AGENDA = ['#43474D','#1E8A5F','#0F5C61','#1A1B1E','#B8964F','#8A929B','#1C3A57','#B8571F','#2E8577','#5C6773','#0D4A4E','#3A4149','#C9A560','#173047','#166B49','#6B7280','#A66B2E','#0B3B3E'];
 // migração: cores antigas (tons escuros/apagados) de profissionais já cadastrados
 // viram automaticamente a cor viva equivalente na mesma posição da paleta.
 (function migrarCoresProfissionaisParaPaletaViva(){
-  if(carregarLS('sk3-prof-paleta-viva-v2', false)) return;
+  if(carregarLS('sk3-prof-paleta-viva-v3', false)) return;
   (agendaProfissionais||[]).forEach((ap,i)=>{ ap.cor = CORES_AGENDA[i % CORES_AGENDA.length]; });
   salvarLS('sk3-agenda-profissionais', agendaProfissionais);
-  salvarLS('sk3-prof-paleta-viva-v2', true);
+  salvarLS('sk3-prof-paleta-viva-v3', true);
 })();
 
 const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 
 const STATUS_AGENDAMENTO = [
   {id:'agendado',label:'Agendado',cor:'#64748B'},
-  {id:'confirmado',label:'Confirmado',cor:'#16A34A'},
-  {id:'realizado',label:'Realizado',cor:'#2F6FEB'},
-  {id:'faltou',label:'Faltou',cor:'#EF4444'},
+  {id:'confirmado',label:'Confirmado',cor:'#1E8A5F'},
+  {id:'realizado',label:'Realizado',cor:'#0F5C61'},
+  {id:'faltou',label:'Faltou',cor:'#DC2626'},
   {id:'cancelado',label:'Cancelado',cor:'#94A3B8'},
 ];
 
@@ -18043,7 +18043,7 @@ function AGI(nome, tam){
   return `<svg viewBox="0 0 24 24" width="${t}" height="${t}" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;flex-shrink:0">${AGI_PATHS[nome]||''}</svg>`;
 }
 function agColTint(hex, alpha){
-  hex = (hex||'#2F6FEB').replace('#','');
+  hex = (hex||'#43474D').replace('#','');
   if(hex.length===3) hex = hex.split('').map(c=>c+c).join('');
   const r = parseInt(hex.substr(0,2),16), g = parseInt(hex.substr(2,2),16), b = parseInt(hex.substr(4,2),16);
   return `rgba(${r},${g},${b},${alpha==null?0.06:alpha})`;
