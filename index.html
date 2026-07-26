@@ -54,6 +54,22 @@
 .plan-sala-chip:hover{border-color:var(--border-s);background:var(--s2)}
 .plan-sala-chip.on{border-color:var(--ac);background:var(--acl);color:var(--ac);box-shadow:inset 0 0 0 1px var(--ac)}
 
+/* Painel Patrik — comparativo em 3 colunas verticais (anterior / atual / variação),
+   uma linha de cards por métrica, preenchida em ordem pelo grid (3 colunas). */
+.plan-cmp-headers,.plan-cmp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.plan-cmp-headers{margin-bottom:10px}
+.plan-cmp-header{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);padding-bottom:8px;border-bottom:1px solid var(--border);line-height:1.6}
+.plan-cmp-grid{align-items:stretch}
+.plan-cmp-bar-wrap{position:relative;height:8px;background:var(--s2);border-radius:6px;margin-top:9px;overflow:hidden}
+.plan-cmp-bar-wrap::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--border-s);z-index:1}
+.plan-cmp-bar-fill{position:absolute;top:0;bottom:0;border-radius:6px}
+.plan-cmp-bar-fill.up{left:50%}
+.plan-cmp-bar-fill.down{right:50%}
+@media (max-width:720px){
+  .plan-cmp-headers,.plan-cmp-grid{grid-template-columns:1fr}
+  .plan-cmp-header:nth-child(2){border-top:1px solid var(--border);padding-top:8px}
+}
+
 /* Cards de resumo */
 .fin-cards-row{display:flex;gap:12px;flex-wrap:wrap}
 .fin-card{flex:1;min-width:130px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r10);padding:14px 16px;box-shadow:var(--shadow)}
@@ -2407,20 +2423,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <input type="date" id="pp-periodo-ate" class="fin-input-date" onchange="_planPatrikPeriodoMudou()">
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
-        <div class="fin-card fin-card-green"><div class="fin-card-label">Recebido no período</div><div class="fin-card-value">R$ 87.400</div></div>
-        <div class="fin-card fin-card-red"><div class="fin-card-label">Pago no período</div><div class="fin-card-value">R$ 61.200</div></div>
-        <div class="fin-card fin-card-green"><div class="fin-card-label">Fluxo de caixa</div><div class="fin-card-value">+ R$ 26.200</div></div>
-        <div class="fin-card"><div class="fin-card-label">Margem líquida</div><div class="fin-card-value">30%</div></div>
-        <div class="fin-card fin-card-blue"><div class="fin-card-label">Orçamentos fechados</div><div class="fin-card-value">R$ 54.000</div></div>
-        <div class="fin-card fin-card-amber"><div class="fin-card-label">Tratamento a realizar</div><div class="fin-card-value">R$ 31.500</div></div>
-        <div class="fin-card fin-card-blue"><div class="fin-card-label">Procedimentos executados</div><div class="fin-card-value">R$ 79.800</div></div>
-        <div class="fin-card"><div class="fin-card-label">Taxa de conversão</div><div class="fin-card-value">42%</div></div>
-        <div class="fin-card"><div class="fin-card-label">Ticket médio</div><div class="fin-card-value">R$ 3.850</div></div>
-        <div class="fin-card fin-card-green"><div class="fin-card-label">ROI marketing</div><div class="fin-card-value">3,2x</div></div>
-        <div class="fin-card fin-card-blue"><div class="fin-card-label">Ocupação de agenda</div><div class="fin-card-value" id="pp-card-ocupacao">71%</div></div>
-        <div class="fin-card"><div class="fin-card-label">1ª consultas no período</div><div class="fin-card-value">18</div></div>
+      <div class="plan-cmp-headers">
+        <div class="plan-cmp-header">Período anterior<br><span id="pp-cmp-label-anterior" style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">—</span></div>
+        <div class="plan-cmp-header">Período atual<br><span id="pp-cmp-label-atual" style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">—</span></div>
+        <div class="plan-cmp-header">Variação</div>
       </div>
+      <div id="pp-comparativo-grid" class="plan-cmp-grid"></div>
     </div>
   </div>
 </div>
@@ -5697,16 +5705,128 @@ function _planPatrikPeriodoParaDatas(){
   return { de:_finIso(de), ate:_finIso(ate) };
 }
 
-// Recalcula os cards do Painel Patrik (por ora, "Ocupação de agenda") para o
-// período selecionado no filtro. As demais métricas do painel ainda são
-// valores de exemplo, a conectar quando os indicadores reais forem plugados.
-function _planPatrikPeriodoMudou(){
+// Dado o preset do filtro e o período atual [de,ate] (YYYY-MM-DD), devolve o
+// período "anterior" equivalente: mês/ano civil anterior quando o preset é
+// calendário (mês atual, mês passado, ano atual); janela de mesma duração
+// imediatamente anterior quando o período é personalizado.
+function _planPatrikPeriodoAnteriorDatas(valorSel, deAtualISO, ateAtualISO){
+  const deAtual=new Date(deAtualISO+'T00:00:00');
+  let de, ate;
+  if(valorSel==='mes_atual'){
+    de=new Date(deAtual.getFullYear(), deAtual.getMonth()-1, 1);
+    ate=new Date(deAtual.getFullYear(), deAtual.getMonth(), 0);
+  } else if(valorSel==='mes_passado'){
+    de=new Date(deAtual.getFullYear(), deAtual.getMonth()-1, 1);
+    ate=new Date(deAtual.getFullYear(), deAtual.getMonth(), 0);
+  } else if(valorSel==='ano_atual'){
+    de=new Date(deAtual.getFullYear()-1, 0, 1);
+    ate=new Date(deAtual.getFullYear()-1, 11, 31);
+  } else { // custom: janela de mesma duração, imediatamente anterior
+    const ateAtual=new Date(ateAtualISO+'T00:00:00');
+    const duracaoDias=Math.round((ateAtual-deAtual)/86400000)+1;
+    ate=new Date(deAtual); ate.setDate(ate.getDate()-1);
+    de=new Date(ate); de.setDate(de.getDate()-(duracaoDias-1));
+  }
+  return { de:_finIso(de), ate:_finIso(ate) };
+}
+function _planFormatarDataBR(iso){
+  const [y,m,d]=iso.split('-');
+  return `${d}/${m}/${y.slice(2)}`;
+}
+
+// Métricas do Painel Patrik. 'real:true' = calculada de verdade (ocupação de
+// agenda, via Referências + agendamentos reais); as demais ainda são valores
+// de exemplo (atual/anterior), a conectar quando o indicador financeiro real
+// for plugado. 'invertido:true' = métrica onde diminuir é o resultado bom
+// (ex.: Pago no período).
+const PATRIK_METRICAS = [
+  { id:'recebido',    label:'Recebido no período',       tipo:'moeda',         atual:87400, anterior:79800 },
+  { id:'pago',        label:'Pago no período',           tipo:'moeda',         atual:61200, anterior:64500, invertido:true },
+  { id:'fluxo',       label:'Fluxo de caixa',            tipo:'moeda',         atual:26200, anterior:15300 },
+  { id:'margem',      label:'Margem líquida',            tipo:'percentual',    atual:30,    anterior:26 },
+  { id:'orcfechados', label:'Orçamentos fechados',       tipo:'moeda',         atual:54000, anterior:48000 },
+  { id:'tratrealizar',label:'Tratamento a realizar',     tipo:'moeda',         atual:31500, anterior:35200 },
+  { id:'procexec',    label:'Procedimentos executados',  tipo:'moeda',         atual:79800, anterior:73100 },
+  { id:'conversao',   label:'Taxa de conversão',         tipo:'percentual',    atual:42,    anterior:38 },
+  { id:'ticket',      label:'Ticket médio',              tipo:'moeda',         atual:3850,  anterior:3620 },
+  { id:'roi',         label:'ROI marketing',             tipo:'multiplicador',atual:3.2,   anterior:2.8 },
+  { id:'ocupacao',    label:'Ocupação de agenda',        tipo:'percentual',    real:true },
+  { id:'primeiras',   label:'1ª consultas no período',   tipo:'numero',        atual:18,    anterior:14 },
+];
+
+function _planFormatarValor(tipo, valor){
+  if(tipo==='moeda') return 'R$ '+Math.round(valor).toLocaleString('pt-BR');
+  if(tipo==='percentual') return Math.round(valor)+'%';
+  if(tipo==='multiplicador') return valor.toFixed(1).replace('.',',')+'x';
+  return Math.round(valor).toLocaleString('pt-BR');
+}
+
+// Compara atual x anterior e devolve como exibir a variação: rótulo, se
+// cresceu/caiu (define a seta), se essa direção é uma melhora (define a cor,
+// já considerando métricas invertidas) e a magnitude visual da barra.
+function _planComparar(tipo, atual, anterior, invertido){
+  let deltaLabel, diffBruta;
+  if(tipo==='percentual'){
+    diffBruta = atual-anterior;
+    deltaLabel = (diffBruta>=0?'+':'')+Math.round(diffBruta)+' p.p.';
+  } else if(tipo==='multiplicador'){
+    diffBruta = atual-anterior;
+    deltaLabel = (diffBruta>=0?'+':'')+diffBruta.toFixed(1).replace('.',',')+'x';
+  } else {
+    diffBruta = anterior!==0 ? ((atual-anterior)/Math.abs(anterior))*100 : (atual===0?0:100);
+    deltaLabel = (diffBruta>=0?'+':'')+diffBruta.toFixed(1).replace('.',',')+'%';
+  }
+  const cresceu = atual>anterior, caiu = atual<anterior;
+  const melhora = invertido ? caiu : cresceu;
+  const semMudanca = Math.abs(diffBruta) < 0.05;
+  const pctMagnitude = Math.min(50, Math.abs(diffBruta) * (tipo==='multiplicador'?20:(tipo==='percentual'?3:1)));
+  return { deltaLabel, cresceu, caiu, melhora, semMudanca, pctMagnitude };
+}
+
+// Monta o comparativo em 3 colunas (anterior / atual / variação) do Painel
+// Patrik para o período selecionado no filtro.
+function _planRenderComparativoPatrik(){
   const painel=document.getElementById('plan-painel_patrik');
   if(!painel) return;
+  const sel=document.getElementById('pp-periodo-sel');
+  const valorSel = sel ? sel.value : 'mes_atual';
   const {de,ate}=_planPatrikPeriodoParaDatas();
-  const r=planCalcularOcupacao(de,ate);
-  const el=document.getElementById('pp-card-ocupacao');
-  if(el) el.textContent = r.pct+'%';
+  const {de:deAnt,ate:ateAnt}=_planPatrikPeriodoAnteriorDatas(valorSel,de,ate);
+
+  const lblAtual=document.getElementById('pp-cmp-label-atual');
+  const lblAnterior=document.getElementById('pp-cmp-label-anterior');
+  if(lblAtual) lblAtual.textContent = `${_planFormatarDataBR(de)} – ${_planFormatarDataBR(ate)}`;
+  if(lblAnterior) lblAnterior.textContent = `${_planFormatarDataBR(deAnt)} – ${_planFormatarDataBR(ateAnt)}`;
+
+  const ocupAtual = planCalcularOcupacao(de,ate).pct;
+  const ocupAnterior = planCalcularOcupacao(deAnt,ateAnt).pct;
+
+  const wrap=document.getElementById('pp-comparativo-grid');
+  if(!wrap) return;
+  wrap.innerHTML = PATRIK_METRICAS.map(m=>{
+    const atual = m.real ? ocupAtual : m.atual;
+    const anterior = m.real ? ocupAnterior : m.anterior;
+    const cmp = _planComparar(m.tipo, atual, anterior, m.invertido);
+    const cor = cmp.semMudanca ? 'var(--tx3)' : (cmp.melhora ? 'var(--su)' : 'var(--da)');
+    const seta = cmp.semMudanca ? '→' : (cmp.cresceu ? '▲' : '▼');
+    const dirBarra = cmp.cresceu ? 'up' : 'down';
+    return `
+      <div class="fin-card"><div class="fin-card-label">${esc(m.label)}</div><div class="fin-card-value">${_planFormatarValor(m.tipo,anterior)}</div></div>
+      <div class="fin-card"><div class="fin-card-label">${esc(m.label)}</div><div class="fin-card-value">${_planFormatarValor(m.tipo,atual)}</div></div>
+      <div class="fin-card">
+        <div class="fin-card-label">${esc(m.label)}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:2px">
+          <span style="font-size:13px;color:${cor}">${seta}</span>
+          <span style="font-weight:700;font-size:14px;color:${cor}">${cmp.deltaLabel}</span>
+        </div>
+        <div class="plan-cmp-bar-wrap"><div class="plan-cmp-bar-fill ${dirBarra}" style="width:${cmp.pctMagnitude}%;background:${cor}"></div></div>
+      </div>`;
+  }).join('');
+}
+
+// Recalcula o comparativo do Painel Patrik para o período selecionado no filtro.
+function _planPatrikPeriodoMudou(){
+  _planRenderComparativoPatrik();
 }
 
 function _planInicializar(){
