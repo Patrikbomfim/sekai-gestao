@@ -21942,8 +21942,34 @@ function excluirAgendamento(){
   if(!confirm('Excluir este agendamento?'))return;
   agendamentos = agendamentos.filter(a=>a.id!==editId);
   _salvarImediato('sk3-agendamentos',agendamentos);
+
+  // O agendamento pode ter gerado lembretes automáticos (regrasLembretes) que
+  // ficam guardados à parte, em lembretesGerados, referenciando o agendamentoId.
+  // Sem isso, esses registros ficam "órfãos": continuam aparecendo em "Meu dia",
+  // "Próximos 7 dias" e no contador de Lembretes até a página ser recarregada
+  // (que é o único momento em que tudo é reprocessado do zero).
+  // Marcamos como 'descartado' — mesmo padrão já usado em descartarLembrete() —
+  // para sumir das telas ativas mas preservar o histórico do paciente.
+  let lembretesAlterados = false;
+  (lembretesGerados||[]).forEach(l=>{
+    if(l.agendamentoId===editId && l.status!=='descartado'){
+      l.status='descartado';
+      lembretesAlterados = true;
+    }
+  });
+  if(lembretesAlterados) _salvarImediato('sk3-lembretes-gerados',lembretesGerados);
+
   fecharModal('modal-agendamento');
   renderAgenda();
+
+  // Atualiza instantaneamente todas as telas que podem estar exibindo o lembrete
+  // deste agendamento, sem precisar de F5.
+  atualizarBadgeLembretes();
+  if(typeof renderHoje==='function') renderHoje();
+  if(typeof renderProximos==='function') renderProximos();
+  if(typeof renderLembretes==='function') renderLembretes();
+  if(typeof renderDesmarcados==='function') renderDesmarcados();
+  if(typeof atualizarBadgeDesmarcados==='function') atualizarBadgeDesmarcados();
 }
 
 // ── BYPASS WRAPPER: funções de salvar explícito (modais, botões) ──────────
