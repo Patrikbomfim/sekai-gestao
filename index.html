@@ -5309,7 +5309,20 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <span class="agpop-ic"><svg viewBox="0 0 24 24" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg></span>
       <span class="agpop-val">
         <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:1px">Status</span>
-        <select id="agpop-status-select" style="font-size:12px;font-weight:600;padding:3px 6px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);font-family:var(--font)" onchange="agPopStatusMudou()"></select>
+        <div style="position:relative;display:inline-block">
+          <button type="button" id="agpop-status-btn" onclick="agPopToggleStatusMenu()" style="font-size:12px;font-weight:700;padding:4px 10px;border-radius:var(--r6);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:6px">
+            <span id="agpop-status-btn-dot" style="width:8px;height:8px;border-radius:50%;flex-shrink:0"></span>
+            <span id="agpop-status-btn-label"></span>
+            <span style="font-size:9px;color:var(--tx3)">▾</span>
+          </button>
+          <div id="agpop-status-menu" style="display:none;position:absolute;top:100%;left:0;margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r8);box-shadow:0 8px 24px rgba(15,23,42,.16);min-width:170px;z-index:20;overflow:hidden"></div>
+        </div>
+        <div id="agpop-situacao-wrap" style="display:none;margin-top:10px">
+          <div class="agpop-lbl">Situação do paciente</div>
+          <select id="agpop-situacao" style="width:100%;font-size:12px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r6);font-family:var(--font);background:var(--surface);color:var(--tx)"></select>
+          <div style="font-size:11px;color:var(--tx3);margin-top:4px">Atendimento marcado como Realizado — atualize a situação do paciente.</div>
+          <button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px" data-perm="pendencias_criar" onclick="agPopAbrirLembretePaciente()">+ Agendar lembrete</button>
+        </div>
       </span>
     </div>
     <div class="agpop-row">
@@ -20366,6 +20379,7 @@ function minutosBloqueados(dataIso, salaId, usuarioId){
 
 // ── POPOVER DE AGENDAMENTO ───────────────────────────────────────────
 let _agPopoverId = null; // id do agendamento atual no popover
+let _agPopStatusPendente = null; // status escolhido no dropdown customizado, ainda não salvo
 
 // ── Arrastar borda do card para mudar horário (início/fim) ────────────
 let _agResizeState = null; // {id, edge, startY, startTopPx, startHeightPx, pxPerMin, gridIniMin}
@@ -20396,7 +20410,7 @@ function _agResizeMove(e){
   const el = document.querySelector(`.ag-card[data-ag-id="${st.id}"]`);
   if(!el) return;
   let newTop = st.startTopPx, newHeight = st.startHeightPx;
-  const MIN_H = Math.max(10, st.pxPerMin*5); // não deixa encolher a ponto de virar menos de 5min
+  const MIN_H = Math.max(10, st.pxPerMin*15); // não deixa encolher a ponto de virar menos de 15min
   if(st.edge==='bottom'){
     newHeight = Math.max(MIN_H, st.startHeightPx + dy);
   } else {
@@ -20419,7 +20433,7 @@ function _agResizeEnd(e){
   if(el && a){
     const topPx = parseFloat(el.style.top)||0;
     const heightPx = parseFloat(el.style.height)||0;
-    const SNAP = 5; // minutos
+    const SNAP = 15; // minutos
     let novoIniMin = st.gridIniMin + Math.round((topPx/st.pxPerMin)/SNAP)*SNAP;
     let novoFimMin = novoIniMin + Math.max(SNAP, Math.round((heightPx/st.pxPerMin)/SNAP)*SNAP);
     const novoIni = minParaHora(novoIniMin);
@@ -20446,11 +20460,14 @@ function abrirAgPopover(a, targetEl){
   stEl.style.color = '#fff';
   stEl.style.border = 'none';
 
-  // Status inline no corpo — select editável, com salvamento explícito pelo botão "Salvar"
-  const stSelect = document.getElementById('agpop-status-select');
-  stSelect.innerHTML = STATUS_AGENDAMENTO.map(s=>`<option value="${s.id}">${s.label}</option>`).join('');
-  stSelect.value = a.status;
-  stSelect.style.color = stInfo.cor;
+  // Status inline no corpo — dropdown customizado (não o <select> nativo) para garantir que
+  // as opções da lista fiquem todas com a mesma cor; só o botão fechado mostra a cor do status.
+  _agPopStatusPendente = a.status;
+  document.getElementById('agpop-status-btn-label').textContent = stInfo.label;
+  document.getElementById('agpop-status-btn-label').style.color = stInfo.cor;
+  document.getElementById('agpop-status-btn-dot').style.background = stInfo.cor;
+  document.getElementById('agpop-status-menu').style.display='none';
+  agPopToggleSituacaoInline();
 
   // Nome com código — clicável
   const pac = pacientes.find(p=>String(p.id)===String(a.pacienteId));
@@ -20531,8 +20548,12 @@ function fecharAgPopover(){
   document.getElementById('ag-popover').classList.remove('open');
   document.getElementById('ag-popover').style.transform = '';
   document.getElementById('agpop-tag-menu').style.display = 'none';
+  const statusMenu = document.getElementById('agpop-status-menu');
+  if(statusMenu) statusMenu.style.display = 'none';
   document.removeEventListener('mousedown', _agPopoverOutsideClick);
+  document.removeEventListener('mousedown', _agPopStatusMenuOutsideClick);
   _agPopoverId = null;
+  _agPopStatusPendente = null;
 }
 
 function agPopAbrirPaciente(e){
@@ -20561,27 +20582,103 @@ function agPopAbrirModal(){
   _abrirModalAgendamentoReal(id);
 }
 
-// Atualiza só a cor/prévia do status enquanto o usuário escolhe — a gravação de fato
-// acontece ao clicar em "Salvar" (agPopSalvar), junto com a observação.
-function agPopStatusMudou(){
-  const sel = document.getElementById('agpop-status-select');
-  const stInfo = STATUS_AGENDAMENTO.find(s=>s.id===sel.value) || {cor:'#9CA3AF'};
-  sel.style.color = stInfo.cor;
+// ── Dropdown customizado de status (evita as inconsistências de cor do <select> nativo) ──
+function agPopToggleStatusMenu(){
+  const menu = document.getElementById('agpop-status-menu');
+  const open = menu.style.display==='none' || menu.style.display==='';
+  if(open){
+    agPopRenderStatusOpts();
+    menu.style.display='block';
+    setTimeout(()=>document.addEventListener('mousedown', _agPopStatusMenuOutsideClick), 10);
+  } else {
+    menu.style.display='none';
+    document.removeEventListener('mousedown', _agPopStatusMenuOutsideClick);
+  }
 }
 
-// Salva observação + status a partir do popover. Para status que exigem informações
-// adicionais no fluxo completo (Cancelado exige motivo; Realizado exige situação do
-// paciente), abre o modal completo em vez de gravar parcialmente por aqui.
+function _agPopStatusMenuOutsideClick(e){
+  const menu=document.getElementById('agpop-status-menu');
+  const btn=document.getElementById('agpop-status-btn');
+  if(menu && !menu.contains(e.target) && e.target!==btn && !btn.contains(e.target)){
+    menu.style.display='none';
+    document.removeEventListener('mousedown', _agPopStatusMenuOutsideClick);
+  }
+}
+
+// Lista de opções sempre na mesma cor de texto (padrão) — só um pontinho colorido identifica
+// o status de cada linha. A cor "cheia" só aparece no botão fechado, após escolher.
+function agPopRenderStatusOpts(){
+  const menu = document.getElementById('agpop-status-menu');
+  menu.innerHTML = STATUS_AGENDAMENTO.map(s=>{
+    const selecionado = _agPopStatusPendente===s.id;
+    return `<div onclick="agPopSelecionarStatus('${s.id}')" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:12.5px;color:var(--tx);${selecionado?'background:var(--s2);font-weight:600':''}" onmouseenter="this.style.background='var(--s2)'" onmouseleave="this.style.background='${selecionado?'var(--s2)':'transparent'}'">
+      <span style="width:8px;height:8px;border-radius:50%;background:${s.cor};flex-shrink:0"></span>
+      <span>${s.label}</span>
+      ${selecionado?'<span style="margin-left:auto;color:var(--su);font-size:11px">✓</span>':''}
+    </div>`;
+  }).join('');
+}
+
+function agPopSelecionarStatus(statusId){
+  _agPopStatusPendente = statusId;
+  const info = STATUS_AGENDAMENTO.find(s=>s.id===statusId) || {label:statusId, cor:'#9CA3AF'};
+  document.getElementById('agpop-status-btn-label').textContent = info.label;
+  document.getElementById('agpop-status-btn-label').style.color = info.cor;
+  document.getElementById('agpop-status-btn-dot').style.background = info.cor;
+  document.getElementById('agpop-status-menu').style.display='none';
+  document.removeEventListener('mousedown', _agPopStatusMenuOutsideClick);
+  agPopToggleSituacaoInline();
+}
+
+// Mostra "Situação do paciente" + "Agendar lembrete" quando o status escolhido é Realizado —
+// o atendimento pode ter mudado a situação do paciente ou gerado algo a lembrar depois.
+function agPopToggleSituacaoInline(){
+  const wrap = document.getElementById('agpop-situacao-wrap');
+  if(!wrap) return;
+  const a = agendamentos.find(x=>x.id===_agPopoverId);
+  const temPaciente = !!(a && a.pacienteId);
+  const cfg = (typeof cfgCamposAgmSistema!=='undefined' && cfgCamposAgmSistema['agm_situacao_paciente']) || {};
+  const ativo = cfg.ativo !== false;
+  const mostrar = ativo && temPaciente && _agPopStatusPendente==='realizado';
+  wrap.style.display = mostrar ? '' : 'none';
+  if(mostrar){
+    const sel = document.getElementById('agpop-situacao');
+    sel.innerHTML = situacaoList.map(s=>`<option value="${esc(s.id)}">${esc(s.label)}</option>`).join('');
+    const atual = a.situacaoRegistrada || (pacientes.find(p=>String(p.id)===String(a.pacienteId))||{}).situacao || '';
+    if(atual) sel.value = atual;
+  }
+}
+
+// Abre "Nova pendência" pré-preenchida com o paciente deste agendamento, sem depender dos
+// campos do modal completo (o popover tem seus próprios dados vindos de agendamentos[]).
+function agPopAbrirLembretePaciente(){
+  const a = agendamentos.find(x=>x.id===_agPopoverId);
+  if(!a) return;
+  abrirModalNovaPendencia(a.pacienteId||null, a.pacienteNome||'');
+  document.getElementById('np-modal-title').textContent='Agendar lembrete'+(a.pacienteNome?` — ${a.pacienteNome}`:'');
+  document.getElementById('np-modal-salvar').textContent='Agendar lembrete';
+  if(a.pacienteNome){
+    document.getElementById('np-texto').value=`${a.pacienteNome} — `;
+  }
+  setTimeout(()=>{
+    const el=document.getElementById('np-texto');
+    if(el){ el.focus(); el.selectionStart=el.selectionEnd=el.value.length; }
+  },30);
+}
+
+// Salva observação + status a partir do popover. Cancelado exige motivo/recontato, que só
+// existem no modal completo — abre-o em vez de gravar um cancelamento incompleto. Realizado
+// é tratado aqui mesmo: exige a situação do paciente (já exibida inline) antes de gravar.
 function agPopSalvar(){
   if(!_agPopoverId) return;
   const idx = agendamentos.findIndex(a=>a.id===_agPopoverId);
   if(idx<0) return;
-  const novoStatus = document.getElementById('agpop-status-select').value;
+  const novoStatus = _agPopStatusPendente;
   const statusAntigo = agendamentos[idx].status;
+  const pacienteId = agendamentos[idx].pacienteId;
 
-  if(novoStatus!==statusAntigo && (novoStatus==='cancelado' || novoStatus==='realizado')){
-    // Esses status têm campos obrigatórios (motivo do cancelamento / situação do paciente)
-    // que só existem no modal completo — evita gravar um cancelamento/atendimento incompleto.
+  if(novoStatus!==statusAntigo && novoStatus==='cancelado'){
+    // Motivo do cancelamento / recontato só existem no modal completo.
     agendamentos[idx].obs = document.getElementById('agpop-obs').value;
     salvarLS('sk3-agendamentos', agendamentos);
     const id=_agPopoverId;
@@ -20594,9 +20691,34 @@ function agPopSalvar(){
     return;
   }
 
+  let situacaoPaciente = null;
+  if(novoStatus==='realizado' && pacienteId){
+    const cfg = (typeof cfgCamposAgmSistema!=='undefined' && cfgCamposAgmSistema['agm_situacao_paciente']) || {};
+    if(cfg.ativo !== false){
+      situacaoPaciente = document.getElementById('agpop-situacao').value;
+      if(!situacaoPaciente){ alert('Selecione a situação do paciente após o atendimento.'); return; }
+    }
+  }
+
   agendamentos[idx].obs = document.getElementById('agpop-obs').value;
   agendamentos[idx].status = novoStatus;
+  if(situacaoPaciente) agendamentos[idx].situacaoRegistrada = situacaoPaciente;
   salvarLS('sk3-agendamentos', agendamentos);
+
+  // Atualiza o cadastro do paciente (mesma lógica do modal completo) quando a situação muda
+  if(situacaoPaciente && pacienteId){
+    const p=pacientes.find(x=>x.id===pacienteId);
+    if(p && p.situacao!==situacaoPaciente){
+      p.historico=p.historico||[];
+      p.historico.push({data:iso(hoje),situacao:situacaoPaciente,nota:`Situação do paciente: ${getSituacaoLabel(p.situacao)} → ${getSituacaoLabel(situacaoPaciente)} (atendimento realizado em ${(agendamentos[idx].data||'').split('-').reverse().join('/')})`});
+      p.situacao=situacaoPaciente;
+      p.situacaoData=iso(hoje);
+      salvarLS('sk3-pacientes',pacientes);
+      if(typeof renderPacientes==='function' && typeof filtroAtual!=='undefined') renderPacientes(filtroAtual);
+      if(typeof renderKanban==='function') renderKanban();
+      if(typeof renderHoje==='function') renderHoje();
+    }
+  }
 
   // feedback rápido no botão + atualiza a pílula de status no cabeçalho do popover
   const stInfo = STATUS_AGENDAMENTO.find(s=>s.id===novoStatus) || {label:novoStatus, cor:'#9CA3AF'};
@@ -21051,6 +21173,9 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
   const nLinhas = Math.ceil((fimMin-iniMin)/passo);
   const SLOT_H = 34;
   const totalH = nLinhas * SLOT_H;
+  // Carregado uma única vez por render (não por card) — usado para mostrar idade e situação
+  // financeira dentro dos cards de agendamento, quando há espaço.
+  const _agTodosTitulosPacientes = _titulos();
 
   let style = `grid-template-columns: 64px repeat(${cols.length}, 1fr); grid-auto-rows: ${SLOT_H}px;`;
   let html = `<div class="ag-grid" style="${style}">`;
@@ -21095,10 +21220,20 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
       const statusIc = a.status==='agendado'
         ? '<span style="color:#fca5a5;font-weight:700;margin-right:3px;flex-shrink:0">✓</span>'
         : '<span style="color:#6ee7b7;font-weight:700;margin-right:3px;flex-shrink:0">✓✓</span>';
+      // Idade e situação financeira do paciente — só quando há espaço suficiente no card
+      let idadeSitTxt = '';
+      if(pacObj){
+        const idadePac = pacObj.nascimento ? calcularIdade(pacObj.nascimento) : null;
+        const temTituloAberto = _agTodosTitulosPacientes.some(t=>String(t.pacienteId)===String(pacObj.id) && (t.status||'aberto')==='aberto');
+        const partesInfo=[];
+        if(idadePac!=null) partesInfo.push(idadePac+' anos');
+        partesInfo.push(temTituloAberto?'Financeiro atrasado':'Em dia');
+        idadeSitTxt = partesInfo.join(' · ');
+      }
       let cardContent;
       const extraClass = heightPx < 30 ? ' ag-card-compact' : '';
       if(heightPx >= 30){
-        cardContent = `<div class="ag-card-tit" style="display:flex;align-items:center">${statusIc}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio}–${a.horaFim} ${pacNomeComCod}</span></div><div class="ag-card-sub">${subLabel}${a.procedimento?' · '+a.procedimento:''}</div>`;
+        cardContent = `<div class="ag-card-tit" style="display:flex;align-items:center">${statusIc}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio}–${a.horaFim} ${pacNomeComCod}</span></div><div class="ag-card-sub">${subLabel}${a.procedimento?' · '+a.procedimento:''}</div>${idadeSitTxt?`<div class="ag-card-sub" style="opacity:.85">${idadeSitTxt}</div>`:''}`;
       } else if(heightPx >= 12){
         const sub = subLabel ? ` · ${subLabel}` : '';
         cardContent = `<div class="ag-card-tit" style="font-size:9px;line-height:1.15;display:flex;align-items:center;overflow:hidden">${statusIc}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio}–${a.horaFim} ${pacNomeComCod}${sub}</span></div>`;
