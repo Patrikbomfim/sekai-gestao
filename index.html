@@ -4674,8 +4674,14 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div class="modal-body" style="max-height:70vh;overflow-y:auto">
       <div class="fl fg-full" style="margin-bottom:14px"><label>Nome do cargo *</label><input type="text" id="mc-nome" placeholder="Ex: Dentista, Recepção, Gestor..."></div>
-      <div class="sl">Permissões</div>
-      <div id="mc-permissoes" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-top:8px"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div class="sl" style="margin:0">Permissões</div>
+        <div id="mc-permissoes-total" style="font-size:11px;color:var(--tx3)"></div>
+      </div>
+      <input type="text" id="mc-busca" list="mc-busca-lista" placeholder="Buscar por módulo/aba ou permissão..." oninput="mcFiltrarPermissoes()" style="width:100%;font-size:12px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6);margin-top:8px">
+      <datalist id="mc-busca-lista"></datalist>
+      <div id="mc-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-bottom:8px;border-bottom:1px solid var(--border)"></div>
+      <div id="mc-permissoes" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-top:12px"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-danger btn-sm" id="mc-excluir" style="display:none" onclick="excluirCargo()">Excluir</button>
@@ -5569,7 +5575,9 @@ function aplicarPermissoesNav(){
     relatorios:'relatorios_ver',
     empresa:   ['empresa_dados_ver','empresa_anexos_ver'],
     config: ['cfg_usuarios_ver','cfg_cargos_ver','cfg_equipe_ver','cfg_reunioes_ver',
-             'cfg_cadpaciente_ver','cfg_empresa_ver'],
+             'cfg_cadpaciente_ver','cfg_empresa_ver','cfg_checkin_ver','cfg_agenda_ver',
+             'cfg_anamnese_ver','cfg_contratos_ver','cfg_termos_ver','cfg_receitas_ver',
+             'cfg_atestados_ver','cfg_encaminhamentos_ver','cfg_tabelas_ver'],
   };
 
   document.querySelectorAll('.nav-btn[onclick]').forEach(btn=>{
@@ -5577,7 +5585,11 @@ function aplicarPermissoesNav(){
     if(!m) return;
     const sec = m[1];
     if(sec==='hoje'||sec==='proximos'||sec==='melhorias') return; // sempre visível
-    if(sec==='planejamento'){ btn.style.display = souAdministradorReal() ? '' : 'none'; return; } // só administrador vê
+    if(sec==='planejamento'){
+      const planPerms=['planejamento_remuneracao_ver','planejamento_funcoes_ver','planejamento_referencias_ver','planejamento_painel_beatriz_ver','planejamento_painel_ingrid_ver','planejamento_painel_leticia_ver','planejamento_painel_fernanda_ver','planejamento_painel_patrik_ver'];
+      btn.style.display = (souAdministradorReal() || planPerms.some(p=>perms.has(p))) ? '' : 'none';
+      return;
+    }
 
     const regra = mapa[sec];
     const temAcesso = Array.isArray(regra) ? regra.some(p=>perms.has(p)) : perms.has(regra||'');
@@ -5596,9 +5608,15 @@ function aplicarPermissoesNav(){
     reunioes:   'cfg_reunioes_ver',
     cadpaciente:'cfg_cadpaciente_ver',
     empresa:    'cfg_empresa_ver',
-    checkin:    'cfg_usuarios_ver',
-    agenda:     'cfg_usuarios_ver',
-    anamnese:   'cfg_usuarios_ver',
+    checkin:    'cfg_checkin_ver',
+    agenda:     'cfg_agenda_ver',
+    anamnese:   'cfg_anamnese_ver',
+    contratos:  'cfg_contratos_ver',
+    termos:     'cfg_termos_ver',
+    receitas:   'cfg_receitas_ver',
+    atestados:  'cfg_atestados_ver',
+    encaminhamentos:'cfg_encaminhamentos_ver',
+    tabelas:    'cfg_tabelas_ver',
     dashboard:  'dashboard_cfg',
   };
   document.querySelectorAll('#config-subnav .subnav-btn[onclick]').forEach(btn=>{
@@ -5607,6 +5625,26 @@ function aplicarPermissoesNav(){
     const sub = m[1];
     const perm = cfgSubMapa[sub] || 'cfg_usuarios_ver';
     btn.style.display = perms.has(perm) ? '' : 'none';
+  });
+
+  // Filtrar sub-itens de Planejamento — cada painel tem sua própria permissão agora
+  // (antes, o módulo inteiro só aparecia para o administrador real).
+  const planSubMapa = {
+    remuneracao:'planejamento_remuneracao_ver',
+    funcoes:'planejamento_funcoes_ver',
+    referencias:'planejamento_referencias_ver',
+    painel_beatriz:'planejamento_painel_beatriz_ver',
+    painel_ingrid:'planejamento_painel_ingrid_ver',
+    painel_leticia:'planejamento_painel_leticia_ver',
+    painel_fernanda:'planejamento_painel_fernanda_ver',
+    painel_patrik:'planejamento_painel_patrik_ver',
+  };
+  document.querySelectorAll('#planejamento-subnav .subnav-btn[onclick]').forEach(btn=>{
+    const m = btn.getAttribute('onclick').match(/showPlanejamento\('([^']+)'/);
+    if(!m) return;
+    const sub = m[1];
+    const perm = planSubMapa[sub];
+    btn.style.display = (souAdministradorReal() || !perm || perms.has(perm)) ? '' : 'none';
   });
 
   // Filtrar sub-itens do Financeiro (Fluxo de Caixa / A pagar / Folha / A receber / Comissão)
@@ -6618,10 +6656,218 @@ const PERMISSOES_GRUPOS = [
       {id:'cfg_empresa_editar',label:'Editar'},
     ]
   },
+  // ── Grupos abaixo adicionados na auditoria de 27/07/2026: módulos/abas criados
+  // depois da configuração original de Cargos, que até então não tinham permissão
+  // própria — cada um usava emprestada uma permissão de outro módulo sem relação.
+  {
+    grupo:'Configurações — Rotina (Check-in)',
+    itens:[
+      {id:'cfg_checkin_ver',label:'Visualizar'},
+      {id:'cfg_checkin_editar',label:'Editar'},
+    ]
+  },
+  {
+    grupo:'Configurações — Agenda',
+    itens:[
+      {id:'cfg_agenda_ver',label:'Visualizar'},
+      {id:'cfg_agenda_editar',label:'Editar'},
+    ]
+  },
+  {
+    grupo:'Configurações — Anamnese',
+    itens:[
+      {id:'cfg_anamnese_ver',label:'Visualizar'},
+      {id:'cfg_anamnese_editar',label:'Editar'},
+    ]
+  },
+  {
+    grupo:'Configurações — Contratos (modelos)',
+    itens:[
+      {id:'cfg_contratos_ver',label:'Visualizar'},
+      {id:'cfg_contratos_criar',label:'Criar'},
+      {id:'cfg_contratos_editar',label:'Editar'},
+      {id:'cfg_contratos_excluir',label:'Excluir'},
+    ]
+  },
+  {
+    grupo:'Configurações — Termos (modelos)',
+    itens:[
+      {id:'cfg_termos_ver',label:'Visualizar'},
+      {id:'cfg_termos_criar',label:'Criar'},
+      {id:'cfg_termos_editar',label:'Editar'},
+      {id:'cfg_termos_excluir',label:'Excluir'},
+    ]
+  },
+  {
+    grupo:'Configurações — Receitas (modelos)',
+    itens:[
+      {id:'cfg_receitas_ver',label:'Visualizar'},
+      {id:'cfg_receitas_criar',label:'Criar'},
+      {id:'cfg_receitas_editar',label:'Editar'},
+      {id:'cfg_receitas_excluir',label:'Excluir'},
+    ]
+  },
+  {
+    grupo:'Configurações — Atestados (modelos)',
+    itens:[
+      {id:'cfg_atestados_ver',label:'Visualizar'},
+      {id:'cfg_atestados_criar',label:'Criar'},
+      {id:'cfg_atestados_editar',label:'Editar'},
+      {id:'cfg_atestados_excluir',label:'Excluir'},
+    ]
+  },
+  {
+    grupo:'Configurações — Encaminhamentos (modelos)',
+    itens:[
+      {id:'cfg_encaminhamentos_ver',label:'Visualizar'},
+      {id:'cfg_encaminhamentos_criar',label:'Criar'},
+      {id:'cfg_encaminhamentos_editar',label:'Editar'},
+      {id:'cfg_encaminhamentos_excluir',label:'Excluir'},
+    ]
+  },
+  {
+    grupo:'Configurações — Tabelas de precificação',
+    itens:[
+      {id:'cfg_tabelas_ver',label:'Visualizar'},
+      {id:'cfg_tabelas_criar',label:'Criar'},
+      {id:'cfg_tabelas_editar',label:'Editar'},
+      {id:'cfg_tabelas_excluir',label:'Excluir'},
+    ]
+  },
+  // Planejamento inteiro não tinha NENHUMA permissão — o acesso era travado no
+  // código só para a conta "administrador real", sem possibilidade de delegar
+  // via Cargos. Um grupo por painel, porque cada um mostra dados de uma pessoa
+  // diferente (ex: dar acesso ao Painel Fernanda não deveria abrir os outros).
+  {
+    grupo:'Planejamento — Remuneração',
+    itens:[
+      {id:'planejamento_remuneracao_ver',label:'Visualizar'},
+      {id:'planejamento_remuneracao_editar',label:'Editar'},
+    ]
+  },
+  {
+    grupo:'Planejamento — Funções',
+    itens:[
+      {id:'planejamento_funcoes_ver',label:'Visualizar'},
+      {id:'planejamento_funcoes_editar',label:'Editar'},
+    ]
+  },
+  {
+    grupo:'Planejamento — Referências',
+    itens:[
+      {id:'planejamento_referencias_ver',label:'Visualizar'},
+      {id:'planejamento_referencias_editar',label:'Editar'},
+    ]
+  },
+  {
+    grupo:'Planejamento — Painel Beatriz',
+    itens:[
+      {id:'planejamento_painel_beatriz_ver',label:'Visualizar'},
+    ]
+  },
+  {
+    grupo:'Planejamento — Painel Ingrid',
+    itens:[
+      {id:'planejamento_painel_ingrid_ver',label:'Visualizar'},
+    ]
+  },
+  {
+    grupo:'Planejamento — Painel Leticia',
+    itens:[
+      {id:'planejamento_painel_leticia_ver',label:'Visualizar'},
+    ]
+  },
+  {
+    grupo:'Planejamento — Painel Fernanda',
+    itens:[
+      {id:'planejamento_painel_fernanda_ver',label:'Visualizar'},
+    ]
+  },
+  {
+    grupo:'Planejamento — Painel Patrik (geral)',
+    itens:[
+      {id:'planejamento_painel_patrik_ver',label:'Visualizar'},
+    ]
+  },
 ];
 
 // Lista achatada (todas as permissões existentes), derivada dos grupos acima
 const PERMISSOES_DISPONIVEIS = PERMISSOES_GRUPOS.flatMap(g=>g.itens);
+
+// ── ABAS DE PERMISSÕES (modal de Cargo) ──────────────────────────────────
+// Não altera PERMISSOES_GRUPOS nem PERMISSOES_DISPONIVEIS — apenas organiza os
+// MESMOS grupos existentes em abas visuais, espelhando a divisão real do menu
+// lateral (labels "Início / Pacientes / Administrativo / Gestão / Sistema").
+const CARGO_TABS = [
+  {id:'inicio', label:'Início'},
+  {id:'pacientes', label:'Pacientes'},
+  {id:'administrativo', label:'Administrativo'},
+  {id:'gestao', label:'Gestão'},
+  {id:'sistema', label:'Sistema'},
+];
+
+const GRUPO_TAB_MAP = {
+  // Início
+  'Empresa — Dados Cadastrais':'inicio',
+  'Empresa — Anexos':'inicio',
+  // Pacientes
+  'Pacientes':'pacientes',
+  'Pacientes — Aba Orçamento':'pacientes',
+  'Pacientes — Aba Financeiro':'pacientes',
+  'Pacientes — Aba Prontuário':'pacientes',
+  'Pacientes — Aba Documentos':'pacientes',
+  'Pacientes — Aba Fotos':'pacientes',
+  'Orçamentos (visão geral)':'pacientes',
+  'Agenda':'pacientes',
+  'Pendências':'pacientes',
+  'Fluxos de ação':'pacientes',
+  // Administrativo
+  'Financeiro — Fluxo de Caixa':'administrativo',
+  'Financeiro — A pagar operacional':'administrativo',
+  'Financeiro — A pagar total (restrito, une operacional + folha)':'administrativo',
+  'Financeiro — Contas a Receber':'administrativo',
+  'Financeiro — Comissão Dentistas':'administrativo',
+  'Financeiro — Recibos (Pessoa Física)':'administrativo',
+  'Reunião periódica':'administrativo',
+  'Relatórios':'administrativo',
+  // Gestão
+  'Dashboard':'gestao',
+  'Monitoramento de equipe':'gestao',
+  // Sistema
+  'Rituais de atendimento':'sistema',
+  'Configurações — Usuários':'sistema',
+  'Configurações — Cargos':'sistema',
+  'Configurações — Equipe':'sistema',
+  'Configurações — Reuniões (templates)':'sistema',
+  'Configurações — Cadastro de paciente':'sistema',
+  'Configurações — Empresa':'sistema',
+  'Configurações — Rotina (Check-in)':'sistema',
+  'Configurações — Agenda':'sistema',
+  'Configurações — Anamnese':'sistema',
+  'Configurações — Contratos (modelos)':'sistema',
+  'Configurações — Termos (modelos)':'sistema',
+  'Configurações — Receitas (modelos)':'sistema',
+  'Configurações — Atestados (modelos)':'sistema',
+  'Configurações — Encaminhamentos (modelos)':'sistema',
+  'Configurações — Tabelas de precificação':'sistema',
+  // Planejamento — mesma aba "Gestão" onde o botão "Planejamento" já vive no menu lateral
+  'Planejamento — Remuneração':'gestao',
+  'Planejamento — Funções':'gestao',
+  'Planejamento — Referências':'gestao',
+  'Planejamento — Painel Beatriz':'gestao',
+  'Planejamento — Painel Ingrid':'gestao',
+  'Planejamento — Painel Leticia':'gestao',
+  'Planejamento — Painel Fernanda':'gestao',
+  'Planejamento — Painel Patrik (geral)':'gestao',
+};
+// Confere, ao carregar, se todo grupo de PERMISSOES_GRUPOS tem aba mapeada — evita
+// que um grupo "suma" silenciosamente do modal de Cargo caso alguém crie um grupo
+// novo em PERMISSOES_GRUPOS e esqueça de incluí-lo aqui.
+(function(){
+  const semAba = PERMISSOES_GRUPOS.filter(g=>!GRUPO_TAB_MAP[g.grupo]);
+  if(semAba.length) console.warn('Grupo(s) de permissão sem aba mapeada em GRUPO_TAB_MAP:', semAba.map(g=>g.grupo));
+})();
+
 
 const CARGOS_PADRAO = [
   {
@@ -7292,10 +7538,14 @@ function goTo(id, btn){
   if(id!=='hoje' && id!=='proximos'){
     let semAcesso;
     if(id==='config'){
-      const cfgPerms=['cfg_usuarios_ver','cfg_cargos_ver','cfg_equipe_ver','cfg_reunioes_ver','cfg_cadpaciente_ver','cfg_empresa_ver'];
+      const cfgPerms=['cfg_usuarios_ver','cfg_cargos_ver','cfg_equipe_ver','cfg_reunioes_ver','cfg_cadpaciente_ver','cfg_empresa_ver','cfg_checkin_ver','cfg_agenda_ver','cfg_anamnese_ver','cfg_contratos_ver','cfg_termos_ver','cfg_receitas_ver','cfg_atestados_ver','cfg_encaminhamentos_ver','cfg_tabelas_ver'];
       semAcesso = !cfgPerms.some(p=>temPerm(p));
     } else if(id==='planejamento'){
-      semAcesso = !souAdministradorReal();
+      // Antes: só a conta "administrador real" entrava, sem possibilidade de delegar via Cargos.
+      // Agora, além do administrador real (que sempre passa), qualquer cargo com pelo menos uma
+      // permissão de Planejamento marcada também consegue entrar.
+      const planPerms=['planejamento_remuneracao_ver','planejamento_funcoes_ver','planejamento_referencias_ver','planejamento_painel_beatriz_ver','planejamento_painel_ingrid_ver','planejamento_painel_leticia_ver','planejamento_painel_fernanda_ver','planejamento_painel_patrik_ver'];
+      semAcesso = !souAdministradorReal() && !planPerms.some(p=>temPerm(p));
     } else {
       const permNecessaria = PERM_SECAO[id];
       semAcesso = permNecessaria && (Array.isArray(permNecessaria) ? !permNecessaria.some(p=>temPerm(p)) : !temPerm(permNecessaria));
@@ -16401,6 +16651,12 @@ async function excluirUsuario(){
 
 // ── CARGOS ───────────────────────────────────────────────────────────────
 let modalCargoId=null;
+// Estado do modal de Cargo: qual aba está ativa e quais permissões estão marcadas.
+// mcPermSelecionadas precisa existir à parte do DOM porque, com abas, só os
+// checkboxes da aba visível existem na tela num dado momento — sem isso, trocar
+// de aba fazia o sistema "esquecer" o que tinha sido marcado nas abas anteriores.
+let mcAbaAtual = 'inicio';
+let mcPermSelecionadas = new Set();
 
 function renderCargos(){
   const wrap=document.getElementById('cargos-lista');
@@ -16420,17 +16676,112 @@ function abrirModalCargo(id){
   const c=id?cargos.find(x=>x.id===id):null;
   document.getElementById('mc-titulo').textContent=c?'Editar cargo':'Novo cargo';
   document.getElementById('mc-nome').value=c?.nome||'';
-  const permAtivas=new Set(c?.permissoes||[]);
-  document.getElementById('mc-permissoes').innerHTML=PERMISSOES_GRUPOS.map(g=>`
-    <div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;margin-top:10px;padding-bottom:3px;border-bottom:1px solid var(--border)">${g.grupo}</div>
-    ${g.itens.map(p=>`
-    <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400;text-transform:none;letter-spacing:normal;color:var(--tx);cursor:pointer;padding:4px 0">
-      <input type="checkbox" value="${p.id}" ${permAtivas.has(p.id)?'checked':''} style="width:15px;height:15px;cursor:pointer">
-      ${p.label}
-    </label>`).join('')}
-  `).join('');
+
+  mcPermSelecionadas = new Set(c?.permissoes||[]);
+  mcAbaAtual = 'inicio';
+  const busca = document.getElementById('mc-busca');
+  if(busca) busca.value = '';
+
+  mcPopularDatalist();
+  mcRenderTabs();
+  mcRenderPermissoes();
+
   document.getElementById('mc-excluir').style.display=c?'':'none';
   document.getElementById('modal-cargo').classList.add('open');
+}
+
+// Conta quantas permissões (itens, não grupos) existem em cada aba — mesmo
+// espírito do número ao lado de cada aba na referência (ex: "Atendimento 73").
+function mcContarPorAba(abaId){
+  return PERMISSOES_GRUPOS
+    .filter(g=>GRUPO_TAB_MAP[g.grupo]===abaId)
+    .reduce((soma,g)=>soma+g.itens.length,0);
+}
+
+function mcRenderTabs(){
+  const wrap = document.getElementById('mc-tabs');
+  if(!wrap) return;
+  wrap.innerHTML = CARGO_TABS.map(t=>{
+    const ativo = t.id===mcAbaAtual;
+    return `<button type="button" class="btn btn-ghost btn-sm" onclick="mcSelecionarAba('${t.id}')" style="${ativo?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">
+      ${t.label} <span class="pill p-neutral" style="font-size:10px;${ativo?'background:rgba(255,255,255,.25);color:#fff':''}">${mcContarPorAba(t.id)}</span>
+    </button>`;
+  }).join('');
+}
+
+function mcSelecionarAba(abaId){
+  mcAbaAtual = abaId;
+  const busca = document.getElementById('mc-busca');
+  if(busca) busca.value = ''; // trocar de aba manualmente sai do modo de busca global
+  mcRenderTabs();
+  mcRenderPermissoes();
+}
+
+// Lista de sugestões do autocomplete: nome de cada grupo (módulo/aba) + label de
+// cada permissão individual, para achar tanto "Financeiro" quanto "Excluir agendamentos".
+function mcPopularDatalist(){
+  const dl = document.getElementById('mc-busca-lista');
+  if(!dl) return;
+  const nomes = new Set();
+  PERMISSOES_GRUPOS.forEach(g=>{
+    nomes.add(g.grupo);
+    g.itens.forEach(p=>nomes.add(p.label));
+  });
+  dl.innerHTML = [...nomes].map(n=>`<option value="${n.replace(/"/g,'&quot;')}">`).join('');
+}
+
+function mcToggleChecagem(el){
+  if(el.checked) mcPermSelecionadas.add(el.value);
+  else mcPermSelecionadas.delete(el.value);
+  mcAtualizarContadorTotal();
+}
+
+function mcAtualizarContadorTotal(){
+  const el = document.getElementById('mc-permissoes-total');
+  if(el) el.textContent = `${mcPermSelecionadas.size} selecionadas`;
+}
+
+// Renderiza a lista de permissões. Sem busca: mostra só os grupos da aba ativa
+// (igual antes, só que filtrado por aba). Com busca: ignora a aba e mostra
+// TODOS os grupos (de qualquer aba) cujo nome ou alguma permissão bata com o
+// texto digitado — é o que resolve "encontrar algum módulo/aba" rapidamente,
+// já indicando de qual aba cada resultado é.
+function mcRenderPermissoes(){
+  const buscaEl = document.getElementById('mc-busca');
+  const busca = (buscaEl?.value||'').trim().toLowerCase();
+  const tabsWrap = document.getElementById('mc-tabs');
+
+  let grupos;
+  if(busca){
+    grupos = PERMISSOES_GRUPOS.filter(g=>
+      g.grupo.toLowerCase().includes(busca) ||
+      g.itens.some(p=>p.label.toLowerCase().includes(busca))
+    );
+    if(tabsWrap) tabsWrap.style.opacity = '.4'; // abas "desligadas" visualmente durante a busca
+  } else {
+    grupos = PERMISSOES_GRUPOS.filter(g=>GRUPO_TAB_MAP[g.grupo]===mcAbaAtual);
+    if(tabsWrap) tabsWrap.style.opacity = '';
+  }
+
+  const abaLabel = id => CARGO_TABS.find(t=>t.id===id)?.label || id;
+
+  document.getElementById('mc-permissoes').innerHTML = grupos.length ? grupos.map(g=>`
+    <div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;margin-top:10px;padding-bottom:3px;border-bottom:1px solid var(--border)">
+      ${g.grupo}
+      ${busca?`<span class="pill p-info" style="font-size:9px;text-transform:none;letter-spacing:normal;font-weight:600">${abaLabel(GRUPO_TAB_MAP[g.grupo])}</span>`:''}
+    </div>
+    ${g.itens.map(p=>`
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400;text-transform:none;letter-spacing:normal;color:var(--tx);cursor:pointer;padding:4px 0">
+      <input type="checkbox" value="${p.id}" ${mcPermSelecionadas.has(p.id)?'checked':''} onchange="mcToggleChecagem(this)" style="width:15px;height:15px;cursor:pointer">
+      ${p.label}
+    </label>`).join('')}
+  `).join('') : `<div class="empty" style="grid-column:1/-1"><div class="empty-ic">🔍</div>Nenhum módulo ou permissão encontrado para "${buscaEl?.value||''}".</div>`;
+
+  mcAtualizarContadorTotal();
+}
+
+function mcFiltrarPermissoes(){
+  mcRenderPermissoes();
 }
 
 // Chama a função administrativa segura para criar/editar/excluir CARGOS.
@@ -16465,7 +16816,11 @@ async function chamarAdminCargos(payload){
 async function salvarCargo(){
   const nome=document.getElementById('mc-nome').value.trim();
   if(!nome){alert('Informe o nome do cargo.');return;}
-  const permissoes=[...document.querySelectorAll('#mc-permissoes input[type=checkbox]:checked')].map(el=>el.value);
+  // Usa o Set persistente (mcPermSelecionadas), não os checkboxes marcados na tela —
+  // como as permissões agora ficam divididas em abas, só os checkboxes da aba
+  // visível no momento existem no DOM; ler só deles perderia as marcações feitas
+  // nas outras abas.
+  const permissoes=[...mcPermSelecionadas];
 
   const btn=document.querySelector('#modal-cargo .btn-primary');
   if(btn){ btn.disabled=true; btn.textContent='Salvando…'; }
@@ -18038,6 +18393,34 @@ function removeCheckinAtribuicao(i){
 
 // ── CONFIGURAÇÕES ────────────────────────────────────────────────────────
 function showPlanejamento(sub, btn){
+  // Antes desta auditoria, Planejamento não tinha permissão nenhuma — o acesso ao
+  // módulo inteiro já era travado lá em goTo()/aplicarPermissoesNav() só pro
+  // administrador real, então nenhum painel individual verificava nada aqui.
+  // Agora cada painel tem sua própria permissão, então checamos de novo aqui —
+  // mesmo padrão de showCfg() logo abaixo — pro caso de alguém digitar/chamar
+  // showPlanejamento() diretamente para um painel que não está liberado pra ela.
+  const planPermMapa = {
+    remuneracao:'planejamento_remuneracao_ver',
+    funcoes:'planejamento_funcoes_ver',
+    referencias:'planejamento_referencias_ver',
+    painel_beatriz:'planejamento_painel_beatriz_ver',
+    painel_ingrid:'planejamento_painel_ingrid_ver',
+    painel_leticia:'planejamento_painel_leticia_ver',
+    painel_fernanda:'planejamento_painel_fernanda_ver',
+    painel_patrik:'planejamento_painel_patrik_ver',
+  };
+  const permNecPlan = planPermMapa[sub];
+  if(permNecPlan && !souAdministradorReal() && !temPerm(permNecPlan)){
+    const aviso = document.getElementById('perm-aviso');
+    if(aviso){
+      const nome = usuarios.find(u=>u.id===usuarioAtualId)?.nome || 'este usuário';
+      aviso.textContent = `<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> ${nome} não tem permissão para acessar este painel.`;
+      aviso.style.display='block';
+      clearTimeout(aviso._t);
+      aviso._t = setTimeout(()=>aviso.style.display='none', 3000);
+    }
+    return;
+  }
   document.querySelectorAll('.plan-sub').forEach(s=>s.style.display='none');
   document.querySelectorAll('#planejamento-subnav .subnav-btn').forEach(t=>t.classList.remove('on'));
   const el=document.getElementById('plan-'+sub);
@@ -18050,13 +18433,17 @@ function showPlanejamento(sub, btn){
 }
 
 function showCfg(sub, btn){
+  // Cada aba agora usa sua própria permissão dedicada — antes, Rotina/Agenda/Anamnese/
+  // Tabelas "emprestavam" cfg_usuarios_ver e Contratos/Termos/Receitas/Atestados/
+  // Encaminhamentos emprestavam cfg_cadpaciente_ver, então marcar acesso a um desses
+  // módulos liberava os outros junto, sem querer.
   const cfgPermMapa = {
     usuarios:'cfg_usuarios_ver', cargos:'cfg_cargos_ver', equipe:'cfg_equipe_ver',
     reunioes:'cfg_reunioes_ver', cadpaciente:'cfg_cadpaciente_ver',
-    checkin:'cfg_usuarios_ver', agenda:'cfg_usuarios_ver', anamnese:'cfg_usuarios_ver',
-    contratos:'cfg_cadpaciente_ver', termos:'cfg_cadpaciente_ver', receitas:'cfg_cadpaciente_ver',
-    atestados:'cfg_cadpaciente_ver', encaminhamentos:'cfg_cadpaciente_ver',
-    dashboard:'dashboard_cfg', empresa:'cfg_empresa_ver', tabelas:'cfg_usuarios_ver',
+    checkin:'cfg_checkin_ver', agenda:'cfg_agenda_ver', anamnese:'cfg_anamnese_ver',
+    contratos:'cfg_contratos_ver', termos:'cfg_termos_ver', receitas:'cfg_receitas_ver',
+    atestados:'cfg_atestados_ver', encaminhamentos:'cfg_encaminhamentos_ver',
+    dashboard:'dashboard_cfg', empresa:'cfg_empresa_ver', tabelas:'cfg_tabelas_ver',
   };
   const permNec = cfgPermMapa[sub];
   if(permNec && !temPerm(permNec)){
