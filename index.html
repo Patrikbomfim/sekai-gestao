@@ -802,6 +802,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .ag-cell.ag-fora{background:var(--surface)}
 .ag-cell.ag-bloqueado{background:repeating-linear-gradient(135deg,#FCA5A5 0 7px,#FEE2E2 7px 14px);cursor:default}
 .ag-card{border-radius:8px;padding:3px 7px;font-size:10.5px;line-height:1.3;cursor:pointer;color:#fff;overflow:hidden;position:absolute;left:2px;right:2px;z-index:3}
+.ag-resize-handle{position:absolute;left:0;right:0;height:6px;cursor:ns-resize;z-index:5}
+.ag-resize-handle.ag-resize-top{top:0}
+.ag-resize-handle.ag-resize-bottom{bottom:0}
+.ag-resize-handle:hover{background:rgba(255,255,255,.35)}
 .ag-card .ag-card-tit{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10.5px}
 .ag-card .ag-card-sub{opacity:.9;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ag-legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--tx2)}
@@ -4936,6 +4940,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             <div id="agm-paciente-resultados" style="position:relative"></div>
           </div>
           <input type="hidden" id="agm-paciente-id">
+          <div id="agm-paciente-info" style="display:none"></div>
         </div>
         <div class="fl fg-full" id="agm-paciente-novo-wrap" style="display:none">
           <label>Telefone / WhatsApp do paciente (não cadastrado)</label>
@@ -4946,16 +4951,16 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <input type="date" id="agm-data">
         </div>
         <div class="fl">
+          <label>Profissional *</label>
+          <select id="agm-profissional" onchange="agmAtualizarSalasDisponiveis()"></select>
+        </div>
+        <div class="fl">
           <label>Hora início *</label>
           <input type="time" id="agm-hora-ini">
         </div>
         <div class="fl">
           <label>Hora fim *</label>
           <input type="time" id="agm-hora-fim">
-        </div>
-        <div class="fl">
-          <label>Profissional *</label>
-          <select id="agm-profissional" onchange="agmAtualizarSalasDisponiveis()"></select>
         </div>
         <div class="fl">
           <label>Sala *</label>
@@ -5304,7 +5309,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <span class="agpop-ic"><svg viewBox="0 0 24 24" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg></span>
       <span class="agpop-val">
         <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:1px">Status</span>
-        <span id="agpop-status-inline"></span>
+        <select id="agpop-status-select" style="font-size:12px;font-weight:600;padding:3px 6px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);font-family:var(--font)" onchange="agPopStatusMudou()"></select>
       </span>
     </div>
     <div class="agpop-row">
@@ -5361,11 +5366,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <!-- OBS -->
     <div id="agpop-obs-row">
       <div class="agpop-lbl">Observação</div>
-      <textarea id="agpop-obs" rows="2" placeholder="Adicionar observação..." style="width:100%;font-size:12px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r6);resize:vertical;font-family:var(--font);background:var(--surface);color:var(--tx);line-height:1.4" oninput="agPopSalvarObs()"></textarea>
+      <textarea id="agpop-obs" rows="2" placeholder="Adicionar observação..." style="width:100%;font-size:12px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r6);resize:vertical;font-family:var(--font);background:var(--surface);color:var(--tx);line-height:1.4"></textarea>
     </div>
   </div>
   <div class="agpop-footer">
-    <button class="btn btn-primary" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="agPopAbrirModal()"><svg viewBox="0 0 24 24" width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Editar agendamento</button>
+    <button class="btn btn-ghost" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="agPopAbrirModal()" title="Abrir todos os campos do agendamento"><svg viewBox="0 0 24 24" width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+    <button class="btn btn-primary" id="agpop-btn-salvar" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="agPopSalvar()"><svg viewBox="0 0 24 24" width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Salvar</button>
   </div>
 </div>
 
@@ -20361,6 +20367,74 @@ function minutosBloqueados(dataIso, salaId, usuarioId){
 // ── POPOVER DE AGENDAMENTO ───────────────────────────────────────────
 let _agPopoverId = null; // id do agendamento atual no popover
 
+// ── Arrastar borda do card para mudar horário (início/fim) ────────────
+let _agResizeState = null; // {id, edge, startY, startTopPx, startHeightPx, pxPerMin, gridIniMin}
+let _agResizeJustHappened = false;
+
+// Abre o popover ao passar o mouse (ou clicar) no card — mas não durante/logo após um
+// arraste de redimensionamento, para não abrir o popover por engano ao soltar o mouse.
+function agAbrirPopoverSeNaoArrastando(id, targetEl){
+  if(_agResizeState) return;
+  if(_agResizeJustHappened){ _agResizeJustHappened=false; return; }
+  const a = agendamentos.find(x=>x.id===id);
+  if(!a) return;
+  abrirAgPopover(a, targetEl);
+}
+
+function agIniciarResize(e, id, edge, topPx, heightPx, pxPerMin, gridIniMin){
+  e.stopPropagation();
+  e.preventDefault();
+  _agResizeState = { id, edge, startY:e.clientY, startTopPx:topPx, startHeightPx:heightPx, pxPerMin, gridIniMin };
+  document.addEventListener('mousemove', _agResizeMove);
+  document.addEventListener('mouseup', _agResizeEnd);
+}
+
+function _agResizeMove(e){
+  if(!_agResizeState) return;
+  const st=_agResizeState;
+  const dy = e.clientY - st.startY;
+  const el = document.querySelector(`.ag-card[data-ag-id="${st.id}"]`);
+  if(!el) return;
+  let newTop = st.startTopPx, newHeight = st.startHeightPx;
+  const MIN_H = Math.max(10, st.pxPerMin*5); // não deixa encolher a ponto de virar menos de 5min
+  if(st.edge==='bottom'){
+    newHeight = Math.max(MIN_H, st.startHeightPx + dy);
+  } else {
+    newTop = st.startTopPx + dy;
+    newHeight = st.startHeightPx - dy;
+    if(newHeight < MIN_H){ newTop = st.startTopPx + (st.startHeightPx - MIN_H); newHeight = MIN_H; }
+    if(newTop < 0){ newHeight += newTop; newTop = 0; }
+  }
+  el.style.top = newTop+'px';
+  el.style.height = newHeight+'px';
+}
+
+function _agResizeEnd(e){
+  if(!_agResizeState) return;
+  const st=_agResizeState;
+  document.removeEventListener('mousemove', _agResizeMove);
+  document.removeEventListener('mouseup', _agResizeEnd);
+  const el = document.querySelector(`.ag-card[data-ag-id="${st.id}"]`);
+  const a = agendamentos.find(x=>x.id===st.id);
+  if(el && a){
+    const topPx = parseFloat(el.style.top)||0;
+    const heightPx = parseFloat(el.style.height)||0;
+    const SNAP = 5; // minutos
+    let novoIniMin = st.gridIniMin + Math.round((topPx/st.pxPerMin)/SNAP)*SNAP;
+    let novoFimMin = novoIniMin + Math.max(SNAP, Math.round((heightPx/st.pxPerMin)/SNAP)*SNAP);
+    const novoIni = minParaHora(novoIniMin);
+    const novoFim = minParaHora(novoFimMin);
+    if(novoIni!==a.horaInicio || novoFim!==a.horaFim){
+      a.horaInicio=novoIni; a.horaFim=novoFim;
+      salvarLS('sk3-agendamentos', agendamentos);
+    }
+  }
+  _agResizeState=null;
+  _agResizeJustHappened=true;
+  setTimeout(()=>{ _agResizeJustHappened=false; }, 300);
+  renderAgenda();
+}
+
 function abrirAgPopover(a, targetEl){
   _agPopoverId = a.id;
 
@@ -20372,11 +20446,11 @@ function abrirAgPopover(a, targetEl){
   stEl.style.color = '#fff';
   stEl.style.border = 'none';
 
-  // Status inline no corpo
-  const stInline = document.getElementById('agpop-status-inline');
-  stInline.textContent = stInfo.label;
-  stInline.style.fontWeight = '500';
-  stInline.style.color = stInfo.cor;
+  // Status inline no corpo — select editável, com salvamento explícito pelo botão "Salvar"
+  const stSelect = document.getElementById('agpop-status-select');
+  stSelect.innerHTML = STATUS_AGENDAMENTO.map(s=>`<option value="${s.id}">${s.label}</option>`).join('');
+  stSelect.value = a.status;
+  stSelect.style.color = stInfo.cor;
 
   // Nome com código — clicável
   const pac = pacientes.find(p=>String(p.id)===String(a.pacienteId));
@@ -20487,12 +20561,54 @@ function agPopAbrirModal(){
   _abrirModalAgendamentoReal(id);
 }
 
-function agPopSalvarObs(){
+// Atualiza só a cor/prévia do status enquanto o usuário escolhe — a gravação de fato
+// acontece ao clicar em "Salvar" (agPopSalvar), junto com a observação.
+function agPopStatusMudou(){
+  const sel = document.getElementById('agpop-status-select');
+  const stInfo = STATUS_AGENDAMENTO.find(s=>s.id===sel.value) || {cor:'#9CA3AF'};
+  sel.style.color = stInfo.cor;
+}
+
+// Salva observação + status a partir do popover. Para status que exigem informações
+// adicionais no fluxo completo (Cancelado exige motivo; Realizado exige situação do
+// paciente), abre o modal completo em vez de gravar parcialmente por aqui.
+function agPopSalvar(){
   if(!_agPopoverId) return;
   const idx = agendamentos.findIndex(a=>a.id===_agPopoverId);
   if(idx<0) return;
+  const novoStatus = document.getElementById('agpop-status-select').value;
+  const statusAntigo = agendamentos[idx].status;
+
+  if(novoStatus!==statusAntigo && (novoStatus==='cancelado' || novoStatus==='realizado')){
+    // Esses status têm campos obrigatórios (motivo do cancelamento / situação do paciente)
+    // que só existem no modal completo — evita gravar um cancelamento/atendimento incompleto.
+    agendamentos[idx].obs = document.getElementById('agpop-obs').value;
+    salvarLS('sk3-agendamentos', agendamentos);
+    const id=_agPopoverId;
+    fecharAgPopover();
+    _abrirModalAgendamentoReal(id);
+    setTimeout(()=>{
+      const selStatus=document.getElementById('agm-status');
+      if(selStatus){ selStatus.value=novoStatus; agmToggleSituacao(); agmToggleCancelamento(); }
+    }, 30);
+    return;
+  }
+
   agendamentos[idx].obs = document.getElementById('agpop-obs').value;
+  agendamentos[idx].status = novoStatus;
   salvarLS('sk3-agendamentos', agendamentos);
+
+  // feedback rápido no botão + atualiza a pílula de status no cabeçalho do popover
+  const stInfo = STATUS_AGENDAMENTO.find(s=>s.id===novoStatus) || {label:novoStatus, cor:'#9CA3AF'};
+  const stEl = document.getElementById('agpop-status');
+  if(stEl){ stEl.textContent = stInfo.label; stEl.style.background = stInfo.cor; }
+  const btn = document.getElementById('agpop-btn-salvar');
+  if(btn){
+    const original = btn.innerHTML;
+    btn.innerHTML = '✓ Salvo';
+    setTimeout(()=>{ btn.innerHTML = original; }, 1200);
+  }
+  renderAgenda();
 }
 
 // ── TAGS do Popover ──────────────────────────────────────────────────
@@ -20806,7 +20922,7 @@ function renderAgendaSemana(d){
           const dur = horaParaMin(a.horaFim) - horaParaMin(a.horaInicio);
           const hPx = Math.max(10, Math.round(dur / passo * SLOT_H)) - 2;
           const primeiroNome = (a.pacienteNome||'').split(' ')[0];
-          body += `<div style="position:absolute;top:1px;left:1px;right:1px;height:${hPx}px;background:${cor};border-radius:3px;z-index:3;cursor:pointer;overflow:hidden;display:flex;align-items:center;padding:0 3px" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${a.pacienteNome||''}\n${a.horaInicio}–${a.horaFim}\n${sala.nome}"><span style="font-size:8px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1">${a.horaInicio} ${primeiroNome}</span></div>`;
+          body += `<div style="position:absolute;top:1px;left:1px;right:1px;height:${hPx}px;background:${cor};border-radius:3px;z-index:3;cursor:pointer;overflow:hidden;display:flex;align-items:center;padding:0 3px" onmouseenter="abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${a.pacienteNome||''}\n${a.horaInicio}–${a.horaFim}\n${sala.nome}"><span style="font-size:8px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1">${a.horaInicio} ${primeiroNome}</span></div>`;
         });
         body += `</div>`;
       });
@@ -20856,7 +20972,7 @@ function renderAgendaMes(d){
     agmsDia.slice(0, MAX_SHOW).forEach(a => {
       const prof = agendaProfissionais.find(ap => ap.usuarioId === a.usuarioId);
       const cor = prof ? prof.cor : '#9CA3AF';
-      html += `<div class="ag-month-event" style="background:${cor}" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${a.pacienteNome||''} ${a.horaInicio}">${a.horaInicio} ${a.pacienteNome||'(sem nome)'}</div>`;
+      html += `<div class="ag-month-event" style="background:${cor}" onmouseenter="abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${a.pacienteNome||''} ${a.horaInicio}">${a.horaInicio} ${a.pacienteNome||'(sem nome)'}</div>`;
     });
     if(agmsDia.length > MAX_SHOW){
       html += `<div class="ag-month-more">+${agmsDia.length - MAX_SHOW} mais</div>`;
@@ -20989,7 +21105,9 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
       } else {
         cardContent = `<div class="ag-card-tit" style="font-size:8px;line-height:1.1;display:flex;align-items:center">${statusIc}<span>${a.horaInicio}</span></div>`;
       }
-      html += `<div class="ag-card st-${a.status}${extraClass}" style="background:${cor};top:${topPx}px;height:${heightPx}px;pointer-events:all;padding:1px 4px" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${pacNomeComCod} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}</div>`;
+      const pxPerMin = SLOT_H / passo;
+      const resizeHandles = `<div class="ag-resize-handle ag-resize-top" onmousedown="agIniciarResize(event,'${a.id}','top',${topPx},${heightPx},${pxPerMin},${iniMin})" title="Arraste para mudar o início"></div><div class="ag-resize-handle ag-resize-bottom" onmousedown="agIniciarResize(event,'${a.id}','bottom',${topPx},${heightPx},${pxPerMin},${iniMin})" title="Arraste para mudar o fim"></div>`;
+      html += `<div class="ag-card st-${a.status}${extraClass}" data-ag-id="${a.id}" style="background:${cor};top:${topPx}px;height:${heightPx}px;pointer-events:all;padding:1px 4px" onmouseenter="agAbrirPopoverSeNaoArrastando('${a.id}',event.currentTarget)" onclick="event.stopPropagation();agAbrirPopoverSeNaoArrastando('${a.id}',event.currentTarget)" title="${pacNomeComCod} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}${resizeHandles}</div>`;
     });
     html += `</div>`;
   });
@@ -21408,6 +21526,7 @@ function agmBuscarPaciente(termo){
   const resultados=document.getElementById('agm-paciente-resultados');
   document.getElementById('agm-paciente-id').value='';
   document.getElementById('agm-paciente-novo-wrap').style.display='none';
+  agmRenderInfoPaciente();
   if(!termo || termo.length<2){ resultados.innerHTML=''; return; }
   const termoBusca=termo.toLowerCase().trim();
   const achados = pacientes.filter(p=>
@@ -21447,6 +21566,7 @@ function agmUsarSemCadastro(nome){
   document.getElementById('agm-paciente-resultados').innerHTML='';
   document.getElementById('agm-paciente-novo-wrap').style.display='';
   agmToggleSituacao();
+  agmRenderInfoPaciente();
 }
 
 // ── PACIENTE NO MODAL DE AGENDAMENTO — alterna entre botão (paciente vinculado) e busca ──
@@ -21482,6 +21602,45 @@ function agmAtualizarPacienteView(){
     linkWrap.style.display='none';
     buscaWrap.style.display='';
   }
+  agmRenderInfoPaciente();
+}
+
+// Painel informativo (só leitura) exibido logo abaixo do campo de paciente no modal de
+// agendamento: idade, telefone, orçamento em aberto (se houver) e situação financeira —
+// serve apenas de contexto para quem está marcando, sem nenhuma ação vinculada.
+function agmRenderInfoPaciente(){
+  const wrap=document.getElementById('agm-paciente-info');
+  if(!wrap) return;
+  const id=document.getElementById('agm-paciente-id').value;
+  const p=id?pacientes.find(x=>String(x.id)===String(id)):null;
+  if(!p){ wrap.style.display='none'; wrap.innerHTML=''; return; }
+
+  const idade = p.nascimento ? calcularIdade(p.nascimento) : null;
+  const fone = p.fone||p.telefone||'';
+
+  const orcamentosPac = _orcamentos().filter(o=>String(o.pacienteId)===String(p.id));
+  const orcAberto = orcamentosPac.find(o=>{ const st=o.status||'aberto'; return st==='aberto'||st==='rascunho'; });
+  let orcTxt='';
+  if(orcAberto){
+    const total=(orcAberto.itens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+    const nomeOrc = orcAberto.nomeOrc || ('Orçamento #'+(orcAberto.num||orcAberto.id.slice(-4)));
+    orcTxt = `${esc(nomeOrc)} — R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+  }
+
+  const titulosPac = _titulos().filter(t=>String(t.pacienteId)===String(p.id));
+  const temTituloAberto = titulosPac.some(t=>(t.status||'aberto')==='aberto');
+
+  const linha=(label,valor,cor)=>`<div style="display:flex;justify-content:space-between;gap:10px;font-size:12px${cor?';color:'+cor:''}">
+    <span style="color:var(--tx3)">${label}</span><span style="font-weight:600;text-align:right${cor?';color:'+cor:''}">${esc(valor)}</span>
+  </div>`;
+
+  wrap.innerHTML = `<div style="display:flex;flex-direction:column;gap:5px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r8);background:var(--s2);margin-top:8px">
+    ${linha('Idade', idade!=null?idade+' anos':'—')}
+    ${linha('Telefone', fone||'—')}
+    ${orcTxt?linha('Orçamento em aberto', orcTxt):''}
+    ${linha('Situação financeira', temTituloAberto?'Financeiro atrasado':'Em dia', temTituloAberto?'#991B1B':'#065F46')}
+  </div>`;
+  wrap.style.display='';
 }
 
 function agmTrocarPaciente(){
