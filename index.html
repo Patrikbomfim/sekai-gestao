@@ -3160,11 +3160,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="fin-toolbar" style="margin-top:14px">
       <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('pagar')"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Recorrentes cadastrados</button>
       <button class="btn btn-ghost btn-sm" onclick="abrirFiltrosFin('pagar')">▤ Filtros<span class="fin-filtros-badge" id="fin-pg-filtros-badge" style="display:none">0</span></button>
+      <input type="text" id="fin-pg-busca-parte" class="fi" style="max-width:220px" placeholder="Buscar por beneficiário..." oninput="finBuscaParteInput('pagar', this.value)">
       <button class="btn btn-ghost btn-sm" onclick="finLimparFiltros('pagar')">Limpar</button>
-      <div style="flex:1 1 180px;display:flex;justify-content:center;min-width:160px">
-        <input type="text" id="fin-pg-busca-parte" class="fi" style="max-width:320px;width:100%" placeholder="Buscar por beneficiário..." oninput="finBuscaParteInput('pagar', this.value)">
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="exportarFinPDF('pagar')"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar em PDF</button>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="exportarFinPDF('pagar')"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar em PDF</button>
       <div id="fin-pg-sel-bar" style="display:none;margin-left:auto;display:none;align-items:center;gap:8px">
         <span id="fin-pg-sel-count" style="font-size:12px;color:var(--tx2)">0 selecionados</span>
         <button class="btn btn-sm" style="background:var(--sul);color:var(--su);border-color:var(--su)" onclick="finLiquidarSelecionados('pagar')" data-perm="fin_pagar_editar">✓ Liquidar</button>
@@ -3266,11 +3264,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('pagar')"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Recorrentes Operacional</button>
       <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('folha')"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Recorrentes Folha</button>
       <button class="btn btn-ghost btn-sm" onclick="abrirFiltrosFin('folha')">▤ Filtros<span class="fin-filtros-badge" id="fin-fl-filtros-badge" style="display:none">0</span></button>
+      <input type="text" id="fin-fl-busca-parte" class="fi" style="max-width:220px" placeholder="Buscar por beneficiário..." oninput="finBuscaParteInput('folha', this.value)">
       <button class="btn btn-ghost btn-sm" onclick="finLimparFiltros('folha')">Limpar</button>
-      <div style="flex:1 1 180px;display:flex;justify-content:center;min-width:160px">
-        <input type="text" id="fin-fl-busca-parte" class="fi" style="max-width:320px;width:100%" placeholder="Buscar por beneficiário..." oninput="finBuscaParteInput('folha', this.value)">
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="exportarFinPDF('folha')"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar em PDF</button>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="exportarFinPDF('folha')"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar em PDF</button>
       <div id="fin-fl-sel-bar" style="display:none;align-items:center;gap:8px;margin-left:auto">
         <span id="fin-fl-sel-count" style="font-size:12px;color:var(--tx2)">0 selecionados</span>
         <button class="btn btn-sm" style="background:var(--sul);color:var(--su);border-color:var(--su)" onclick="finLiquidarSelecionados('folha')" data-perm="fin_folha_editar">✓ Liquidar</button>
@@ -3386,11 +3382,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="fin-toolbar" style="margin-top:14px">
       <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('receber')"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Recorrentes cadastrados</button>
       <button class="btn btn-ghost btn-sm" onclick="abrirFiltrosFin('receber')">▤ Filtros<span class="fin-filtros-badge" id="fin-rc-filtros-badge" style="display:none">0</span></button>
+      <input type="text" id="fin-rc-busca-parte" class="fi" style="max-width:220px" placeholder="Buscar por pagador / paciente..." oninput="finBuscaParteInput('receber', this.value)">
       <button class="btn btn-ghost btn-sm" onclick="finLimparFiltros('receber')">Limpar</button>
-      <div style="flex:1 1 180px;display:flex;justify-content:center;min-width:160px">
-        <input type="text" id="fin-rc-busca-parte" class="fi" style="max-width:320px;width:100%" placeholder="Buscar por pagador / paciente..." oninput="finBuscaParteInput('receber', this.value)">
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="exportarFinPDF('receber')"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar em PDF</button>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="exportarFinPDF('receber')"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar em PDF</button>
       <div id="fin-rc-sel-bar" style="display:none;align-items:center;gap:8px;margin-left:auto">
         <span id="fin-rc-sel-count" style="font-size:12px;color:var(--tx2)">0 selecionados</span>
         <button class="btn btn-sm" style="background:var(--sul);color:var(--su);border-color:var(--su)" onclick="finLiquidarSelecionados('receber')" data-perm="fin_receber_editar">✓ Liquidar</button>
@@ -3412,7 +3406,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             <th style="width:110px"><div class="fin-th-wrap" style="justify-content:flex-end"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','valor')" title="Ordenar por valor">Valor <span class="fin-th-sort-ic" id="rc-sort-ic-valor"></span></span></div></th>
             <th style="width:90px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','status')" title="Ordenar por status">Status <span class="fin-th-sort-ic" id="rc-sort-ic-status"></span></span><button type="button" class="fin-th-group-btn" id="rc-group-btn-status" onclick="finAgruparColuna('receber','status')" title="Agrupar por status">⊞</button></div></th>
             <th style="width:60px">Anexo</th>
-            <th style="width:180px">Emissão fiscal</th>
+            <th style="width:210px">Emissão fiscal</th>
             <th style="width:80px"></th>
           </tr>
         </thead>
@@ -22873,7 +22867,7 @@ let _finFolhaTipoFiltro = 'geral';
 
 // Ordenação e agrupamento por coluna nas listas "a pagar" (operacional e folha)
 let _finOrdemColuna = { pagar:{campo:'vencimento',dir:'asc'}, folha:{campo:'vencimento',dir:'asc'}, receber:{campo:'vencimento',dir:'asc'} };
-let _finAgruparColuna = { pagar:'vencimento', folha:null, receber:'vencimento' };
+let _finAgruparColuna = { pagar:'vencimento', folha:'vencimento', receber:'vencimento' };
 
 // Extrai o valor de um título usado para ordenar/agrupar por uma determinada coluna
 function _finValorColuna(t, campo){
@@ -23168,26 +23162,24 @@ function finVerAnexoTitulo(id){
 }
 
 // ── Emissão fiscal na lista "Contas a Receber" ────────────────────────
-// Dois botões independentes (Nota Fiscal / Recibo): o que corresponde ao tipo já emitido
-// (t.emissaoFiscal.tipo, status concluído) aparece verde; o outro fica neutro. Quando nada
-// foi emitido ainda, os dois ficam neutros e um aviso "Sem emissão" aparece ao lado.
+// Dois botões independentes (Nota Fiscal / Recibo), lado a lado numa única linha — o que
+// corresponde ao tipo já emitido (t.emissaoFiscal.tipo, status concluído) aparece verde; o
+// outro fica neutro com moldura fina (visual de clicável). Quando nada foi emitido ainda,
+// os dois ficam neutros e um ícone de alerta (sem texto) aparece ao lado, na mesma linha.
 function _finEmissaoFiscalHtml(t){
   const ef = t.emissaoFiscal;
   const concluido = ef && ef.status==='concluido' ? ef.tipo : null;
   const btn = (tipo, label)=>{
     const on = concluido===tipo;
     const style = on
-      ? 'background:#ECFDF5;border-color:#6EE7B7;color:#065F46'
-      : 'background:var(--s2);border-color:var(--border);color:var(--tx3)';
-    return `<button type="button" class="btn btn-sm" style="padding:3px 8px;font-size:11px;${style}" onclick="event.stopPropagation();abrirModalEmissaoFiscal('${t.id}','${t._origem||'manual'}','${tipo}')" title="${on?label+' emitida':'Registrar '+label}">${on?'✓ ':''}${label}</button>`;
+      ? 'background:#ECFDF5;border:1px solid #6EE7B7;color:#065F46'
+      : 'background:var(--surface);border:1px solid var(--border-s);color:var(--tx2)';
+    return `<button type="button" class="btn btn-sm" style="padding:3px 8px;font-size:11px;line-height:1.2;white-space:nowrap;${style}" onclick="event.stopPropagation();abrirModalEmissaoFiscal('${t.id}','${t._origem||'manual'}','${tipo}')" title="${on?label+' emitida':'Registrar '+label}">${on?'✓ ':''}${label}</button>`;
   };
   const aviso = !concluido
-    ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10.5px;color:var(--tx3);margin-top:3px" title="Nenhuma emissão fiscal registrada para este título"><svg viewBox="0 0 24 24" width="11" height="11" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> Sem emissão</span>`
+    ? `<span style="display:inline-flex;align-items:center;color:var(--wa)" title="Sem emissão fiscal registrada para este título"><svg viewBox="0 0 24 24" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>`
     : '';
-  return `<div style="display:flex;flex-direction:column;gap:3px;align-items:flex-start">
-    <div style="display:flex;gap:4px;flex-wrap:wrap">${btn('nota_fiscal','Nota Fiscal')}${btn('recibo','Recibo')}</div>
-    ${aviso}
-  </div>`;
+  return `<div style="display:flex;align-items:center;gap:5px;white-space:nowrap">${btn('nota_fiscal','Nota Fiscal')}${btn('recibo','Recibo')}${aviso}</div>`;
 }
 
 // Ícone de anexo: cinza/sem cor quando não há anexo (decorativo), colorido e clicável quando há.
