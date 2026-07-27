@@ -2487,14 +2487,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             <div id="pb-fat-bar" style="height:100%;width:78%;border-radius:6px;background:var(--su)"></div>
           </div>
         </div>
-        <div class="fin-card">
-          <div class="fin-card-label">Ocupação de agenda</div>
-          <div class="fin-card-value" id="pb-ocup-atual">64%</div>
-          <div class="fin-card-sub" id="pb-ocup-sub">piso de 60% — faltam 0 p.p.</div>
-          <div style="height:8px;border-radius:6px;background:var(--s2);overflow:hidden;margin-top:8px">
-            <div id="pb-ocup-bar" style="height:100%;width:64%;border-radius:6px;background:var(--su)"></div>
-          </div>
-        </div>
+        <div id="pb-ocup-salas-wrap" style="display:contents"></div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
         <div class="fin-card"><div class="fin-card-label">Remuneração</div><div class="fin-card-value" id="pb-rem-faturamento">R$ 0</div></div>
@@ -2521,13 +2514,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="fin-card"><div class="fin-card-label">Comissão por indicação</div><div class="fin-card-value" id="pi-comissao-indicacao">R$ 0</div></div>
         <div class="fin-card fin-card-green"><div class="fin-card-label">Valor acumulado</div><div class="fin-card-value" id="pi-valor-acumulado">R$ 3.680</div></div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-        <span style="font-size:14px;font-weight:700">Ocupação de agenda</span>
-        <span style="font-size:12px;color:var(--tx2)">38%</span>
-      </div>
-      <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden">
-        <div style="height:100%;width:38%;border-radius:6px;background:var(--wa)"></div>
-      </div>
+      <div id="pi-ocup-salas-wrap"></div>
     </div>
   </div>
 
@@ -2536,26 +2523,20 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
         <span style="font-size:14px;font-weight:700">Faturamento vs meta</span>
-        <span style="font-size:12px;color:var(--tx2)">R$ 87.400 / R$ 120.000</span>
+        <span style="font-size:12px;color:var(--tx2)" id="pl-fat-sub">R$ 87.400 / R$ 120.000</span>
       </div>
       <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden;margin-bottom:16px">
-        <div style="height:100%;width:73%;border-radius:6px;background:var(--ac)"></div>
+        <div id="pl-fat-bar" style="height:100%;width:73%;border-radius:6px;background:var(--ac)"></div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:12px">
         <div class="fin-card fin-card-green"><div class="fin-card-label">Comissão a receber</div><div class="fin-card-value">R$ 23.940</div></div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
         <div class="fin-card"><div class="fin-card-label">Lucro da clínica</div><div class="fin-card-value">R$ 19.800</div></div>
-        <div class="fin-card"><div class="fin-card-label">Ticket médio</div><div class="fin-card-value">R$ 3.850</div></div>
+        <div class="fin-card"><div class="fin-card-label">Ticket médio</div><div class="fin-card-value" id="pl-ticket-medio">R$ 3.850</div></div>
         <div class="fin-card"><div class="fin-card-label">Comissão por indicação</div><div class="fin-card-value" id="pl-comissao-indicacao">R$ 0</div></div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-        <span style="font-size:14px;font-weight:700">Ocupação de agenda</span>
-        <span style="font-size:12px;color:var(--tx2)">71%</span>
-      </div>
-      <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden;margin-bottom:16px">
-        <div style="height:100%;width:71%;border-radius:6px;background:var(--su)"></div>
-      </div>
+      <div id="pl-ocup-salas-wrap" style="margin-bottom:16px"></div>
       <div style="font-size:13px;font-weight:700;margin-bottom:8px">Orçamentos em aberto por urgência</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <span style="background:var(--s2);color:var(--tx2);font-size:12px;padding:4px 10px;border-radius:20px">3 dias · 4</span>
@@ -2571,10 +2552,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
         <span style="font-size:14px;font-weight:700">Faturamento vs meta</span>
-        <span style="font-size:12px;color:var(--tx2)">R$ 87.400 / R$ 120.000</span>
+        <span style="font-size:12px;color:var(--tx2)" id="pf-fat-sub">R$ 87.400 / R$ 120.000</span>
       </div>
       <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden;margin-bottom:16px">
-        <div style="height:100%;width:73%;border-radius:6px;background:var(--ac)"></div>
+        <div id="pf-fat-bar" style="height:100%;width:73%;border-radius:6px;background:var(--ac)"></div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
         <div class="fin-card fin-card-green"><div class="fin-card-label">Comissão a receber</div><div class="fin-card-value" id="pf-comissao-receber">R$ 6.780</div></div>
@@ -2582,13 +2563,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="fin-card"><div class="fin-card-label">Comissão por indicação</div><div class="fin-card-value" id="pf-comissao-indicacao">R$ 0</div></div>
         <div class="fin-card fin-card-blue"><div class="fin-card-label">Valor total</div><div class="fin-card-value" id="pf-valor-total">R$ 9.750</div></div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-        <span style="font-size:14px;font-weight:700">Ocupação de agenda</span>
-        <span style="font-size:12px;color:var(--tx2)">71%</span>
-      </div>
-      <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden;margin-bottom:16px">
-        <div style="height:100%;width:71%;border-radius:6px;background:var(--su)"></div>
-      </div>
+      <div id="pf-ocup-salas-wrap" style="margin-bottom:16px"></div>
       <div style="font-size:13px;font-weight:700;margin-bottom:8px">Status dos eixos que audita</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <span style="background:var(--sul);color:var(--su);font-size:12px;padding:4px 10px;border-radius:20px">Financeiro</span>
@@ -5830,6 +5805,7 @@ function _planSalvarReferencias(){
   if(typeof _planAtualizarPainelBeatriz==='function') _planAtualizarPainelBeatriz();
   if(typeof _planAtualizarPainelIngrid==='function') _planAtualizarPainelIngrid();
   if(typeof _planAtualizarPainelFernanda==='function') _planAtualizarPainelFernanda();
+  if(typeof _planAtualizarPainelLeticia==='function') _planAtualizarPainelLeticia();
 }
 function _planToggleSalaReferencia(btn){
   btn.classList.toggle('on');
@@ -5862,35 +5838,188 @@ function _planCarregarReferencias(){
   _planRenderSalasReferencia(ref);
 }
 
-// Calcula a ocupação de agenda (%) num período [dataIniISO,dataFimISO], usando
-// o horário útil e as salas configuradas em Referências, contra os agendamentos
-// reais (exclui cancelados). dataIniISO/dataFimISO no formato 'YYYY-MM-DD'.
-function planCalcularOcupacao(dataIniISO, dataFimISO){
+// Minutos de horário útil disponíveis num único dia da semana (0=domingo … 6=sábado),
+// para UMA sala, segundo o horário útil configurado em Referências.
+function _planMinutosUteisDia(dow, hu){
+  if(dow>=1 && dow<=5){
+    const ini=horaParaMin(hu.segSex.inicio), fim=horaParaMin(hu.segSex.fim);
+    const intIni=horaParaMin(hu.segSex.intervaloInicio), intFim=horaParaMin(hu.segSex.intervaloFim);
+    return Math.max(0,(fim-ini) - Math.max(0,intFim-intIni));
+  }
+  if(dow===6){
+    return Math.max(0, horaParaMin(hu.sabado.fim) - horaParaMin(hu.sabado.inicio));
+  }
+  return 0; // domingo: sem horário útil configurado
+}
+
+// Ocupação de agenda (%) de UMA sala específica, num período [dataIniISO,dataFimISO],
+// contra o horário útil configurado em Referências. Só contam agendamentos de
+// paciente de verdade (todo item de `agendamentos` exige nome de paciente para
+// ser salvo — bloqueios e eventos recorrentes vivem em listas separadas e nunca
+// entram aqui); exclui cancelados. Se um agendamento cair fora do horário útil
+// (ex.: depois das 18h), o minuto ocupado é contado do mesmo jeito — por isso o
+// resultado pode passar de 100% quando a sala tem mais agendado do que o
+// horário útil comporta.
+function planCalcularOcupacaoSala(salaId, dataIniISO, dataFimISO){
   const ref = planGetReferencias();
-  const salasIds = ref.salasConsideradas;
   const hu = ref.horarioUtil;
   let minutosDisponiveis = 0;
   const dIni = new Date(dataIniISO+'T00:00:00');
   const dFim = new Date(dataFimISO+'T00:00:00');
   for(let d=new Date(dIni); d<=dFim; d.setDate(d.getDate()+1)){
-    const dow = d.getDay(); // 0=domingo … 6=sábado
-    let minutosDia = 0;
-    if(dow>=1 && dow<=5){
-      const ini=horaParaMin(hu.segSex.inicio), fim=horaParaMin(hu.segSex.fim);
-      const intIni=horaParaMin(hu.segSex.intervaloInicio), intFim=horaParaMin(hu.segSex.intervaloFim);
-      minutosDia = Math.max(0,(fim-ini) - Math.max(0,intFim-intIni));
-    } else if(dow===6){
-      minutosDia = Math.max(0, horaParaMin(hu.sabado.fim) - horaParaMin(hu.sabado.inicio));
-    }
-    minutosDisponiveis += minutosDia * salasIds.length;
+    minutosDisponiveis += _planMinutosUteisDia(d.getDay(), hu);
   }
   const minutosOcupados = (typeof agendamentos!=='undefined' ? agendamentos : []).filter(a=>{
     if(a.status==='cancelado') return false;
-    if(!salasIds.includes(a.salaId)) return false;
+    if(a.salaId!==salaId) return false;
+    if(!a.pacienteId && !a.pacienteNome) return false; // só conta agendamento de paciente
     return a.data >= dataIniISO && a.data <= dataFimISO;
   }).reduce((soma,a)=> soma + Math.max(0, horaParaMin(a.horaFim)-horaParaMin(a.horaInicio)), 0);
   const pct = minutosDisponiveis>0 ? Math.round((minutosOcupados/minutosDisponiveis)*100) : 0;
   return { pct, minutosDisponiveis, minutosOcupados };
+}
+
+// Ocupação de agenda (%) GERAL — média de todas as salas marcadas em "salas
+// consideradas na ocupação" (Referências), no período [dataIniISO,dataFimISO].
+// Soma minutos ocupados e disponíveis de todas as salas juntas (não a média
+// simples dos percentuais de cada sala) e calcula o percentual em cima disso.
+function planCalcularOcupacao(dataIniISO, dataFimISO){
+  const ref = planGetReferencias();
+  const salasIds = ref.salasConsideradas;
+  let minutosDisponiveis = 0, minutosOcupados = 0;
+  salasIds.forEach(salaId=>{
+    const r = planCalcularOcupacaoSala(salaId, dataIniISO, dataFimISO);
+    minutosDisponiveis += r.minutosDisponiveis;
+    minutosOcupados += r.minutosOcupados;
+  });
+  const pct = minutosDisponiveis>0 ? Math.round((minutosOcupados/minutosDisponiveis)*100) : 0;
+  return { pct, minutosDisponiveis, minutosOcupados };
+}
+
+// Nome de exibição de uma sala a partir do seu id (cai no próprio id se não encontrar).
+function _planNomeSala(salaId){
+  const s = (typeof salas!=='undefined' ? salas : []).find(s=>s.id===salaId);
+  return s ? s.nome : salaId;
+}
+
+// Cor/estado de uma ocupação: acima do horário útil (>100%) = alerta forte;
+// abaixo da meta = alerta suave; na meta ou acima (sem estourar) = ok.
+function _planCorOcupacao(pct, metaOcup){
+  if(pct>100) return 'var(--da)';
+  if(metaOcup!=null && pct<metaOcup) return 'var(--wa)';
+  return 'var(--su)';
+}
+
+// Monta um card de ocupação (estilo "fin-card", com barra) para UMA sala.
+function _planCardOcupacaoSala(salaId, dataIniISO, dataFimISO, metaOcup){
+  const r = planCalcularOcupacaoSala(salaId, dataIniISO, dataFimISO);
+  const cor = _planCorOcupacao(r.pct, metaOcup);
+  const largura = Math.min(100, r.pct);
+  const sub = r.pct>100
+    ? `excedeu o horário útil em ${r.pct-100} p.p.`
+    : (metaOcup!=null ? (r.pct<metaOcup ? `piso de ${metaOcup}% — faltam ${metaOcup-r.pct} p.p.` : `piso de ${metaOcup}% atingido`) : '');
+  return `<div class="fin-card">
+    <div class="fin-card-label">Ocupação ${esc(_planNomeSala(salaId))}</div>
+    <div class="fin-card-value" style="color:${cor}">${r.pct}%</div>
+    ${sub?`<div class="fin-card-sub">${sub}</div>`:''}
+    <div style="height:8px;border-radius:6px;background:var(--s2);overflow:hidden;margin-top:8px">
+      <div style="height:100%;width:${largura}%;border-radius:6px;background:${cor}"></div>
+    </div>
+  </div>`;
+}
+
+// Monta um bloco de ocupação (estilo "barra simples", sem moldura de card) para UMA sala.
+function _planBarraOcupacaoSala(salaId, dataIniISO, dataFimISO, metaOcup){
+  const r = planCalcularOcupacaoSala(salaId, dataIniISO, dataFimISO);
+  const cor = _planCorOcupacao(r.pct, metaOcup);
+  const largura = Math.min(100, r.pct);
+  const nota = r.pct>100 ? ` <span style="color:${cor};font-weight:600">(excedeu o horário útil)</span>` : '';
+  return `<div style="margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+      <span style="font-size:14px;font-weight:700">Ocupação ${esc(_planNomeSala(salaId))}</span>
+      <span style="font-size:12px;color:${cor}">${r.pct}%${nota}</span>
+    </div>
+    <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden">
+      <div style="height:100%;width:${largura}%;border-radius:6px;background:${cor}"></div>
+    </div>
+  </div>`;
+}
+
+// Preenche um container com um card/barra de ocupação por sala considerada
+// (Referências → "salas consideradas na ocupação"). estilo: 'card' (fin-card,
+// usado no Painel Beatriz) ou 'barra' (barra simples, usado nos demais painéis).
+function _planRenderOcupacaoPorSala(containerId, dataIniISO, dataFimISO, estilo){
+  const wrap=document.getElementById(containerId);
+  if(!wrap) return;
+  const ref=planGetReferencias();
+  const salasIds=ref.salasConsideradas;
+  if(!salasIds.length){
+    wrap.innerHTML = estilo==='card'
+      ? ''
+      : '<div style="font-size:12px;color:var(--tx3)">Nenhuma sala marcada em Referências para calcular ocupação.</div>';
+    return;
+  }
+  const metaOcup=ref.taxaOcupacaoMinima;
+  wrap.innerHTML = salasIds.map(salaId => estilo==='card'
+    ? _planCardOcupacaoSala(salaId, dataIniISO, dataFimISO, metaOcup)
+    : _planBarraOcupacaoSala(salaId, dataIniISO, dataFimISO, metaOcup)
+  ).join('');
+}
+
+// Faturamento = orçamentos FECHADOS (status 'aprovado'), pelo valor realmente
+// vendido (valorFechado, líquido de desconto) — não pela soma "de tabela" dos
+// itens. Orçamentos aprovados antigos, salvos antes de valorFechado existir,
+// caem no fallback (soma dos itens). Filtra pela data de decisão (fechamento);
+// se nomeProf for informado, restringe a orçamentos criados por esse profissional
+// (match por substring, case-insensitive, para tolerar "Dra. Leticia" etc.).
+// Retorna { soma, qtd, ticketMedio } — ticketMedio = soma ÷ qtd de orçamentos fechados.
+function _planFaturamentoFechado(dataIniISO, dataFimISO, nomeProf){
+  const lista = _orcamentos().filter(o=>{
+    if(o.status!=='aprovado') return false;
+    const dataRef = o.dataDecisao || o.data || o.dataCriacao || '';
+    if(dataIniISO && dataRef < dataIniISO) return false;
+    if(dataFimISO && dataRef > dataFimISO) return false;
+    if(nomeProf){
+      const criador = String(o.criadoPor||'').toLowerCase();
+      if(!criador.includes(String(nomeProf).toLowerCase())) return false;
+    }
+    return true;
+  });
+  const soma = lista.reduce((s,o)=>{
+    const valor = (o.valorFechado!=null) ? parseFloat(o.valorFechado) : (o.itens||[]).reduce((si,i)=>si+(parseFloat(i.valor)||0),0);
+    return s + (valor||0);
+  }, 0);
+  const qtd = lista.length;
+  const ticketMedio = qtd ? soma/qtd : 0;
+  return { soma, qtd, ticketMedio };
+}
+
+// Valores PAGOS no período — módulo "A pagar total" (une operacional + folha,
+// tipo:'pagar' ou tipo:'folha'), contando só títulos com status 'pago', pela
+// data em que foram efetivamente liquidados (dataBaixa), não pelo vencimento.
+// A separação "A pagar operacional" existe só para ocultar da secretária —
+// aqui sempre olhamos o total, como no módulo financeiro consolidado.
+function _planPagoNoPeriodo(dataIniISO, dataFimISO){
+  return _finTodosTitulos().filter(t=>{
+    if(t.tipo!=='pagar' && t.tipo!=='folha') return false;
+    if(t.status!=='pago') return false;
+    const dataRef = t.dataBaixa||'';
+    if(!dataRef) return false;
+    return dataRef>=dataIniISO && dataRef<=dataFimISO;
+  }).reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+}
+
+// Valores RECEBIDOS no período — módulo "Contas a receber" (tipo:'receber',
+// inclui títulos de pacientes), contando só títulos com status 'recebido',
+// pela data de liquidação (dataBaixa).
+function _planRecebidoNoPeriodo(dataIniISO, dataFimISO){
+  return _finTodosTitulos().filter(t=>{
+    if(t.tipo!=='receber' && t.tipo) return false; // 'receber' ou sem tipo definido
+    if(t.status!=='recebido') return false;
+    const dataRef = t.dataBaixa||'';
+    if(!dataRef) return false;
+    return dataRef>=dataIniISO && dataRef<=dataFimISO;
+  }).reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
 }
 
 // Primeiro e último dia do mês corrente, em 'YYYY-MM-DD' — usado pelos painéis
@@ -5904,20 +6033,21 @@ function _planMesAtualDatas(){
 }
 
 // Atualiza os cards do Painel Beatriz com base nas Referências (piso de
-// faturamento, taxa mínima de ocupação, remuneração fixa) e na ocupação real
-// de agenda do mês corrente. O faturamento do mês e o bônus por agendamentos
-// ainda são valores de exemplo — a conectar quando o indicador financeiro
-// real for plugado a este painel.
+// faturamento, taxa mínima de ocupação, remuneração fixa), no faturamento real
+// (orçamentos fechados da clínica toda — mesmo critério dos demais painéis) e
+// na ocupação real de agenda do mês corrente. O bônus por agendamentos ainda é
+// valor de exemplo — a conectar quando esse indicador for plugado a este painel.
 function _planAtualizarPainelBeatriz(){
   const painel=document.getElementById('plan-painel_beatriz');
   if(!painel) return;
   const ref=planGetReferencias();
   const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val; };
   const fmtMoeda=n=>'R$ '+Math.round(n).toLocaleString('pt-BR');
+  const {de,ate}=_planMesAtualDatas();
 
-  // Faturamento do mês vs. piso (faturamento em si ainda é exemplo)
+  // Faturamento do mês vs. piso — orçamentos fechados da clínica toda, valor líquido
   const piso=ref.pisoFaturamento;
-  const faturamentoAtual=70200;
+  const faturamentoAtual=_planFaturamentoFechado(de,ate,null).soma;
   const pctFat = piso>0 ? Math.min(100, Math.round((faturamentoAtual/piso)*100)) : 0;
   const faltaFat = Math.max(0, piso-faturamentoAtual);
   set('pb-fat-atual', fmtMoeda(faturamentoAtual));
@@ -5925,19 +6055,12 @@ function _planAtualizarPainelBeatriz(){
   const barFat=document.getElementById('pb-fat-bar');
   if(barFat){ barFat.style.width=pctFat+'%'; barFat.style.background = faturamentoAtual>=piso ? 'var(--su)' : 'var(--wa)'; }
 
-  // Ocupação de agenda (mês corrente) vs. taxa mínima — cálculo real
-  const {de,ate}=_planMesAtualDatas();
-  const ocup=planCalcularOcupacao(de,ate).pct;
-  const metaOcup=ref.taxaOcupacaoMinima;
-  const faltaOcup=Math.max(0, metaOcup-ocup);
-  set('pb-ocup-atual', ocup+'%');
-  set('pb-ocup-sub', faltaOcup>0 ? `piso de ${metaOcup}% — faltam ${faltaOcup} p.p.` : `piso de ${metaOcup}% atingido`);
-  const barOcup=document.getElementById('pb-ocup-bar');
-  if(barOcup){ barOcup.style.width=Math.min(100,ocup)+'%'; barOcup.style.background = ocup>=metaOcup ? 'var(--su)' : 'var(--wa)'; }
+  // Ocupação de agenda (mês corrente) — um card por sala considerada em Referências
+  _planRenderOcupacaoPorSala('pb-ocup-salas-wrap', de, ate, 'card');
 
   // Remuneração: fixo se o faturamento ficar abaixo do piso; comissão % sobre
   // faturamento (Referências) se atingir ou superar o piso — não soma os dois.
-  // Bônus, comissão por indicação e faturamento em si ainda são exemplo.
+  // Faturamento já é real (orçamentos fechados); bônus e comissão por indicação ainda são exemplo.
   const remuneracao = faturamentoAtual>=piso ? faturamentoAtual*(ref.comissoes.beatrizPctFaturamento/100) : ref.remuneracaoFixa.beatriz;
   const bonusAgendamentos = 340;
   const comissaoIndicacao = 0;
@@ -5949,7 +6072,8 @@ function _planAtualizarPainelBeatriz(){
 }
 
 // Atualiza os cards do Painel Ingrid. Remuneração vem de verdade das
-// Referências (remuneração fixa); procedimentos realizados e comissão por
+// Referências (remuneração fixa); ocupação de agenda é real (um card por sala
+// considerada em Referências); procedimentos realizados e comissão por
 // indicação ainda são exemplo/placeholder, a conectar depois.
 function _planAtualizarPainelIngrid(){
   const painel=document.getElementById('plan-painel_ingrid');
@@ -5957,6 +6081,7 @@ function _planAtualizarPainelIngrid(){
   const ref=planGetReferencias();
   const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val; };
   const fmtMoeda=n=>'R$ '+Math.round(n).toLocaleString('pt-BR');
+  const {de,ate}=_planMesAtualDatas();
 
   const remuneracao = ref.remuneracaoFixa.ingrid;
   const procedimentosRealizados = 1180;
@@ -5966,15 +6091,34 @@ function _planAtualizarPainelIngrid(){
   set('pi-procedimentos', fmtMoeda(procedimentosRealizados));
   set('pi-comissao-indicacao', fmtMoeda(comissaoIndicacao));
   set('pi-valor-acumulado', fmtMoeda(valorAcumulado));
+
+  _planRenderOcupacaoPorSala('pi-ocup-salas-wrap', de, ate, 'barra');
 }
 
-// Atualiza os cards do Painel Fernanda. Comissão a receber, lucro e comissão
-// por indicação ainda são exemplo/placeholder — o valor total já soma os três.
+// Meta de faturamento mensal da clínica (usada nos painéis de Leticia e Fernanda,
+// que enxergam o faturamento da clínica como um todo, não só o que cada uma fecha).
+// Ainda não existe um campo próprio em Referências para isso — segue como valor
+// fixo até definirmos onde ele deve ser configurado.
+const PLAN_META_FATURAMENTO_CLINICA = 120000;
+
+// Atualiza os cards do Painel Fernanda. Faturamento vs meta é real (orçamentos
+// fechados da clínica toda, já que a comissão dela é sobre o lucro, não sobre
+// o que ela mesma vende). Comissão a receber, lucro e comissão por indicação
+// ainda são exemplo/placeholder — o valor total já soma os três.
 function _planAtualizarPainelFernanda(){
   const painel=document.getElementById('plan-painel_fernanda');
   if(!painel) return;
   const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val; };
   const fmtMoeda=n=>'R$ '+Math.round(n).toLocaleString('pt-BR');
+  const {de,ate}=_planMesAtualDatas();
+
+  // Faturamento vs meta (clínica toda, mês corrente)
+  const fatClinica=_planFaturamentoFechado(de,ate,null).soma;
+  const meta=PLAN_META_FATURAMENTO_CLINICA;
+  const pctFat=meta>0 ? Math.min(100, Math.round((fatClinica/meta)*100)) : 0;
+  set('pf-fat-sub', `${fmtMoeda(fatClinica)} / ${fmtMoeda(meta)}`);
+  const barFat=document.getElementById('pf-fat-bar');
+  if(barFat){ barFat.style.width=pctFat+'%'; }
 
   const comissaoReceber = 6780;
   const lucro15 = 2970;
@@ -5984,6 +6128,32 @@ function _planAtualizarPainelFernanda(){
   set('pf-lucro-15', fmtMoeda(lucro15));
   set('pf-comissao-indicacao', fmtMoeda(comissaoIndicacao));
   set('pf-valor-total', fmtMoeda(valorTotal));
+
+  _planRenderOcupacaoPorSala('pf-ocup-salas-wrap', de, ate, 'barra');
+}
+
+// Atualiza os cards do Painel Leticia. Faturamento vs meta e ticket médio são
+// reais (orçamentos fechados da clínica toda, mês corrente) — ela é a figura
+// central da clínica, então esses indicadores refletem o resultado geral, não
+// só o que ela mesma fecha. Comissão a receber, lucro da clínica e comissão
+// por indicação ainda são exemplo/placeholder, a conectar depois.
+function _planAtualizarPainelLeticia(){
+  const painel=document.getElementById('plan-painel_leticia');
+  if(!painel) return;
+  const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val; };
+  const fmtMoeda=n=>'R$ '+Math.round(n).toLocaleString('pt-BR');
+  const {de,ate}=_planMesAtualDatas();
+
+  const fat=_planFaturamentoFechado(de,ate,null);
+  const meta=PLAN_META_FATURAMENTO_CLINICA;
+  const pctFat=meta>0 ? Math.min(100, Math.round((fat.soma/meta)*100)) : 0;
+  set('pl-fat-sub', `${fmtMoeda(fat.soma)} / ${fmtMoeda(meta)}`);
+  const barFat=document.getElementById('pl-fat-bar');
+  if(barFat){ barFat.style.width=pctFat+'%'; }
+
+  set('pl-ticket-medio', fmtMoeda(fat.ticketMedio));
+
+  _planRenderOcupacaoPorSala('pl-ocup-salas-wrap', de, ate, 'barra');
 }
 
 // Traduz a seleção do filtro de período do Painel Patrik em datas 'YYYY-MM-DD'.
@@ -6041,23 +6211,26 @@ function _planFormatarDataBR(iso){
   return `${d}/${m}/${y.slice(2)}`;
 }
 
-// Métricas do Painel Patrik. 'real:true' = calculada de verdade (ocupação de
-// agenda, via Referências + agendamentos reais); as demais ainda são valores
-// de exemplo (atual/anterior), a conectar quando o indicador financeiro real
-// for plugado. 'invertido:true' = métrica onde diminuir é o resultado bom
-// (ex.: Pago no período).
+// Métricas do Painel Patrik. 'real:true' = calculada de verdade (recebido/pago/
+// fluxo via módulo Financeiro — títulos liquidados no período, pela data de
+// baixa; orçamentos fechados e ticket médio via módulo de Orçamentos — status
+// 'aprovado', valor líquido fechado); as demais ainda são valores de exemplo
+// (atual/anterior), a conectar quando o indicador real for plugado.
+// 'invertido:true' = métrica onde diminuir é o resultado bom (ex.: Pago no
+// período). Ocupação de agenda não entra aqui como item fixo — é montada
+// dinamicamente em _planRenderComparativoPatrik, um item por sala considerada
+// em Referências.
 const PATRIK_METRICAS = [
-  { id:'recebido',    label:'Recebido no período',       tipo:'moeda',         atual:87400, anterior:79800 },
-  { id:'pago',        label:'Pago no período',           tipo:'moeda',         atual:61200, anterior:64500, invertido:true },
-  { id:'fluxo',       label:'Fluxo de caixa',            tipo:'moeda',         atual:26200, anterior:15300 },
+  { id:'recebido',    label:'Recebido no período',       tipo:'moeda',         real:true },
+  { id:'pago',        label:'Pago no período',           tipo:'moeda',         real:true, invertido:true },
+  { id:'fluxo',       label:'Fluxo de caixa',             tipo:'moeda',         real:true },
   { id:'margem',      label:'Margem líquida',            tipo:'percentual',    atual:30,    anterior:26 },
-  { id:'orcfechados', label:'Orçamentos fechados',       tipo:'moeda',         atual:54000, anterior:48000 },
+  { id:'orcfechados', label:'Orçamentos fechados',       tipo:'moeda',         real:true },
   { id:'tratrealizar',label:'Tratamento a realizar',     tipo:'moeda',         atual:31500, anterior:35200 },
   { id:'procexec',    label:'Procedimentos executados',  tipo:'moeda',         atual:79800, anterior:73100 },
   { id:'conversao',   label:'Taxa de conversão',         tipo:'percentual',    atual:42,    anterior:38 },
-  { id:'ticket',      label:'Ticket médio',              tipo:'moeda',         atual:3850,  anterior:3620 },
+  { id:'ticket',      label:'Ticket médio',              tipo:'moeda',         real:true },
   { id:'roi',         label:'ROI marketing',             tipo:'multiplicador',atual:3.2,   anterior:2.8 },
-  { id:'ocupacao',    label:'Ocupação de agenda',        tipo:'percentual',    real:true },
   { id:'primeiras',   label:'1ª consultas no período',   tipo:'numero',        atual:18,    anterior:14 },
 ];
 
@@ -6105,14 +6278,46 @@ function _planRenderComparativoPatrik(){
   if(lblAtual) lblAtual.textContent = `${_planFormatarDataBR(de)} – ${_planFormatarDataBR(ate)}`;
   if(lblAnterior) lblAnterior.textContent = `${_planFormatarDataBR(deAnt)} – ${_planFormatarDataBR(ateAnt)}`;
 
-  const ocupAtual = planCalcularOcupacao(de,ate).pct;
-  const ocupAnterior = planCalcularOcupacao(deAnt,ateAnt).pct;
+  // Orçamentos fechados e ticket médio: clínica toda (sem filtro de profissional),
+  // pelo mesmo período atual/anterior do comparativo.
+  const fatAtual = _planFaturamentoFechado(de,ate,null);
+  const fatAnterior = _planFaturamentoFechado(deAnt,ateAnt,null);
+
+  // Recebido / Pago / Fluxo de caixa: módulo Financeiro, títulos liquidados
+  // (dataBaixa) dentro do período. "Pago" usa o módulo "A pagar total" (une
+  // operacional + folha) — a separação operacional existe só pra ocultar da
+  // secretária, não muda o valor real pago pela clínica.
+  const recebidoAtual = _planRecebidoNoPeriodo(de,ate);
+  const recebidoAnterior = _planRecebidoNoPeriodo(deAnt,ateAnt);
+  const pagoAtual = _planPagoNoPeriodo(de,ate);
+  const pagoAnterior = _planPagoNoPeriodo(deAnt,ateAnt);
+
+  const valoresReais = {
+    recebido:    { atual: recebidoAtual,               anterior: recebidoAnterior },
+    pago:        { atual: pagoAtual,                   anterior: pagoAnterior },
+    fluxo:       { atual: recebidoAtual-pagoAtual,      anterior: recebidoAnterior-pagoAnterior },
+    orcfechados: { atual: fatAtual.soma,                anterior: fatAnterior.soma },
+    ticket:      { atual: fatAtual.ticketMedio,         anterior: fatAnterior.ticketMedio },
+  };
+
+  // Ocupação de agenda: um item por sala considerada em Referências, não mais
+  // um único item médio — cada sala compara o mesmo período atual/anterior.
+  const salasIds = planGetReferencias().salasConsideradas;
+  const metricasOcupacao = salasIds.map(salaId=>({
+    id: 'ocup_'+salaId,
+    label: 'Ocupação '+_planNomeSala(salaId),
+    tipo: 'percentual',
+    atual: planCalcularOcupacaoSala(salaId, de, ate).pct,
+    anterior: planCalcularOcupacaoSala(salaId, deAnt, ateAnt).pct,
+  }));
+
+  const metricas = [...PATRIK_METRICAS, ...metricasOcupacao];
 
   const wrap=document.getElementById('pp-comparativo-grid');
   if(!wrap) return;
-  wrap.innerHTML = PATRIK_METRICAS.map(m=>{
-    const atual = m.real ? ocupAtual : m.atual;
-    const anterior = m.real ? ocupAnterior : m.anterior;
+  wrap.innerHTML = metricas.map(m=>{
+    const atual = m.real ? valoresReais[m.id].atual : m.atual;
+    const anterior = m.real ? valoresReais[m.id].anterior : m.anterior;
     const cmp = _planComparar(m.tipo, atual, anterior, m.invertido);
     const cor = cmp.semMudanca ? 'var(--tx3)' : (cmp.melhora ? 'var(--su)' : 'var(--da)');
     const seta = cmp.semMudanca ? '→' : (cmp.cresceu ? '▲' : '▼');
@@ -6143,6 +6348,7 @@ function _planInicializar(){
   if(typeof _planAtualizarPainelBeatriz==='function') _planAtualizarPainelBeatriz();
   if(typeof _planAtualizarPainelIngrid==='function') _planAtualizarPainelIngrid();
   if(typeof _planAtualizarPainelFernanda==='function') _planAtualizarPainelFernanda();
+  if(typeof _planAtualizarPainelLeticia==='function') _planAtualizarPainelLeticia();
 }
 
 // Avisar (sem salvar sozinho) se houver alterações pendentes ao fechar/recarregar a página
@@ -18430,6 +18636,7 @@ function showPlanejamento(sub, btn){
   if(sub==='painel_beatriz' && typeof _planAtualizarPainelBeatriz==='function') _planAtualizarPainelBeatriz();
   if(sub==='painel_ingrid' && typeof _planAtualizarPainelIngrid==='function') _planAtualizarPainelIngrid();
   if(sub==='painel_fernanda' && typeof _planAtualizarPainelFernanda==='function') _planAtualizarPainelFernanda();
+  if(sub==='painel_leticia' && typeof _planAtualizarPainelLeticia==='function') _planAtualizarPainelLeticia();
 }
 
 function showCfg(sub, btn){
