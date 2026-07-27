@@ -2471,7 +2471,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <input id="plan-ref-com-beatriz-fat" type="number" step="0.1" min="0" max="100" placeholder="Ex: 3,5" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:14px" onblur="_planSalvarReferencias()">
 
       <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">% comissão sobre lucro — Fernanda</label>
-      <input id="plan-ref-com-fernanda-lucro" type="number" step="0.1" min="0" max="100" placeholder="Ex: 15" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font)" onblur="_planSalvarReferencias()">
+      <input id="plan-ref-com-fernanda-lucro" type="number" step="0.1" min="0" max="100" placeholder="Ex: 15" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:18px" onblur="_planSalvarReferencias()">
+
+      <div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:8px;padding-top:14px;border-top:1px solid var(--border)">Bônus por agendamento</div>
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Valor por primeira consulta agendada (Beatriz)</label>
+      <input id="plan-ref-bonus-agendamento" type="number" step="1" min="0" placeholder="Ex: 20" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font)" onblur="_planSalvarReferencias()">
     </div>
   </div>
 
@@ -5761,7 +5765,8 @@ function planGetReferencias(){
     },
     salasConsideradas: ['sala1','sala4'],
     remuneracaoFixa: { beatriz: 2300, fernanda: 1500, ingrid: 2500 },
-    comissoes: { beatrizPctFaturamento: 3.5, fernandaPctLucro: 15 }
+    comissoes: { beatrizPctFaturamento: 3.5, fernandaPctLucro: 15 },
+    valorBonusAgendamento: 20
   };
   const salvo = carregarLS('sk3-plan-referencias', null);
   if(!salvo) return def;
@@ -5774,7 +5779,8 @@ function planGetReferencias(){
     },
     salasConsideradas: (salvo.salasConsideradas && salvo.salasConsideradas.length) ? salvo.salasConsideradas : def.salasConsideradas,
     remuneracaoFixa: { ...def.remuneracaoFixa, ...(salvo.remuneracaoFixa||{}) },
-    comissoes: { ...def.comissoes, ...(salvo.comissoes||{}) }
+    comissoes: { ...def.comissoes, ...(salvo.comissoes||{}) },
+    valorBonusAgendamento: salvo.valorBonusAgendamento ?? def.valorBonusAgendamento
   };
 }
 function _planSalvarReferencias(){
@@ -5798,7 +5804,8 @@ function _planSalvarReferencias(){
     comissoes: {
       beatrizPctFaturamento: parseFloat(v('plan-ref-com-beatriz-fat'))||0,
       fernandaPctLucro: parseFloat(v('plan-ref-com-fernanda-lucro'))||0
-    }
+    },
+    valorBonusAgendamento: parseFloat(v('plan-ref-bonus-agendamento'))||0
   });
   // Recalcula na hora os painéis que dependem dessas referências, caso estejam abertos
   if(typeof _planPatrikPeriodoMudou==='function') _planPatrikPeriodoMudou();
@@ -5835,6 +5842,7 @@ function _planCarregarReferencias(){
   set('plan-ref-fixo-ingrid', ref.remuneracaoFixa.ingrid);
   set('plan-ref-com-beatriz-fat', ref.comissoes.beatrizPctFaturamento);
   set('plan-ref-com-fernanda-lucro', ref.comissoes.fernandaPctLucro);
+  set('plan-ref-bonus-agendamento', ref.valorBonusAgendamento);
   _planRenderSalasReferencia(ref);
 }
 
@@ -6022,6 +6030,32 @@ function _planRecebidoNoPeriodo(dataIniISO, dataFimISO){
   }).reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
 }
 
+// Número de agendamentos marcados como "Primeira consulta? → Sim" no período
+// (checkpoint do próprio modal de agendamento), excluindo cancelados. Filtra
+// pela data do agendamento.
+function _planPrimeirasConsultasNoPeriodo(dataIniISO, dataFimISO){
+  return (typeof agendamentos!=='undefined' ? agendamentos : []).filter(a=>{
+    if(a.status==='cancelado') return false;
+    if(a.primeiraConsulta!=='sim') return false;
+    return a.data>=dataIniISO && a.data<=dataFimISO;
+  }).length;
+}
+
+// Taxa de conversão = orçamentos fechados (aprovados) ÷ orçamentos decididos
+// (aprovados + reprovados) no período, em %. Orçamentos ainda "em aberto"
+// (sem decisão) não entram na conta — só quem já foi de fato decidido.
+// Filtra pela data de decisão. Retorna { pct, aprovados, decididos }.
+function _planTaxaConversao(dataIniISO, dataFimISO){
+  const decididos = _orcamentos().filter(o=>{
+    if(o.status!=='aprovado' && o.status!=='reprovado') return false;
+    const dataRef = o.dataDecisao || o.data || o.dataCriacao || '';
+    return dataRef>=dataIniISO && dataRef<=dataFimISO;
+  });
+  const aprovados = decididos.filter(o=>o.status==='aprovado').length;
+  const pct = decididos.length ? (aprovados/decididos.length)*100 : 0;
+  return { pct, aprovados, decididos: decididos.length };
+}
+
 // Primeiro e último dia do mês corrente, em 'YYYY-MM-DD' — usado pelos painéis
 // individuais (Beatriz, Fernanda, Ingrid, Leticia), que são sempre mensais e
 // não têm filtro de período.
@@ -6060,9 +6094,12 @@ function _planAtualizarPainelBeatriz(){
 
   // Remuneração: fixo se o faturamento ficar abaixo do piso; comissão % sobre
   // faturamento (Referências) se atingir ou superar o piso — não soma os dois.
-  // Faturamento já é real (orçamentos fechados); bônus e comissão por indicação ainda são exemplo.
+  // Faturamento já é real (orçamentos fechados). Bônus por agendamentos é real:
+  // valor por primeira consulta (Referências) × nº de agendamentos marcados
+  // como "Primeira consulta? Sim" no mês. Comissão por indicação ainda é exemplo.
   const remuneracao = faturamentoAtual>=piso ? faturamentoAtual*(ref.comissoes.beatrizPctFaturamento/100) : ref.remuneracaoFixa.beatriz;
-  const bonusAgendamentos = 340;
+  const qtdPrimeirasConsultas = _planPrimeirasConsultasNoPeriodo(de,ate);
+  const bonusAgendamentos = ref.valorBonusAgendamento * qtdPrimeirasConsultas;
   const comissaoIndicacao = 0;
   const valorTotal = remuneracao + bonusAgendamentos + comissaoIndicacao;
   set('pb-rem-faturamento', fmtMoeda(remuneracao));
@@ -6213,13 +6250,13 @@ function _planFormatarDataBR(iso){
 
 // Métricas do Painel Patrik. 'real:true' = calculada de verdade (recebido/pago/
 // fluxo via módulo Financeiro — títulos liquidados no período, pela data de
-// baixa; orçamentos fechados e ticket médio via módulo de Orçamentos — status
-// 'aprovado', valor líquido fechado); as demais ainda são valores de exemplo
-// (atual/anterior), a conectar quando o indicador real for plugado.
-// 'invertido:true' = métrica onde diminuir é o resultado bom (ex.: Pago no
-// período). Ocupação de agenda não entra aqui como item fixo — é montada
-// dinamicamente em _planRenderComparativoPatrik, um item por sala considerada
-// em Referências.
+// baixa; orçamentos fechados, ticket médio e taxa de conversão via módulo de
+// Orçamentos; 1ª consultas via módulo de Agenda — checkpoint "Primeira
+// consulta? Sim"); as demais ainda são valores de exemplo (atual/anterior), a
+// conectar quando o indicador real for plugado. 'invertido:true' = métrica
+// onde diminuir é o resultado bom (ex.: Pago no período). Ocupação de agenda
+// não entra aqui como item fixo — é montada dinamicamente em
+// _planRenderComparativoPatrik, um item por sala considerada em Referências.
 const PATRIK_METRICAS = [
   { id:'recebido',    label:'Recebido no período',       tipo:'moeda',         real:true },
   { id:'pago',        label:'Pago no período',           tipo:'moeda',         real:true, invertido:true },
@@ -6228,10 +6265,10 @@ const PATRIK_METRICAS = [
   { id:'orcfechados', label:'Orçamentos fechados',       tipo:'moeda',         real:true },
   { id:'tratrealizar',label:'Tratamento a realizar',     tipo:'moeda',         atual:31500, anterior:35200 },
   { id:'procexec',    label:'Procedimentos executados',  tipo:'moeda',         atual:79800, anterior:73100 },
-  { id:'conversao',   label:'Taxa de conversão',         tipo:'percentual',    atual:42,    anterior:38 },
+  { id:'conversao',   label:'Taxa de conversão',         tipo:'percentual',    real:true },
   { id:'ticket',      label:'Ticket médio',              tipo:'moeda',         real:true },
   { id:'roi',         label:'ROI marketing',             tipo:'multiplicador',atual:3.2,   anterior:2.8 },
-  { id:'primeiras',   label:'1ª consultas no período',   tipo:'numero',        atual:18,    anterior:14 },
+  { id:'primeiras',   label:'1ª consultas no período',   tipo:'numero',        real:true },
 ];
 
 function _planFormatarValor(tipo, valor){
@@ -6292,12 +6329,19 @@ function _planRenderComparativoPatrik(){
   const pagoAtual = _planPagoNoPeriodo(de,ate);
   const pagoAnterior = _planPagoNoPeriodo(deAnt,ateAnt);
 
+  const conversaoAtual = _planTaxaConversao(de,ate).pct;
+  const conversaoAnterior = _planTaxaConversao(deAnt,ateAnt).pct;
+  const primeirasAtual = _planPrimeirasConsultasNoPeriodo(de,ate);
+  const primeirasAnterior = _planPrimeirasConsultasNoPeriodo(deAnt,ateAnt);
+
   const valoresReais = {
     recebido:    { atual: recebidoAtual,               anterior: recebidoAnterior },
     pago:        { atual: pagoAtual,                   anterior: pagoAnterior },
     fluxo:       { atual: recebidoAtual-pagoAtual,      anterior: recebidoAnterior-pagoAnterior },
     orcfechados: { atual: fatAtual.soma,                anterior: fatAnterior.soma },
     ticket:      { atual: fatAtual.ticketMedio,         anterior: fatAnterior.ticketMedio },
+    conversao:   { atual: conversaoAtual,               anterior: conversaoAnterior },
+    primeiras:   { atual: primeirasAtual,               anterior: primeirasAnterior },
   };
 
   // Ocupação de agenda: um item por sala considerada em Referências, não mais
