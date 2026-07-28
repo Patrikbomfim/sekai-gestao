@@ -4285,15 +4285,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="pg-title">Relatórios</div>
   <div class="pg-desc">Detalhamento operacional — procedimentos, primeiras consultas, indicações e altas</div>
 
-  <div class="tabs" id="rel-tabs">
-    <button class="tab" id="rel-tab-proc_realizados" onclick="relSelecionarAba('proc_realizados')">Procedimentos realizados</button>
-    <button class="tab" id="rel-tab-proc_a_realizar" onclick="relSelecionarAba('proc_a_realizar')">Procedimentos a realizar</button>
-    <button class="tab" id="rel-tab-primeiras_consultas" onclick="relSelecionarAba('primeiras_consultas')">Primeiras consultas</button>
-    <button class="tab" id="rel-tab-pacientes_indicados" onclick="relSelecionarAba('pacientes_indicados')">Pacientes indicados</button>
-    <button class="tab" id="rel-tab-pacientes_alta" onclick="relSelecionarAba('pacientes_alta')">Pacientes de alta</button>
-  </div>
-
-  <div class="card" style="margin-bottom:16px">
+  <!-- Filtro de período: geral, fixo no topo, vale pra todas as abas -->
+  <div class="card" style="margin-bottom:16px;position:sticky;top:0;z-index:15">
     <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
       <div class="fl" style="min-width:170px">
         <label>Período</label>
@@ -4314,12 +4307,24 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <input type="date" id="rel-periodo-ate" class="fin-input-date" onchange="relRenderConteudo()">
         </div>
       </div>
-      <div id="rel-filtros-aba" style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap"></div>
       <button class="btn btn-ghost btn-sm" onclick="relLimparFiltro()" style="margin-left:auto">Limpar filtro</button>
     </div>
   </div>
 
-  <div id="rel-conteudo"></div>
+  <!-- Menu lateral de abas + conteúdo, mesmo padrão visual do menu do paciente -->
+  <div class="pp-layout">
+    <nav class="pp-menu" id="rel-menu">
+      <button class="pp-menu-btn" id="rel-tab-proc_realizados" onclick="relSelecionarAba('proc_realizados')">Procedimentos realizados</button>
+      <button class="pp-menu-btn" id="rel-tab-proc_a_realizar" onclick="relSelecionarAba('proc_a_realizar')">Procedimentos a realizar</button>
+      <button class="pp-menu-btn" id="rel-tab-primeiras_consultas" onclick="relSelecionarAba('primeiras_consultas')">Primeiras consultas</button>
+      <button class="pp-menu-btn" id="rel-tab-pacientes_indicados" onclick="relSelecionarAba('pacientes_indicados')">Pacientes indicados</button>
+      <button class="pp-menu-btn" id="rel-tab-pacientes_alta" onclick="relSelecionarAba('pacientes_alta')">Pacientes de alta</button>
+    </nav>
+    <div class="pp-content">
+      <div id="rel-filtros-aba" style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:14px"></div>
+      <div id="rel-conteudo"></div>
+    </div>
+  </div>
 </div>
 
 <!-- SEÇÃO DASHBOARD (estático) -->
