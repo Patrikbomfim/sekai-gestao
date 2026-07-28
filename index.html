@@ -4283,34 +4283,43 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <!-- SEÇÃO RELATÓRIOS -->
 <div id="sec-relatorios" class="sec">
   <div class="pg-title">Relatórios</div>
-  <div class="pg-desc">Detalhamento por indicador — selecione um indicador para ver o histórico completo</div>
-  <div style="display:flex;align-items:flex-start;gap:16px">
-    <div style="width:240px;flex-shrink:0">
-      <div class="card" style="padding:10px 0">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);padding:0 14px;margin-bottom:8px">Indicadores</div>
-        <div id="rel-lista-indicadores"></div>
+  <div class="pg-desc">Detalhamento operacional — procedimentos, primeiras consultas, indicações e altas</div>
+
+  <div class="tabs" id="rel-tabs">
+    <button class="tab" id="rel-tab-proc_realizados" onclick="relSelecionarAba('proc_realizados')">Procedimentos realizados</button>
+    <button class="tab" id="rel-tab-proc_a_realizar" onclick="relSelecionarAba('proc_a_realizar')">Procedimentos a realizar</button>
+    <button class="tab" id="rel-tab-primeiras_consultas" onclick="relSelecionarAba('primeiras_consultas')">Primeiras consultas</button>
+    <button class="tab" id="rel-tab-pacientes_indicados" onclick="relSelecionarAba('pacientes_indicados')">Pacientes indicados</button>
+    <button class="tab" id="rel-tab-pacientes_alta" onclick="relSelecionarAba('pacientes_alta')">Pacientes de alta</button>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
+      <div class="fl" style="min-width:170px">
+        <label>Período</label>
+        <select id="rel-periodo-sel" class="fin-select" onchange="relPeriodoMudou()">
+          <option value="mes_atual">Mês atual</option>
+          <option value="semana_atual">Semana atual</option>
+          <option value="hoje">Hoje</option>
+          <option value="especifica">Data específica</option>
+        </select>
       </div>
-    </div>
-    <div style="flex:1;min-width:0">
-      <div id="rel-filtro" style="display:none;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
-        <span style="font-size:12px;color:var(--tx2);font-weight:500">Período:</span>
-        <div style="display:flex;align-items:center;gap:6px">
-          <label style="font-size:11px;color:var(--tx3)">De</label>
-          <input type="date" id="rel-ini" style="font-size:11px;padding:3px 6px;border:0.5px solid var(--border-s);border-radius:4px;background:var(--surface);color:var(--tx)">
-          <label style="font-size:11px;color:var(--tx3)">até</label>
-          <input type="date" id="rel-fim" style="font-size:11px;padding:3px 6px;border:0.5px solid var(--border-s);border-radius:4px;background:var(--surface);color:var(--tx)">
-          <button class="btn btn-ghost btn-sm" onclick="relAplicarFiltro()">Aplicar</button>
-          <button class="btn btn-ghost btn-sm" onclick="relResetarFiltro()">Limpar</button>
+      <div id="rel-periodo-custom" style="display:none;align-items:flex-end;gap:10px">
+        <div class="fl" style="min-width:150px">
+          <label>De</label>
+          <input type="date" id="rel-periodo-de" class="fin-input-date" onchange="relRenderConteudo()">
+        </div>
+        <div class="fl" style="min-width:150px">
+          <label>Até</label>
+          <input type="date" id="rel-periodo-ate" class="fin-input-date" onchange="relRenderConteudo()">
         </div>
       </div>
-      <div id="rel-conteudo">
-        <div style="display:flex;align-items:center;justify-content:center;height:300px;color:var(--tx3);font-size:13px;flex-direction:column;gap:8px">
-          <div style="font-size:28px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg></div>
-          <div>Selecione um indicador ao lado para ver o detalhamento</div>
-        </div>
-      </div>
+      <div id="rel-filtros-aba" style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap"></div>
+      <button class="btn btn-ghost btn-sm" onclick="relLimparFiltro()" style="margin-left:auto">Limpar filtro</button>
     </div>
   </div>
+
+  <div id="rel-conteudo"></div>
 </div>
 
 <!-- SEÇÃO DASHBOARD (estático) -->
@@ -9527,6 +9536,9 @@ function voltarParaPacientes(){
     showFinSub(sub, document.getElementById('fin-sub-'+sub));
   } else if(pacienteOrigemTab==='orcamentosgeral'){
     goTo('orcamentosgeral', document.getElementById('navbtn-orcamentosgeral'));
+  } else if(pacienteOrigemTab==='relatorios'){
+    const btnRel = document.querySelector('.nav-btn[onclick*="goTo(\'relatorios\'"]');
+    goTo('relatorios', btnRel);
   } else {
     goTo('pacientes', document.getElementById('navbtn-pacientes'));
   }
@@ -23102,205 +23114,471 @@ function salvarEntradaModal(){
 }
 
 // ── RELATÓRIOS ────────────────────────────────────────────────────────────
-let _relIndicadorSelecionado = null;
+// 5 abas fixas, cada uma com filtro de período (mês atual / semana atual /
+// hoje / data específica) + filtros próprios (autocomplete). Nomes de
+// paciente são clicáveis e levam à ficha, com "voltar" trazendo de volta pra
+// cá (pacienteOrigemTab='relatorios', tratado em voltarParaPacientes()).
+let _relAbaAtual = 'proc_realizados';
+let _relPeriodoTipo = 'mes_atual';
+let _relFiltros = {
+  proc_realizados: { profissionais: [] },
+  proc_a_realizar: { profissionais: [] },
+  primeiras_consultas: { paciente: null },
+  pacientes_indicados: { pacienteIndicado: null, indicador: null },
+  pacientes_alta: { paciente: null },
+};
+let _relAcTemp = {}; // resultados temporários de cada autocomplete, pra mapear clique → item
+
+const REL_ABAS = [
+  { id:'proc_realizados',     label:'Procedimentos realizados' },
+  { id:'proc_a_realizar',     label:'Procedimentos a realizar' },
+  { id:'primeiras_consultas', label:'Primeiras consultas' },
+  { id:'pacientes_indicados', label:'Pacientes indicados' },
+  { id:'pacientes_alta',      label:'Pacientes de alta' },
+];
 
 function renderRelatorios(){
-  const wrap = document.getElementById('rel-lista-indicadores');
-  if(!wrap) return;
-  const disponiveis = todosIndicadoresDisponiveis();
-  if(!disponiveis.length){
-    wrap.innerHTML = '<div style="padding:10px 14px;font-size:12px;color:var(--tx3)">Nenhum indicador configurado.</div>';
-    return;
-  }
-  // agrupa por cargo
-  const porCargo = {};
-  disponiveis.forEach(d => {
-    if(!porCargo[d.cargoNome]) porCargo[d.cargoNome] = [];
-    porCargo[d.cargoNome].push(d);
+  relRenderTabs();
+  relRenderFiltroPeriodo();
+  relRenderFiltrosAba();
+  relRenderConteudo();
+}
+
+function relRenderTabs(){
+  REL_ABAS.forEach(a=>{
+    const btn=document.getElementById('rel-tab-'+a.id);
+    if(btn) btn.classList.toggle('on', _relAbaAtual===a.id);
   });
-  let html = '';
-  Object.entries(porCargo).forEach(([cargo, itens]) => {
-    html += `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--tx3);padding:10px 14px 4px">${cargo}</div>`;
-    itens.forEach(d => {
-      const key = d.cargoId + '__' + d.itemId;
-      const ativo = _relIndicadorSelecionado === key;
-      html += `<button onclick="abrirRelatorio('${key}')" style="display:flex;align-items:center;gap:8px;width:100%;padding:7px 14px;border:none;background:${ativo?'var(--acl)':'none'};color:${ativo?'var(--ac)':'var(--tx2)'};font-size:12px;font-weight:${ativo?'600':'400'};cursor:pointer;text-align:left;border-left:${ativo?'2px solid var(--ac)':'2px solid transparent'};font-family:var(--font)">
-        <span style="font-size:11px">${d.tipo==='formulario'?'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg>':d.tipo==='registro'?'🏷':d.tipo==='moeda'?'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>':d.tipo==='simnao'?'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg>':'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>'}</span>
-        ${d.itemLabel}
-      </button>`;
-    });
-  });
-  wrap.innerHTML = html;
 }
 
-function relIniPadrao(){ const h=new Date(hoje); return new Date(h.getFullYear(),h.getMonth(),1).toISOString().slice(0,10); }
-function relFimPadrao(){ const h=new Date(hoje); return new Date(h.getFullYear(),h.getMonth()+1,0).toISOString().slice(0,10); }
-
-function relMostrarFiltro(ini, fim){
-  const bar = document.getElementById('rel-filtro');
-  if(!bar) return;
-  bar.style.display = 'flex';
-  document.getElementById('rel-ini').value = ini || relIniPadrao();
-  document.getElementById('rel-fim').value = fim || relFimPadrao();
-}
-
-function relGetFiltro(){
-  const ini = document.getElementById('rel-ini')?.value || relIniPadrao();
-  const fim = document.getElementById('rel-fim')?.value || relFimPadrao();
-  return {ini, fim};
-}
-
-function relAplicarFiltro(){
-  if(_relIndicadorSelecionado) abrirRelatorio(_relIndicadorSelecionado, false);
-}
-
-function relResetarFiltro(){
-  const ini = relIniPadrao();
-  const fim = relFimPadrao();
-  document.getElementById('rel-ini').value = ini;
-  document.getElementById('rel-fim').value = fim;
-  if(_relIndicadorSelecionado) abrirRelatorio(_relIndicadorSelecionado, false);
-}
-
-function abrirRelatorio(key, resetFiltro){
-  // navega para relatórios se não estiver lá
-  const secRel = document.getElementById('sec-relatorios');
-  if(secRel && !secRel.classList.contains('on')){
-    document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
-    document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('on'));
-    secRel.classList.add('on');
-    document.querySelectorAll('.nav-btn[onclick]').forEach(btn=>{
-      if(btn.getAttribute('onclick').includes("'relatorios'")) btn.classList.add('on');
-    });
-    renderRelatorios();
-  }
-  _relIndicadorSelecionado = key;
+function relSelecionarAba(id){
+  _relAbaAtual=id;
   renderRelatorios();
+}
 
-  // mostra filtro — reseta datas só na primeira abertura do indicador
-  if(resetFiltro !== false) relMostrarFiltro(relIniPadrao(), relFimPadrao());
-  else relMostrarFiltro();
+function relRenderFiltroPeriodo(){
+  const sel=document.getElementById('rel-periodo-sel');
+  if(sel) sel.value=_relPeriodoTipo;
+  const custom=document.getElementById('rel-periodo-custom');
+  if(custom) custom.style.display = _relPeriodoTipo==='especifica' ? 'flex' : 'none';
+}
 
-  const {ini: filtroIni, fim: filtroFim} = relGetFiltro();
+function relPeriodoMudou(){
+  const sel=document.getElementById('rel-periodo-sel');
+  _relPeriodoTipo = sel ? sel.value : 'mes_atual';
+  relRenderFiltroPeriodo();
+  relRenderConteudo();
+}
 
-  // gera lista de datas do período filtrado
-  const relDatasNoFiltro = dbDatasEntrePeriodo(filtroIni, filtroFim);
+// Datas do período selecionado, formato 'YYYY-MM-DD'.
+function _relPeriodoDatas(){
+  const hoje=_finHoje();
+  if(_relPeriodoTipo==='hoje'){
+    return { de:_finIso(hoje), ate:_finIso(hoje) };
+  }
+  if(_relPeriodoTipo==='semana_atual'){
+    const seg=_finSegundaSemana(hoje);
+    const dom=new Date(seg); dom.setDate(seg.getDate()+6);
+    return { de:_finIso(seg), ate:_finIso(dom) };
+  }
+  if(_relPeriodoTipo==='especifica'){
+    const de=document.getElementById('rel-periodo-de')?.value || _finIso(hoje);
+    const ate=document.getElementById('rel-periodo-ate')?.value || _finIso(hoje);
+    return { de, ate };
+  }
+  // 'mes_atual' (padrão)
+  const ini=new Date(hoje.getFullYear(),hoje.getMonth(),1);
+  const fim=new Date(hoje.getFullYear(),hoje.getMonth()+1,0);
+  return { de:_finIso(ini), ate:_finIso(fim) };
+}
 
-  const disponiveis = todosIndicadoresDisponiveis();
-  const d = disponiveis.find(x => x.cargoId+'__'+x.itemId === key);
-  const conteudo = document.getElementById('rel-conteudo');
-  if(!d || !conteudo) return;
+function relFiltroVazio(aba){
+  const map={
+    proc_realizados:{profissionais:[]},
+    proc_a_realizar:{profissionais:[]},
+    primeiras_consultas:{paciente:null},
+    pacientes_indicados:{pacienteIndicado:null, indicador:null},
+    pacientes_alta:{paciente:null},
+  };
+  return map[aba];
+}
 
-  const tipoLabel = {numero:'Número',moeda:'Moeda',percentual:'Percentual',simnao:'Sim/Não',escala:'Escala',registro:'Registro de lead',formulario:'Formulário'};
+function relLimparFiltro(){
+  _relPeriodoTipo='mes_atual';
+  const de=document.getElementById('rel-periodo-de'); if(de) de.value='';
+  const ate=document.getElementById('rel-periodo-ate'); if(ate) ate.value='';
+  _relFiltros[_relAbaAtual] = relFiltroVazio(_relAbaAtual);
+  renderRelatorios();
+}
 
-  if(d.tipo === 'formulario'){
-    const entradas = (leadEntries||[]).filter(e => e.itemId === d.itemId && relDatasNoFiltro.includes(e.data));
-    // descobre campos
-    let campos = null;
-    cargos.forEach(c => {
-      const it = (checkinTemplates[c.id]||[]).find(x => x.id === d.itemId);
-      if(it && it.campos) campos = it.campos;
-    });
-    if(!entradas.length){
-      conteudo.innerHTML = `<div class="card"><div class="card-title">${d.itemLabel}</div><div class="card-sub">${d.cargoNome} · Formulário</div><div class="empty" style="padding:32px 0"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg></div>Nenhum registro encontrado</div></div>`;
-      return;
-    }
-    // agrupa por data
-    const porData = {};
-    entradas.forEach(e => {
-      if(!porData[e.data]) porData[e.data] = [];
-      porData[e.data].push(e);
-    });
-    const datas_ord = Object.keys(porData).sort().reverse();
-    const gridCols = campos ? `100px ${campos.map(()=>'1fr').join(' ')} 120px` : '100px 1fr 120px';
-    let rows = '';
-    datas_ord.forEach(dt => {
-      porData[dt].forEach((e,i) => {
-        const quem = usuarios.find(u=>u.id===e.registradoPor)?.nome||'—';
-        const vals = campos ? campos.map(c => `<span style="font-size:12px;color:var(--tx)">${(e.dados&&e.dados[c.id])||'—'}</span>`) : [`<span style="font-size:12px;color:var(--tx)">${JSON.stringify(e.dados||{})}</span>`];
-        rows += `<div style="display:grid;grid-template-columns:${gridCols};gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border)">
-          ${i===0?`<span style="font-size:11px;font-weight:600;color:var(--tx2)">${fmtDate(parseIso(dt))}</span>`:'<span></span>'}
-          ${vals.join('')}
-          <span style="font-size:11px;color:var(--tx3)">${quem}</span>
-        </div>`;
-      });
-    });
-    const header = campos ? campos.map(c=>`<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3)">${c.nome}</span>`).join('') : '<span style="font-size:10px;font-weight:700;color:var(--tx3)">Dados</span>';
-    conteudo.innerHTML = `<div class="card" style="padding:0;overflow:hidden">
-      <div style="padding:14px 16px;border-bottom:1px solid var(--border)">
-        <div class="card-title" style="margin-bottom:2px">${d.itemLabel}</div>
-        <div style="font-size:12px;color:var(--tx2)">${d.cargoNome} · Formulário · ${entradas.length} registro${entradas.length!==1?'s':''}</div>
-      </div>
-      <div style="display:grid;grid-template-columns:${gridCols};gap:10px;padding:8px 12px;background:var(--s2)">
-        <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3)">Data</span>
-        ${header}
-        <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3)">Registrado por</span>
-      </div>
-      ${rows}
+// Nomes da equipe (mesma fonte usada nos seletores "Criado por"/"Executou" dos orçamentos).
+function _relEquipeNomes(){
+  return (typeof equipe!=='undefined' ? equipe : []).map(e=>typeof e==='string'?e:(e.nome||'')).filter(Boolean);
+}
+
+// ── FILTROS POR ABA (autocomplete) ──────────────────────────────────────
+function relRenderFiltrosAba(){
+  const wrap=document.getElementById('rel-filtros-aba');
+  if(!wrap) return;
+  const aba=_relAbaAtual;
+
+  if(aba==='proc_realizados' || aba==='proc_a_realizar'){
+    const chave=aba+'Prof';
+    const selecionados=_relFiltros[aba].profissionais;
+    wrap.innerHTML=`<div class="fl" style="min-width:260px;position:relative">
+      <label>Profissional</label>
+      <input type="text" id="rel-ac-${chave}" placeholder="Buscar profissional..." autocomplete="off"
+        oninput="_relProfBuscar('${aba}', this.value)"
+        onfocus="_relProfBuscar('${aba}', '')"
+        onblur="setTimeout(()=>{const dd=document.getElementById('rel-ac-${chave}-dd'); if(dd)dd.classList.remove('open')},160)">
+      <div id="rel-ac-${chave}-dd" class="fin-ac-dropdown"></div>
+      ${selecionados.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-width:320px">${selecionados.map(n=>`<span style="display:inline-flex;align-items:center;gap:5px;background:var(--acl);color:var(--ac);font-size:12px;font-weight:600;padding:3px 8px 3px 10px;border-radius:20px">${esc(n)}<span onmousedown="_relProfRemover('${aba}','${esc(n).replace(/'/g,"\\'")}')" style="cursor:pointer;font-weight:700">×</span></span>`).join('')}</div>`:''}
     </div>`;
     return;
   }
 
-  // Para indicadores numéricos/sim-não/etc — histórico por dia filtrado
-  const todasDatas = relDatasNoFiltro.filter(dt => checkinRegistros[dt]).sort().reverse();
-  if(!todasDatas.length){
-    conteudo.innerHTML = `<div class="card"><div class="card-title">${d.itemLabel}</div><div class="card-sub">${d.cargoNome} · ${tipoLabel[d.tipo]||d.tipo}</div><div class="empty" style="padding:32px 0"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg></div>Nenhum dado registrado</div></div>`;
+  if(aba==='primeiras_consultas'){
+    const v=_relFiltros.primeiras_consultas.paciente;
+    wrap.innerHTML=_relPacInputHTML('primeirasPaciente','Paciente',v);
     return;
   }
 
-  let rows = '';
-  let totalGeral = 0, countGeral = 0;
-  todasDatas.forEach(dt => {
-    const regDia = checkinRegistros[dt] || {};
-    const entradasDia = [];
-    Object.entries(regDia).forEach(([uid, regUser]) => {
-      const val = regUser[d.itemId];
-      if(val === undefined || val === '' || val === null) return;
-      const quem = usuarios.find(u=>u.id===uid)?.nome||'—';
-      entradasDia.push({val, quem});
-    });
-    if(!entradasDia.length) return;
-    entradasDia.forEach((e,i) => {
-      let exibVal = e.val;
-      if(d.tipo==='moeda') exibVal = 'R$ '+parseFloat(String(e.val).replace(',','.')).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-      else if(d.tipo==='percentual') exibVal = e.val+'%';
-      else if(d.tipo==='escala') exibVal = e.val+' / 5';
-      else if(d.tipo==='simnao') exibVal = e.val==='sim'?'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg> Sim':'<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg> Não';
-      const n = parseFloat(String(e.val).replace(',','.'));
-      if(!isNaN(n)){ totalGeral += n; countGeral++; }
-      rows += `<div style="display:grid;grid-template-columns:120px 1fr 120px;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border)">
-        ${i===0?`<span style="font-size:11px;font-weight:600;color:var(--tx2)">${fmtDate(parseIso(dt))}</span>`:'<span></span>'}
-        <span style="font-size:13px;font-weight:600;color:var(--tx)">${exibVal}</span>
-        <span style="font-size:11px;color:var(--tx3)">${e.quem}</span>
+  if(aba==='pacientes_indicados'){
+    const vp=_relFiltros.pacientes_indicados.pacienteIndicado;
+    const vi=_relFiltros.pacientes_indicados.indicador;
+    wrap.innerHTML = _relPacInputHTML('indicadosPaciente','Paciente indicado',vp) + `
+      <div class="fl" style="min-width:220px;position:relative">
+        <label>Quem indicou</label>
+        <input type="text" id="rel-ac-indicadosIndicador" value="${vi?esc(vi.nome):''}" placeholder="Buscar indicador..." autocomplete="off"
+          oninput="_relIndicBuscar(this.value)"
+          onblur="setTimeout(()=>{const dd=document.getElementById('rel-ac-indicadosIndicador-dd'); if(dd)dd.classList.remove('open')},160)">
+        <div id="rel-ac-indicadosIndicador-dd" class="fin-ac-dropdown"></div>
       </div>`;
-    });
-  });
-
-  let resumo = '';
-  if(d.tipo !== 'simnao' && countGeral > 0){
-    const media = totalGeral/countGeral;
-    const fmtV = v => d.tipo==='moeda'?'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):d.tipo==='percentual'?v.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%':d.tipo==='escala'?v.toLocaleString('pt-BR',{maximumFractionDigits:1})+' / 5':v.toLocaleString('pt-BR',{maximumFractionDigits:1});
-    resumo = `<div style="display:flex;gap:16px;padding:12px 16px;background:var(--acl);border-bottom:1px solid var(--border)">
-      <div><div style="font-size:10px;color:var(--ac);font-weight:700;text-transform:uppercase;letter-spacing:.06em">Total acumulado</div><div style="font-size:16px;font-weight:700;color:var(--ac)">${fmtV(totalGeral)}</div></div>
-      <div><div style="font-size:10px;color:var(--ac);font-weight:700;text-transform:uppercase;letter-spacing:.06em">Média por registro</div><div style="font-size:16px;font-weight:700;color:var(--ac)">${fmtV(media)}</div></div>
-      <div><div style="font-size:10px;color:var(--ac);font-weight:700;text-transform:uppercase;letter-spacing:.06em">Registros</div><div style="font-size:16px;font-weight:700;color:var(--ac)">${countGeral}</div></div>
-    </div>`;
+    return;
   }
 
-  conteudo.innerHTML = `<div class="card" style="padding:0;overflow:hidden">
-    <div style="padding:14px 16px;border-bottom:1px solid var(--border)">
-      <div class="card-title" style="margin-bottom:2px">${d.itemLabel}</div>
-      <div style="font-size:12px;color:var(--tx2)">${d.cargoNome} · ${tipoLabel[d.tipo]||d.tipo}</div>
-    </div>
-    ${resumo}
-    <div style="display:grid;grid-template-columns:120px 1fr 120px;gap:10px;padding:8px 12px;background:var(--s2)">
-      <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3)">Data</span>
-      <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3)">Valor</span>
-      <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3)">Usuário</span>
-    </div>
-    ${rows || '<div style="padding:32px;text-align:center;color:var(--tx3);font-size:12px">Nenhum dado encontrado</div>'}
+  if(aba==='pacientes_alta'){
+    const v=_relFiltros.pacientes_alta.paciente;
+    wrap.innerHTML=_relPacInputHTML('altaPaciente','Paciente',v);
+    return;
+  }
+
+  wrap.innerHTML='';
+}
+
+// Campo de autocomplete de paciente (single-select), reaproveitado nas 3 abas que precisam.
+function _relPacInputHTML(campoKey, label, valorAtual){
+  return `<div class="fl" style="min-width:230px;position:relative">
+    <label>${esc(label)}</label>
+    <input type="text" id="rel-ac-${campoKey}" value="${valorAtual?esc(valorAtual.nome):''}" placeholder="Buscar paciente..." autocomplete="off"
+      oninput="_relPacBuscar('${campoKey}', this.value)"
+      onblur="setTimeout(()=>{const dd=document.getElementById('rel-ac-${campoKey}-dd'); if(dd)dd.classList.remove('open')},160)">
+    <div id="rel-ac-${campoKey}-dd" class="fin-ac-dropdown"></div>
   </div>`;
 }
+
+function _relSetFiltroPaciente(campoKey, valor){
+  if(campoKey==='primeirasPaciente') _relFiltros.primeiras_consultas.paciente=valor;
+  else if(campoKey==='indicadosPaciente') _relFiltros.pacientes_indicados.pacienteIndicado=valor;
+  else if(campoKey==='altaPaciente') _relFiltros.pacientes_alta.paciente=valor;
+}
+
+function _relPacBuscar(campoKey, termo){
+  const dd=document.getElementById('rel-ac-'+campoKey+'-dd');
+  if(!dd) return;
+  const t=(termo||'').trim().toLowerCase();
+  if(!t){ dd.classList.remove('open'); return; }
+  const lista=(typeof pacientes!=='undefined'?pacientes:[]).filter(p=>(p.nome||'').toLowerCase().includes(t)).slice(0,10);
+  _relAcTemp[campoKey]=lista;
+  dd.innerHTML = lista.length
+    ? lista.map((p,i)=>`<div class="fin-ac-item" onmousedown="_relPacSelecionar('${campoKey}',${i})"><span class="fin-ac-item-nome">${esc(p.nome)}</span></div>`).join('')
+    : '<div class="fin-ac-item" style="color:var(--tx3)">Nenhum paciente encontrado</div>';
+  dd.classList.add('open');
+}
+
+function _relPacSelecionar(campoKey, idx){
+  const p=(_relAcTemp[campoKey]||[])[idx];
+  if(!p) return;
+  _relSetFiltroPaciente(campoKey, {id:p.id, nome:p.nome});
+  const inp=document.getElementById('rel-ac-'+campoKey);
+  if(inp) inp.value=p.nome;
+  const dd=document.getElementById('rel-ac-'+campoKey+'-dd');
+  if(dd) dd.classList.remove('open');
+  relRenderConteudo();
+}
+
+function _relIndicBuscar(termo){
+  const dd=document.getElementById('rel-ac-indicadosIndicador-dd');
+  if(!dd) return;
+  const t=(termo||'').trim().toLowerCase();
+  if(!t){ dd.classList.remove('open'); return; }
+  const lista=_ogContatosTodos().filter(c=>(c.nome||'').toLowerCase().includes(t)).slice(0,10);
+  _relAcTemp.indicadosIndicador=lista;
+  const tagMap={paciente:'Paciente',usuario:'Equipe',fornecedor:'Fornecedor',indicador:'Indicador'};
+  dd.innerHTML = lista.length
+    ? lista.map((c,i)=>`<div class="fin-ac-item" onmousedown="_relIndicSelecionar(${i})"><span class="fin-ac-item-nome">${esc(c.nome)}</span><span style="color:var(--tx3);font-size:11px">${tagMap[c.tipo]||c.tipo}</span></div>`).join('')
+    : '<div class="fin-ac-item" style="color:var(--tx3)">Nenhum resultado</div>';
+  dd.classList.add('open');
+}
+
+function _relIndicSelecionar(idx){
+  const c=(_relAcTemp.indicadosIndicador||[])[idx];
+  if(!c) return;
+  _relFiltros.pacientes_indicados.indicador={tipo:c.tipo,id:c.id,nome:c.nome};
+  const inp=document.getElementById('rel-ac-indicadosIndicador');
+  if(inp) inp.value=c.nome;
+  const dd=document.getElementById('rel-ac-indicadosIndicador-dd');
+  if(dd) dd.classList.remove('open');
+  relRenderConteudo();
+}
+
+function _relProfBuscar(aba, termo){
+  const chave=aba+'Prof';
+  const dd=document.getElementById('rel-ac-'+chave+'-dd');
+  if(!dd) return;
+  const t=(termo||'').trim().toLowerCase();
+  const selecionados=_relFiltros[aba].profissionais;
+  const fonte=_relEquipeNomes().filter(n=>!selecionados.includes(n));
+  const filtrados = t ? fonte.filter(n=>n.toLowerCase().includes(t)) : fonte;
+  _relAcTemp[chave]=filtrados.slice(0,10);
+  dd.innerHTML = _relAcTemp[chave].length
+    ? _relAcTemp[chave].map((n,i)=>`<div class="fin-ac-item" onmousedown="_relProfSelecionar('${aba}',${i})"><span class="fin-ac-item-nome">${esc(n)}</span></div>`).join('')
+    : '<div class="fin-ac-item" style="color:var(--tx3)">Nenhum resultado</div>';
+  dd.classList.add('open');
+}
+
+function _relProfSelecionar(aba, idx){
+  const nome=(_relAcTemp[aba+'Prof']||[])[idx];
+  if(!nome) return;
+  _relFiltros[aba].profissionais.push(nome);
+  const inp=document.getElementById('rel-ac-'+aba+'Prof');
+  if(inp) inp.value='';
+  const dd=document.getElementById('rel-ac-'+aba+'Prof-dd');
+  if(dd) dd.classList.remove('open');
+  relRenderFiltrosAba();
+  relRenderConteudo();
+}
+
+function _relProfRemover(aba, nome){
+  _relFiltros[aba].profissionais = _relFiltros[aba].profissionais.filter(n=>n!==nome);
+  relRenderFiltrosAba();
+  relRenderConteudo();
+}
+
+// Abre a ficha do paciente a partir de qualquer relatório, guardando a origem
+// pra "voltar" trazer de volta pra Relatórios (mesma aba/filtro, pois o
+// estado _relAbaAtual/_relFiltros não é resetado ao navegar).
+function relAbrirPaciente(id){
+  if(!id) return;
+  pacienteOrigemTab='relatorios';
+  abrirModalPt(id);
+}
+
+// ── CONTEÚDO DE CADA ABA ────────────────────────────────────────────────
+function relRenderConteudo(){
+  const wrap=document.getElementById('rel-conteudo');
+  if(!wrap) return;
+  const {de,ate}=_relPeriodoDatas();
+  const aba=_relAbaAtual;
+  if(aba==='proc_realizados')     return _relRenderProcRealizados(wrap,de,ate);
+  if(aba==='proc_a_realizar')     return _relRenderProcARealizar(wrap,de,ate);
+  if(aba==='primeiras_consultas') return _relRenderPrimeirasConsultas(wrap,de,ate);
+  if(aba==='pacientes_indicados') return _relRenderPacientesIndicados(wrap,de,ate);
+  if(aba==='pacientes_alta')      return _relRenderPacientesAlta(wrap,de,ate);
+  wrap.innerHTML='';
+}
+
+function _relTabelaVazia(wrap, mensagem){
+  wrap.innerHTML = `<div class="card" style="padding:0"><div class="fin-empty">${esc(mensagem)}</div></div>`;
+}
+
+// Procedimentos realizados: itens do plano de tratamento com executado:true,
+// pela data de execução — mesma fonte do módulo Financeiro → Comissão Dentistas.
+function _relRenderProcRealizados(wrap, de, ate){
+  const profs=_relFiltros.proc_realizados.profissionais;
+  const itens=_finItensExecutados().filter(i=>{
+    const d=i.execData||'';
+    if(d<de || d>ate) return false;
+    if(profs.length && !profs.includes(i.execProfissional)) return false;
+    return true;
+  }).sort((a,b)=> (b.execData||'').localeCompare(a.execData||''));
+
+  if(!itens.length) return _relTabelaVazia(wrap, 'Nenhum procedimento realizado nesse período/filtro.');
+
+  const total=itens.reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+  const rows=itens.map(i=>`<tr>
+    <td>${_finFmtData(i.execData)}</td>
+    <td><a href="javascript:void(0)" onclick="relAbrirPaciente('${i.pacId}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(i.pacNome)}</a></td>
+    <td>${esc(i.proc)||'—'}</td>
+    <td>${esc(i.execProfissional)||'—'}</td>
+    <td class="fin-td-valor">${_finFmt(i.valor)}</td>
+  </tr>`).join('');
+
+  wrap.innerHTML=`<div class="card" style="margin-bottom:14px;display:flex;gap:24px">
+      <div><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3)">Total no período</div><div style="font-size:18px;font-weight:700">${_finFmt(total)}</div></div>
+      <div><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3)">Procedimentos</div><div style="font-size:18px;font-weight:700">${itens.length}</div></div>
+    </div>
+    <div class="fin-table-wrap"><table class="fin-table">
+      <thead><tr><th>Data</th><th>Paciente</th><th>Procedimento</th><th>Profissional</th><th style="text-align:right">Valor</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// Procedimentos a realizar: itens do plano de tratamento (de orçamentos
+// aprovados) ainda com executado:false — filtra pela data de aprovação do
+// orçamento; profissional = dentista planejado no item (ainda não tem
+// execProfissional, que só existe depois de executado).
+function _relItensNaoExecutados(){
+  const orcs=_orcamentos().filter(o=>o.status==='aprovado');
+  const out=[];
+  orcs.forEach(orc=>{
+    const dataAprovacao = orc.dataDecisao || orc.data || orc.dataCriacao || '';
+    const pac=pacientes.find(x=>String(x.id)===String(orc.pacienteId));
+    (orc.itens||[]).forEach((it,idx)=>{
+      if(it.executado) return;
+      out.push({ ...it, orcId:orc.id, itemIdx:idx, dataAprovacao, pacNome:pac?pac.nome:'Paciente', pacId:orc.pacienteId });
+    });
+  });
+  return out;
+}
+
+function _relRenderProcARealizar(wrap, de, ate){
+  const profs=_relFiltros.proc_a_realizar.profissionais;
+  const itens=_relItensNaoExecutados().filter(i=>{
+    const d=i.dataAprovacao||'';
+    if(d<de || d>ate) return false;
+    if(profs.length && !profs.includes(i.dentista||'')) return false;
+    return true;
+  }).sort((a,b)=> (b.dataAprovacao||'').localeCompare(a.dataAprovacao||''));
+
+  if(!itens.length) return _relTabelaVazia(wrap, 'Nenhum procedimento a realizar nesse período/filtro.');
+
+  const total=itens.reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+  const rows=itens.map(i=>`<tr>
+    <td>${_finFmtData(i.dataAprovacao)}</td>
+    <td><a href="javascript:void(0)" onclick="relAbrirPaciente('${i.pacId}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(i.pacNome)}</a></td>
+    <td>${esc(i.proc)||'—'}</td>
+    <td>${esc(i.dentista)||'—'}</td>
+    <td class="fin-td-valor">${_finFmt(i.valor)}</td>
+  </tr>`).join('');
+
+  wrap.innerHTML=`<div class="card" style="margin-bottom:14px;display:flex;gap:24px">
+      <div><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3)">Total a realizar</div><div style="font-size:18px;font-weight:700">${_finFmt(total)}</div></div>
+      <div><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3)">Procedimentos</div><div style="font-size:18px;font-weight:700">${itens.length}</div></div>
+    </div>
+    <div class="fin-table-wrap"><table class="fin-table">
+      <thead><tr><th>Aprovado em</th><th>Paciente</th><th>Procedimento</th><th>Profissional</th><th style="text-align:right">Valor</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// Primeiras consultas: agendamentos com o checkpoint "Primeira consulta? Sim",
+// exclui cancelados — mesma fonte usada no Painel Geral (Planejamento).
+function _relRenderPrimeirasConsultas(wrap, de, ate){
+  const pacFiltro=_relFiltros.primeiras_consultas.paciente;
+  const lista=(typeof agendamentos!=='undefined'?agendamentos:[]).filter(a=>{
+    if(a.status==='cancelado') return false;
+    if(a.primeiraConsulta!=='sim') return false;
+    if(a.data<de || a.data>ate) return false;
+    if(pacFiltro && String(a.pacienteId)!==String(pacFiltro.id)) return false;
+    return true;
+  }).sort((a,b)=> (b.data||'').localeCompare(a.data||''));
+
+  if(!lista.length) return _relTabelaVazia(wrap, 'Nenhuma primeira consulta nesse período/filtro.');
+
+  const rows=lista.map(a=>{
+    const prof=(typeof usuarios!=='undefined'?usuarios:[]).find(u=>u.id===a.usuarioId);
+    const sala=(typeof salas!=='undefined'?salas:[]).find(s=>s.id===a.salaId);
+    return `<tr>
+      <td>${_finFmtData(a.data)}</td>
+      <td>${a.pacienteId?`<a href="javascript:void(0)" onclick="relAbrirPaciente('${a.pacienteId}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(a.pacienteNome)}</a>`:esc(a.pacienteNome)||'—'}</td>
+      <td>${esc(prof?prof.nome:'—')}</td>
+      <td>${esc(sala?sala.nome:'—')}</td>
+      <td>${esc(a.status)||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML=`<div class="card" style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3)">1ª consultas no período</div><div style="font-size:18px;font-weight:700">${lista.length}</div>
+    </div>
+    <div class="fin-table-wrap"><table class="fin-table">
+      <thead><tr><th>Data</th><th>Paciente</th><th>Profissional</th><th>Sala</th><th>Status</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// Pacientes indicados: orçamentos aprovados com indicação preenchida
+// (o.indicacao = {tipo,id,nome}) — qualquer tipo de indicador aqui (equipe,
+// paciente, fornecedor ou indicador avulso), não só equipe como na comissão.
+function _relRenderPacientesIndicados(wrap, de, ate){
+  const fPac=_relFiltros.pacientes_indicados.pacienteIndicado;
+  const fInd=_relFiltros.pacientes_indicados.indicador;
+  const tagMap={paciente:'Paciente',usuario:'Equipe',fornecedor:'Fornecedor',indicador:'Indicador'};
+
+  const lista=_orcamentos().filter(o=>{
+    if(o.status!=='aprovado') return false;
+    if(!o.indicacao || !o.indicacao.nome) return false;
+    const d=o.dataDecisao || o.data || o.dataCriacao || '';
+    if(d<de || d>ate) return false;
+    if(fPac && String(o.pacienteId)!==String(fPac.id)) return false;
+    if(fInd && !(String(o.indicacao.id)===String(fInd.id) && o.indicacao.tipo===fInd.tipo)) return false;
+    return true;
+  }).map(o=>{
+    const pac=pacientes.find(x=>String(x.id)===String(o.pacienteId));
+    const valor = (o.valorFechado!=null) ? parseFloat(o.valorFechado) : (o.itens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+    return { orc:o, pacNome:pac?pac.nome:'Paciente', pacId:o.pacienteId, data: o.dataDecisao||o.data||o.dataCriacao||'', valor };
+  }).sort((a,b)=> (b.data||'').localeCompare(a.data||''));
+
+  if(!lista.length) return _relTabelaVazia(wrap, 'Nenhum paciente indicado nesse período/filtro.');
+
+  const rows=lista.map(x=>`<tr>
+    <td>${_finFmtData(x.data)}</td>
+    <td><a href="javascript:void(0)" onclick="relAbrirPaciente('${x.pacId}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(x.pacNome)}</a></td>
+    <td>${x.orc.indicacao.tipo==='paciente'?`<a href="javascript:void(0)" onclick="relAbrirPaciente('${x.orc.indicacao.id}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(x.orc.indicacao.nome)}</a>`:esc(x.orc.indicacao.nome)}</td>
+    <td>${tagMap[x.orc.indicacao.tipo]||x.orc.indicacao.tipo||'—'}</td>
+    <td class="fin-td-valor">${_finFmt(x.valor)}</td>
+  </tr>`).join('');
+
+  wrap.innerHTML=`<div class="card" style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3)">Pacientes indicados no período</div><div style="font-size:18px;font-weight:700">${lista.length}</div>
+    </div>
+    <div class="fin-table-wrap"><table class="fin-table">
+      <thead><tr><th>Data</th><th>Paciente indicado</th><th>Indicado por</th><th>Tipo</th><th style="text-align:right">Valor do orçamento</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// Pacientes de alta: histórico de situação do paciente (p.historico) com
+// situacao==='alta' — mesmo pipeline usado no Kanban/Situação do paciente.
+function _relRenderPacientesAlta(wrap, de, ate){
+  const pacFiltro=_relFiltros.pacientes_alta.paciente;
+  const eventos=[];
+  (typeof pacientes!=='undefined'?pacientes:[]).forEach(p=>{
+    if(pacFiltro && String(p.id)!==String(pacFiltro.id)) return;
+    (p.historico||[]).forEach(h=>{
+      if(h.situacao!=='alta') return;
+      if((h.data||'')<de || (h.data||'')>ate) return;
+      eventos.push({ pacId:p.id, pacNome:p.nome, data:h.data, nota:h.nota||'' });
+    });
+  });
+  eventos.sort((a,b)=> (b.data||'').localeCompare(a.data||''));
+
+  if(!eventos.length) return _relTabelaVazia(wrap, 'Nenhum paciente com alta nesse período/filtro.');
+
+  const rows=eventos.map(e=>`<tr>
+    <td>${_finFmtData(e.data)}</td>
+    <td><a href="javascript:void(0)" onclick="relAbrirPaciente('${e.pacId}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(e.pacNome)}</a></td>
+  </tr>`).join('');
+
+  wrap.innerHTML=`<div class="card" style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3)">Altas no período</div><div style="font-size:18px;font-weight:700">${eventos.length}</div>
+    </div>
+    <div class="fin-table-wrap"><table class="fin-table">
+      <thead><tr><th>Data da alta</th><th>Paciente</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
 // ── TOGGLE DO MENU LATERAL ──────────────────────────────────────────────
 function toggleNavSidebar(){
   const layout = document.querySelector('.layout');
