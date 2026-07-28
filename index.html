@@ -2471,7 +2471,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <input id="plan-ref-com-beatriz-fat" type="number" step="0.1" min="0" max="100" placeholder="Ex: 3,5" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:14px" onblur="_planSalvarReferencias()">
 
       <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">% comissão sobre lucro — Fernanda</label>
-      <input id="plan-ref-com-fernanda-lucro" type="number" step="0.1" min="0" max="100" placeholder="Ex: 15" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:18px" onblur="_planSalvarReferencias()">
+      <input id="plan-ref-com-fernanda-lucro" type="number" step="0.1" min="0" max="100" placeholder="Ex: 15" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:14px" onblur="_planSalvarReferencias()">
+
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Porcentagem comissão de indicação</label>
+      <input id="plan-ref-com-indicacao" type="number" step="0.1" min="0" max="100" placeholder="Ex: 3" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:18px" onblur="_planSalvarReferencias()">
 
       <div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:8px;padding-top:14px;border-top:1px solid var(--border)">Bônus por agendamento</div>
       <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Valor por primeira consulta agendada (Beatriz)</label>
@@ -2514,7 +2517,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="card">
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
         <div class="fin-card fin-card-blue"><div class="fin-card-label">Remuneração</div><div class="fin-card-value" id="pi-remuneracao">R$ 2.500</div></div>
-        <div class="fin-card"><div class="fin-card-label">Procedimentos realizados</div><div class="fin-card-value" id="pi-procedimentos">R$ 1.180</div></div>
+        <div class="fin-card"><div class="fin-card-label">Comissão a receber</div><div class="fin-card-value" id="pi-procedimentos">R$ 1.180</div></div>
         <div class="fin-card"><div class="fin-card-label">Comissão por indicação</div><div class="fin-card-value" id="pi-comissao-indicacao">R$ 0</div></div>
         <div class="fin-card fin-card-green"><div class="fin-card-label">Valor acumulado</div><div class="fin-card-value" id="pi-valor-acumulado">R$ 3.680</div></div>
       </div>
@@ -2533,10 +2536,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div id="pl-fat-bar" style="height:100%;width:73%;border-radius:6px;background:var(--ac)"></div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:12px">
-        <div class="fin-card fin-card-green"><div class="fin-card-label">Comissão a receber</div><div class="fin-card-value">R$ 23.940</div></div>
+        <div class="fin-card fin-card-green"><div class="fin-card-label">Comissão a receber</div><div class="fin-card-value" id="pl-comissao-receber">R$ 23.940</div></div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
-        <div class="fin-card"><div class="fin-card-label">Lucro da clínica</div><div class="fin-card-value">R$ 19.800</div></div>
+        <div class="fin-card"><div class="fin-card-label">Lucro da clínica</div><div class="fin-card-value" id="pl-lucro-clinica">R$ 19.800</div></div>
         <div class="fin-card"><div class="fin-card-label">Ticket médio</div><div class="fin-card-value" id="pl-ticket-medio">R$ 3.850</div></div>
         <div class="fin-card"><div class="fin-card-label">Comissão por indicação</div><div class="fin-card-value" id="pl-comissao-indicacao">R$ 0</div></div>
       </div>
@@ -5765,7 +5768,7 @@ function planGetReferencias(){
     },
     salasConsideradas: ['sala1','sala4'],
     remuneracaoFixa: { beatriz: 2300, fernanda: 1500, ingrid: 2500 },
-    comissoes: { beatrizPctFaturamento: 3.5, fernandaPctLucro: 15 },
+    comissoes: { beatrizPctFaturamento: 3.5, fernandaPctLucro: 15, pctIndicacao: 3 },
     valorBonusAgendamento: 20
   };
   const salvo = carregarLS('sk3-plan-referencias', null);
@@ -5803,7 +5806,8 @@ function _planSalvarReferencias(){
     },
     comissoes: {
       beatrizPctFaturamento: parseFloat(v('plan-ref-com-beatriz-fat'))||0,
-      fernandaPctLucro: parseFloat(v('plan-ref-com-fernanda-lucro'))||0
+      fernandaPctLucro: parseFloat(v('plan-ref-com-fernanda-lucro'))||0,
+      pctIndicacao: parseFloat(v('plan-ref-com-indicacao'))||0
     },
     valorBonusAgendamento: parseFloat(v('plan-ref-bonus-agendamento'))||0
   });
@@ -5842,6 +5846,7 @@ function _planCarregarReferencias(){
   set('plan-ref-fixo-ingrid', ref.remuneracaoFixa.ingrid);
   set('plan-ref-com-beatriz-fat', ref.comissoes.beatrizPctFaturamento);
   set('plan-ref-com-fernanda-lucro', ref.comissoes.fernandaPctLucro);
+  set('plan-ref-com-indicacao', ref.comissoes.pctIndicacao);
   set('plan-ref-bonus-agendamento', ref.valorBonusAgendamento);
   _planRenderSalasReferencia(ref);
 }
@@ -6056,6 +6061,81 @@ function _planTaxaConversao(dataIniISO, dataFimISO){
   return { pct, aprovados, decididos: decididos.length };
 }
 
+// Comissão por indicação: quando um orçamento é aprovado, o modal de aprovação
+// pergunta se houve indicação e, se sim, quem indicou (o.indicacao = {tipo,id,nome}).
+// Só entra na conta quando o indicador é alguém da equipe (tipo==='usuario') —
+// indicação de paciente, fornecedor ou indicador avulso não gera comissão aqui.
+// Comissão = % de indicação (Referências) × valor final do orçamento aprovado
+// (valorFechado, líquido — mesmo critério usado em faturamento). nomeUsuario
+// filtra para o painel de uma pessoa específica; null soma todo mundo.
+function _planComissaoIndicacaoNoPeriodo(dataIniISO, dataFimISO, nomeUsuario){
+  const ref = planGetReferencias();
+  const lista = _orcamentos().filter(o=>{
+    if(o.status!=='aprovado') return false;
+    if(!o.indicacao || o.indicacao.tipo!=='usuario' || !o.indicacao.nome) return false;
+    const dataRef = o.dataDecisao || o.data || o.dataCriacao || '';
+    if(dataRef<dataIniISO || dataRef>dataFimISO) return false;
+    if(nomeUsuario){
+      if(!String(o.indicacao.nome||'').toLowerCase().includes(String(nomeUsuario).toLowerCase())) return false;
+    }
+    return true;
+  });
+  const base = lista.reduce((s,o)=>{
+    const valor = (o.valorFechado!=null) ? parseFloat(o.valorFechado) : (o.itens||[]).reduce((si,i)=>si+(parseFloat(i.valor)||0),0);
+    return s + (valor||0);
+  }, 0);
+  return base * (ref.comissoes.pctIndicacao/100);
+}
+
+// Comissão a receber = mesma fonte e mesma regra do módulo Financeiro →
+// Comissão Dentistas (_finItensExecutados): procedimentos já EXECUTADOS
+// (executado:true) do plano de tratamento de orçamentos aprovados, cujo valor
+// de comissão ainda não foi medido (comissaoMedida:false) — ou seja, ainda não
+// foi lançado/pago. Assim que alguém mede, o item some daqui (não é mais "a
+// receber"). Não tem filtro de período: é o saldo pendente agora, igual à
+// aba Comissão Dentistas. nomeProf casa com execProfissional (nome exato).
+function _planComissaoAReceber(nomeProf){
+  return _finItensExecutados()
+    .filter(i=>i.execProfissional===nomeProf && !i.comissaoMedida)
+    .reduce((s,i)=>s+(parseFloat(i.valorComissao)||0),0);
+}
+
+// Valor de procedimentos EXECUTADOS no período — plano de tratamento (itens do
+// orçamento aprovado) com executado:true, pela data de execução (execData).
+// Itens ainda "em aberto" (não executados) não entram — mesma regra do
+// prontuário do paciente.
+function _planValorProcedimentosExecutados(dataIniISO, dataFimISO){
+  return _finItensExecutados().filter(i=>{
+    const d = i.execData||'';
+    return d>=dataIniISO && d<=dataFimISO;
+  }).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+}
+
+// Lucro da clínica = valor de procedimentos executados no período − valor
+// total pago no período (módulo "A pagar total" — mesma base do card "Pago no
+// período" do Painel Geral). Pode dar negativo (prejuízo).
+function _planLucroClinica(dataIniISO, dataFimISO){
+  return _planValorProcedimentosExecutados(dataIniISO, dataFimISO) - _planPagoNoPeriodo(dataIniISO, dataFimISO);
+}
+
+// Tratamento a realizar = valor de itens de orçamentos aprovados no período
+// (mesma data de decisão usada em "orçamentos fechados") que AINDA não foram
+// executados (executado:false) — o oposto de "procedimentos executados".
+// Mesma fonte do prontuário do paciente → plano de tratamento.
+function _planTratamentoARealizar(dataIniISO, dataFimISO){
+  const orcs = _orcamentos().filter(o=>o.status==='aprovado');
+  let soma = 0;
+  orcs.forEach(o=>{
+    const dataRef = o.dataDecisao || o.data || o.dataCriacao || '';
+    if(dataRef<dataIniISO || dataRef>dataFimISO) return;
+    (o.itens||[]).forEach(it=>{
+      if(it.executado) return;
+      soma += parseFloat(it.valor)||0;
+    });
+  });
+  return soma;
+}
+
 // Primeiro e último dia do mês corrente, em 'YYYY-MM-DD' — usado pelos painéis
 // individuais (Beatriz, Fernanda, Ingrid, Leticia), que são sempre mensais e
 // não têm filtro de período.
@@ -6096,11 +6176,13 @@ function _planAtualizarPainelBeatriz(){
   // faturamento (Referências) se atingir ou superar o piso — não soma os dois.
   // Faturamento já é real (orçamentos fechados). Bônus por agendamentos é real:
   // valor por primeira consulta (Referências) × nº de agendamentos marcados
-  // como "Primeira consulta? Sim" no mês. Comissão por indicação ainda é exemplo.
+  // como "Primeira consulta? Sim" no mês. Comissão por indicação também é real:
+  // % de indicação (Referências) × orçamentos aprovados no mês em que ela foi
+  // marcada como indicadora (equipe) na aprovação.
   const remuneracao = faturamentoAtual>=piso ? faturamentoAtual*(ref.comissoes.beatrizPctFaturamento/100) : ref.remuneracaoFixa.beatriz;
   const qtdPrimeirasConsultas = _planPrimeirasConsultasNoPeriodo(de,ate);
   const bonusAgendamentos = ref.valorBonusAgendamento * qtdPrimeirasConsultas;
-  const comissaoIndicacao = 0;
+  const comissaoIndicacao = _planComissaoIndicacaoNoPeriodo(de,ate,'Beatriz');
   const valorTotal = remuneracao + bonusAgendamentos + comissaoIndicacao;
   set('pb-rem-faturamento', fmtMoeda(remuneracao));
   set('pb-bonus-agendamentos', fmtMoeda(bonusAgendamentos));
@@ -6110,8 +6192,10 @@ function _planAtualizarPainelBeatriz(){
 
 // Atualiza os cards do Painel Ingrid. Remuneração vem de verdade das
 // Referências (remuneração fixa); ocupação de agenda é real (um card por sala
-// considerada em Referências); procedimentos realizados e comissão por
-// indicação ainda são exemplo/placeholder, a conectar depois.
+// considerada em Referências); comissão por indicação é real (% de indicação
+// × orçamentos aprovados onde ela foi marcada como indicadora); comissão a
+// receber é real (procedimentos que ela executou e ainda não foram medidos,
+// mesma fonte do módulo Financeiro → Comissão Dentistas).
 function _planAtualizarPainelIngrid(){
   const painel=document.getElementById('plan-painel_ingrid');
   if(!painel) return;
@@ -6121,11 +6205,11 @@ function _planAtualizarPainelIngrid(){
   const {de,ate}=_planMesAtualDatas();
 
   const remuneracao = ref.remuneracaoFixa.ingrid;
-  const procedimentosRealizados = 1180;
-  const comissaoIndicacao = 0;
-  const valorAcumulado = remuneracao + procedimentosRealizados + comissaoIndicacao;
+  const comissaoReceber = _planComissaoAReceber('Ingrid');
+  const comissaoIndicacao = _planComissaoIndicacaoNoPeriodo(de,ate,'Ingrid');
+  const valorAcumulado = remuneracao + comissaoReceber + comissaoIndicacao;
   set('pi-remuneracao', fmtMoeda(remuneracao));
-  set('pi-procedimentos', fmtMoeda(procedimentosRealizados));
+  set('pi-procedimentos', fmtMoeda(comissaoReceber));
   set('pi-comissao-indicacao', fmtMoeda(comissaoIndicacao));
   set('pi-valor-acumulado', fmtMoeda(valorAcumulado));
 
@@ -6140,11 +6224,16 @@ const PLAN_META_FATURAMENTO_CLINICA = 120000;
 
 // Atualiza os cards do Painel Fernanda. Faturamento vs meta é real (orçamentos
 // fechados da clínica toda, já que a comissão dela é sobre o lucro, não sobre
-// o que ela mesma vende). Comissão a receber, lucro e comissão por indicação
-// ainda são exemplo/placeholder — o valor total já soma os três.
+// o que ela mesma vende); comissão por indicação também é real (% de indicação
+// × orçamentos aprovados onde ela foi marcada como indicadora); comissão a
+// receber é real (procedimentos que ela executou como dentista e ainda não
+// foram medidos, mesma fonte do módulo Financeiro → Comissão Dentistas);
+// "Lucro + 15%" também é real: % comissão sobre lucro (Referências) × Lucro
+// da clínica no mês (mesmo cálculo do Painel Leticia).
 function _planAtualizarPainelFernanda(){
   const painel=document.getElementById('plan-painel_fernanda');
   if(!painel) return;
+  const ref=planGetReferencias();
   const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val; };
   const fmtMoeda=n=>'R$ '+Math.round(n).toLocaleString('pt-BR');
   const {de,ate}=_planMesAtualDatas();
@@ -6157,9 +6246,10 @@ function _planAtualizarPainelFernanda(){
   const barFat=document.getElementById('pf-fat-bar');
   if(barFat){ barFat.style.width=pctFat+'%'; }
 
-  const comissaoReceber = 6780;
-  const lucro15 = 2970;
-  const comissaoIndicacao = 0;
+  const comissaoReceber = _planComissaoAReceber('Fernanda');
+  const lucro = _planLucroClinica(de,ate);
+  const lucro15 = lucro * (ref.comissoes.fernandaPctLucro/100);
+  const comissaoIndicacao = _planComissaoIndicacaoNoPeriodo(de,ate,'Fernanda');
   const valorTotal = comissaoReceber + lucro15 + comissaoIndicacao;
   set('pf-comissao-receber', fmtMoeda(comissaoReceber));
   set('pf-lucro-15', fmtMoeda(lucro15));
@@ -6169,11 +6259,15 @@ function _planAtualizarPainelFernanda(){
   _planRenderOcupacaoPorSala('pf-ocup-salas-wrap', de, ate, 'barra');
 }
 
-// Atualiza os cards do Painel Leticia. Faturamento vs meta e ticket médio são
-// reais (orçamentos fechados da clínica toda, mês corrente) — ela é a figura
-// central da clínica, então esses indicadores refletem o resultado geral, não
-// só o que ela mesma fecha. Comissão a receber, lucro da clínica e comissão
-// por indicação ainda são exemplo/placeholder, a conectar depois.
+// Atualiza os cards do Painel Leticia. Faturamento vs meta, ticket médio,
+// comissão por indicação, comissão a receber e lucro da clínica são todos
+// reais — ela é a figura central da clínica, então faturamento/ticket
+// refletem o resultado geral (não só o que ela mesma fecha); comissão por
+// indicação é % de indicação × orçamentos aprovados onde ela foi marcada como
+// indicadora; comissão a receber vem dos procedimentos que ela executou e
+// ainda não foram medidos (mesma fonte do módulo Financeiro → Comissão
+// Dentistas); lucro da clínica = valor de procedimentos executados no mês
+// (plano de tratamento) menos o total pago no mês (pode dar negativo).
 function _planAtualizarPainelLeticia(){
   const painel=document.getElementById('plan-painel_leticia');
   if(!painel) return;
@@ -6189,6 +6283,17 @@ function _planAtualizarPainelLeticia(){
   if(barFat){ barFat.style.width=pctFat+'%'; }
 
   set('pl-ticket-medio', fmtMoeda(fat.ticketMedio));
+
+  const comissaoIndicacao = _planComissaoIndicacaoNoPeriodo(de,ate,'Leticia');
+  set('pl-comissao-indicacao', fmtMoeda(comissaoIndicacao));
+
+  const comissaoReceber = _planComissaoAReceber('Leticia');
+  set('pl-comissao-receber', fmtMoeda(comissaoReceber));
+
+  const lucro = _planLucroClinica(de,ate);
+  set('pl-lucro-clinica', fmtMoeda(lucro));
+  const elLucro=document.getElementById('pl-lucro-clinica');
+  if(elLucro) elLucro.style.color = lucro>=0 ? 'var(--su)' : 'var(--da)';
 
   _planRenderOcupacaoPorSala('pl-ocup-salas-wrap', de, ate, 'barra');
 }
@@ -6251,20 +6356,23 @@ function _planFormatarDataBR(iso){
 // Métricas do Painel Patrik. 'real:true' = calculada de verdade (recebido/pago/
 // fluxo via módulo Financeiro — títulos liquidados no período, pela data de
 // baixa; orçamentos fechados, ticket médio e taxa de conversão via módulo de
-// Orçamentos; 1ª consultas via módulo de Agenda — checkpoint "Primeira
-// consulta? Sim"); as demais ainda são valores de exemplo (atual/anterior), a
-// conectar quando o indicador real for plugado. 'invertido:true' = métrica
-// onde diminuir é o resultado bom (ex.: Pago no período). Ocupação de agenda
-// não entra aqui como item fixo — é montada dinamicamente em
-// _planRenderComparativoPatrik, um item por sala considerada em Referências.
+// Orçamentos; tratamento a realizar e procedimentos executados via plano de
+// tratamento — itens do orçamento aprovado, não-executado x executado; 1ª
+// consultas via módulo de Agenda — checkpoint "Primeira consulta? Sim");
+// "Margem líquida" e "ROI marketing" ainda são valores de exemplo
+// (atual/anterior), a conectar quando o indicador real for plugado.
+// 'invertido:true' = métrica onde diminuir é o resultado bom (ex.: Pago no
+// período). Ocupação de agenda não entra aqui como item fixo — é montada
+// dinamicamente em _planRenderComparativoPatrik, um item por sala considerada
+// em Referências.
 const PATRIK_METRICAS = [
   { id:'recebido',    label:'Recebido no período',       tipo:'moeda',         real:true },
   { id:'pago',        label:'Pago no período',           tipo:'moeda',         real:true, invertido:true },
   { id:'fluxo',       label:'Fluxo de caixa',             tipo:'moeda',         real:true },
   { id:'margem',      label:'Margem líquida',            tipo:'percentual',    atual:30,    anterior:26 },
   { id:'orcfechados', label:'Orçamentos fechados',       tipo:'moeda',         real:true },
-  { id:'tratrealizar',label:'Tratamento a realizar',     tipo:'moeda',         atual:31500, anterior:35200 },
-  { id:'procexec',    label:'Procedimentos executados',  tipo:'moeda',         atual:79800, anterior:73100 },
+  { id:'tratrealizar',label:'Tratamento a realizar',     tipo:'moeda',         real:true },
+  { id:'procexec',    label:'Procedimentos executados',  tipo:'moeda',         real:true },
   { id:'conversao',   label:'Taxa de conversão',         tipo:'percentual',    real:true },
   { id:'ticket',      label:'Ticket médio',              tipo:'moeda',         real:true },
   { id:'roi',         label:'ROI marketing',             tipo:'multiplicador',atual:3.2,   anterior:2.8 },
@@ -6342,6 +6450,8 @@ function _planRenderComparativoPatrik(){
     ticket:      { atual: fatAtual.ticketMedio,         anterior: fatAnterior.ticketMedio },
     conversao:   { atual: conversaoAtual,               anterior: conversaoAnterior },
     primeiras:   { atual: primeirasAtual,               anterior: primeirasAnterior },
+    tratrealizar:{ atual: _planTratamentoARealizar(de,ate),           anterior: _planTratamentoARealizar(deAnt,ateAnt) },
+    procexec:    { atual: _planValorProcedimentosExecutados(de,ate),  anterior: _planValorProcedimentosExecutados(deAnt,ateAnt) },
   };
 
   // Ocupação de agenda: um item por sala considerada em Referências, não mais
