@@ -491,7 +491,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--ac);box-shadow:0 0 0 
 .pp-area-desc{font-size:12px;color:var(--tx2);margin-bottom:14px}
 
 /* mini tabela genérica usada em orçamento/financeiro/agenda/prontuário */
-.pp-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.pp-row{display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--border)}
 .pp-row:last-child{border-bottom:none}
 .pp-doc-thumb{width:40px;height:40px;border-radius:var(--r6);background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .pp-foto{aspect-ratio:1;border-radius:var(--r8);background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--tx3);overflow:hidden;position:relative}
@@ -1359,7 +1359,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <nav class="pp-menu" id="pp-menu">
       <div class="subnav-title" style="padding:4px 10px 8px;margin:0">Menu do paciente</div>
       <button class="pp-menu-btn on" id="pp-menu-dados" onclick="switchPpArea('dados')">Cadastro</button>
-      <button class="pp-menu-btn" id="pp-menu-agenda" onclick="switchPpArea('agenda')">Agenda</button>
+      <button class="pp-menu-btn" id="pp-menu-agenda" onclick="switchPpArea('agenda')">Agendamentos</button>
       <div style="height:1px;background:var(--border);margin:6px 2px"></div>
       <button class="pp-menu-btn" id="pp-menu-anamnese" onclick="switchPpArea('anamnese')">Anamnese inicial</button>
       <div style="height:1px;background:var(--border);margin:6px 2px"></div>
@@ -1430,9 +1430,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
       </div>
 
-      <!-- AGENDA DO PACIENTE -->
+      <!-- AGENDAMENTOS DO PACIENTE -->
       <div class="pp-area" id="pp-area-agenda">
-        <div class="pp-area-title">Agenda</div>
+        <div class="pp-area-title">Agendamentos</div>
         <div class="pp-area-desc">Consultas agendadas e histórico de atendimentos deste paciente.</div>
         <div class="card" id="pp-agenda-wrap"></div>
       </div>
@@ -5229,7 +5229,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 </div>
 
 <!-- POPOVER DE AGENDAMENTO -->
-<div id="ag-popover">
+<div id="ag-popover" onmouseenter="agPopoverCancelClose()" onmouseleave="agPopoverScheduleClose()">
   <div class="agpop-header">
     <span id="agpop-status" class="agpop-status"></span>
     <button class="agpop-close" onclick="fecharAgPopover()">✕</button>
@@ -15086,7 +15086,7 @@ function renderPpAgenda(p){
     const salaObj=salas.find(s=>s.id===a.salaId);
     const profObj=usuarios.find(u=>u.id===a.usuarioId);
     const passado=a.data<hojeStr;
-    return `<div class="pp-row" style="cursor:pointer;${passado?'opacity:.7':''}" onclick="pacienteOrigemAgendamentoId=${a.id};_abrirModalAgendamentoReal('${a.id}')">
+    return `<div class="pp-row" style="cursor:pointer;border-radius:var(--r8);transition:background .12s;${passado?'opacity:.7':''}" onclick="pacienteOrigemAgendamentoId=${a.id};_abrirModalAgendamentoReal('${a.id}')" onmouseenter="this.style.background='var(--s2)';this.style.padding='7px 10px';this.style.margin='0 -10px'" onmouseleave="this.style.background='';this.style.padding='7px 0';this.style.margin=''">
       <div style="width:90px;flex-shrink:0">
         <div style="font-size:13px;font-weight:600">${a.data.split('-').reverse().join('/')}</div>
         <div style="font-size:11px;color:var(--tx3)">${a.horaInicio}${a.horaFim?' – '+a.horaFim:''}</div>
@@ -15709,7 +15709,7 @@ function renderCadastroLinkArea(p){
   let html = `<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:12px 14px;background:var(--s2);border-radius:var(--r8)">`;
   html += completo
     ? `<span style="font-size:13px;color:var(--su);font-weight:600">✓ Cadastro completo</span>`
-    : `<span style="font-size:13px;color:var(--tx2)">Cadastro incompleto${faltando.length ? ' — faltando: '+esc(faltando.join(', ')) : ''}</span>`;
+    : `<span style="font-size:13px;color:var(--da);font-weight:600">Cadastro incompleto${faltando.length ? ' — faltando: '+esc(faltando.join(', ')) : ''}</span>`;
   html += `<div style="display:flex;gap:8px;flex-wrap:wrap">`;
   if(!completo){
     html += `<button class="btn btn-primary btn-sm" onclick="abrirModalLinkCadastro('${p.id}')"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M9 17H7a5 5 0 0 1 0-10h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><path d="M8 12h8"/></svg> Enviar link de cadastro</button>`;
@@ -21080,6 +21080,22 @@ function minutosBloqueados(dataIso, salaId, usuarioId){
 // ── POPOVER DE AGENDAMENTO ───────────────────────────────────────────
 let _agPopoverId = null; // id do agendamento atual no popover
 let _agPopStatusPendente = null; // status escolhido no dropdown customizado, ainda não salvo
+let _agPopoverCloseTimer = null; // timer do fechamento automático ao tirar o mouse
+
+// Cancela o fechamento automático agendado (mouse voltou pro card ou entrou no popover)
+function agPopoverCancelClose(){
+  if(_agPopoverCloseTimer){ clearTimeout(_agPopoverCloseTimer); _agPopoverCloseTimer=null; }
+}
+
+// Agenda o fechamento do popover — dá uma pequena folga para o mouse "viajar" do
+// agendamento até o popover (ou vice-versa) sem fechar por engano no meio do caminho.
+function agPopoverScheduleClose(){
+  agPopoverCancelClose();
+  _agPopoverCloseTimer = setTimeout(()=>{
+    fecharAgPopover();
+    _agPopoverCloseTimer = null;
+  }, 200);
+}
 
 // ── Arrastar borda do card para mudar horário (início/fim) ────────────
 let _agResizeState = null; // {id, edge, startY, startTopPx, startHeightPx, pxPerMin, gridIniMin}
@@ -21090,6 +21106,7 @@ let _agResizeJustHappened = false;
 function agAbrirPopoverSeNaoArrastando(id, targetEl){
   if(_agResizeState) return;
   if(_agResizeJustHappened){ _agResizeJustHappened=false; return; }
+  agPopoverCancelClose();
   const a = agendamentos.find(x=>x.id===id);
   if(!a) return;
   abrirAgPopover(a, targetEl);
@@ -21245,6 +21262,7 @@ function _agPopoverOutsideClick(e){
 }
 
 function fecharAgPopover(){
+  agPopoverCancelClose();
   document.getElementById('ag-popover').classList.remove('open');
   document.getElementById('ag-popover').style.transform = '';
   document.getElementById('agpop-tag-menu').style.display = 'none';
@@ -21735,7 +21753,7 @@ function renderAgendaSemana(d){
           const dur = horaParaMin(a.horaFim) - horaParaMin(a.horaInicio);
           const hPx = Math.max(10, Math.round(dur / passo * SLOT_H)) - 2;
           const primeiroNome = (a.pacienteNome||'').split(' ')[0];
-          body += `<div style="position:absolute;top:1px;left:1px;right:1px;height:${hPx}px;background:${cor};border-radius:3px;z-index:3;cursor:pointer;overflow:hidden;display:flex;align-items:center;padding:0 3px" onmouseenter="abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${a.pacienteNome||''}\n${a.horaInicio}–${a.horaFim}\n${sala.nome}"><span style="font-size:8px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1">${a.horaInicio} ${primeiroNome}</span></div>`;
+          body += `<div style="position:absolute;top:1px;left:1px;right:1px;height:${hPx}px;background:${cor};border-radius:3px;z-index:3;cursor:pointer;overflow:hidden;display:flex;align-items:center;padding:0 3px" onmouseenter="abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" onmouseleave="agPopoverScheduleClose()" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${a.pacienteNome||''}\n${a.horaInicio}–${a.horaFim}\n${sala.nome}"><span style="font-size:8px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1">${a.horaInicio} ${primeiroNome}</span></div>`;
         });
         body += `</div>`;
       });
@@ -21785,7 +21803,7 @@ function renderAgendaMes(d){
     agmsDia.slice(0, MAX_SHOW).forEach(a => {
       const prof = agendaProfissionais.find(ap => ap.usuarioId === a.usuarioId);
       const cor = prof ? prof.cor : '#9CA3AF';
-      html += `<div class="ag-month-event" style="background:${cor}" onmouseenter="abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${a.pacienteNome||''} ${a.horaInicio}">${a.horaInicio} ${a.pacienteNome||'(sem nome)'}</div>`;
+      html += `<div class="ag-month-event" style="background:${cor}" onmouseenter="abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" onmouseleave="agPopoverScheduleClose()" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${a.pacienteNome||''} ${a.horaInicio}">${a.horaInicio} ${a.pacienteNome||'(sem nome)'}</div>`;
     });
     if(agmsDia.length > MAX_SHOW){
       html += `<div class="ag-month-more">+${agmsDia.length - MAX_SHOW} mais</div>`;
@@ -21933,7 +21951,7 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
       }
       const pxPerMin = SLOT_H / passo;
       const resizeHandles = `<div class="ag-resize-handle ag-resize-top" onmousedown="agIniciarResize(event,'${a.id}','top',${topPx},${heightPx},${pxPerMin},${iniMin})" title="Arraste para mudar o início"></div><div class="ag-resize-handle ag-resize-bottom" onmousedown="agIniciarResize(event,'${a.id}','bottom',${topPx},${heightPx},${pxPerMin},${iniMin})" title="Arraste para mudar o fim"></div>`;
-      html += `<div class="ag-card st-${a.status}${extraClass}" data-ag-id="${a.id}" style="background:${cor};top:${topPx}px;height:${heightPx}px;pointer-events:all;padding:1px 4px" onmouseenter="agAbrirPopoverSeNaoArrastando('${a.id}',event.currentTarget)" onclick="event.stopPropagation();agAbrirPopoverSeNaoArrastando('${a.id}',event.currentTarget)" title="${pacNomeComCod} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}${resizeHandles}</div>`;
+      html += `<div class="ag-card st-${a.status}${extraClass}" data-ag-id="${a.id}" style="background:${cor};top:${topPx}px;height:${heightPx}px;pointer-events:all;padding:1px 4px" onmouseenter="agAbrirPopoverSeNaoArrastando('${a.id}',event.currentTarget)" onmouseleave="agPopoverScheduleClose()" onclick="event.stopPropagation();agAbrirPopoverSeNaoArrastando('${a.id}',event.currentTarget)" title="${pacNomeComCod} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}${resizeHandles}</div>`;
     });
     html += `</div>`;
   });
@@ -22028,6 +22046,7 @@ function abrirModalAgendamento(agendamentoId, dataPre, horaPre, salaPre, usuario
 
   // Se é um agendamento existente, abre o popover em vez do modal
   if(a && agendamentoId && !dataPre && !horaPre){
+    agPopoverCancelClose();
     abrirAgPopover(a, targetEl);
     return;
   }
@@ -23444,6 +23463,7 @@ function _relRenderPrimeirasConsultas(wrap, de, ate){
       <td>${a.pacienteId?`<a href="javascript:void(0)" onclick="relAbrirPaciente('${a.pacienteId}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(a.pacienteNome)}</a>`:esc(a.pacienteNome)||'—'}</td>
       <td>${esc(prof?prof.nome:'—')}</td>
       <td>${esc(sala?sala.nome:'—')}</td>
+      <td>${esc(a.procedimento)||'—'}</td>
       <td>${esc(a.status)||'—'}</td>
     </tr>`;
   }).join('');
@@ -23452,7 +23472,7 @@ function _relRenderPrimeirasConsultas(wrap, de, ate){
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3)">1ª consultas no período</div><div style="font-size:18px;font-weight:700">${lista.length}</div>
     </div>
     <div class="fin-table-wrap"><table class="fin-table">
-      <thead><tr><th>Data</th><th>Paciente</th><th>Profissional</th><th>Sala</th><th>Status</th></tr></thead>
+      <thead><tr><th>Data</th><th>Paciente</th><th>Profissional</th><th>Sala</th><th>Procedimento</th><th>Status</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`;
 }
