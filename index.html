@@ -623,7 +623,7 @@ input.invalid{border-color:var(--da);background:var(--dal)}
    Esses modais/popover ficam fora de #sec-agenda no DOM (são overlays soltos),
    então repetimos as variáveis aqui — mantém o escopo restrito só a estes IDs. */
 #modal-agendamento, #modal-bloqueio, #modal-link-agenda, #modal-eventos-recorrentes, #modal-agenda-prof, #modal-disponibilidade, #ag-popover{
-  --ag-acc:#43474D; --ag-acc-d:#2E3136; --ag-acc-soft:#EDEEEF;
+  --ag-acc:#0F5C61; --ag-acc-d:#0B3B3E; --ag-acc-soft:#E6EEEE;
   --ag-cta:#B8964F; --ag-cta-d:#9C7D3F;
   --font:'Plus Jakarta Sans','Inter',system-ui,-apple-system,sans-serif;
   font-family:var(--font);
@@ -785,20 +785,24 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
    Estas variáveis substituem localmente var(--ac)/(--acl)/(--act) apenas
    dentro de #sec-agenda, sem alterar a paleta usada pelo resto do sistema. */
 #sec-agenda{
-  --ag-acc:#43474D;      /* chumbo — accent principal da agenda (opção A aprovada) */
-  --ag-acc-d:#2E3136;    /* hover/variante escura do accent */
-  --ag-acc-soft:#EDEEEF; /* tom claro sólido (não transparente) p/ destaques sutis */
+  --ag-acc:#0F5C61;      /* verde petróleo — accent principal da agenda (nova paleta) */
+  --ag-acc-d:#0B3B3E;    /* hover/variante escura do accent */
+  --ag-acc-soft:#E6EEEE; /* tom claro sólido (não transparente) p/ destaques sutis */
   --font:'Plus Jakarta Sans','Inter',system-ui,-apple-system,sans-serif;
   font-family:var(--font);
 }
 .ag-grid{display:grid;min-width:560px}
-.ag-head{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;padding:10px 4px;border-left:1px solid rgba(255,255,255,.3);text-align:center;line-height:1.3;color:#fff;background:var(--tx3)}
+.ag-head{position:sticky;top:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:700;padding:8px 4px;border-left:1px solid rgba(255,255,255,.3);text-align:center;line-height:1.3;color:#fff;background:var(--tx3)}
 .ag-head:first-child{background:transparent;border-left:none}
+.ag-head-date{font-size:10px;font-weight:600;opacity:.85;letter-spacing:.01em}
+.ag-head-sala{font-size:12.5px;font-weight:700}
 .ag-time{font-size:10px;color:var(--tx3);padding:2px 6px;text-align:right;border-top:1px solid var(--border);display:flex;align-items:flex-start;justify-content:flex-end}
 .ag-cell{border-top:1px solid var(--border);border-left:1px solid var(--border);position:relative;padding:2px;overflow:visible}
 .ag-cell:first-of-type{border-left:none}
 .ag-cell.ag-empty{cursor:pointer;transition:background .1s;background:var(--tint,transparent)}
+.ag-cell.ag-empty::after{content:'';position:absolute;top:50%;left:50%;width:18px;height:18px;transform:translate(-50%,-50%);opacity:0;transition:opacity .12s;pointer-events:none;background-color:var(--ag-acc);-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='2'/%3E%3Cpath d='M12 7v5l3 2' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='2'/%3E%3Cpath d='M12 7v5l3 2' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain}
 .ag-cell.ag-empty:hover{background:var(--ag-acc-soft)}
+.ag-cell.ag-empty:hover::after{opacity:1}
 .ag-cell.ag-fora{background:var(--surface)}
 .ag-cell.ag-bloqueado{background:repeating-linear-gradient(135deg,#FCA5A5 0 7px,#FEE2E2 7px 14px);cursor:default}
 .ag-card{border-radius:8px;padding:3px 7px;font-size:10.5px;line-height:1.3;cursor:grab;color:#fff;overflow:hidden;position:absolute;left:2px;right:2px;z-index:3}
@@ -5367,7 +5371,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
   </div>
   <div class="agpop-footer">
-    <button class="btn btn-ghost" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="agPopAbrirModal()" title="Abrir todos os campos do agendamento"><svg viewBox="0 0 24 24" width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Editar todos os campos</button>
+    <button class="btn btn-ghost" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="agPopAbrirModal()" title="Abrir agendamento"><svg viewBox="0 0 24 24" width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Abrir agendamento</button>
   </div>
 </div>
 
@@ -6690,22 +6694,21 @@ let indicacoesMes = carregarLS('sk3-indicacoes', 0);
 
 // ── AGENDA — estado ──────────────────────────────────────────────────
 const SALAS_PADRAO = [
-  {id:'sala1',nome:'Sala 01',cor:'#43474D',ativa:true},
-  {id:'sala2',nome:'Sala 02',cor:'#1E8A5F',ativa:true},
-  {id:'sala3',nome:'Sala 03',cor:'#0F5C61',ativa:true},
-  {id:'sala4',nome:'Sala 04',cor:'#1A1B1E',ativa:true},
+  {id:'sala1',nome:'Sala 01',cor:'#9C7D3F',ativa:true},
+  {id:'sala2',nome:'Sala 02',cor:'#0F5C61',ativa:true},
+  {id:'sala3',nome:'Sala 03',cor:'#5B6B45',ativa:true},
+  {id:'sala4',nome:'Sala 04',cor:'#C9A560',ativa:true},
 ];
 let salas = carregarLS('sk3-salas', SALAS_PADRAO);
-// migração (v2, forçada uma única vez): a versão anterior só migrava se a cor batesse
-// exatamente com um hex antigo específico — não cobria instalações já customizadas ou
-// com cache antigo. Agora força as 4 salas padrão para a paleta viva uma única vez,
-// controlado por flag, e não mexe mais depois disso (preserva customização futura).
+// migração (v4, forçada uma única vez): troca a paleta anterior (chumbo/preto) pela
+// nova paleta viva — ouro envelhecido, verde petróleo e verde musgo — nas 4 salas
+// padrão, controlado por flag, e não mexe mais depois disso (preserva customização futura).
 (function migrarCoresSalasParaPaletaViva(){
-  if(carregarLS('sk3-salas-paleta-viva-v3', false)) return;
-  const FORCAR = {sala1:'#43474D', sala2:'#1E8A5F', sala3:'#0F5C61', sala4:'#1A1B1E'};
+  if(carregarLS('sk3-salas-paleta-viva-v4', false)) return;
+  const FORCAR = {sala1:'#9C7D3F', sala2:'#0F5C61', sala3:'#5B6B45', sala4:'#C9A560'};
   salas.forEach(s=>{ if(FORCAR[s.id]) s.cor = FORCAR[s.id]; });
   salvarLS('sk3-salas', salas);
-  salvarLS('sk3-salas-paleta-viva-v3', true);
+  salvarLS('sk3-salas-paleta-viva-v4', true);
 })();
 
 // agendaProfissionais: {usuarioId, salasIds:[], cor, granularidadeMin, ativo}
@@ -6732,14 +6735,15 @@ let tagsAgendamento = carregarLS('sk3-tags-agendamento', [
 // linksAgenda: {id, nome, slug, modo:'profissional'|'escolha', usuarioId, profissionaisPermitidos:[], salasPermitidas:[], diasSemana:[], horaInicio, horaFim, dataValidadeFim, ativo}
 let linksAgenda = carregarLS('sk3-links-agenda', []);
 
-const CORES_AGENDA = ['#43474D','#1E8A5F','#0F5C61','#1A1B1E','#B8964F','#8A929B','#1C3A57','#B8571F','#2E8577','#5C6773','#0D4A4E','#3A4149','#C9A560','#173047','#166B49','#6B7280','#A66B2E','#0B3B3E'];
-// migração: cores antigas (tons escuros/apagados) de profissionais já cadastrados
-// viram automaticamente a cor viva equivalente na mesma posição da paleta.
+const CORES_AGENDA = ['#9C7D3F','#1E8A5F','#0F5C61','#5B6B45','#B8964F','#6B7A4F','#1C3A57','#B8571F','#2E8577','#7A6335','#0D4A4E','#3F4A2E','#C9A560','#173047','#166B49','#4F6B5B','#A66B2E','#0B3B3E'];
+// migração (v4): troca a paleta anterior (com tons cinza/preto) por uma paleta 100%
+// dentro da identidade viva — ouro envelhecido, verde petróleo e verde musgo — para
+// os profissionais já cadastrados, na mesma posição da paleta.
 (function migrarCoresProfissionaisParaPaletaViva(){
-  if(carregarLS('sk3-prof-paleta-viva-v3', false)) return;
+  if(carregarLS('sk3-prof-paleta-viva-v4', false)) return;
   (agendaProfissionais||[]).forEach((ap,i)=>{ ap.cor = CORES_AGENDA[i % CORES_AGENDA.length]; });
   salvarLS('sk3-agenda-profissionais', agendaProfissionais);
-  salvarLS('sk3-prof-paleta-viva-v3', true);
+  salvarLS('sk3-prof-paleta-viva-v4', true);
 })();
 
 const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
@@ -22332,11 +22336,17 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
   // financeira dentro dos cards de agendamento, quando há espaço.
   const _agTodosTitulosPacientes = _titulos();
 
+  // Data formatada (ex.: "terça-feira, 28 de julho") para exibir em cima do nome
+  // de cada sala/profissional no cabeçalho da grade — além do "Hoje" que já
+  // aparece no topo da tela, fica visualmente mais claro qual dia está sendo visto.
+  const _agHeadDataObj = parseIso(dataIso);
+  const _agHeadDataTxt = _agHeadDataObj ? `${DIAS[_agHeadDataObj.getDay()]}, ${_agHeadDataObj.getDate()} de ${MESES[_agHeadDataObj.getMonth()]}` : '';
+
   let style = `grid-template-columns: 64px repeat(${cols.length}, 1fr); grid-auto-rows: ${SLOT_H}px;`;
   let html = `<div class="ag-grid" style="${style}">`;
   html += `<div class="ag-head"></div>`;
   cols.forEach(c=>{
-    html += `<div class="ag-head" style="background:${c.cor}">${c.label}</div>`;
+    html += `<div class="ag-head" style="background:${c.cor}"><div class="ag-head-date">${_agHeadDataTxt}</div><div class="ag-head-sala">${c.label}</div></div>`;
   });
 
   for(let r=0;r<nLinhas;r++){
