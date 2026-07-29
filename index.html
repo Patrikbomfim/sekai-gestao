@@ -1434,7 +1434,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="pp-area" id="pp-area-agenda">
         <div class="pp-area-title">Agendamentos</div>
         <div class="pp-area-desc">Consultas agendadas e histórico de atendimentos deste paciente.</div>
-        <div class="card" id="pp-agenda-wrap"></div>
+        <div id="pp-agenda-wrap"></div>
       </div>
 
       <!-- ANAMNESE INICIAL -->
@@ -8961,6 +8961,14 @@ function salvarPaciente(){
   renderKanban();
   renderHoje();
   showSaveToast('Paciente cadastrado');
+  // Se este cadastro foi aberto a partir do campo "Quem indicou?" da agenda, vincula
+  // automaticamente o paciente recém-criado como indicador do agendamento.
+  if(_agmIndicacaoCriarPendente){
+    _agmIndicacaoCriarPendente = false;
+    if(typeof agmIndicacaoSelecionarContato==='function'){
+      agmIndicacaoSelecionarContato({tipo:'paciente', id:p.id, nome:p.nome});
+    }
+  }
 }
 
 // ── RENDER PACIENTES ──────────────────────────────────────────────────
@@ -15076,28 +15084,29 @@ function renderPpAgenda(p){
     .sort((a,b)=> a.data<b.data?1:a.data>b.data?-1:0);
   if(!lista.length){
     const debug=todos.length?`<div style="font-size:11px;color:var(--tx3);margin-top:8px;padding:8px;background:var(--s2);border-radius:var(--r6)"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> Encontrados ${todos.length} agendamento(s) pelo nome mas não pelo ID. p.id = <b>${p.id}</b> (${typeof p.id}), pacienteId nos agendamentos: ${todos.map(a=>`<b>${a.pacienteId}</b> (${typeof a.pacienteId})`).join(', ')}</div>`:'';
-    wrap.innerHTML='<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="4" width="18" height="18" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>Nenhum agendamento encontrado para este paciente.</div>'+debug;
+    wrap.innerHTML='<div class="card"><div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="4" width="18" height="18" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>Nenhum agendamento encontrado para este paciente.</div>'+debug+'</div>';
     return;
   }
   const pillMap={agendado:'p-neutral',confirmado:'p-green',realizado:'p-info',faltou:'p-danger',cancelado:'p-neutral'};
   const lblMap={agendado:'Agendado',confirmado:'Confirmado',realizado:'Realizado',faltou:'Faltou',cancelado:'Cancelado'};
   const hojeStr=iso(hoje);
-  wrap.innerHTML=lista.map(a=>{
+  const rows=lista.map(a=>{
     const salaObj=salas.find(s=>s.id===a.salaId);
     const profObj=usuarios.find(u=>u.id===a.usuarioId);
     const passado=a.data<hojeStr;
-    return `<div class="pp-row" style="cursor:pointer;border-radius:var(--r8);transition:background .12s;${passado?'opacity:.7':''}" onclick="pacienteOrigemAgendamentoId=${a.id};_abrirModalAgendamentoReal('${a.id}')" onmouseenter="this.style.background='var(--s2)';this.style.padding='7px 10px';this.style.margin='0 -10px'" onmouseleave="this.style.background='';this.style.padding='7px 0';this.style.margin=''">
-      <div style="width:90px;flex-shrink:0">
-        <div style="font-size:13px;font-weight:600">${a.data.split('-').reverse().join('/')}</div>
-        <div style="font-size:11px;color:var(--tx3)">${a.horaInicio}${a.horaFim?' – '+a.horaFim:''}</div>
-      </div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:500">${a.procedimento||'—'}</div>
-        <div style="font-size:11px;color:var(--tx3)">${salaObj?salaObj.nome:''}${profObj?' · '+profObj.nome:''}</div>
-      </div>
-      <span class="pill ${pillMap[a.status]||'p-neutral'}" style="flex-shrink:0">${lblMap[a.status]||a.status}</span>
-    </div>`;
+    return `<tr style="cursor:pointer;${passado?'opacity:.7':''}" onclick="pacienteOrigemAgendamentoId='${a.id}';_abrirModalAgendamentoReal('${a.id}')">
+      <td>${a.data.split('-').reverse().join('/')}</td>
+      <td>${a.horaInicio}${a.horaFim?' – '+a.horaFim:''}</td>
+      <td>${esc(a.procedimento)||'—'}</td>
+      <td>${esc(profObj?profObj.nome:'—')}</td>
+      <td>${esc(salaObj?salaObj.nome:'—')}</td>
+      <td><span class="pill ${pillMap[a.status]||'p-neutral'}">${lblMap[a.status]||a.status}</span></td>
+    </tr>`;
   }).join('');
+  wrap.innerHTML=`<div class="fin-table-wrap"><table class="fin-table">
+    <thead><tr><th>Data</th><th>Horário</th><th>Procedimento</th><th>Profissional</th><th>Sala</th><th>Status</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
 }
 
 function toggleIndicadorEdit(){
@@ -21230,16 +21239,27 @@ function abrirAgPopover(a, targetEl){
   // Posicionamento inteligente perto do card clicado
   if(targetEl){
     const rect = targetEl.getBoundingClientRect();
-    const pw = 300, ph = 480;
+    const pw = 300, phEstimado = 480;
     let left = rect.right + 8;
     let top = rect.top;
     if(left + pw > window.innerWidth - 8) left = rect.left - pw - 8;
     if(left < 8) left = 8;
-    if(top + ph > window.innerHeight - 8) top = window.innerHeight - ph - 8;
+    if(top + phEstimado > window.innerHeight - 8) top = window.innerHeight - phEstimado - 8;
     if(top < 8) top = 8;
     pop.style.left = left + 'px';
     pop.style.top = top + 'px';
     pop.style.right = 'auto';
+
+    // O cálculo acima usa uma altura estimada — reposiciona com a altura REAL do popover
+    // já renderizado, para que os botões do rodapé (editar/salvar) nunca fiquem fora da
+    // tela quando o agendamento está nos últimos horários do dia (perto do fim da grade).
+    requestAnimationFrame(()=>{
+      const ph = pop.offsetHeight || phEstimado;
+      let top2 = rect.top;
+      if(top2 + ph > window.innerHeight - 8) top2 = window.innerHeight - ph - 8;
+      if(top2 < 8) top2 = 8;
+      pop.style.top = top2 + 'px';
+    });
   } else {
     // Centralizado
     pop.style.left = '50%';
@@ -22214,6 +22234,8 @@ function agmRenderCamposExtras(agendamentoExistente){
       const showTexto = showOrigem && (origemVal==='Indicação'||origemVal==='Outro');
       const labelOrigem = origemVal==='Indicação' ? 'Quem indicou?' : 'Qual a origem?';
       const placeholderTexto = origemVal==='Indicação' ? 'Nome de quem indicou...' : 'Descreva a origem...';
+      // Pré-carrega o indicador estruturado (se este agendamento já tiver um vinculado)
+      _agmIndicacaoSelecionado = (agendamentoExistente && agendamentoExistente.indicacao) ? agendamentoExistente.indicacao : null;
       html += `<div class="fl fg-full"><label>Primeira consulta?${labelStar}</label>
         <select id="agm-primeira-consulta" onchange="agmTogglePrimeiraConsulta()">
           <option value="">Selecionar...</option>
@@ -22233,9 +22255,13 @@ function agmRenderCamposExtras(agendamentoExistente){
           <option value="Outro" ${origemVal==='Outro'?'selected':''}>Outro</option>
         </select>
       </div>
-      <div class="fl fg-full" id="agm-origem-texto-wrap" style="${showTexto?'':'display:none'}">
+      <div class="fl fg-full" id="agm-origem-texto-wrap" style="${showTexto?'':'display:none'};position:relative">
         <label id="agm-origem-texto-label">${labelOrigem}</label>
-        <input type="text" id="agm-origem-texto" placeholder="${placeholderTexto}" value="${esc(origemTextoVal)}">
+        <input type="text" id="agm-origem-texto" placeholder="${placeholderTexto}" value="${esc(origemTextoVal)}" autocomplete="off"
+          oninput="agmOrigemTextoInput(this.value)"
+          onfocus="agmOrigemTextoInput(this.value)"
+          onblur="setTimeout(()=>{const dd=document.getElementById('agm-indicacao-dropdown'); if(dd) dd.classList.remove('open')},160)">
+        <div id="agm-indicacao-dropdown" class="fin-ac-dropdown"></div>
       </div>`;
     }
   });
@@ -22304,6 +22330,7 @@ function agmTogglePrimeiraConsulta(){
     if(textoWrap) textoWrap.style.display = 'none';
     const sel = document.getElementById('agm-origem'); if(sel) sel.value='';
     const txt = document.getElementById('agm-origem-texto'); if(txt) txt.value='';
+    _agmIndicacaoSelecionado = null;
   }
 }
 
@@ -22312,18 +22339,72 @@ function agmToggleOrigemTexto(){
   const textoWrap = document.getElementById('agm-origem-texto-wrap');
   const label = document.getElementById('agm-origem-texto-label');
   if(!textoWrap) return;
+  _agmIndicacaoSelecionado = null;
+  const dd=document.getElementById('agm-indicacao-dropdown'); if(dd){ dd.classList.remove('open'); dd.innerHTML=''; }
   if(origem === 'Indicação'){
     textoWrap.style.display = '';
     if(label) label.textContent = 'Quem indicou?';
-    const inp = document.getElementById('agm-origem-texto'); if(inp) inp.placeholder='Nome de quem indicou...';
+    const inp = document.getElementById('agm-origem-texto'); if(inp){ inp.placeholder='Nome de quem indicou...'; inp.value=''; }
   } else if(origem === 'Outro'){
     textoWrap.style.display = '';
     if(label) label.textContent = 'Qual a origem?';
-    const inp = document.getElementById('agm-origem-texto'); if(inp) inp.placeholder='Descreva a origem...';
+    const inp = document.getElementById('agm-origem-texto'); if(inp){ inp.placeholder='Descreva a origem...'; inp.value=''; }
   } else {
     textoWrap.style.display = 'none';
     const inp = document.getElementById('agm-origem-texto'); if(inp) inp.value='';
   }
+}
+
+// ── Autocomplete "Quem indicou?" — busca em toda a base (pacientes, equipe,
+// fornecedores, indicadores avulsos), igual ao mesmo padrão usado na aprovação
+// de orçamentos. Fora do modo "Indicação" (ex.: "Outro"), o campo é texto livre.
+let _agmIndicacaoSelecionado = null; // {tipo,id,nome} do indicador vinculado a este agendamento
+let _agmIndicacaoBuscaResultados = [];
+let _agmIndicacaoCriarPendente = false; // aguardando criação de novo paciente via "+ Adicionar cadastro"
+
+function agmOrigemTextoInput(termo){
+  const origem = document.getElementById('agm-origem')?.value;
+  const dd = document.getElementById('agm-indicacao-dropdown');
+  if(origem !== 'Indicação'){
+    if(dd){ dd.classList.remove('open'); dd.innerHTML=''; }
+    return;
+  }
+  if(_agmIndicacaoSelecionado && termo !== _agmIndicacaoSelecionado.nome) _agmIndicacaoSelecionado = null;
+  if(!dd) return;
+  const t=(termo||'').trim().toLowerCase();
+  const todos=_ogContatosTodos();
+  const filtrados = t ? todos.filter(c=>(c.nome||'').toLowerCase().includes(t)).slice(0,10) : [];
+  _agmIndicacaoBuscaResultados = filtrados;
+  const tagMap={paciente:'Paciente',usuario:'Equipe',fornecedor:'Fornecedor',indicador:'Indicador'};
+  let html = filtrados.map((c,i)=>`<div class="fin-ac-item" onmousedown="agmIndicacaoSelecionarAC(${i})"><span class="fin-ac-item-nome">${esc(c.nome)}</span><span class="fin-ac-tag fin-ac-tag-${c.tipo==='paciente'?'paciente':c.tipo==='usuario'?'usuario':'fornecedor'}">${tagMap[c.tipo]}</span></div>`).join('');
+  if(t){
+    const termoEsc=esc(termo).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    html += `<div class="fin-ac-item" style="color:var(--ac);font-weight:600" onmousedown="agmIndicacaoAdicionarCadastro('${termoEsc}')">+ Adicionar cadastro para "${esc(termo)}"</div>`;
+  }
+  dd.innerHTML = html || '<div class="fin-ac-item" style="color:var(--tx3)">Digite para buscar...</div>';
+  dd.classList.toggle('open', !!t);
+}
+
+function agmIndicacaoSelecionarAC(idx){
+  const c=_agmIndicacaoBuscaResultados[idx];
+  if(!c) return;
+  agmIndicacaoSelecionarContato(c);
+}
+
+function agmIndicacaoSelecionarContato(c){
+  _agmIndicacaoSelecionado = {tipo:c.tipo, id:c.id, nome:c.nome};
+  const inp=document.getElementById('agm-origem-texto'); if(inp) inp.value=c.nome;
+  const dd=document.getElementById('agm-indicacao-dropdown'); if(dd) dd.classList.remove('open');
+}
+
+// Abre o cadastro de novo paciente pré-preenchido com o nome buscado; ao salvar,
+// esse paciente é vinculado automaticamente como indicador deste agendamento.
+function agmIndicacaoAdicionarCadastro(nomeDigitado){
+  const nome = (nomeDigitado!=null ? nomeDigitado : (document.getElementById('agm-origem-texto')?.value||'')).trim();
+  _agmIndicacaoCriarPendente = true;
+  abrirModalNovo();
+  const nomeEl=document.getElementById('nn-nome');
+  if(nomeEl) nomeEl.value = nome;
 }
 
 function agmLerCamposExtras(){
@@ -22547,6 +22628,10 @@ function _salvarAgendamentoInterno(){
   const origemPaciente=origemPacienteEl ? (origemPacienteEl.value||null) : null;
   const origemPacienteTextoEl=document.getElementById('agm-origem-texto');
   const origemPacienteTexto=origemPacienteTextoEl ? (origemPacienteTextoEl.value.trim()||null) : null;
+  // Indicador estruturado (para conectar com o relatório "Pacientes indicados") — só é
+  // salvo se o texto atual ainda corresponde ao contato escolhido no autocomplete.
+  const indicacao = (origemPaciente==='Indicação' && _agmIndicacaoSelecionado && _agmIndicacaoSelecionado.nome===origemPacienteTexto)
+    ? {..._agmIndicacaoSelecionado} : null;
   const camposExtras = agmLerCamposExtras();
 
   if(!agmValidarCamposExtras()) return;
@@ -22605,7 +22690,7 @@ function _salvarAgendamentoInterno(){
   const fluxo = null; // definido apenas em agendamentos via encaminhamento
   const existenteParaTags = editId ? agendamentos.find(a=>a.id===editId) : null;
   const item={pacienteId,pacienteNome,pacienteFone:pacienteId?'':pacienteFone,usuarioId,salaId,data,horaInicio,horaFim,status,origem:'interno',procedimento,fluxo,obs,situacaoRegistrada:situacaoPaciente,
-    motivoCancelamento,motivoCancelamentoOutro,jaReagendado,recontatoStatus,recontatoResponsavel,recontatoObs,recontatoCriadoEm,recontatoResolvidoEm,primeiraConsulta,origemPaciente,origemPacienteTexto,camposExtras,
+    motivoCancelamento,motivoCancelamentoOutro,jaReagendado,recontatoStatus,recontatoResponsavel,recontatoObs,recontatoCriadoEm,recontatoResolvidoEm,primeiraConsulta,origemPaciente,origemPacienteTexto,indicacao,camposExtras,
     tags: existenteParaTags ? (existenteParaTags.tags||[]) : []};
 
   if(editId){
@@ -23477,15 +23562,16 @@ function _relRenderPrimeirasConsultas(wrap, de, ate){
     </table></div>`;
 }
 
-// Pacientes indicados: orçamentos aprovados com indicação preenchida
-// (o.indicacao = {tipo,id,nome}) — qualquer tipo de indicador aqui (equipe,
-// paciente, fornecedor ou indicador avulso), não só equipe como na comissão.
+// Pacientes indicados: combina duas origens —
+// 1) orçamentos aprovados com indicação preenchida (o.indicacao = {tipo,id,nome})
+// 2) agendamentos com "Primeira consulta = Sim" + "Origem = Indicação" (a.indicacao = {tipo,id,nome})
+// Qualquer tipo de indicador aqui (equipe, paciente, fornecedor ou indicador avulso).
 function _relRenderPacientesIndicados(wrap, de, ate){
   const fPac=_relFiltros.pacientes_indicados.pacienteIndicado;
   const fInd=_relFiltros.pacientes_indicados.indicador;
   const tagMap={paciente:'Paciente',usuario:'Equipe',fornecedor:'Fornecedor',indicador:'Indicador'};
 
-  const lista=_orcamentos().filter(o=>{
+  const doOrcamentos=_orcamentos().filter(o=>{
     if(o.status!=='aprovado') return false;
     if(!o.indicacao || !o.indicacao.nome) return false;
     const d=o.dataDecisao || o.data || o.dataCriacao || '';
@@ -23496,24 +23582,38 @@ function _relRenderPacientesIndicados(wrap, de, ate){
   }).map(o=>{
     const pac=pacientes.find(x=>String(x.id)===String(o.pacienteId));
     const valor = (o.valorFechado!=null) ? parseFloat(o.valorFechado) : (o.itens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
-    return { orc:o, pacNome:pac?pac.nome:'Paciente', pacId:o.pacienteId, data: o.dataDecisao||o.data||o.dataCriacao||'', valor };
-  }).sort((a,b)=> (b.data||'').localeCompare(a.data||''));
+    return { origem:'Orçamento aprovado', data: o.dataDecisao||o.data||o.dataCriacao||'', pacNome:pac?pac.nome:'Paciente', pacId:o.pacienteId, indicTipo:o.indicacao.tipo, indicId:o.indicacao.id, indicNome:o.indicacao.nome, valor };
+  });
+
+  const doAgendamentos=(typeof agendamentos!=='undefined'?agendamentos:[]).filter(a=>{
+    if(a.status==='cancelado') return false;
+    if(!a.indicacao || !a.indicacao.nome) return false;
+    if(a.data<de || a.data>ate) return false;
+    if(fPac && String(a.pacienteId)!==String(fPac.id)) return false;
+    if(fInd && !(String(a.indicacao.id)===String(fInd.id) && a.indicacao.tipo===fInd.tipo)) return false;
+    return true;
+  }).map(a=>{
+    return { origem:'Agendamento', data:a.data||'', pacNome:a.pacienteNome||'Paciente', pacId:a.pacienteId, indicTipo:a.indicacao.tipo, indicId:a.indicacao.id, indicNome:a.indicacao.nome, valor:null };
+  });
+
+  const lista=[...doOrcamentos, ...doAgendamentos].sort((a,b)=> (b.data||'').localeCompare(a.data||''));
 
   if(!lista.length) return _relTabelaVazia(wrap, 'Nenhum paciente indicado nesse período/filtro.');
 
   const rows=lista.map(x=>`<tr>
     <td>${_finFmtData(x.data)}</td>
-    <td><a href="javascript:void(0)" onclick="relAbrirPaciente('${x.pacId}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(x.pacNome)}</a></td>
-    <td>${x.orc.indicacao.tipo==='paciente'?`<a href="javascript:void(0)" onclick="relAbrirPaciente('${x.orc.indicacao.id}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(x.orc.indicacao.nome)}</a>`:esc(x.orc.indicacao.nome)}</td>
-    <td>${tagMap[x.orc.indicacao.tipo]||x.orc.indicacao.tipo||'—'}</td>
-    <td class="fin-td-valor">${_finFmt(x.valor)}</td>
+    <td>${x.pacId?`<a href="javascript:void(0)" onclick="relAbrirPaciente('${x.pacId}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(x.pacNome)}</a>`:esc(x.pacNome)}</td>
+    <td>${x.indicTipo==='paciente'?`<a href="javascript:void(0)" onclick="relAbrirPaciente('${x.indicId}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(x.indicNome)}</a>`:esc(x.indicNome)}</td>
+    <td>${tagMap[x.indicTipo]||x.indicTipo||'—'}</td>
+    <td>${esc(x.origem)}</td>
+    <td class="fin-td-valor">${x.valor!=null?_finFmt(x.valor):'—'}</td>
   </tr>`).join('');
 
   wrap.innerHTML=`<div class="card" style="margin-bottom:14px">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3)">Pacientes indicados no período</div><div style="font-size:18px;font-weight:700">${lista.length}</div>
     </div>
     <div class="fin-table-wrap"><table class="fin-table">
-      <thead><tr><th>Data</th><th>Paciente indicado</th><th>Indicado por</th><th>Tipo</th><th style="text-align:right">Valor do orçamento</th></tr></thead>
+      <thead><tr><th>Data</th><th>Paciente indicado</th><th>Indicado por</th><th>Tipo</th><th>Origem</th><th style="text-align:right">Valor do orçamento</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`;
 }
