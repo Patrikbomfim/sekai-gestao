@@ -3035,42 +3035,41 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 ══════════════════════════════════════════════════════════════ -->
 <div id="sec-financeiro" class="sec">
 
+  <!-- Filtro de período: geral, fixo no topo, vale pra todas as abas do Financeiro -->
+  <div class="card" style="margin-bottom:16px;position:sticky;top:0;z-index:15">
+    <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
+      <div class="fl" style="min-width:170px">
+        <label>Período</label>
+        <select id="fin-periodo-sel" class="fin-select" onchange="finPeriodoGlobalMudou()">
+          <option value="hoje">Hoje</option>
+          <option value="semana_atual">Esta semana</option>
+          <option value="semana_proxima">Próxima semana</option>
+          <option value="mes_atual">Este mês</option>
+          <option value="mes_proximo">Próximo mês</option>
+          <option value="especifica">Data específica</option>
+        </select>
+      </div>
+      <div id="fin-periodo-custom" style="display:none;align-items:flex-end;gap:10px">
+        <div class="fl" style="min-width:150px">
+          <label>De</label>
+          <input type="date" id="fin-periodo-de" class="fin-input-date" onchange="finPeriodoGlobalCustomChange()">
+        </div>
+        <div class="fl" style="min-width:150px">
+          <label>Até</label>
+          <input type="date" id="fin-periodo-ate" class="fin-input-date" onchange="finPeriodoGlobalCustomChange()">
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="finPeriodoGlobalLimpar()" style="margin-left:auto">Limpar filtro</button>
+    </div>
+    <div style="font-size:11.5px;color:var(--tx3);margin-top:8px" id="fin-periodo-global-label"></div>
+  </div>
+
   <!-- FLUXO DE CAIXA -->
   <div id="fin-area-fluxo" class="fin-area on">
     <div class="pg-title">Fluxo de Caixa</div>
     <div class="pg-desc">Visão geral financeira — entradas, saídas e posição do caixa (a pagar operacional + folha + a receber)</div>
 
-    <!-- Atalhos de período -->
-    <div class="fin-periodo-row" style="margin-top:16px">
-      <button type="button" class="fin-periodo-btn" id="flx-periodo-btn-mes_atual" onclick="finFluxoSetPeriodo('mes_atual')">
-        <span class="fin-periodo-lbl">Este mês</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-      <button type="button" class="fin-periodo-btn" id="flx-periodo-btn-semana_atual" onclick="finFluxoSetPeriodo('semana_atual')">
-        <span class="fin-periodo-lbl">Esta semana</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-      <button type="button" class="fin-periodo-btn" id="flx-periodo-btn-semana_proxima" onclick="finFluxoSetPeriodo('semana_proxima')">
-        <span class="fin-periodo-lbl">Próxima semana</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-      <button type="button" class="fin-periodo-btn" id="flx-periodo-btn-mes_proximo" onclick="finFluxoSetPeriodo('mes_proximo')">
-        <span class="fin-periodo-lbl">Próximo mês</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-    </div>
-
-    <!-- Filtro por período customizado -->
-    <div class="fin-flx-custom-datas">
-      <div class="fin-flx-custom-datas-linha">
-        <span class="fin-flx-custom-lbl">De</span>
-        <input type="date" id="flx-filtro-de" class="fin-input-date" title="Data inicial" onchange="finFluxoDataCustomChange()">
-        <span class="fin-flx-custom-lbl">até</span>
-        <input type="date" id="flx-filtro-ate" class="fin-input-date" title="Data final" onchange="finFluxoDataCustomChange()">
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="finFluxoLimparFiltro()">Limpar filtro</button>
-    </div>
-    <div style="font-size:11.5px;color:var(--tx3);margin-top:8px" id="flx-periodo-label"></div>
+    <div style="font-size:11.5px;color:var(--tx3);margin-top:12px" id="flx-periodo-label"></div>
 
     <!-- Cards realizados no período selecionado (unificam a pagar operacional + folha + a receber) -->
     <div class="fin-cards-row" style="margin-top:12px">
@@ -3102,28 +3101,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="btn btn-primary btn-sm" onclick="abrirModalFinLancamento('pagar')" data-perm="fin_pagar_criar">+ Novo lançamento</button>
     </div>
 
-    <!-- Atalhos de período -->
-    <div class="fin-periodo-row" style="margin-top:14px">
-      <button type="button" class="fin-periodo-btn" id="pg-periodo-btn-mes" onclick="finSetPeriodoLista('pagar','mes')">
-        <span class="fin-periodo-lbl">Este mês</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-      <button type="button" class="fin-periodo-btn" id="pg-periodo-btn-semana" onclick="finSetPeriodoLista('pagar','semana')">
-        <span class="fin-periodo-lbl">Esta semana</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-      <button type="button" class="fin-periodo-btn" id="pg-periodo-btn-prox_semana" onclick="finSetPeriodoLista('pagar','prox_semana')">
-        <span class="fin-periodo-lbl">Próxima semana</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-      <button type="button" class="fin-periodo-btn" id="pg-periodo-btn-prox_mes" onclick="finSetPeriodoLista('pagar','prox_mes')">
-        <span class="fin-periodo-lbl">Próximo mês</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-    </div>
-
     <!-- Cards resumo -->
-    <div class="fin-cards-row">
+    <div class="fin-cards-row" style="margin-top:14px">
       <div class="fin-card fin-card-blue fin-card-clickable" data-status="" onclick="finFiltrarPorStatusCard('pagar','')">
         <div class="fin-card-label">Total</div>
         <div class="fin-card-value" id="pg-val-total">R$ 0,00</div>
@@ -3205,28 +3184,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </button>
     </div>
 
-    <!-- Atalhos de período -->
-    <div class="fin-periodo-row" style="margin-top:10px">
-      <button type="button" class="fin-periodo-btn" id="fl-periodo-btn-mes" onclick="finSetPeriodoLista('folha','mes')">
-        <span class="fin-periodo-lbl">Este mês</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-      <button type="button" class="fin-periodo-btn" id="fl-periodo-btn-semana" onclick="finSetPeriodoLista('folha','semana')">
-        <span class="fin-periodo-lbl">Esta semana</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-      <button type="button" class="fin-periodo-btn" id="fl-periodo-btn-prox_semana" onclick="finSetPeriodoLista('folha','prox_semana')">
-        <span class="fin-periodo-lbl">Próxima semana</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-      <button type="button" class="fin-periodo-btn" id="fl-periodo-btn-prox_mes" onclick="finSetPeriodoLista('folha','prox_mes')">
-        <span class="fin-periodo-lbl">Próximo mês</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-    </div>
-
     <!-- Cards resumo -->
-    <div class="fin-cards-row">
+    <div class="fin-cards-row" style="margin-top:14px">
       <div class="fin-card fin-card-blue fin-card-clickable" data-status="" onclick="finFiltrarPorStatusCard('folha','')">
         <div class="fin-card-label">Total</div>
         <div class="fin-card-value" id="fl-val-total">R$ 0,00</div>
@@ -3324,28 +3283,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="btn btn-primary btn-sm" onclick="abrirModalFinLancamento('receber')" data-perm="fin_receber_criar">+ Novo lançamento</button>
     </div>
 
-    <!-- Atalhos de período -->
-    <div class="fin-periodo-row" style="margin-top:14px">
-      <button type="button" class="fin-periodo-btn" id="rc-periodo-btn-mes" onclick="finSetPeriodoLista('receber','mes')">
-        <span class="fin-periodo-lbl">Este mês</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-      <button type="button" class="fin-periodo-btn" id="rc-periodo-btn-semana" onclick="finSetPeriodoLista('receber','semana')">
-        <span class="fin-periodo-lbl">Esta semana</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-      <button type="button" class="fin-periodo-btn" id="rc-periodo-btn-prox_semana" onclick="finSetPeriodoLista('receber','prox_semana')">
-        <span class="fin-periodo-lbl">Próxima semana</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-      <button type="button" class="fin-periodo-btn" id="rc-periodo-btn-prox_mes" onclick="finSetPeriodoLista('receber','prox_mes')">
-        <span class="fin-periodo-lbl">Próximo mês</span>
-        <span class="fin-periodo-datas"></span>
-      </button>
-    </div>
-
     <!-- Cards resumo -->
-    <div class="fin-cards-row">
+    <div class="fin-cards-row" style="margin-top:14px">
       <div class="fin-card fin-card-blue fin-card-clickable" data-status="" onclick="finFiltrarPorStatusCard('receber','')">
         <div class="fin-card-label">Total</div>
         <div class="fin-card-value" id="rc-val-total">R$ 0,00</div>
@@ -4017,13 +3956,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
       </div>
 
-      <div>
-        <div class="fin-drawer-sec-label">Vencimento</div>
-        <div class="fin-drawer-row2">
-          <input type="date" id="fin-filtro-venc-de" class="fi" title="Vencimento de">
-          <input type="date" id="fin-filtro-venc-ate" class="fi" title="Vencimento até">
-        </div>
-      </div>
+      <div style="font-size:11.5px;color:var(--tx3)">O filtro de vencimento (período) agora é o filtro superior, fixo no topo do módulo, e vale para todas as abas.</div>
 
       <div>
         <div class="fin-drawer-sec-label">Liquidação</div>
@@ -4291,9 +4224,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="fl" style="min-width:170px">
         <label>Período</label>
         <select id="rel-periodo-sel" class="fin-select" onchange="relPeriodoMudou()">
-          <option value="mes_atual">Mês atual</option>
-          <option value="semana_atual">Semana atual</option>
           <option value="hoje">Hoje</option>
+          <option value="semana_atual">Esta semana</option>
+          <option value="semana_proxima">Próxima semana</option>
+          <option value="mes_atual">Este mês</option>
+          <option value="mes_proximo">Próximo mês</option>
           <option value="especifica">Data específica</option>
         </select>
       </div>
@@ -4307,7 +4242,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <input type="date" id="rel-periodo-ate" class="fin-input-date" onchange="relRenderConteudo()">
         </div>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="relLimparFiltro()" style="margin-left:auto">Limpar filtro</button>
+      <button class="btn btn-ghost btn-sm" onclick="relLimparFiltro()">Limpar filtro</button>
     </div>
   </div>
 
@@ -23186,6 +23121,16 @@ function _relPeriodoDatas(){
     const dom=new Date(seg); dom.setDate(seg.getDate()+6);
     return { de:_finIso(seg), ate:_finIso(dom) };
   }
+  if(_relPeriodoTipo==='semana_proxima'){
+    const seg=_finSegundaSemana(hoje); seg.setDate(seg.getDate()+7);
+    const dom=new Date(seg); dom.setDate(seg.getDate()+6);
+    return { de:_finIso(seg), ate:_finIso(dom) };
+  }
+  if(_relPeriodoTipo==='mes_proximo'){
+    const ini=new Date(hoje.getFullYear(),hoje.getMonth()+1,1);
+    const fim=new Date(hoje.getFullYear(),hoje.getMonth()+2,0);
+    return { de:_finIso(ini), ate:_finIso(fim) };
+  }
   if(_relPeriodoTipo==='especifica'){
     const de=document.getElementById('rel-periodo-de')?.value || _finIso(hoje);
     const ate=document.getElementById('rel-periodo-ate')?.value || _finIso(hoje);
@@ -24191,7 +24136,10 @@ function _finSalvarTitulosGestao(list){ _comSalvarImediato(()=>salvarLS('sk3-fin
 // ── Estado ───────────────────────────────────────────────────────────
 let _finSubAtual = 'fluxo';
 // Período selecionado no Fluxo de Caixa — padrão: semana atual (segunda a domingo)
-let _finFluxoPeriodo = { tipo:'mes_atual', de:'', ate:'' };
+// Filtro de período global do módulo Financeiro (fixo no topo, vale para todas as abas)
+let _finGlobalPeriodoTipo = 'mes_atual';
+let _finGlobalPeriodoDe = '';
+let _finGlobalPeriodoAte = '';
 let _finFiltroRapido = { pagar: null, receber: null };
 let _finLiqPendingIds = [];
 let _finLiqPendingTipo = '';
@@ -24203,7 +24151,6 @@ function _finFiltroVazio(){ return { cats:[], origem:'', status:'', emisDe:'', e
 let _finFiltrosAdv = { pagar:_finFiltroVazio(), folha:_finFiltroVazio(), receber:_finFiltroVazio() };
 
 // Atalho de período ativo nas listas "a pagar" (operacional e folha) — padrão: mês atual
-let _finPeriodoAtivoLista = { pagar:'mes', folha:'mes', receber:'mes' };
 // Filtro de tipo na aba unificada "A pagar total" (fin-area-folha): 'geral' (padrão) | 'pagar' | 'folha'
 let _finFolhaTipoFiltro = 'geral';
 
@@ -24554,14 +24501,17 @@ function showFinSub(sub, btn){
   document.querySelectorAll('#financeiro-subnav .subnav-btn').forEach(b=>b.classList.remove('on'));
   if(btn) btn.classList.add('on');
   if(sub==='fluxo') renderFinFluxo();
-  else if(sub==='pagar') finSetPeriodoLista('pagar','mes');
-  else if(sub==='folha') finSetPeriodoLista('folha','mes');
-  else if(sub==='receber') finSetPeriodoLista('receber','mes');
+  else if(sub==='pagar') renderFinLista('pagar');
+  else if(sub==='folha') renderFinLista('folha');
+  else if(sub==='receber') renderFinLista('receber');
   else if(sub==='comissao') renderFinComissao();
   else if(sub==='recibos') renderFinRecibos();
 }
 
 function renderFinanceiro(){
+  // Filtro de período global, fixo no topo, vale para todas as abas
+  finPeriodoGlobalRenderUI();
+  finPeriodoGlobalSetAdv();
   // Controla visibilidade de cada aba do Financeiro conforme permissão do usuário logado
   aplicarPermissoesFinanceiroSubnav();
   const admin = souAdministradorReal();
@@ -24601,9 +24551,13 @@ function irFinSub(tipo, grupo){
     const fim=new Date(hoje); fim.setDate(hoje.getDate()+7);
     adv.vencDe=_finIso(amanha); adv.vencAte=_finIso(fim);
   }
+  // Mantém o filtro global superior coerente com a data aplicada por este atalho
+  if(adv.vencDe && adv.vencAte){
+    _finGlobalPeriodoTipo='especifica';
+    _finGlobalPeriodoDe=adv.vencDe; _finGlobalPeriodoAte=adv.vencAte;
+    finPeriodoGlobalRenderUI();
+  }
   _finUpdateFiltrosBadge(tipo);
-  _finPeriodoAtivoLista[tipo]=null;
-  _finAtualizarBotoesPeriodoLista(tipo);
   renderFinLista(tipo);
 }
 
@@ -24662,121 +24616,93 @@ function _finSegundaSemana(d){
   return nd;
 }
 
-// Calcula a data inicial/final (ISO) do atalho de período das listas "a pagar" (operacional e folha).
-// 'mes' = mês atual · 'semana' = semana atual (segunda a domingo) · 'prox_semana' = semana seguinte.
-function _finPeriodoListaBounds(periodo){
+
+// Calcula a data inicial/final (ISO) de um tipo de período (usado pelo filtro global do
+// Financeiro, que vale para todas as abas: Fluxo de Caixa, A pagar, A pagar total, A receber).
+function _finPeriodoTipoBounds(tipo, custom){
   const hoje=_finHoje();
-  if(periodo==='semana'){
+  if(tipo==='especifica'){
+    return { de:(custom&&custom.de)||_finIso(hoje), ate:(custom&&custom.ate)||_finIso(hoje) };
+  }
+  if(tipo==='hoje'){
+    return { de:_finIso(hoje), ate:_finIso(hoje) };
+  }
+  if(tipo==='semana_atual'){
     const seg=_finSegundaSemana(hoje);
     const dom=new Date(seg); dom.setDate(seg.getDate()+6);
     return { de:_finIso(seg), ate:_finIso(dom) };
-  }
-  if(periodo==='prox_semana'){
-    const seg=_finSegundaSemana(hoje); seg.setDate(seg.getDate()+7);
-    const dom=new Date(seg); dom.setDate(seg.getDate()+6);
-    return { de:_finIso(seg), ate:_finIso(dom) };
-  }
-  if(periodo==='prox_mes'){
-    const ini=new Date(hoje.getFullYear(),hoje.getMonth()+1,1);
-    const fim=new Date(hoje.getFullYear(),hoje.getMonth()+2,0);
-    return { de:_finIso(ini), ate:_finIso(fim) };
-  }
-  // 'mes' (padrão)
-  const ini=new Date(hoje.getFullYear(),hoje.getMonth(),1);
-  const fim=new Date(hoje.getFullYear(),hoje.getMonth()+1,0);
-  return { de:_finIso(ini), ate:_finIso(fim) };
-}
-
-// Formata uma data ISO como dd/mm (sem o ano), usado nos rótulos dos botões de atalho de período.
-function _finFmtDataCurta(iso){
-  if(!iso) return '';
-  const[y,m,d]=iso.split('-');
-  return `${d}/${m}`;
-}
-
-// Atualiza o texto e o estado "ativo" (.on) dos botões de atalho de período de uma lista.
-function _finAtualizarBotoesPeriodoLista(tipo){
-  const prefix = tipo==='pagar'?'pg':(tipo==='folha'?'fl':'rc');
-  ['mes','semana','prox_semana','prox_mes'].forEach(p=>{
-    const btn=document.getElementById(`${prefix}-periodo-btn-${p}`);
-    if(!btn) return;
-    btn.classList.toggle('on', _finPeriodoAtivoLista[tipo]===p);
-    const {de,ate}=_finPeriodoListaBounds(p);
-    const datasEl=btn.querySelector('.fin-periodo-datas');
-    if(datasEl) datasEl.textContent = `${_finFmtDataCurta(de)} – ${_finFmtDataCurta(ate)}`;
-  });
-}
-
-// Aplica o atalho de período (este mês / esta semana / próxima semana) como filtro de vencimento
-// na lista "a pagar" (operacional ou folha), atualizando os cards, a tabela e o estado visual dos botões.
-function finSetPeriodoLista(tipo, periodo){
-  _finPeriodoAtivoLista[tipo]=periodo;
-  const adv = _finFiltrosAdv[tipo] || (_finFiltrosAdv[tipo]=_finFiltroVazio());
-  const {de,ate} = _finPeriodoListaBounds(periodo);
-  adv.vencDe=de; adv.vencAte=ate;
-  _finAtualizarBotoesPeriodoLista(tipo);
-  _finUpdateFiltrosBadge(tipo);
-  renderFinLista(tipo);
-}
-
-// Calcula a data inicial/final (ISO) do período selecionado no Fluxo de Caixa
-function _finPeriodoFluxoBounds(tipoParam){
-  const hoje=_finHoje();
-  const tipo=tipoParam||_finFluxoPeriodo.tipo;
-  if(tipo==='custom'){
-    return { de:_finFluxoPeriodo.de||_finIso(hoje), ate:_finFluxoPeriodo.ate||_finIso(hoje) };
   }
   if(tipo==='semana_proxima'){
     const seg=_finSegundaSemana(hoje); seg.setDate(seg.getDate()+7);
     const dom=new Date(seg); dom.setDate(seg.getDate()+6);
     return { de:_finIso(seg), ate:_finIso(dom) };
   }
-  if(tipo==='mes_atual'){
-    const ini=new Date(hoje.getFullYear(),hoje.getMonth(),1);
-    const fim=new Date(hoje.getFullYear(),hoje.getMonth()+1,0);
-    return { de:_finIso(ini), ate:_finIso(fim) };
-  }
   if(tipo==='mes_proximo'){
     const ini=new Date(hoje.getFullYear(),hoje.getMonth()+1,1);
     const fim=new Date(hoje.getFullYear(),hoje.getMonth()+2,0);
     return { de:_finIso(ini), ate:_finIso(fim) };
   }
-  // 'semana_atual' (padrão)
-  const seg=_finSegundaSemana(hoje);
-  const dom=new Date(seg); dom.setDate(seg.getDate()+6);
-  return { de:_finIso(seg), ate:_finIso(dom) };
+  // 'mes_atual' (padrão)
+  const ini=new Date(hoje.getFullYear(),hoje.getMonth(),1);
+  const fim=new Date(hoje.getFullYear(),hoje.getMonth()+1,0);
+  return { de:_finIso(ini), ate:_finIso(fim) };
 }
 
-function finFluxoSetPeriodo(tipo){
-  _finFluxoPeriodo={tipo, de:'', ate:''};
-  const elDe=document.getElementById('flx-filtro-de'), elAte=document.getElementById('flx-filtro-ate');
-  if(elDe) elDe.value='';
-  if(elAte) elAte.value='';
-  renderFinFluxo();
+// Datas (ISO) do período global vigente no Financeiro.
+function finPeriodoGlobalDatas(){
+  return _finPeriodoTipoBounds(_finGlobalPeriodoTipo, {de:_finGlobalPeriodoDe, ate:_finGlobalPeriodoAte});
 }
 
-function finFluxoDataCustomChange(){
-  const de=document.getElementById('flx-filtro-de').value;
-  const ate=document.getElementById('flx-filtro-ate').value;
-  if(de&&ate){
-    _finFluxoPeriodo={tipo:'custom', de, ate};
-    renderFinFluxo();
-  }
+// Reflete o estado do período global nos campos do filtro superior (select + datas customizadas).
+function finPeriodoGlobalRenderUI(){
+  const sel=document.getElementById('fin-periodo-sel');
+  if(sel) sel.value=_finGlobalPeriodoTipo;
+  const custom=document.getElementById('fin-periodo-custom');
+  if(custom) custom.style.display = _finGlobalPeriodoTipo==='especifica' ? 'flex' : 'none';
+  const de=document.getElementById('fin-periodo-de'); if(de) de.value=_finGlobalPeriodoDe;
+  const ate=document.getElementById('fin-periodo-ate'); if(ate) ate.value=_finGlobalPeriodoAte;
+  const {de:pDe, ate:pAte} = finPeriodoGlobalDatas();
+  const lbl=document.getElementById('fin-periodo-global-label');
+  if(lbl) lbl.textContent = `Período selecionado: ${_finFmtData(pDe)} a ${_finFmtData(pAte)}`;
 }
 
-function finFluxoLimparFiltro(){
-  finFluxoSetPeriodo('mes_atual');
-}
-
-function _finFluxoAtualizarBotoes(){
-  ['mes_atual','semana_atual','semana_proxima','mes_proximo'].forEach(t=>{
-    const b=document.getElementById('flx-periodo-btn-'+t);
-    if(!b) return;
-    b.classList.toggle('on', _finFluxoPeriodo.tipo===t);
-    const {de,ate}=_finPeriodoFluxoBounds(t);
-    const datasEl=b.querySelector('.fin-periodo-datas');
-    if(datasEl) datasEl.textContent = `${_finFmtDataCurta(de)} – ${_finFmtDataCurta(ate)}`;
+// Aplica o período global como filtro de vencimento nas 3 listas (pagar/folha/receber).
+function finPeriodoGlobalSetAdv(){
+  const {de,ate} = finPeriodoGlobalDatas();
+  ['pagar','folha','receber'].forEach(tipo=>{
+    const adv = _finFiltrosAdv[tipo] || (_finFiltrosAdv[tipo]=_finFiltroVazio());
+    adv.vencDe=de; adv.vencAte=ate;
   });
+}
+
+// Aplica o período global e re-renderiza a aba do Financeiro atualmente visível.
+function finPeriodoGlobalAplicar(){
+  finPeriodoGlobalSetAdv();
+  ['pagar','folha','receber'].forEach(tipo=>_finUpdateFiltrosBadge(tipo));
+  if(_finSubAtual==='fluxo') renderFinFluxo();
+  else if(_finSubAtual==='pagar') renderFinLista('pagar');
+  else if(_finSubAtual==='folha') renderFinLista('folha');
+  else if(_finSubAtual==='receber') renderFinLista('receber');
+}
+
+function finPeriodoGlobalMudou(){
+  const sel=document.getElementById('fin-periodo-sel');
+  _finGlobalPeriodoTipo = sel ? sel.value : 'mes_atual';
+  finPeriodoGlobalRenderUI();
+  finPeriodoGlobalAplicar();
+}
+
+function finPeriodoGlobalCustomChange(){
+  _finGlobalPeriodoDe = document.getElementById('fin-periodo-de')?.value || '';
+  _finGlobalPeriodoAte = document.getElementById('fin-periodo-ate')?.value || '';
+  finPeriodoGlobalAplicar();
+}
+
+function finPeriodoGlobalLimpar(){
+  _finGlobalPeriodoTipo='mes_atual';
+  _finGlobalPeriodoDe=''; _finGlobalPeriodoAte='';
+  finPeriodoGlobalRenderUI();
+  finPeriodoGlobalAplicar();
 }
 
 // ── FLUXO DE CAIXA ───────────────────────────────────────────────────
@@ -24787,9 +24713,8 @@ function renderFinFluxo(){
   const pagar = todos.filter(t=>t.tipo==='pagar'||t.tipo==='folha');
   const receber = todos.filter(t=>t.tipo==='receber'||!t.tipo);
 
-  // Período selecionado (padrão: mês atual)
-  _finFluxoAtualizarBotoes();
-  const {de:pDe, ate:pAte} = _finPeriodoFluxoBounds();
+  // Período selecionado (vem do filtro global superior do Financeiro; padrão: mês atual)
+  const {de:pDe, ate:pAte} = finPeriodoGlobalDatas();
 
   // "A pagar" / "A receber" somam apenas os títulos ainda em aberto (inclui atrasados) com
   // vencimento dentro do período selecionado — ou seja, o que falta ser liquidado, não o que já
@@ -25013,9 +24938,11 @@ function renderFinLista(tipo){
 
 function finLimparFiltros(tipo){
   _finFiltrosAdv[tipo] = _finFiltroVazio();
+  // O período (vencimento) é controlado pelo filtro global superior — não é resetado aqui.
+  const {de,ate} = finPeriodoGlobalDatas();
+  _finFiltrosAdv[tipo].vencDe = de;
+  _finFiltrosAdv[tipo].vencAte = ate;
   _finFiltroRapido[tipo]=null;
-  _finPeriodoAtivoLista[tipo]=null;
-  _finAtualizarBotoesPeriodoLista(tipo);
   _finUpdateFiltrosBadge(tipo);
   renderFinLista(tipo);
 }
@@ -25057,11 +24984,9 @@ function abrirFiltrosFin(tipo){
     : `<option value="">Todos os status</option><option value="aberto">Em aberto</option><option value="recebido">Recebido</option><option value="atrasado">Atrasado</option><option value="cancelado">Cancelado</option>`;
   statusSel.value = adv.status||'';
 
-  // Datas
+  // Datas (vencimento agora é controlado pelo filtro global superior, não pelo drawer)
   document.getElementById('fin-filtro-emis-de').value = adv.emisDe||'';
   document.getElementById('fin-filtro-emis-ate').value = adv.emisAte||'';
-  document.getElementById('fin-filtro-venc-de').value = adv.vencDe||'';
-  document.getElementById('fin-filtro-venc-ate').value = adv.vencAte||'';
   document.getElementById('fin-filtro-liq-de').value = adv.liqDe||'';
   document.getElementById('fin-filtro-liq-ate').value = adv.liqAte||'';
 
@@ -25091,14 +25016,18 @@ function finFiltrosAplicar(){
       ]
     : Array.from(document.querySelectorAll('#fin-filtro-cat-list input[data-fin-cat]:checked')).map(c=>c.value);
 
+  // Vencimento (período) não é mais editado aqui — vem do filtro global superior, então
+  // preservamos o que já estiver em _finFiltrosAdv[tipo].
+  const vencAtual = _finFiltrosAdv[tipo] || _finFiltroVazio();
+
   _finFiltrosAdv[tipo] = {
     cats,
     origem: document.getElementById('fin-filtro-origem').value,
     status: document.getElementById('fin-filtro-status').value,
     emisDe: document.getElementById('fin-filtro-emis-de').value,
     emisAte: document.getElementById('fin-filtro-emis-ate').value,
-    vencDe: document.getElementById('fin-filtro-venc-de').value,
-    vencAte: document.getElementById('fin-filtro-venc-ate').value,
+    vencDe: vencAtual.vencDe||'',
+    vencAte: vencAtual.vencAte||'',
     liqDe: document.getElementById('fin-filtro-liq-de').value,
     liqAte: document.getElementById('fin-filtro-liq-ate').value,
     parte: document.getElementById('fin-filtro-parte').value.trim(),
@@ -25107,19 +25036,6 @@ function finFiltrosAplicar(){
   // Recorrente agora é apenas uma opção dentro do próprio drawer de filtros
   const recorrChk = document.getElementById('fin-filtro-recorr').checked;
   _finFiltroRapido[tipo] = recorrChk ? 'recorrente' : null;
-
-  // Reconcilia o estado visual dos atalhos de período (mês/semana/próxima semana) com o filtro
-  // de vencimento aplicado manualmente pelo drawer — marca o botão correspondente se coincidir
-  // exatamente com o período de algum deles, ou desmarca todos caso contrário.
-  {
-    const adv = _finFiltrosAdv[tipo];
-    const match = ['mes','semana','prox_semana'].find(p=>{
-      const b=_finPeriodoListaBounds(p);
-      return b.de===(adv.vencDe||'') && b.ate===(adv.vencAte||'');
-    });
-    _finPeriodoAtivoLista[tipo] = match || null;
-    _finAtualizarBotoesPeriodoLista(tipo);
-  }
 
   _finUpdateFiltrosBadge(tipo);
   fecharFiltrosFin();
@@ -25140,7 +25056,6 @@ function _finUpdateFiltrosBadge(tipo){
   if(adv.origem) n++;
   if(adv.status) n++;
   if(adv.emisDe||adv.emisAte) n++;
-  if(adv.vencDe||adv.vencAte) n++;
   if(adv.liqDe||adv.liqAte) n++;
   if(adv.parte) n++;
   if(_finFiltroRapido[tipo]==='recorrente') n++;
