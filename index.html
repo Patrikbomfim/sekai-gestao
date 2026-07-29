@@ -15346,6 +15346,17 @@ function _aplicarCamposCadastroAnamnese(p, resp){
   });
 }
 
+// ── Define se uma resposta de anamnese merece destaque de atenção ──────
+// Regra: perguntas Sim/Não chamam atenção quando respondidas "sim", a não
+// ser que o campo desative isso explicitamente com atencaoSe:false/null.
+// Campos podem também customizar o valor-gatilho com atencaoSe:'nao', etc.
+function anamneseExigeAtencao(c, val){
+  if(c.tipo !== 'sim_nao') return false;
+  if(c.atencaoSe === false || c.atencaoSe === null) return false;
+  const gatilho = c.atencaoSe || 'sim';
+  return val === gatilho;
+}
+
 // ── Aba Anamnese dentro do modal do paciente ───────────────────────────
 function renderAbaAnamnese(p){
   const resp = respostasAnamnese[p.id] || {};
@@ -15379,19 +15390,47 @@ function renderAbaAnamnese(p){
   html += `</div>`;
 
   if(preenchido && camposAnamnese.length){
-    html += `<div style="display:flex;flex-direction:column;gap:10px">`;
+    const svgCheck = '<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg>';
+    let rows = '';
+    let temAtencao = false;
     camposAnamnese.forEach(c=>{
       if(c.vinculoCadastro) return; // campos vinculados já estão no cadastro, não exibir aqui
       const val = resp[c.id];
       const valCond = resp[c.id + '_cond'];
       if(val === undefined && !valCond) return;
-      html += `<div style="padding:10px 12px;background:var(--s2);border-radius:var(--r8)">
-        <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">${c.label}</div>
-        <div style="font-size:13px;color:var(--tx)">${val !== undefined ? (val === 'sim' ? '<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg> Sim' : val === 'nao' ? '<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg> Não' : (val||'—')) : '—'}</div>
-        ${valCond ? `<div style="font-size:12px;color:var(--tx2);margin-top:4px;font-style:italic">${valCond}</div>` : ''}
-      </div>`;
+      const atencao = anamneseExigeAtencao(c, val);
+      if(atencao) temAtencao = true;
+      const trBg = atencao ? 'background:var(--dal)' : '';
+      const condHtml = valCond ? `<div style="font-size:11.5px;color:var(--tx2);margin-top:2px;font-style:italic">${valCond}</div>` : '';
+
+      if(c.tipo === 'sim_nao'){
+        rows += `<tr style="${trBg};border-left:3px solid ${atencao ? 'var(--da)' : 'transparent'}">
+          <td style="padding:8px 10px;font-size:13px;color:var(--tx);vertical-align:top">${c.label}${atencao ? ' <span style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--da);color:#fff;font-size:10px;font-weight:700;letter-spacing:.03em;vertical-align:middle">ATENÇÃO</span>' : ''}${condHtml}</td>
+          <td style="padding:8px 10px;text-align:center;width:60px;font-size:13px;${val==='sim' ? 'font-weight:700;color:'+(atencao?'var(--da)':'var(--su)') : 'color:var(--border-s)'}">${val==='sim' ? svgCheck : '—'}</td>
+          <td style="padding:8px 10px;text-align:center;width:60px;font-size:13px;${val==='nao' ? 'font-weight:700;color:var(--tx2)' : 'color:var(--border-s)'}">${val==='nao' ? svgCheck : '—'}</td>
+        </tr>`;
+      } else {
+        const textoResp = val !== undefined ? (val==='outro' ? 'Prefiro não informar' : (val||'—')) : '—';
+        rows += `<tr style="${trBg}">
+          <td style="padding:8px 10px;font-size:13px;color:var(--tx);vertical-align:top;width:42%">${c.label}${condHtml}</td>
+          <td colspan="2" style="padding:8px 10px;font-size:13px;color:var(--tx)">${textoResp}</td>
+        </tr>`;
+      }
     });
-    html += `</div>`;
+    html += `${temAtencao ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:12px;color:var(--da);font-weight:600">
+        <svg viewBox="0 0 24 24" width="1em" height="1em" style="flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Há pontos que precisam de atenção nesta ficha
+      </div>` : ''}
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="border-bottom:1.5px solid var(--border)">
+            <th style="text-align:left;padding:2px 10px 8px;font-size:10.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Pergunta</th>
+            <th style="text-align:center;padding:2px 10px 8px;font-size:10.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;width:60px">Sim</th>
+            <th style="text-align:center;padding:2px 10px 8px;font-size:10.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;width:60px">Não</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
   } else if(!preenchido){
     html += `<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg></div>${token ? 'Aguardando o paciente preencher o formulário.' : 'Gere um link e envie para o paciente pelo WhatsApp.'}</div>`;
   }
@@ -15429,24 +15468,54 @@ function exportarAnamnesePDF(pacienteId){
     ? camposAnamnese.filter(c => !c.vinculoCadastro) // se preenchida, só exibe não-vinculados
     : camposAnamnese; // em branco, mostra todos para preenchimento físico
 
+  // Modo preenchida: tabela compacta Pergunta | Sim | Não (ou Pergunta | Resposta para texto)
+  if(preenchido){
+    const svgCheckPdf = '<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg>';
+    let rowsPdf = '';
+    let temAtencaoPdf = false;
+    campos.forEach(c=>{
+      const val = resp[c.id];
+      const valCond = resp[c.id + '_cond'];
+      const atencao = anamneseExigeAtencao(c, val);
+      if(atencao) temAtencaoPdf = true;
+      const trBg = atencao ? 'background:#FDEAEA' : '';
+      const condHtml = valCond ? `<div style="font-size:11px;color:#6B7280;margin-top:2px;font-style:italic">${valCond}</div>` : '';
+
+      if(c.tipo === 'sim_nao'){
+        rowsPdf += `<tr style="${trBg};border-left:3px solid ${atencao ? '#DC2626' : 'transparent'}">
+          <td style="padding:7px 10px;font-size:12.5px;color:#111827;border-bottom:1px solid #EEF0F4">${c.label}${c.obrigatorio?' <span style="color:#DC2626">*</span>':''}${atencao ? ' <span style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:20px;background:#DC2626;color:#fff;font-size:9.5px;font-weight:700">ATENÇÃO</span>' : ''}${condHtml}</td>
+          <td style="padding:7px 10px;text-align:center;width:50px;font-size:12.5px;border-bottom:1px solid #EEF0F4;${val==='sim' ? 'font-weight:700;color:'+(atencao?'#DC2626':'#1E8A5F') : 'color:#D1D5DB'}">${val==='sim' ? svgCheckPdf : '—'}</td>
+          <td style="padding:7px 10px;text-align:center;width:50px;font-size:12.5px;border-bottom:1px solid #EEF0F4;${val==='nao' ? 'font-weight:700;color:#374151' : 'color:#D1D5DB'}">${val==='nao' ? svgCheckPdf : '—'}</td>
+        </tr>`;
+      } else {
+        let resposta = '—';
+        if(val === 'outro') resposta = 'Prefiro não informar';
+        else if(val) resposta = val;
+        rowsPdf += `<tr style="${trBg}">
+          <td style="padding:7px 10px;font-size:12.5px;color:#111827;border-bottom:1px solid #EEF0F4;width:42%">${c.label}${c.obrigatorio?' <span style="color:#DC2626">*</span>':''}${condHtml}</td>
+          <td colspan="2" style="padding:7px 10px;font-size:12.5px;color:#111827;border-bottom:1px solid #EEF0F4">${resposta}</td>
+        </tr>`;
+      }
+    });
+    camposHtml = `${temAtencaoPdf ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:12px;color:#DC2626;font-weight:700">⚠ Há pontos que precisam de atenção nesta ficha</div>` : ''}
+      <table style="width:100%;border-collapse:collapse;margin-bottom:18px">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:2px 10px 8px;font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #1E3A5F">Pergunta</th>
+            <th style="text-align:center;padding:2px 10px 8px;font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #1E3A5F;width:50px">Sim</th>
+            <th style="text-align:center;padding:2px 10px 8px;font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #1E3A5F;width:50px">Não</th>
+          </tr>
+        </thead>
+        <tbody>${rowsPdf}</tbody>
+      </table>`;
+  }
+
   campos.forEach((c, i) => {
     const val = resp[c.id];
     const valCond = resp[c.id + '_cond'];
 
     if(preenchido){
-      // Modo preenchida: mostra pergunta + resposta
-      let resposta = '—';
-      if(val === 'sim') resposta = '<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg> Sim';
-      else if(val === 'nao') resposta = '<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg> Não';
-      else if(val === 'outro') resposta = '— Prefiro não informar';
-      else if(val) resposta = val;
-
-      camposHtml += `
-        <div style="margin-bottom:14px;padding:10px 12px;background:${i%2===0?'#F8FAFC':'#fff'};border-radius:6px;border:1px solid #EEF0F4">
-          <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">${c.label}${c.obrigatorio?' <span style="color:#DC2626">*</span>':''}</div>
-          <div style="font-size:13px;color:#111827">${resposta}</div>
-          ${valCond ? `<div style="font-size:12px;color:#6B7280;margin-top:4px;font-style:italic">${valCond}</div>` : ''}
-        </div>`;
+      // já renderizado acima como tabela
     } else {
       // Modo em branco: área para preenchimento manual
       let areaResposta = '';
