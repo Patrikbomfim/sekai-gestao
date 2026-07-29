@@ -432,6 +432,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:13px
 .p-info{background:var(--acl);color:var(--ac)}
 .p-neutral{background:var(--s2);color:var(--tx2)}
 .p-purple{background:var(--pul);color:var(--pu)}
+.p-gold{background:#F5EEDD;color:#9C7D3F}
 
 /* ALERT */
 .alert{border-radius:var(--r8);padding:10px 14px;margin-bottom:14px;font-size:13px;line-height:1.5;border-left:3px solid}
@@ -10754,16 +10755,36 @@ function _orcToggleDataDecisao(status){
 
 // Retorna {nome, cro} da dentista responsável pelo tratamento, buscando na Equipe
 // (cargo "Dentista") e cruzando com o cadastro do usuário em Configurações → Equipe
-// (campo "Registro / CRO") — nunca digitado à mão na proposta. Se mais de uma pessoa
-// tiver o cargo de dentista, prioriza quem consta como criador(a) do orçamento; caso
-// contrário, usa a primeira dentista cadastrada na Equipe.
+// (campo "Registro / CRO") — nunca digitado à mão na proposta. Prioriza sempre quem
+// está marcada com o selo "Responsável técnica" (Configurações → Equipe); só na
+// ausência desse selo (equipe ainda não configurada) cai para uma escolha por
+// aproximação (criadora do orçamento, senão a primeira dentista cadastrada).
 function _orcDentistaResponsavel(nomeCriador){
   const dentistas = equipe.filter(e=>e.cargoId==='cg_dentista');
   if(!dentistas.length) return null;
-  const membro = dentistas.find(e=>e.nome===nomeCriador) || dentistas[0];
+  const membro = dentistas.find(e=>e.respTecnico) || dentistas.find(e=>e.nome===nomeCriador) || dentistas[0];
   const u = usuarios.find(x=>x.id===membro.usuarioId);
   return { nome:(u&&u.nome)||membro.nome||'', cro:(u&&u.cro)||'' };
 }
+
+// Migração única: instalações que já tinham dentistas cadastradas antes deste selo existir
+// não têm ninguém marcado como "Responsável técnica" ainda. Nesse caso — e só nesse caso —
+// tenta reconhecer automaticamente quem é a Dra. Letícia Yuki pelo nome (ignorando acento/
+// maiúsculas) e marca o selo nela, que é quem deve assinar todas as propostas de tratamento.
+// Se ninguém corresponder, não mexe em nada — o selo pode ser definido manualmente em
+// Configurações → Equipe.
+(function migrarRespTecnicaPadrao(){
+  if(carregarLS('sk3-resp-tecnica-v1', false)) return;
+  salvarLS('sk3-resp-tecnica-v1', true);
+  const jaTemSelo = equipe.some(e=>typeof e!=='string'&&e.respTecnico);
+  if(jaTemSelo) return;
+  const alvo = equipe.find(e=>typeof e!=='string' && e.cargoId==='cg_dentista' && _normalizarNome(e.nome).includes('leticia'));
+  if(alvo){
+    equipe.forEach(e=>{ if(typeof e!=='string') e.respTecnico=false; });
+    alvo.respTecnico=true;
+    salvarLS('sk3-equipe', equipe);
+  }
+})();
 
 function gerarPdfOrcamento(){
   // Coleta dados do formulário atual (pode ainda não ter sido salvo)
@@ -12264,6 +12285,21 @@ function _aprovRenderEntradas(){
     const isCredito=e.tipo==='parcelado_credito';
     const borderTop=ei>0?'border-top:1px solid var(--border)':'';
     const parcOpts=[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24].map(n=>`<option value="${n}"${n===e.nParcelas?' selected':''}>${n}x</option>`).join('');
+    // Parcelas do cartão de crédito — de "à vista" (1x) até 12x. Não muda o valor do
+    // título gerado (a operadora deposita em uma única vez), é só informativo: aparece
+    // na descrição do título e ajuda a secretária a saber o que combinar com o paciente.
+    const parcOptsCredito=Array.from({length:12},(_,i)=>i+1).map(n=>`<option value="${n}"${n===(e.nParcelas||1)?' selected':''}>${n===1?'À vista':n+'x'}</option>`).join('');
+    // Emissão fiscal esperada para esta forma de pagamento — só um indicativo definido
+    // aqui na aprovação, para orientar a secretária no recebimento; a emissão de fato
+    // (com upload do documento) continua sendo feita depois, no título já gerado.
+    const _EMISSAO_OPTS=[['nota_fiscal','Nota fiscal'],['recibo','Recibo'],['sem_emissao','Sem emissão']];
+    const emissaoHtml=`<div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:11px;color:var(--tx3);white-space:nowrap">Emissão fiscal</span>
+          <select onchange="_aprovChangeEmissao(${ei},this.value)"
+            style="font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 8px;background:var(--surface);color:var(--tx);font-family:var(--font)">
+            ${_EMISSAO_OPTS.map(([v,l])=>`<option value="${v}"${v===(e.emissaoTipo||'nota_fiscal')?' selected':''}>${l}</option>`).join('')}
+          </select>
+        </div>`;
 
     // Coluna "Detalhes" muda por tipo
     let detalhesHtml='';
@@ -12280,9 +12316,15 @@ function _aprovRenderEntradas(){
           <input type="date" value="${e.venc1||hojeStr}" oninput="_aprovChangeVenc1(${ei},this.value)"
             style="font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 8px;background:var(--surface);color:var(--tx);font-family:var(--font)">
         </div>
+        ${emissaoHtml}
       </div>`;
     } else if(isCredito){
       detalhesHtml=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:11px;color:var(--tx3);white-space:nowrap">Parcelas</span>
+          <select onchange="_aprovChangeNParc(${ei},this.value)"
+            style="font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 8px;background:var(--surface);color:var(--tx);font-family:var(--font)">${parcOptsCredito}</select>
+        </div>
         <div style="display:flex;align-items:center;gap:6px">
           <span style="font-size:11px;color:var(--tx3);white-space:nowrap">Desconto</span>
           <input type="number" value="${e.desconto}" min="0" max="100" step="1" oninput="_aprovChangeDesconto(${ei},this.value)"
@@ -12294,6 +12336,7 @@ function _aprovRenderEntradas(){
           <input type="date" value="${e.venc1||hojeStr}" oninput="_aprovChangeVenc1(${ei},this.value)"
             style="font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 8px;background:var(--surface);color:var(--tx);font-family:var(--font)">
         </div>
+        ${emissaoHtml}
       </div>`;
     } else if(isBoleto){
       const boletoLinhas=(e.parcelasCustom||[]).map((p,pi)=>`
@@ -12305,7 +12348,7 @@ function _aprovRenderEntradas(){
             style="width:80px;font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 6px;background:var(--surface);color:var(--tx);font-family:var(--font)">
         </div>`).join('');
       detalhesHtml=`<div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:${e.parcelasCustom&&e.parcelasCustom.length?'4':'0'}px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:${e.parcelasCustom&&e.parcelasCustom.length?'4':'0'}px">
           <span style="font-size:11px;color:var(--tx3);white-space:nowrap">Parcelas</span>
           <select onchange="_aprovChangeNParc(${ei},this.value)"
             style="font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 8px;background:var(--surface);color:var(--tx);font-family:var(--font)">${parcOpts}</select>
@@ -12313,6 +12356,7 @@ function _aprovRenderEntradas(){
           <input type="number" value="${e.desconto}" min="0" max="100" step="1" oninput="_aprovChangeDesconto(${ei},this.value)"
             style="width:52px;font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 6px;background:var(--surface);color:var(--tx);font-family:var(--font)">
           <span style="font-size:11px;color:var(--tx3)">%</span>
+          ${emissaoHtml}
         </div>
         ${boletoLinhas}
       </div>`;
@@ -12384,7 +12428,7 @@ function _aprovAddEntrada(){
   const totalOrc=(_orcItens||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
   const usado=_aprovEntradas.reduce((s,e)=>s+e.valor,0);
   const restante=Math.max(0,+(totalOrc-usado).toFixed(2));
-  _aprovEntradas.push({tipo:'avista_pix',valor:restante,desconto:0,nParcelas:2,venc1:new Date().toISOString().slice(0,10),parcelasCustom:[]});
+  _aprovEntradas.push({tipo:'avista_pix',valor:restante,desconto:0,nParcelas:2,venc1:new Date().toISOString().slice(0,10),parcelasCustom:[],emissaoTipo:'nota_fiscal'});
   _aprovRenderEntradas();
 }
 function _aprovRemoverEntrada(idx){ _aprovEntradas.splice(idx,1); _aprovRenderEntradas(); }
@@ -12407,6 +12451,10 @@ function _aprovChangeNParc(idx,val){
   _aprovEntradas[idx].nParcelas=parseInt(val)||2;
   if(_aprovEntradas[idx].tipo==='parcelado_boleto') _aprovInicializarBoleto(idx,true);
   _aprovRenderEntradas();
+}
+function _aprovChangeEmissao(idx,val){
+  _aprovEntradas[idx].emissaoTipo=val;
+  _aprovGerarPreview();
 }
 function _aprovChangeVenc1(idx,val){ _aprovEntradas[idx].venc1=val; _aprovGerarPreview(); }
 function _aprovUpdateBoleto(ei,pi,campo,val){
@@ -12436,18 +12484,23 @@ function _aprovGerarPreview(){
   const fmtMoeda=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
   const fmtData=d=>{ if(!d) return '—'; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
   const tipoLabel={avista_dinheiro:'Dinheiro',avista_pix:'Pix/Transferência',avista_debito:'Débito',parcelado_credito:'Crédito',parcelado_boleto:'Boleto'};
+  const emissaoLabel={nota_fiscal:'Nota fiscal',recibo:'Recibo',sem_emissao:'Sem emissão'};
   let titulos=[];
   _aprovEntradas.forEach(e=>{
     const label=tipoLabel[e.tipo]||e.tipo;
     const totalFinal=e.valor*(1-(e.desconto||0)/100);
+    const emissao=e.emissaoTipo||'nota_fiscal';
     if(e.tipo.startsWith('avista')){
-      titulos.push({descricao:label,valor:totalFinal,vencimento:e.venc1||new Date().toISOString().slice(0,10),tipo:label});
+      titulos.push({descricao:label,valor:totalFinal,vencimento:e.venc1||new Date().toISOString().slice(0,10),tipo:label,emissao});
     } else if(e.tipo==='parcelado_credito'){
-      // Crédito: sempre à vista (recebemos em uma parcela da operadora)
-      titulos.push({descricao:`Crédito`,valor:totalFinal,vencimento:e.venc1||new Date().toISOString().slice(0,10),tipo:label});
+      // Crédito: sempre à vista (recebemos em uma parcela da operadora) — o número de
+      // parcelas escolhido pelo paciente no cartão é só informativo, vai na descrição.
+      const nParc=e.nParcelas||1;
+      const descParc=nParc>1?`Crédito ${nParc}x`:'Crédito (à vista)';
+      titulos.push({descricao:descParc,valor:totalFinal,vencimento:e.venc1||new Date().toISOString().slice(0,10),tipo:label,parcelas:nParc,emissao});
     } else if(e.tipo==='parcelado_boleto'){
       (e.parcelasCustom||[]).forEach((p,pi)=>
-        titulos.push({descricao:`Parcela ${pi+1}/${e.parcelasCustom.length} — Boleto`,valor:p.valor,vencimento:p.vencimento,tipo:label}));
+        titulos.push({descricao:`Parcela ${pi+1}/${e.parcelasCustom.length} — Boleto`,valor:p.valor,vencimento:p.vencimento,tipo:label,emissao}));
     }
   });
   window._aprovTitulosTemp=titulos;
@@ -12459,7 +12512,7 @@ function _aprovGerarPreview(){
     ${titulos.map(t=>`
     <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r6);margin-bottom:5px">
       <div><div style="font-size:12px;font-weight:600">${t.descricao}</div>
-      <div style="font-size:11px;color:var(--tx3)">Vencimento: ${fmtData(t.vencimento)}</div></div>
+      <div style="font-size:11px;color:var(--tx3)">Vencimento: ${fmtData(t.vencimento)} · ${emissaoLabel[t.emissao]||'Nota fiscal'}</div></div>
       <div style="font-size:14px;font-weight:700;color:var(--ac)">R$ ${fmtMoeda(t.valor)}</div>
     </div>`).join('')}`
     :'<div style="font-size:12px;color:var(--tx3)">Configure ao menos uma entrada de pagamento.</div>';
@@ -12524,6 +12577,8 @@ function confirmarAprovacaoOrcamento(){
       tipo:t.tipo,
       status:'aberto',
       criadoEm:hojeIso,
+      emissaoPrevista:t.emissao||'nota_fiscal',
+      ...(t.parcelas?{parcelasCredito:t.parcelas}:{}),
     });
   });
   // Salva imediatamente (sem fila pendente)
@@ -17052,13 +17107,23 @@ function renderEquipe(){
     const nome=nomeEquipeItem(e);
     const cargoIdAtual=(typeof e!=='string')?(e.cargoId||''):'';
     const ehPrincipal=typeof e!=='string'&&e.principal;
+    const ehDentista=cargoIdAtual==='cg_dentista';
+    const ehRespTecnica=typeof e!=='string'&&!!e.respTecnico;
     const selCargo=`<select onchange="updateCargoEquipe(${i},this.value)" style="font-size:12px;padding:5px 8px;max-width:170px">
       <option value="">Sem cargo</option>
       ${cargos.map(c=>`<option value="${c.id}" ${c.id===cargoIdAtual?'selected':''}>${c.nome}</option>`).join('')}
     </select>`;
+    // Selo/ação de "Responsável técnica" — só faz sentido para quem tem cargo de dentista.
+    // É quem assina (nome + CRO) em todas as propostas de tratamento geradas pelo sistema.
+    const respTecnicaHtml = ehDentista
+      ? (ehRespTecnica
+          ? '<span class="pill p-gold" title="Nome e CRO usados nas propostas de tratamento">★ Responsável técnica</span>'
+          : `<button class="btn btn-ghost btn-sm" onclick="definirRespTecnica(${i})" title="Usar nome e CRO desta pessoa nas propostas de tratamento">Definir como responsável técnica</button>`)
+      : '';
     return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
     <span style="flex:1;font-size:13px;font-weight:500">${nome}</span>
     ${selCargo}
+    ${respTecnicaHtml}
     ${ehPrincipal?'<span class="pill p-green">Conta principal</span>':`<button class="btn btn-danger btn-sm" onclick="removeEquipe(${i})">Remover</button>`}
   </div>`;
   }).join('');
@@ -17074,6 +17139,16 @@ function renderEquipe(){
   if(selC){
     selC.innerHTML='<option value="">Selecionar cargo...</option>'+cargos.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
   }
+}
+
+// Marca esta pessoa (deve ter cargo de dentista) como a responsável técnica — nome e CRO
+// que passam a ser usados em todas as propostas de tratamento geradas pelo sistema. Só uma
+// pessoa por vez tem o selo: marcar aqui remove automaticamente de qualquer outra.
+function definirRespTecnica(i){
+  equipe.forEach(e=>{ if(typeof e!=='string') e.respTecnico=false; });
+  if(typeof equipe[i]!=='string') equipe[i].respTecnico=true;
+  salvarLS('sk3-equipe',equipe);
+  renderEquipe();
 }
 
 async function addEquipe(){
@@ -25101,6 +25176,9 @@ function finVerAnexoTitulo(id){
 // corresponde ao tipo já emitido (t.emissaoFiscal.tipo, status concluído) aparece verde; o
 // outro fica neutro com moldura fina (visual de clicável). Quando nada foi emitido ainda,
 // os dois ficam neutros e um ícone de alerta (sem texto) aparece ao lado, na mesma linha.
+function _finEmissaoPrevistaLabel(v){
+  return {nota_fiscal:'Nota fiscal',recibo:'Recibo',sem_emissao:'Sem emissão'}[v]||'';
+}
 function _finEmissaoFiscalHtml(t){
   const ef = t.emissaoFiscal;
   const concluido = ef && ef.status==='concluido' ? ef.tipo : null;
@@ -25554,6 +25632,7 @@ function renderFinLista(tipo){
       ${tipoPagtoTag}
       <td class="fin-td-desc">
         <div style="font-weight:500;color:var(--tx)">${t.descricao||'—'}${recorrIc}</div>
+        ${t.emissaoPrevista?`<div style="font-size:10px;color:var(--tx3);margin-top:2px">${_finEmissaoPrevistaLabel(t.emissaoPrevista)}</div>`:''}
       </td>
       <td><span style="font-size:12px;color:var(--tx2)">${beneficiario}</span></td>
       <td><span style="font-size:12px;color:var(--tx2)">${parcelaCol}</span></td>
