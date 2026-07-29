@@ -10752,6 +10752,19 @@ function _orcToggleDataDecisao(status){
   }
 }
 
+// Retorna {nome, cro} da dentista responsável pelo tratamento, buscando na Equipe
+// (cargo "Dentista") e cruzando com o cadastro do usuário em Configurações → Equipe
+// (campo "Registro / CRO") — nunca digitado à mão na proposta. Se mais de uma pessoa
+// tiver o cargo de dentista, prioriza quem consta como criador(a) do orçamento; caso
+// contrário, usa a primeira dentista cadastrada na Equipe.
+function _orcDentistaResponsavel(nomeCriador){
+  const dentistas = equipe.filter(e=>e.cargoId==='cg_dentista');
+  if(!dentistas.length) return null;
+  const membro = dentistas.find(e=>e.nome===nomeCriador) || dentistas[0];
+  const u = usuarios.find(x=>x.id===membro.usuarioId);
+  return { nome:(u&&u.nome)||membro.nome||'', cro:(u&&u.cro)||'' };
+}
+
 function gerarPdfOrcamento(){
   // Coleta dados do formulário atual (pode ainda não ter sido salvo)
   const nomeOrc=(document.getElementById('orc-input-nome')||{}).value||'Orçamento';
@@ -10759,9 +10772,6 @@ function gerarPdfOrcamento(){
   const _orcAtualParaSalvar = _orcModalId ? (_orcamentos().find(o=>o.id===_orcModalId)||{}) : {};
   const status = _orcAtualParaSalvar.status || 'aberto';
   const dataCriacao=(document.getElementById('orc-input-data')||{}).value||iso(hoje);
-  const dataDecisaoEl=document.getElementById('orc-input-data-decisao');
-  const dataDecisaoWrap=document.getElementById('orc-data-decisao-wrap');
-  const dataDecisao=(dataDecisaoWrap&&dataDecisaoWrap.style.display!=='none'&&dataDecisaoEl)?dataDecisaoEl.value:'';
   const obs=(document.getElementById('orc-input-obs')||{}).value||'';
   const criadoPor=(document.getElementById('orc-sel-criador')||{}).value||'';
   const clinicaNome=(document.getElementById('orc-modal-clinica')||{}).textContent||'Clínica Sekai';
@@ -10769,58 +10779,72 @@ function gerarPdfOrcamento(){
 
   const pac=pacientes.find(x=>String(x.id)===String(_orcModalPacId));
   const pacNome=pac?pac.nome:'—';
-  const pacCpf=pac?pac.cpf||'':'';
-  const pacTel=pac?pac.telefone||pac.celular||'':'';
-  const pacEmail=pac?pac.email||'':'';
 
+  // Empresa (Configurações → Empresa) — CNPJ e telefone da clínica, nunca digitados à mão.
   const emp=getEmpresaAtual()||{};
-  const clinicaEndereco=(emp.dados&&emp.dados.endereco)||'';
   const clinicaTel=(emp.dados&&emp.dados.telefone)||'';
   const clinicaCnpj=(emp.dados&&emp.dados.cnpj)||'';
 
-  const statusLabel={aberto:'Em aberto',aprovado:'Aprovado',reprovado:'Reprovado'};
-  const statusColor={aberto:'#1E3A5F',aprovado:'#065F46',reprovado:'#991B1B'};
-  const statusBg={aberto:'#F0F4F9',aprovado:'#F0FDF6',reprovado:'#FFF5F5'};
+  // Equipe (Configurações → Equipe) — nome e CRO da dentista responsável.
+  const dentistaResp=_orcDentistaResponsavel(criadoPor);
 
   const fmtData=d=>{ if(!d) return '—'; const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
+  const dataValidade=iso(addDays(parseIso(dataCriacao),30));
+  const fmtMoedaPdf=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
 
-  // --- Determina bloco de pagamento conforme status ---
-  // Aprovado → usa títulos reais; qualquer outro → usa sugestões (_orcPagamentos)
-  let pagHtml='';
+  // --- Procedimentos incluídos ---
+  const linhasProc=_orcItens.map(it=>{
+    const detalhes=[];
+    if(it.dentista) detalhes.push(it.dentista);
+    if(it.dentes&&it.dentes.length) detalhes.push('Dente(s) '+it.dentes.join(', '));
+    const detalheHtml=detalhes.length?`<div class="p-det">${detalhes.join(' · ')}</div>`:'';
+    return `<tr>
+      <td class="t-nome">${it.proc||'—'}${detalheHtml}</td>
+      <td class="t-val">R$ ${fmtMoedaPdf(it.valor)}</td>
+    </tr>`;
+  }).join('');
+
+  // --- Condições de pagamento ---
+  // Aprovado → usa títulos reais já lançados; qualquer outro status → usa as sugestões
+  // de pagamento do orçamento, destacando a opção com o maior desconto (como no modelo aprovado).
+  let pagCardsHtml='';
   let secaoPagTitulo='Condições de pagamento';
   if(status==='aprovado'&&_orcModalId){
     const tits=_titulos().filter(t=>t.orcamentoId===_orcModalId);
     if(tits.length){
       secaoPagTitulo='Condições acordadas';
-      const fmtMoedaPdf=v=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
       const tipoLabelTit={pix:'Pix',dinheiro:'Dinheiro',transferencia:'Transferência',debito:'Cartão de Débito',credito:'Cartão de Crédito',boleto:'Boleto',avista_pix:'À Vista / Pix',avista:'À Vista'};
-      pagHtml=tits.map(t=>`<div style="border:1px solid #e8e8e8;border-radius:8px;padding:14px 16px;margin-bottom:8px">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <div style="font-size:10px;font-weight:600;color:#9a9a9a;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px">${tipoLabelTit[t.tipo]||t.tipo||'Título'}</div>
-            <div style="font-size:12px;color:#6a6a6a">${t.descricao||''}${t.vencimento?' · Venc. '+fmtData(t.vencimento):''}</div>
-          </div>
-          <div style="font-size:15px;font-weight:600;color:#1a1a1a">R$ ${fmtMoedaPdf(t.valor)}</div>
-        </div>
-      </div>`).join('');
+      pagCardsHtml=tits.map(t=>`
+        <div class="pag-card">
+          <div class="pag-tit">${tipoLabelTit[t.tipo]||t.tipo||'Título'}</div>
+          <div class="pag-l1">R$ ${fmtMoedaPdf(t.valor)}</div>
+          ${(t.descricao||t.vencimento)?`<div class="pag-l2">${t.descricao||''}${t.vencimento?' · Venc. '+fmtData(t.vencimento):''}</div>`:''}
+        </div>`).join('');
     }
   } else if(_orcPagamentos.length){
-    // Sugestões (orçamento aberto ou reprovado)
-    pagHtml=_orcPagamentos.map(pg=>{
-      const tipoLabel2={dinheiro:'Dinheiro',transferencia:'Transferência',debito:'Débito',credito:'Crédito',boleto:'Boleto'};
+    const tipoLabel2={dinheiro:'Dinheiro',transferencia:'Transferência',debito:'Cartão de Débito',credito:'Cartão de Crédito',boleto:'Boleto'};
+    const maiorDesconto=Math.max(0, ..._orcPagamentos.map(pg=>pg.desconto||0));
+    pagCardsHtml=_orcPagamentos.map(pg=>{
       const desconto=pg.desconto||0;
       const final=(pg.valorTotal||0)*(1-desconto/100);
       const parcelas=pg.parcelas||1;
-      let valorStr='';
-      let detalhe='';
-      if(pg.tipo==='credito'&&parcelas>1){ valorStr=`${parcelas}× R$ ${(final/parcelas).toLocaleString('pt-BR',{minimumFractionDigits:2})}`; detalhe=`Total R$ ${final.toLocaleString('pt-BR',{minimumFractionDigits:2})}`; }
-      else if(desconto>0){ valorStr=`R$ ${final.toLocaleString('pt-BR',{minimumFractionDigits:2})}`; detalhe=`${desconto}% de desconto`; }
-      else { valorStr=`R$ ${final.toLocaleString('pt-BR',{minimumFractionDigits:2})}`; detalhe=''; }
-      return `<div style="border:1px solid #e8e8e8;border-radius:8px;padding:14px 16px;margin-bottom:8px">
-        <div style="font-size:10px;font-weight:600;color:#9a9a9a;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">${tipoLabel2[pg.tipo]||pg.tipo}</div>
-        <div style="font-size:15px;font-weight:600;color:#1a1a1a">${valorStr}</div>
-        ${detalhe?`<div style="font-size:11px;color:#9a9a9a;margin-top:3px">${detalhe}</div>`:''}
-      </div>`;
+      const destaque=desconto>0&&desconto===maiorDesconto;
+      let linha1,linha2Html;
+      if(pg.tipo==='credito'&&parcelas>1){
+        linha1=`${parcelas}x de R$ ${fmtMoedaPdf(final/parcelas)}`;
+        linha2Html=`<div class="pag-l2">Total R$ ${fmtMoedaPdf(final)}</div>`;
+      } else {
+        linha1=`R$ ${fmtMoedaPdf(final)} à vista`;
+        linha2Html='';
+      }
+      const descTxt=desconto>0?`${desconto}% de desconto`:'Valor sem desconto';
+      return `
+        <div class="pag-card${destaque?' destaque':''}">
+          <div class="pag-tit">${tipoLabel2[pg.tipo]||pg.tipo}</div>
+          <div class="pag-l1">${linha1}</div>
+          ${linha2Html}
+          <div class="pag-desc">${descTxt}</div>
+        </div>`;
     }).join('');
   }
 
@@ -10830,74 +10854,78 @@ function gerarPdfOrcamento(){
 <meta charset="UTF-8">
 <title>Proposta de Tratamento — ${pacNome}</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap');
-  body{font-family:'Inter',Helvetica,Arial,sans-serif;background:#fff;color:#1a1a1a;font-size:13px;line-height:1.6;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  @media print{body{padding:0}@page{margin:16mm 14mm;size:A4}}
+@page{ size:A4; margin:0; }
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+body{background:#FFFFFF;font-family:'Poppins',sans-serif;color:#211E1A;width:210mm;min-height:297mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.faixa{background:#0A0A0B;padding:15mm 20mm 12mm;text-align:center}
+.faixa .nome{font-family:'Lora',serif;color:#C9A560;font-size:26px;letter-spacing:4px;text-transform:uppercase;font-weight:600}
+.faixa .sub{color:#8A8680;font-size:9.5px;letter-spacing:2px;text-transform:uppercase;margin-top:6px}
+.corpo{padding:14mm 20mm 18mm}
+.titulo{font-family:'Lora',serif;font-size:27px;font-weight:600;color:#0A0A0B;text-align:center;margin-top:2mm}
+.regua{width:70px;height:2px;background:#C9A560;margin:5mm auto 8mm}
+.meta{display:flex;justify-content:space-between;margin-bottom:9mm}
+.meta-item{text-align:left}
+.meta-item:last-child{text-align:right}
+.meta-lbl{font-size:8.5px;letter-spacing:1.5px;text-transform:uppercase;color:#B3A57C;font-weight:600;margin-bottom:2px}
+.meta-val{font-size:13px;font-weight:600;color:#0A0A0B}
+.plano{background:#FCFBF8;border:1px solid #ECE7DC;border-radius:3px;padding:6mm 8mm;margin-bottom:9mm}
+.plano-tit{font-family:'Lora',serif;font-size:15px;font-weight:600;color:#0A0A0B;margin-bottom:2mm}
+.plano-obs{font-size:11px;color:#726A5A;font-style:italic}
+.sec-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#B3A57C;font-weight:700;margin-bottom:4mm;border-bottom:1px solid #ECE7DC;padding-bottom:2mm}
+table{width:100%;border-collapse:collapse;margin-bottom:3mm}
+.t-nome{font-size:12px;color:#211E1A;padding:3.2mm 3mm 3.2mm 0;border-bottom:1px solid #ECE7DC;font-weight:500}
+.p-det{font-size:10px;color:#A39C8C;margin-top:1mm}
+.t-val{font-size:12.5px;color:#0A0A0B;font-weight:600;padding:3.2mm 0;border-bottom:1px solid #ECE7DC;text-align:right;white-space:nowrap;vertical-align:top}
+.total-bar{background:#C9A560;display:flex;justify-content:space-between;align-items:center;padding:6mm 8mm;margin:8mm 0 10mm;border-radius:2px}
+.total-lbl{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#2B2000;font-weight:700}
+.total-val{font-family:'Lora',serif;font-size:22px;color:#0A0A0B;font-weight:700}
+.pagamentos{display:flex;flex-wrap:wrap;gap:5mm;margin-bottom:10mm}
+.pag-card{flex:1 1 25%;min-width:45mm;border:1px solid #ECE7DC;border-radius:3px;padding:6mm 5mm;text-align:center;background:#FFFFFF}
+.pag-card.destaque{background:#0A0A0B;border-color:#0A0A0B}
+.pag-card.destaque .pag-tit{color:#C9A560}
+.pag-card.destaque .pag-l1{color:#fff}
+.pag-card.destaque .pag-l2{color:#E9E1CC}
+.pag-card.destaque .pag-desc{color:#C9A560}
+.pag-tit{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#B3A57C;font-weight:700;margin-bottom:3mm}
+.pag-l1{font-size:14px;font-weight:700;color:#0A0A0B;margin-bottom:1.5mm}
+.pag-l2{font-size:9.5px;color:#A39C8C;margin-bottom:1.5mm}
+.pag-desc{font-size:9.5px;color:#9C7D3F;font-weight:600}
+.footer{border-top:1px solid #ECE7DC;padding-top:5mm;display:flex;justify-content:space-between;font-size:9px;color:#A39C8C}
+.footer b{color:#726A5A}
 </style>
 </head>
-<body style="padding:40px 44px;max-width:740px;margin:auto">
-
-  <!-- CABEÇALHO -->
-  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:36px">
-    <div>
-      <div style="font-family:'Cormorant Garamond','Georgia',serif;font-size:28px;font-weight:600;color:#1a1a1a;letter-spacing:-.3px;line-height:1">${clinicaNome}</div>
-      ${clinicaEndereco?`<div style="font-size:11px;color:#9a9a9a;margin-top:6px;letter-spacing:.01em">${clinicaEndereco}</div>`:''}
-      ${clinicaTel?`<div style="font-size:11px;color:#9a9a9a;letter-spacing:.01em">${clinicaTel}</div>`:''}
-      ${clinicaCnpj?`<div style="font-size:11px;color:#9a9a9a;letter-spacing:.01em">CNPJ ${clinicaCnpj}</div>`:''}
+<body>
+  <div class="faixa">
+    <div class="nome">${clinicaNome}</div>
+    <div class="sub">Sorria e conquiste o mundo</div>
+  </div>
+  <div class="corpo">
+    <div class="titulo">Proposta de Tratamento</div>
+    <div class="regua"></div>
+    <div class="meta">
+      <div class="meta-item"><div class="meta-lbl">Paciente</div><div class="meta-val">${pacNome}</div></div>
+      <div class="meta-item"><div class="meta-lbl">Emissão</div><div class="meta-val">${fmtData(dataCriacao)}</div></div>
+      <div class="meta-item"><div class="meta-lbl">Válida até</div><div class="meta-val">${fmtData(dataValidade)}</div></div>
     </div>
-    <div style="text-align:right">
-      <div style="font-size:10px;font-weight:600;color:#9a9a9a;letter-spacing:.18em;text-transform:uppercase">Proposta de Tratamento</div>
-      <div style="font-size:11px;color:#b0b0b0;margin-top:4px">${fmtData(dataCriacao)}</div>
+    <div class="plano">
+      <div class="plano-tit">${nomeOrc}</div>
+      ${obs?`<div class="plano-obs">${obs}</div>`:''}
+    </div>
+    <div class="sec-lbl">Procedimentos incluídos</div>
+    <table>${linhasProc}</table>
+    <div class="total-bar">
+      <div class="total-lbl">Valor total do tratamento</div>
+      <div class="total-val">R$ ${fmtMoedaPdf(total)}</div>
+    </div>
+    ${pagCardsHtml?`
+    <div class="sec-lbl">${secaoPagTitulo}</div>
+    <div class="pagamentos">${pagCardsHtml}</div>`:''}
+    <div class="footer">
+      <div><b>${dentistaResp?dentistaResp.nome:''}</b>${dentistaResp&&dentistaResp.cro?' · '+dentistaResp.cro:''}</div>
+      <div>${clinicaTel?clinicaTel+' · ':''}${clinicaCnpj?'CNPJ '+clinicaCnpj:''}</div>
     </div>
   </div>
-
-  <!-- LINHA DIVISÓRIA REFINADA -->
-  <div style="height:1px;background:linear-gradient(to right,#1a1a1a 60px,#e0e0e0);margin-bottom:36px"></div>
-
-  <!-- DESTINATÁRIO -->
-  <div style="margin-bottom:40px">
-    <div style="font-family:'Cormorant Garamond','Georgia',serif;font-size:26px;font-weight:500;color:#1a1a1a;letter-spacing:-.2px">${pacNome}</div>
-    <div style="display:flex;gap:20px;margin-top:6px;flex-wrap:wrap">
-      ${pacTel?`<span style="font-size:11.5px;color:#6a6a6a">${pacTel}</span>`:''}
-      ${pacEmail?`<span style="font-size:11.5px;color:#6a6a6a">${pacEmail}</span>`:''}
-    </div>
-  </div>
-
-  <!-- NOME DO TRATAMENTO -->
-  <div style="margin-bottom:32px">
-    <div style="font-size:10px;font-weight:600;color:#9a9a9a;letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px">Plano de tratamento</div>
-    <div style="font-size:16px;font-weight:500;color:#1a1a1a;letter-spacing:-.1px">${nomeOrc}</div>
-    ${obs?`<div style="font-size:12.5px;color:#6a6a6a;margin-top:8px;line-height:1.65;max-width:560px">${obs}</div>`:''}
-  </div>
-
-  <!-- PROCEDIMENTOS -->
-  <div style="margin-bottom:32px">
-    <div style="font-size:10px;font-weight:600;color:#9a9a9a;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px">Procedimentos incluídos</div>
-    ${_orcItens.map((it,i)=>`
-    <div style="display:flex;align-items:baseline;justify-content:space-between;padding:12px 0;border-bottom:1px solid ${i===_orcItens.length-1?'transparent':'#f0f0f0'}">
-      <div style="flex:1;min-width:0;padding-right:20px">
-        <div style="font-size:13px;font-weight:500;color:#1a1a1a">${it.proc||'—'}</div>
-        <div style="font-size:11px;color:#9a9a9a;margin-top:2px">${it.dentista||''}${it.dentes&&it.dentes.length?' · Dente(s) '+it.dentes.join(', '):''}</div>
-      </div>
-      <div style="font-size:13px;font-weight:500;color:#1a1a1a;white-space:nowrap">R$ ${(parseFloat(it.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-    </div>`).join('')}
-  </div>
-
-  <!-- CONDIÇÕES DE PAGAMENTO -->
-  ${pagHtml?`
-  <div style="margin-bottom:36px">
-    <div style="font-size:10px;font-weight:600;color:#9a9a9a;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px">${secaoPagTitulo}</div>
-    ${pagHtml}
-  </div>`:''}
-
-  <!-- RODAPÉ -->
-  <div style="height:1px;background:#f0f0f0;margin-bottom:20px"></div>
-  <div style="display:flex;align-items:center;justify-content:space-between">
-    <div style="font-size:11px;color:#b0b0b0">Esta proposta é válida por 30 dias a partir de ${fmtData(dataCriacao)}.</div>
-    <div style="font-size:11px;color:#b0b0b0">${clinicaNome}</div>
-  </div>
-
   <script>window.onload=()=>window.print();<\/script>
 </body>
 </html>`;
@@ -22355,7 +22383,7 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
     const showLabel = slotIni % 60 === 0;
     html += `<div class="ag-time">${showLabel?minParaHora(slotIni):''}</div>`;
     cols.forEach(c=>{
-      html += renderAgendaCell(c, modo, slotIni, slotFim, dataIso, diaSemana, iniMin, passo, SLOT_H);
+      html += renderAgendaCell(c, modo, slotIni, slotFim, dataIso, diaSemana, iniMin, fimMin, passo, SLOT_H);
     });
   }
   html += `</div>`;
@@ -22416,17 +22444,28 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
   grid.innerHTML = html;
 }
 
-function renderAgendaCell(col, modo, slotIni, slotFim, dataIso, diaSemana, iniMin, passo, SLOT_H){
+function renderAgendaCell(col, modo, slotIni, slotFim, dataIso, diaSemana, iniMin, fimMin, passo, SLOT_H){
   passo = passo||30; SLOT_H = SLOT_H||34;
 
+  // Quando a sala/profissional não tem NENHUM registro de disponibilidade configurado
+  // (comum em instalações novas, antes de alguém preencher Configurações → Disponibilidade),
+  // cai-se no fallback: considerar disponível dentro da janela do dia (iniMin–fimMin), em
+  // vez de tratar o dia inteiro como "fora do expediente" (o que travava o clique/hover em
+  // todos os slots vazios). Se já existe disponibilidade configurada para a coluna, ela manda.
   if(modo==='sala'){
-    var disponivel = disponibilidade.some(d=> d.diaSemana===diaSemana && d.salaId===col.id && horaParaMin(d.horaInicio)<=slotIni && horaParaMin(d.horaFim)>=slotFim);
+    const dispCol = disponibilidade.filter(d=>d.salaId===col.id);
+    var disponivel = dispCol.length
+      ? dispCol.some(d=> d.diaSemana===diaSemana && horaParaMin(d.horaInicio)<=slotIni && horaParaMin(d.horaFim)>=slotFim)
+      : (slotIni>=iniMin && slotFim<=fimMin);
     var bloqueado = bloqueios.find(b=> (b.tipo==='sala'||b.tipo==='ambos') && b.salaId===col.id && bloqueioCobre(b,dataIso,slotIni,slotFim));
     if(!bloqueado){
       var erBloqueado = eventosRecorrentes.find(ev=> ev.salaId===col.id && erAplica(ev,dataIso,slotIni,slotFim));
     } else { var erBloqueado = null; }
   } else {
-    var disponivel = disponibilidade.some(d=> d.diaSemana===diaSemana && d.usuarioId===col.id && horaParaMin(d.horaInicio)<=slotIni && horaParaMin(d.horaFim)>=slotFim);
+    const dispCol = disponibilidade.filter(d=>d.usuarioId===col.id);
+    var disponivel = dispCol.length
+      ? dispCol.some(d=> d.diaSemana===diaSemana && horaParaMin(d.horaInicio)<=slotIni && horaParaMin(d.horaFim)>=slotFim)
+      : (slotIni>=iniMin && slotFim<=fimMin);
     var bloqueado = bloqueios.find(b=> (b.tipo==='profissional'||b.tipo==='ambos') && b.usuarioId===col.id && bloqueioCobre(b,dataIso,slotIni,slotFim));
     var erBloqueado = null;
   }
