@@ -617,7 +617,7 @@ input.invalid{border-color:var(--da);background:var(--dal)}
 .modal-ov.open{display:flex}
 
 /* POPOVER DE AGENDAMENTO */
-#ag-popover{display:none;position:fixed;z-index:250;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 12px 32px rgba(15,23,42,.16);width:300px;max-width:94vw;padding:0;overflow:hidden}
+#ag-popover{display:none;position:fixed;z-index:250;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 12px 32px rgba(15,23,42,.16);width:300px;max-width:94vw;max-height:calc(100vh - 16px);padding:0;overflow:hidden;flex-direction:column}
 
 /* ══ MESMA IDENTIDADE VIVA DA AGENDA, agora nos modais/popover que ela abre ══
    Esses modais/popover ficam fora de #sec-agenda no DOM (são overlays soltos),
@@ -671,17 +671,17 @@ input.invalid{border-color:var(--da);background:var(--dal)}
 #modal-agendamento .modal-footer, #modal-bloqueio .modal-footer, #modal-link-agenda .modal-footer, #modal-eventos-recorrentes .modal-footer, #modal-agenda-prof .modal-footer, #modal-disponibilidade .modal-footer{
   border-top:1px solid var(--border);border-radius:0 0 22px 22px;
 }
-#ag-popover.open{display:block}
-.agpop-header{padding:12px 14px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+#ag-popover.open{display:flex}
+.agpop-header{padding:12px 14px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-shrink:0}
 .agpop-status{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
 .agpop-close{background:none;border:none;cursor:pointer;color:var(--tx3);font-size:15px;line-height:1;padding:2px 4px;border-radius:var(--r4)}
 .agpop-close:hover{background:var(--s2);color:var(--tx)}
-.agpop-body{padding:12px 14px;display:flex;flex-direction:column;gap:9px;max-height:70vh;overflow-y:auto}
+.agpop-body{padding:12px 14px;display:flex;flex-direction:column;gap:9px;flex:1;min-height:0;overflow-y:auto}
 .agpop-row{display:flex;align-items:flex-start;gap:8px;font-size:12px}
 .agpop-ic{width:16px;display:flex;align-items:center;justify-content:center;color:var(--tx3);flex-shrink:0;margin-top:1px}
 .agpop-val{color:var(--tx);flex:1;line-height:1.4}
 .agpop-lbl{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
-.agpop-footer{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px}
+.agpop-footer{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
 /* Tags no popover */
 .agpop-tags{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
 .agpop-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;cursor:default}
@@ -801,7 +801,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .ag-cell.ag-empty:hover{background:var(--ag-acc-soft)}
 .ag-cell.ag-fora{background:var(--surface)}
 .ag-cell.ag-bloqueado{background:repeating-linear-gradient(135deg,#FCA5A5 0 7px,#FEE2E2 7px 14px);cursor:default}
-.ag-card{border-radius:8px;padding:3px 7px;font-size:10.5px;line-height:1.3;cursor:pointer;color:#fff;overflow:hidden;position:absolute;left:2px;right:2px;z-index:3}
+.ag-card{border-radius:8px;padding:3px 7px;font-size:10.5px;line-height:1.3;cursor:grab;color:#fff;overflow:hidden;position:absolute;left:2px;right:2px;z-index:3}
+.ag-card.ag-dragging{opacity:.3}
+.ag-drag-ghost{position:fixed;z-index:9999;pointer-events:none;box-shadow:0 10px 28px rgba(0,0,0,.35);opacity:.95;cursor:grabbing}
+.ag-mini-cal-day.ag-drop-target{outline:2px solid var(--ag-acc);outline-offset:-2px;background:var(--ag-acc-soft);border-radius:6px}
+.ag-cell.ag-drop-target-cell{background:var(--ag-acc-soft) !important}
 .ag-resize-handle{position:absolute;left:0;right:0;height:6px;cursor:ns-resize;z-index:5}
 .ag-resize-handle.ag-resize-top{top:0}
 .ag-resize-handle.ag-resize-bottom{bottom:0}
@@ -4249,6 +4253,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <!-- Menu lateral de abas + conteúdo, mesmo padrão visual do menu do paciente -->
   <div class="pp-layout">
     <nav class="pp-menu" id="rel-menu">
+      <button class="pp-menu-btn" id="rel-tab-agendamentos" onclick="relSelecionarAba('agendamentos')">Agendamentos</button>
       <button class="pp-menu-btn" id="rel-tab-proc_realizados" onclick="relSelecionarAba('proc_realizados')">Procedimentos realizados</button>
       <button class="pp-menu-btn" id="rel-tab-proc_a_realizar" onclick="relSelecionarAba('proc_a_realizar')">Procedimentos a realizar</button>
       <button class="pp-menu-btn" id="rel-tab-primeiras_consultas" onclick="relSelecionarAba('primeiras_consultas')">Primeiras consultas</button>
@@ -4937,7 +4942,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           </div>
         </div>
         <div class="fl fg-full" id="agm-faltou-wrap" style="display:none">
-          <button type="button" class="btn btn-ghost btn-sm" data-perm="pendencias_criar" onclick="agmAbrirLembretePaciente()">+ Agendar lembrete</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-perm="pendencias_criar" onclick="agmAbrirLembretePaciente()">+ Agendar pendência</button>
         </div>
         <div id="agm-campos-extras" style="display:contents"></div>
       </div>
@@ -5256,9 +5261,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
         <div id="agpop-situacao-wrap" style="display:none;margin-top:10px">
           <div class="agpop-lbl">Situação do paciente</div>
-          <select id="agpop-situacao" style="width:100%;font-size:12px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r6);font-family:var(--font);background:var(--surface);color:var(--tx)"></select>
+          <select id="agpop-situacao" onchange="agPopAutoSalvar()" style="width:100%;font-size:12px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r6);font-family:var(--font);background:var(--surface);color:var(--tx)"></select>
           <div style="font-size:11px;color:var(--tx3);margin-top:4px">Atendimento marcado como Realizado — atualize a situação do paciente.</div>
-          <button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px" data-perm="pendencias_criar" onclick="agPopAbrirLembretePaciente()">+ Agendar lembrete</button>
+          <button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px" data-perm="pendencias_criar" onclick="agPopAbrirLembretePaciente()">+ Agendar pendência</button>
         </div>
       </span>
     </div>
@@ -5316,12 +5321,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <!-- OBS -->
     <div id="agpop-obs-row">
       <div class="agpop-lbl">Observação</div>
-      <textarea id="agpop-obs" rows="2" placeholder="Adicionar observação..." style="width:100%;font-size:12px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r6);resize:vertical;font-family:var(--font);background:var(--surface);color:var(--tx);line-height:1.4"></textarea>
+      <textarea id="agpop-obs" rows="2" placeholder="Adicionar observação..." onblur="agPopAutoSalvar()" style="width:100%;font-size:12px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r6);resize:vertical;font-family:var(--font);background:var(--surface);color:var(--tx);line-height:1.4"></textarea>
     </div>
   </div>
   <div class="agpop-footer">
-    <button class="btn btn-ghost" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="agPopAbrirModal()" title="Abrir todos os campos do agendamento"><svg viewBox="0 0 24 24" width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
-    <button class="btn btn-primary" id="agpop-btn-salvar" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="agPopSalvar()"><svg viewBox="0 0 24 24" width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Salvar</button>
+    <button class="btn btn-ghost" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="agPopAbrirModal()" title="Abrir todos os campos do agendamento"><svg viewBox="0 0 24 24" width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Editar todos os campos</button>
   </div>
 </div>
 
@@ -18048,8 +18052,8 @@ function agmAbrirLembretePaciente(){
   const pacienteId=document.getElementById('agm-paciente-id').value||null;
   const pacienteNome=document.getElementById('agm-paciente-busca').value.trim();
   abrirModalNovaPendencia();
-  document.getElementById('np-modal-title').textContent='Agendar lembrete'+(pacienteNome?` — ${pacienteNome}`:'');
-  document.getElementById('np-modal-salvar').textContent='Agendar lembrete';
+  document.getElementById('np-modal-title').textContent='Agendar pendência'+(pacienteNome?` — ${pacienteNome}`:'');
+  document.getElementById('np-modal-salvar').textContent='Agendar pendência';
   if(pacienteNome){
     document.getElementById('np-texto').value=`${pacienteNome} — `;
   }
@@ -21049,7 +21053,7 @@ function renderAgMiniCal(){
     } else if(dIso === agendaData){
       cls.push('ag-mc-sel');
     }
-    html += `<div class="${cls.join(' ')}" onclick="agMiniCalSelecionar('${dIso}')">${cur.getDate()}</div>`;
+    html += `<div class="${cls.join(' ')}" data-mc-date="${dIso}" onclick="agMiniCalSelecionar('${dIso}')">${cur.getDate()}</div>`;
   }
   html += `</div>`;
   el.innerHTML = html;
@@ -21175,6 +21179,112 @@ function _agResizeEnd(e){
   renderAgenda();
 }
 
+// ── Arrastar o card inteiro para mudar horário/sala/profissional (dentro da grade)
+// ou para outro dia (soltando sobre um dia do mini-calendário) — mantém sempre a
+// duração original do agendamento. ────────────────────────────────────────────
+let _agMoveState = null; // {id, cardEl, startX, startY, offsetX, offsetY, width, height, moved, ghost}
+
+function agIniciarMoverCard(e, id){
+  if(e.button!==0) return; // só botão esquerdo do mouse
+  if(_agResizeState) return;
+  const cardEl = e.currentTarget;
+  const rect = cardEl.getBoundingClientRect();
+  _agMoveState = {
+    id, cardEl,
+    startX: e.clientX, startY: e.clientY,
+    offsetX: e.clientX-rect.left, offsetY: e.clientY-rect.top,
+    width: rect.width, height: rect.height,
+    moved:false, ghost:null,
+  };
+  document.addEventListener('mousemove', _agMoveMove);
+  document.addEventListener('mouseup', _agMoveEnd);
+}
+
+function _agMoveMove(e){
+  const st=_agMoveState;
+  if(!st) return;
+  if(!st.moved){
+    if(Math.abs(e.clientX-st.startX)<4 && Math.abs(e.clientY-st.startY)<4) return; // ainda dentro do threshold de clique
+    st.moved=true;
+    agPopoverCancelClose();
+    fecharAgPopover(); // fecha o minimodal pra não atrapalhar o arraste
+    st.cardEl.classList.add('ag-dragging');
+    const ghost=document.createElement('div');
+    ghost.className='ag-card ag-drag-ghost';
+    ghost.style.width=st.width+'px';
+    ghost.style.height=st.height+'px';
+    ghost.style.background=getComputedStyle(st.cardEl).backgroundColor;
+    ghost.innerHTML=st.cardEl.innerHTML;
+    document.body.appendChild(ghost);
+    st.ghost=ghost;
+  }
+  st.ghost.style.left=(e.clientX-st.offsetX)+'px';
+  st.ghost.style.top=(e.clientY-st.offsetY)+'px';
+
+  // Destaca o alvo (dia do mini-calendário OU célula da grade) sob o cursor
+  document.querySelectorAll('.ag-drop-target, .ag-drop-target-cell').forEach(el=>el.classList.remove('ag-drop-target','ag-drop-target-cell'));
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  const mcDay = under && under.closest('.ag-mini-cal-day[data-mc-date]');
+  if(mcDay){ mcDay.classList.add('ag-drop-target'); return; }
+  const cell = under && under.closest('[data-ag-col]');
+  if(cell) cell.classList.add('ag-drop-target-cell');
+}
+
+function _agMoveEnd(e){
+  const st=_agMoveState;
+  document.removeEventListener('mousemove', _agMoveMove);
+  document.removeEventListener('mouseup', _agMoveEnd);
+  _agMoveState=null;
+  document.querySelectorAll('.ag-drop-target, .ag-drop-target-cell').forEach(el=>el.classList.remove('ag-drop-target','ag-drop-target-cell'));
+  if(!st) return;
+  if(st.ghost) st.ghost.remove();
+  if(st.cardEl) st.cardEl.classList.remove('ag-dragging');
+  if(!st.moved) return; // foi só um clique — deixa o onclick/hover cuidar da abertura do minimodal
+
+  const a = agendamentos.find(x=>x.id===st.id);
+  if(!a) return;
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+
+  // 1) Soltou sobre um dia do mini-calendário → move de dia, mantendo horário/sala/duração
+  const mcDay = under && under.closest('.ag-mini-cal-day[data-mc-date]');
+  if(mcDay){
+    const novaData = mcDay.dataset.mcDate;
+    if(novaData && novaData!==a.data){
+      a.data = novaData;
+      salvarLS('sk3-agendamentos', agendamentos);
+      showSaveToast('Agendamento movido para '+_finFmtData(novaData));
+    }
+    renderAgenda();
+    return;
+  }
+
+  // 2) Soltou dentro da grade → muda horário (mantendo a duração) e/ou sala/profissional
+  const cell = under && under.closest('[data-ag-col]');
+  if(!cell){ renderAgenda(); return; } // soltou fora de qualquer área válida — cancela, sem alterar nada
+
+  const rect = cell.getBoundingClientRect();
+  const relY = e.clientY - rect.top;
+  const slotIni = parseFloat(cell.dataset.agSlotini);
+  const slotH = parseFloat(cell.dataset.agSloth);
+  const passo = parseFloat(cell.dataset.agPasso);
+  const modo = cell.dataset.agModo;
+  const colId = cell.dataset.agCol;
+  const SNAP = 15;
+  let novoIniMin = slotIni + Math.round(((relY/slotH)*passo)/SNAP)*SNAP;
+  novoIniMin = Math.max(0, novoIniMin);
+  const dur = horaParaMin(a.horaFim) - horaParaMin(a.horaInicio);
+  const novoIni = minParaHora(novoIniMin);
+  const novoFim = minParaHora(novoIniMin + dur);
+
+  let mudou = false;
+  if(novoIni!==a.horaInicio || novoFim!==a.horaFim){ a.horaInicio=novoIni; a.horaFim=novoFim; mudou=true; }
+  if(modo==='sala' && colId && colId!==String(a.salaId)){ a.salaId=colId; mudou=true; }
+  if(modo==='profissional' && colId && colId!==String(a.usuarioId)){ a.usuarioId=colId; mudou=true; }
+
+  if(mudou) salvarLS('sk3-agendamentos', agendamentos);
+  renderAgenda();
+}
+
 function abrirAgPopover(a, targetEl){
   _agPopoverId = a.id;
 
@@ -21276,9 +21386,12 @@ function abrirAgPopover(a, targetEl){
 
 function _agPopoverOutsideClick(e){
   const pop = document.getElementById('ag-popover');
-  if(!pop.contains(e.target)){
-    fecharAgPopover();
-  }
+  if(pop.contains(e.target)) return;
+  // Não fecha se o clique foi dentro de outro modal aberto por cima do popover
+  // (ex.: "Nova pendência" aberta a partir do minimodal) — senão o popover fecharia
+  // antes de dar tempo de salvar a pendência, perdendo a alteração de status pendente.
+  if(e.target.closest('.modal-ov.open, .fin-drawer-ov.open, .fin-modal-ov.open')) return;
+  fecharAgPopover();
 }
 
 function fecharAgPopover(){
@@ -21366,6 +21479,7 @@ function agPopSelecionarStatus(statusId){
   document.getElementById('agpop-status-menu').style.display='none';
   document.removeEventListener('mousedown', _agPopStatusMenuOutsideClick);
   agPopToggleSituacaoInline();
+  agPopAutoSalvar();
 }
 
 // Mostra "Situação do paciente" + "Agendar lembrete" quando o status escolhido é Realizado —
@@ -21393,8 +21507,8 @@ function agPopAbrirLembretePaciente(){
   const a = agendamentos.find(x=>x.id===_agPopoverId);
   if(!a) return;
   abrirModalNovaPendencia(a.pacienteId||null, a.pacienteNome||'');
-  document.getElementById('np-modal-title').textContent='Agendar lembrete'+(a.pacienteNome?` — ${a.pacienteNome}`:'');
-  document.getElementById('np-modal-salvar').textContent='Agendar lembrete';
+  document.getElementById('np-modal-title').textContent='Agendar pendência'+(a.pacienteNome?` — ${a.pacienteNome}`:'');
+  document.getElementById('np-modal-salvar').textContent='Agendar pendência';
   if(a.pacienteNome){
     document.getElementById('np-texto').value=`${a.pacienteNome} — `;
   }
@@ -21404,10 +21518,12 @@ function agPopAbrirLembretePaciente(){
   },30);
 }
 
-// Salva observação + status a partir do popover. Cancelado exige motivo/recontato, que só
-// existem no modal completo — abre-o em vez de gravar um cancelamento incompleto. Realizado
-// é tratado aqui mesmo: exige a situação do paciente (já exibida inline) antes de gravar.
-function agPopSalvar(){
+// Salva automaticamente (status/situação/observação) a cada alteração feita no popover —
+// não depende de um botão "Salvar" manual. "Cancelado" exige motivo/recontato, que só
+// existem no modal completo — abre-o em vez de gravar um cancelamento incompleto. Se o
+// status é "Realizado" mas a situação do paciente ainda não foi escolhida, aguarda em
+// silêncio (sem alerta) até que ela seja selecionada, para não gravar um estado parcial.
+function agPopAutoSalvar(){
   if(!_agPopoverId) return;
   const idx = agendamentos.findIndex(a=>a.id===_agPopoverId);
   if(idx<0) return;
@@ -21434,7 +21550,7 @@ function agPopSalvar(){
     const cfg = (typeof cfgCamposAgmSistema!=='undefined' && cfgCamposAgmSistema['agm_situacao_paciente']) || {};
     if(cfg.ativo !== false){
       situacaoPaciente = document.getElementById('agpop-situacao').value;
-      if(!situacaoPaciente){ alert('Selecione a situação do paciente após o atendimento.'); return; }
+      if(!situacaoPaciente) return; // aguarda a situação ser escolhida antes de gravar
     }
   }
 
@@ -21459,7 +21575,6 @@ function agPopSalvar(){
   }
 
   renderAgenda();
-  fecharAgPopover();
 }
 
 // ── TAGS do Popover ──────────────────────────────────────────────────
@@ -21837,9 +21952,7 @@ function renderAgendaMes(d){
 function renderAgendaLegenda(){
   const wrap=document.getElementById('agenda-legenda');
   const profs=usuariosNaAgenda();
-  let html = profs.map(ap=>`<span class="ag-legend-item"><span class="ag-legend-dot" style="background:${ap.cor}"></span>${ap.nome}</span>`).join('');
-  html += `<span class="ag-legend-item"><span class="ag-legend-dot" style="background:repeating-linear-gradient(135deg,var(--dal) 0 4px,var(--surface) 4px 8px)"></span>Bloqueado</span>`;
-  html += `<span class="ag-legend-item"><span class="ag-legend-dot" style="border:1px solid var(--border)">✓</span>Confirmado</span>`;
+  const html = profs.map(ap=>`<span class="ag-legend-item"><span class="ag-legend-dot" style="background:${ap.cor}"></span>${ap.nome}</span>`).join('');
   wrap.innerHTML = html;
 }
 
@@ -21971,7 +22084,7 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
       }
       const pxPerMin = SLOT_H / passo;
       const resizeHandles = `<div class="ag-resize-handle ag-resize-top" onmousedown="agIniciarResize(event,'${a.id}','top',${topPx},${heightPx},${pxPerMin},${iniMin})" title="Arraste para mudar o início"></div><div class="ag-resize-handle ag-resize-bottom" onmousedown="agIniciarResize(event,'${a.id}','bottom',${topPx},${heightPx},${pxPerMin},${iniMin})" title="Arraste para mudar o fim"></div>`;
-      html += `<div class="ag-card st-${a.status}${extraClass}" data-ag-id="${a.id}" style="background:${cor};top:${topPx}px;height:${heightPx}px;pointer-events:all;padding:1px 4px" onmouseenter="agAbrirPopoverSeNaoArrastando('${a.id}',event.currentTarget)" onmouseleave="agPopoverScheduleClose()" onclick="event.stopPropagation();agAbrirPopoverSeNaoArrastando('${a.id}',event.currentTarget)" title="${pacNomeComCod} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}${resizeHandles}</div>`;
+      html += `<div class="ag-card st-${a.status}${extraClass}" data-ag-id="${a.id}" style="background:${cor};top:${topPx}px;height:${heightPx}px;pointer-events:all;padding:1px 4px" onmouseenter="agAbrirPopoverSeNaoArrastando('${a.id}',event.currentTarget)" onmouseleave="agPopoverScheduleClose()" onmousedown="agIniciarMoverCard(event,'${a.id}')" onclick="event.stopPropagation();agAbrirPopoverSeNaoArrastando('${a.id}',event.currentTarget)" title="${pacNomeComCod} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}${resizeHandles}</div>`;
     });
     html += `</div>`;
   });
@@ -22045,7 +22158,10 @@ function renderAgendaCell(col, modo, slotIni, slotFim, dataIso, diaSemana, iniMi
 
   // Cards renderizados no overlay (renderAgendaGrid) — não renderizar aqui
 
-  return `<div class="${cls}" ${onclick} style="overflow:visible;--tint:${cls.includes('ag-empty')?agColTint(col.cor,0.05):'transparent'}">${conteudo}</div>`;
+  const dropAttrs = (!bloqueado && !erBloqueado)
+    ? ` data-ag-col="${col.id}" data-ag-slotini="${slotIni}" data-ag-modo="${modo}" data-ag-sloth="${SLOT_H}" data-ag-passo="${passo}"`
+    : '';
+  return `<div class="${cls}" ${onclick} style="overflow:visible;--tint:${cls.includes('ag-empty')?agColTint(col.cor,0.05):'transparent'}"${dropAttrs}>${conteudo}</div>`;
 }
 
 function bloqueioCobre(b,dataIso,slotIni,slotFim){
@@ -22224,7 +22340,7 @@ function agmRenderCamposExtras(agendamentoExistente){
         <label>Situação do paciente${labelStar}</label>
         <select id="agm-situacao">${opcoesHtml}</select>
         <div id="agm-situacao-hint" style="font-size:11px;color:var(--tx3);margin-top:4px">Atendimento marcado como Realizado — atualize a situação do paciente.</div>
-        <button id="agm-situacao-lembrete" type="button" class="btn btn-ghost btn-sm" style="margin-top:8px" data-perm="pendencias_criar" onclick="agmAbrirLembretePaciente()">+ Agendar lembrete</button>
+        <button id="agm-situacao-lembrete" type="button" class="btn btn-ghost btn-sm" style="margin-top:8px" data-perm="pendencias_criar" onclick="agmAbrirLembretePaciente()">+ Agendar pendência</button>
       </div>`;
     } else if(id==='agm_primeira_consulta'){
       const val = agendamentoExistente ? (agendamentoExistente.primeiraConsulta||'') : '';
@@ -23165,6 +23281,7 @@ function salvarEntradaModal(){
 let _relAbaAtual = 'proc_realizados';
 let _relPeriodoTipo = 'mes_atual';
 let _relFiltros = {
+  agendamentos: { paciente: null },
   proc_realizados: { profissionais: [] },
   proc_a_realizar: { profissionais: [] },
   primeiras_consultas: { paciente: null },
@@ -23174,6 +23291,7 @@ let _relFiltros = {
 let _relAcTemp = {}; // resultados temporários de cada autocomplete, pra mapear clique → item
 
 const REL_ABAS = [
+  { id:'agendamentos',        label:'Agendamentos' },
   { id:'proc_realizados',     label:'Procedimentos realizados' },
   { id:'proc_a_realizar',     label:'Procedimentos a realizar' },
   { id:'primeiras_consultas', label:'Primeiras consultas' },
@@ -23248,6 +23366,7 @@ function _relPeriodoDatas(){
 
 function relFiltroVazio(aba){
   const map={
+    agendamentos:{paciente:null},
     proc_realizados:{profissionais:[]},
     proc_a_realizar:{profissionais:[]},
     primeiras_consultas:{paciente:null},
@@ -23275,6 +23394,12 @@ function relRenderFiltrosAba(){
   const wrap=document.getElementById('rel-filtros-aba');
   if(!wrap) return;
   const aba=_relAbaAtual;
+
+  if(aba==='agendamentos'){
+    const v=_relFiltros.agendamentos.paciente;
+    wrap.innerHTML=_relPacInputHTML('agendamentosPaciente','Paciente',v);
+    return;
+  }
 
   if(aba==='proc_realizados' || aba==='proc_a_realizar'){
     const chave=aba+'Prof';
@@ -23335,6 +23460,7 @@ function _relSetFiltroPaciente(campoKey, valor){
   if(campoKey==='primeirasPaciente') _relFiltros.primeiras_consultas.paciente=valor;
   else if(campoKey==='indicadosPaciente') _relFiltros.pacientes_indicados.pacienteIndicado=valor;
   else if(campoKey==='altaPaciente') _relFiltros.pacientes_alta.paciente=valor;
+  else if(campoKey==='agendamentosPaciente') _relFiltros.agendamentos.paciente=valor;
 }
 
 function _relPacBuscar(campoKey, termo){
@@ -23434,6 +23560,7 @@ function relRenderConteudo(){
   if(!wrap) return;
   const {de,ate}=_relPeriodoDatas();
   const aba=_relAbaAtual;
+  if(aba==='agendamentos')        return _relRenderAgendamentos(wrap,de,ate);
   if(aba==='proc_realizados')     return _relRenderProcRealizados(wrap,de,ate);
   if(aba==='proc_a_realizar')     return _relRenderProcARealizar(wrap,de,ate);
   if(aba==='primeiras_consultas') return _relRenderPrimeirasConsultas(wrap,de,ate);
@@ -23444,6 +23571,43 @@ function relRenderConteudo(){
 
 function _relTabelaVazia(wrap, mensagem){
   wrap.innerHTML = `<div class="card" style="padding:0"><div class="fin-empty">${esc(mensagem)}</div></div>`;
+}
+
+// Agendamentos: TODOS os agendamentos da agenda dentro do período do filtro superior
+// (não filtra por status nem por "primeira consulta" — mostra tudo, uma linha por agendamento).
+function _relRenderAgendamentos(wrap, de, ate){
+  const pacFiltro=_relFiltros.agendamentos.paciente;
+  const lista=(typeof agendamentos!=='undefined'?agendamentos:[]).filter(a=>{
+    if(a.data<de || a.data>ate) return false;
+    if(pacFiltro && String(a.pacienteId)!==String(pacFiltro.id)) return false;
+    return true;
+  }).sort((a,b)=> (b.data+b.horaInicio).localeCompare(a.data+a.horaInicio));
+
+  if(!lista.length) return _relTabelaVazia(wrap, 'Nenhum agendamento nesse período/filtro.');
+
+  const lblMap={agendado:'Agendado',confirmado:'Confirmado',realizado:'Realizado',faltou:'Faltou',cancelado:'Cancelado'};
+  const pillMap={agendado:'p-neutral',confirmado:'p-green',realizado:'p-info',faltou:'p-danger',cancelado:'p-neutral'};
+  const rows=lista.map(a=>{
+    const prof=(typeof usuarios!=='undefined'?usuarios:[]).find(u=>u.id===a.usuarioId);
+    const sala=(typeof salas!=='undefined'?salas:[]).find(s=>s.id===a.salaId);
+    return `<tr>
+      <td>${_finFmtData(a.data)}</td>
+      <td>${a.horaInicio}${a.horaFim?' – '+a.horaFim:''}</td>
+      <td>${a.pacienteId?`<a href="javascript:void(0)" onclick="relAbrirPaciente('${a.pacienteId}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(a.pacienteNome)}</a>`:esc(a.pacienteNome)||'—'}</td>
+      <td>${esc(prof?prof.nome:'—')}</td>
+      <td>${esc(sala?sala.nome:'—')}</td>
+      <td>${esc(a.procedimento)||'—'}</td>
+      <td><span class="pill ${pillMap[a.status]||'p-neutral'}">${lblMap[a.status]||a.status}</span></td>
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML=`<div class="card" style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3)">Agendamentos no período</div><div style="font-size:18px;font-weight:700">${lista.length}</div>
+    </div>
+    <div class="fin-table-wrap"><table class="fin-table">
+      <thead><tr><th>Data</th><th>Horário</th><th>Paciente</th><th>Profissional</th><th>Sala</th><th>Procedimento</th><th>Status</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
 }
 
 // Procedimentos realizados: itens do plano de tratamento com executado:true,
