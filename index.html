@@ -4367,6 +4367,48 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
+<!-- MODAL EDITAR RESPOSTAS ANAMNESE -->
+<div class="modal-ov" id="modal-editar-anamnese">
+  <div class="modal" style="width:560px;max-height:85vh">
+    <div class="modal-header">
+      <div class="modal-title">Editar respostas da anamnese</div>
+      <button class="modal-close" onclick="fecharModal('modal-editar-anamnese')">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:60vh;overflow-y:auto">
+      <input type="hidden" id="mea-paciente-id">
+      <div id="mea-campos-lista" style="display:flex;flex-direction:column;gap:16px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModal('modal-editar-anamnese')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarEdicaoAnamnese()">Salvar alterações →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ADICIONAR OBSERVAÇÃO ANAMNESE -->
+<div class="modal-ov" id="modal-obs-anamnese">
+  <div class="modal" style="width:460px">
+    <div class="modal-header">
+      <div class="modal-title">Adicionar observação</div>
+      <button class="modal-close" onclick="fecharModal('modal-obs-anamnese')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="moa-paciente-id">
+      <div class="fg">
+        <div class="fl fg-full">
+          <label>Observação</label>
+          <textarea id="moa-texto" rows="4" placeholder="Ex: Paciente relatou sensibilidade extra na região do dente 26."></textarea>
+          <div style="font-size:11px;color:var(--tx3);margin-top:4px">Essa observação fica só na anamnese deste paciente — não altera o formulário padrão nem afeta outros pacientes.</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModal('modal-obs-anamnese')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarObsAnamnese()">Adicionar →</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL LINK ANAMNESE -->
 <div class="modal-ov" id="modal-link-anamnese">
   <div class="modal" style="width:500px">
@@ -15138,6 +15180,8 @@ vincularFechamentoPorClickFora('modal-cargo');
 vincularFechamentoPorClickFora('modal-checkin-item');
 vincularFechamentoPorClickFora('modal-campo-anamnese');
 vincularFechamentoPorClickFora('modal-link-anamnese');
+vincularFechamentoPorClickFora('modal-editar-anamnese');
+vincularFechamentoPorClickFora('modal-obs-anamnese');
 vincularFechamentoPorClickFora('modal-link-cadastro');
 
 // ══════════════════════════════════════════════════════════════════════
@@ -15368,7 +15412,9 @@ function renderAbaAnamnese(p){
   html += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">`;
   if(preenchido){
     html += `<span style="font-size:13px;color:var(--su)">✓ Preenchida em ${preenchido}</span>`;
-    html += `<div style="display:flex;gap:8px">
+    html += `<div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalEditarAnamnese('${p.id}')"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Editar respostas</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalObsAnamnese('${p.id}')"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 5v14M5 12h14"/></svg> Observação</button>
       <button class="btn btn-ghost btn-sm" onclick="exportarAnamnesePDF('${p.id}')"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar PDF</button>
       <button class="btn btn-ghost btn-sm" onclick="abrirModalLink('${p.id}')"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M9 17H7a5 5 0 0 1 0-10h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><path d="M8 12h8"/></svg> Ver link</button>
       <button class="btn btn-danger btn-sm" onclick="limparAnamnese('${p.id}')">Limpar respostas</button>
@@ -15453,11 +15499,150 @@ function renderAbaAnamnese(p){
           <tbody>${rows2}</tbody>
         </table>`;
     }
+
+    const obsCustom = resp._obsCustom || [];
+    if(obsCustom.length){
+      let rowsObs = '';
+      obsCustom.forEach((o,i)=>{
+        const zebra = i%2===1 ? 'background:var(--s2)' : '';
+        rowsObs += `<tr style="${zebra};border-bottom:1px solid var(--border)">
+          <td style="padding:8px 10px 8px 4px;font-size:13px;color:var(--tx);vertical-align:top">${esc(o.texto)}<div style="font-size:11px;color:var(--tx3);margin-top:2px">${esc(o.data)}</div></td>
+          <td style="padding:8px 4px;text-align:right;vertical-align:top;width:32px">
+            <button onclick="removerObsAnamnese('${p.id}','${o.id}')" title="Remover observação" style="background:none;border:none;cursor:pointer;color:var(--tx3);padding:2px;line-height:0">
+              <svg viewBox="0 0 24 24" width="1em" height="1em" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </td>
+        </tr>`;
+      });
+      html += `<div style="font-size:10.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;margin-top:${(simNaoItens.length||textoItens.length)?'22px':'0'}">Observações — só neste paciente</div>
+        <table style="width:100%;border-collapse:collapse">
+          <tbody>${rowsObs}</tbody>
+        </table>`;
+    }
   } else if(!preenchido){
     html += `<div class="empty"><div class="empty-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg></div>${token ? 'Aguardando o paciente preencher o formulário.' : 'Gere um link e envie para o paciente pelo WhatsApp.'}</div>`;
   }
 
   return html;
+}
+
+// ── Editar respostas da anamnese já preenchida ──────────────────────────
+function _campoInputEdicaoHtml(c, val, valCond){
+  const idBase = 'mea-' + c.id;
+  if(c.tipo === 'sim_nao'){
+    const opts = [['sim','Sim'],['nao','Não'],['outro','Prefiro não informar']];
+    const radios = opts.map(([v,label])=>`<label style="display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r8);cursor:pointer">
+        <input type="radio" name="${idBase}" value="${v}" ${val===v?'checked':''}> ${label}
+      </label>`).join('');
+    const condInput = c.condicionalLabel ? `<div style="margin-top:8px">
+        <label style="font-size:11px;color:var(--tx3)">${c.condicionalLabel}</label>
+        <input type="text" id="${idBase}-cond" value="${esc(valCond||'')}">
+      </div>` : '';
+    return `<div style="display:flex;gap:8px;flex-wrap:wrap">${radios}</div>${condInput}`;
+  }
+  if(c.tipo === 'data'){
+    return `<input type="date" id="${idBase}" value="${esc(val||'')}">`;
+  }
+  if(c.tipo === 'selecao'){
+    const opts = (c.opcoes||[]).map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('');
+    return `<select id="${idBase}"><option value="">Selecione...</option>${opts}</select>`;
+  }
+  if(c.tipo === 'multiplo'){
+    const selecionados = (val||'').split(',').map(s=>s.trim()).filter(Boolean);
+    return `<div style="display:flex;flex-direction:column;gap:6px">${(c.opcoes||[]).map(o=>`<label style="display:flex;align-items:center;gap:8px;font-size:13px">
+        <input type="checkbox" name="${idBase}" value="${esc(o)}" ${selecionados.includes(o)?'checked':''}> ${esc(o)}
+      </label>`).join('')}</div>`;
+  }
+  // texto (padrão)
+  return `<textarea id="${idBase}" rows="2">${esc(val||'')}</textarea>`;
+}
+
+function abrirModalEditarAnamnese(pacienteId){
+  const p = pacientes.find(x => x.id == pacienteId);
+  if(!p) return;
+  const resp = respostasAnamnese[p.id] || {};
+  document.getElementById('mea-paciente-id').value = pacienteId;
+  const lista = document.getElementById('mea-campos-lista');
+  let html = '';
+  camposAnamnese.forEach(c=>{
+    if(c.vinculoCadastro) return; // esses ficam no cadastro, não são editados aqui
+    const val = resp[c.id];
+    const valCond = resp[c.id + '_cond'];
+    html += `<div>
+      <label style="font-size:13px;font-weight:600;color:var(--tx);display:block;margin-bottom:6px">${c.label}</label>
+      ${_campoInputEdicaoHtml(c, val, valCond)}
+    </div>`;
+  });
+  lista.innerHTML = html || '<div style="font-size:13px;color:var(--tx3)">Nenhum campo configurado.</div>';
+  abrirModal('modal-editar-anamnese');
+}
+
+function salvarEdicaoAnamnese(){
+  const pacienteId = document.getElementById('mea-paciente-id').value;
+  const p = pacientes.find(x => x.id == pacienteId);
+  if(!p) return;
+  const resp = respostasAnamnese[p.id] || {};
+
+  camposAnamnese.forEach(c=>{
+    if(c.vinculoCadastro) return;
+    const idBase = 'mea-' + c.id;
+    if(c.tipo === 'sim_nao'){
+      const marcado = document.querySelector(`input[name="${idBase}"]:checked`);
+      resp[c.id] = marcado ? marcado.value : undefined;
+      const condEl = document.getElementById(idBase + '-cond');
+      if(condEl) resp[c.id + '_cond'] = condEl.value.trim() || undefined;
+    } else if(c.tipo === 'multiplo'){
+      const marcados = Array.from(document.querySelectorAll(`input[name="${idBase}"]:checked`)).map(x=>x.value);
+      resp[c.id] = marcados.length ? marcados.join(', ') : undefined;
+    } else {
+      const el = document.getElementById(idBase);
+      if(el) resp[c.id] = el.value.trim() || undefined;
+    }
+  });
+
+  respostasAnamnese[p.id] = resp;
+  salvarAnamnese();
+  fecharModal('modal-editar-anamnese');
+  document.getElementById('pp-anamnese-wrap').innerHTML = renderAbaAnamnese(p);
+  showSaveToast('Respostas da anamnese atualizadas!');
+}
+
+// ── Observações internas — só na anamnese deste paciente específico ────
+function abrirModalObsAnamnese(pacienteId){
+  document.getElementById('moa-paciente-id').value = pacienteId;
+  document.getElementById('moa-texto').value = '';
+  abrirModal('modal-obs-anamnese');
+}
+
+function salvarObsAnamnese(){
+  const pacienteId = document.getElementById('moa-paciente-id').value;
+  const texto = document.getElementById('moa-texto').value.trim();
+  if(!texto) return;
+  const p = pacientes.find(x => x.id == pacienteId);
+  if(!p) return;
+  const resp = respostasAnamnese[p.id] || {};
+  resp._obsCustom = resp._obsCustom || [];
+  resp._obsCustom.push({
+    id: 'obs' + Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    texto,
+    data: new Date().toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
+  });
+  respostasAnamnese[p.id] = resp;
+  salvarAnamnese();
+  fecharModal('modal-obs-anamnese');
+  document.getElementById('pp-anamnese-wrap').innerHTML = renderAbaAnamnese(p);
+  showSaveToast('Observação adicionada!');
+}
+
+function removerObsAnamnese(pacienteId, obsId){
+  const p = pacientes.find(x => x.id == pacienteId);
+  if(!p) return;
+  const resp = respostasAnamnese[p.id] || {};
+  resp._obsCustom = (resp._obsCustom || []).filter(o => o.id !== obsId);
+  respostasAnamnese[p.id] = resp;
+  salvarAnamnese();
+  document.getElementById('pp-anamnese-wrap').innerHTML = renderAbaAnamnese(p);
+  showSaveToast('Observação removida.');
 }
 
 // ── Exportar/Imprimir anamnese em PDF ─────────────────────────────────
@@ -15550,6 +15735,21 @@ function exportarAnamnesePDF(pacienteId){
       camposHtml += `<div style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Respostas em texto</div>
         <table style="width:100%;border-collapse:collapse;margin-bottom:14px">
           <tbody>${rows2Pdf}</tbody>
+        </table>`;
+    }
+
+    const obsCustomPdf = resp._obsCustom || [];
+    if(obsCustomPdf.length){
+      let rowsObsPdf = '';
+      obsCustomPdf.forEach((o,i)=>{
+        const zebra = i%2===1 ? 'background:#F8FAFC' : '';
+        rowsObsPdf += `<tr style="${zebra}">
+          <td style="padding:7px 10px 7px 4px;font-size:12.5px;color:#111827;border-bottom:1px solid #EEF0F4">${o.texto}<div style="font-size:10.5px;color:#9CA3AF;margin-top:2px">${o.data}</div></td>
+        </tr>`;
+      });
+      camposHtml += `<div style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Observações</div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:14px">
+          <tbody>${rowsObsPdf}</tbody>
         </table>`;
     }
   }
