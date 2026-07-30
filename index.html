@@ -3339,8 +3339,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             <th style="width:100px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','vencimento')" title="Ordenar por vencimento">Vencimento <span class="fin-th-sort-ic" id="rc-sort-ic-vencimento"></span></span><button type="button" class="fin-th-group-btn" id="rc-group-btn-vencimento" onclick="finAgruparColuna('receber','vencimento')" title="Agrupar por vencimento">⊞</button></div></th>
             <th style="width:110px"><div class="fin-th-wrap" style="justify-content:flex-end"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','valor')" title="Ordenar por valor">Valor <span class="fin-th-sort-ic" id="rc-sort-ic-valor"></span></span></div></th>
             <th style="width:90px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','status')" title="Ordenar por status">Status <span class="fin-th-sort-ic" id="rc-sort-ic-status"></span></span><button type="button" class="fin-th-group-btn" id="rc-group-btn-status" onclick="finAgruparColuna('receber','status')" title="Agrupar por status">⊞</button></div></th>
+            <th style="width:60px" title="Combinado com o paciente na aprovação do orçamento">Solicitado</th>
             <th style="width:60px">Anexo</th>
-            <th style="width:210px">Emissão fiscal</th>
+            <th style="width:130px">Emissão fiscal</th>
             <th style="width:80px"></th>
           </tr>
         </thead>
@@ -25179,6 +25180,25 @@ function finVerAnexoTitulo(id){
 function _finEmissaoPrevistaLabel(v){
   return {nota_fiscal:'Nota fiscal',recibo:'Recibo',sem_emissao:'Sem emissão'}[v]||'';
 }
+
+// Coluna "Solicitado" — o que foi combinado com o paciente na aprovação do orçamento
+// (Nota fiscal / Recibo / Sem emissão). "Sem emissão" fica verde (nada a fazer); Nota
+// fiscal/Recibo ficam vermelhos com alerta até serem de fato emitidos (aí viram verdes).
+function _finSolicitadoHtml(t){
+  const v = t.emissaoPrevista;
+  if(!v) return `<span style="font-size:11px;color:var(--tx3)">—</span>`;
+  if(v==='sem_emissao'){
+    return `<span style="font-size:11px;font-weight:600;color:#065F46">Sem emissão</span>`;
+  }
+  const label = _finEmissaoPrevistaLabel(v);
+  const ef = t.emissaoFiscal;
+  const emitido = ef && ef.status==='concluido' && ef.tipo===v;
+  if(emitido){
+    return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#065F46" title="${label} já emitida"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><path d="M20 6L9 17l-5-5"/></svg>${label}</span>`;
+  }
+  return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#991B1B" title="${label} ainda não emitida"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>${label}</span>`;
+}
+
 function _finEmissaoFiscalHtml(t){
   const ef = t.emissaoFiscal;
   const concluido = ef && ef.status==='concluido' ? ef.tipo : null;
@@ -25189,6 +25209,15 @@ function _finEmissaoFiscalHtml(t){
       : 'background:var(--surface);border:1px solid var(--border-s);color:var(--tx2)';
     return `<button type="button" class="btn btn-sm" style="padding:3px 8px;font-size:11px;line-height:1.2;white-space:nowrap;${style}" onclick="event.stopPropagation();abrirModalEmissaoFiscal('${t.id}','${t._origem||'manual'}','${tipo}')" title="${on?label+' emitida':'Registrar '+label}">${on?'✓ ':''}${label}</button>`;
   };
+  const solicitado = t.emissaoPrevista;
+  // Já sabemos (coluna Solicitado) se é nota, recibo ou nada — então aqui basta UMA ação.
+  if(solicitado==='sem_emissao') return `<span style="font-size:11px;color:var(--tx3)">—</span>`;
+  if(solicitado==='nota_fiscal'||solicitado==='recibo'){
+    const label = solicitado==='nota_fiscal'?'Nota Fiscal':'Recibo';
+    return `<div style="display:flex;align-items:center;gap:5px;white-space:nowrap">${btn(solicitado,label)}</div>`;
+  }
+  // Título sem indicação prévia (lançado fora do fluxo de aprovação de orçamento) —
+  // mantém as duas opções, já que não dá pra saber qual foi combinado.
   const aviso = !concluido
     ? `<span style="display:inline-flex;align-items:center;color:var(--wa)" title="Sem emissão fiscal registrada para este título"><svg viewBox="0 0 24 24" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>`
     : '';
@@ -25632,7 +25661,6 @@ function renderFinLista(tipo){
       ${tipoPagtoTag}
       <td class="fin-td-desc">
         <div style="font-weight:500;color:var(--tx)">${t.descricao||'—'}${recorrIc}</div>
-        ${t.emissaoPrevista?`<div style="font-size:10px;color:var(--tx3);margin-top:2px">${_finEmissaoPrevistaLabel(t.emissaoPrevista)}</div>`:''}
       </td>
       <td><span style="font-size:12px;color:var(--tx2)">${beneficiario}</span></td>
       <td><span style="font-size:12px;color:var(--tx2)">${parcelaCol}</span></td>
@@ -25640,7 +25668,7 @@ function renderFinLista(tipo){
       <td style="white-space:nowrap;color:${st==='atrasado'?'var(--da)':'var(--tx2)'}">${_finFmtData(t.vencimento)}</td>
       <td class="fin-td-valor">${_finFmt(t.valor)}</td>
       <td>${_finBadge(st)}</td>
-      ${tipo==='receber'?`<td onclick="event.stopPropagation()">${_finAnexoIconHtml(t)}</td><td onclick="event.stopPropagation()">${_finEmissaoFiscalHtml(t)}</td>`:''}
+      ${tipo==='receber'?`<td onclick="event.stopPropagation()">${_finSolicitadoHtml(t)}</td><td onclick="event.stopPropagation()">${_finAnexoIconHtml(t)}</td><td onclick="event.stopPropagation()">${_finEmissaoFiscalHtml(t)}</td>`:''}
       <td onclick="event.stopPropagation()">
         ${!isPaciente?`<button class="btn btn-sm ${liquidado?'btn-ghost':''}" style="white-space:nowrap;${liquidado?'':'background:var(--sul);color:var(--su);border-color:var(--su)'}" onclick="${liquidado?`finDesfazerPagamento('${t.id}','${tipo}')`:`abrirModalFinPagar('${t.id}','${tipo}')`}">${liquidado?'Desfazer pagamento':labelAcao}</button>`:''}
       </td>
@@ -25650,7 +25678,7 @@ function renderFinLista(tipo){
   const grupoCampo = _finAgruparColuna[tipo];
   if(grupoCampo){
     const grupos = _finAgruparLista(lista, tipo);
-    const colspanBase = tipo==='receber' ? 11 : (tipo==='folha' ? 10 : 9);
+    const colspanBase = tipo==='receber' ? 12 : (tipo==='folha' ? 10 : 9);
     tbody.innerHTML = grupos.map(g=>{
       const subtotal = g.itens.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
       return `<tr class="fin-grupo-row"><td colspan="${colspanBase}">${esc(String(g.label))} <span style="font-weight:400;color:var(--tx3)">· ${g.itens.length} título${g.itens.length!==1?'s':''} · ${_finFmt(subtotal)}</span></td></tr>`
