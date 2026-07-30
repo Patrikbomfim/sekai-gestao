@@ -1933,7 +1933,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 <!-- MODAL APROVAR ORÇAMENTO -->
 <div class="modal-ov" id="modal-aprovar-orc" style="z-index:240">
-  <div class="modal" style="width:760px;max-width:96vw;max-height:90vh">
+  <div class="modal" style="width:960px;max-width:96vw;max-height:90vh">
     <div class="modal-header">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div class="modal-title">Aprovar orçamento</div>
@@ -3339,7 +3339,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             <th style="width:100px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','vencimento')" title="Ordenar por vencimento">Vencimento <span class="fin-th-sort-ic" id="rc-sort-ic-vencimento"></span></span><button type="button" class="fin-th-group-btn" id="rc-group-btn-vencimento" onclick="finAgruparColuna('receber','vencimento')" title="Agrupar por vencimento">⊞</button></div></th>
             <th style="width:110px"><div class="fin-th-wrap" style="justify-content:flex-end"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','valor')" title="Ordenar por valor">Valor <span class="fin-th-sort-ic" id="rc-sort-ic-valor"></span></span></div></th>
             <th style="width:90px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','status')" title="Ordenar por status">Status <span class="fin-th-sort-ic" id="rc-sort-ic-status"></span></span><button type="button" class="fin-th-group-btn" id="rc-group-btn-status" onclick="finAgruparColuna('receber','status')" title="Agrupar por status">⊞</button></div></th>
-            <th style="width:60px" title="Combinado com o paciente na aprovação do orçamento">Solicitado</th>
+            <th style="width:60px" title="Combinado com o paciente na aprovação do orçamento">Combinado</th>
             <th style="width:60px">Anexo</th>
             <th style="width:130px">Emissão fiscal</th>
             <th style="width:80px"></th>
@@ -12183,8 +12183,10 @@ function abrirModalAprovarOrcamento(){
   _orcAprovarParcelasTemp=[];
   
   _aprovEntradas=[];
-  // Pré-carrega indicação já registrada (caso o orçamento esteja sendo reaprovado)
-  _aprovIndicadorSelecionado = orc.indicacao ? {...orc.indicacao} : null;
+  // Indicação sempre começa zerada ao abrir a aprovação — não deve puxar de nenhum
+  // histórico (nem do próprio orçamento, mesmo em reaprovação). Cada aprovação
+  // registra sua própria indicação, informada do zero pela secretária.
+  _aprovIndicadorSelecionado = null;
   _aprovRenderModal(orc,total);
   document.getElementById('modal-aprovar-orc').classList.add('open');
 }
@@ -12272,9 +12274,10 @@ function _aprovRenderEntradas(){
 
   // Cabeçalho da tabela
   let html=`
-  <div style="display:grid;grid-template-columns:200px 1fr 140px 32px;gap:0;border:1px solid var(--border);border-radius:var(--r8);overflow:hidden">
+  <div style="display:grid;grid-template-columns:170px 150px 1fr 130px 32px;gap:0;border:1px solid var(--border);border-radius:var(--r8);overflow:hidden">
     <div style="display:contents">
       <div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;padding:7px 12px;background:var(--s2);border-bottom:1px solid var(--border)">Forma</div>
+      <div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;padding:7px 12px;background:var(--s2);border-bottom:1px solid var(--border);border-left:1px solid var(--border)">Emissão fiscal</div>
       <div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;padding:7px 12px;background:var(--s2);border-bottom:1px solid var(--border);border-left:1px solid var(--border)">Detalhes</div>
       <div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;padding:7px 12px;background:var(--s2);border-bottom:1px solid var(--border);border-left:1px solid var(--border);text-align:right">Valor (R$)</div>
       <div style="background:var(--s2);border-bottom:1px solid var(--border);border-left:1px solid var(--border)"></div>
@@ -12294,13 +12297,10 @@ function _aprovRenderEntradas(){
     // aqui na aprovação, para orientar a secretária no recebimento; a emissão de fato
     // (com upload do documento) continua sendo feita depois, no título já gerado.
     const _EMISSAO_OPTS=[['nota_fiscal','Nota fiscal'],['recibo','Recibo'],['sem_emissao','Sem emissão']];
-    const emissaoHtml=`<div style="display:flex;align-items:center;gap:6px">
-          <span style="font-size:11px;color:var(--tx3);white-space:nowrap">Emissão fiscal</span>
-          <select onchange="_aprovChangeEmissao(${ei},this.value)"
-            style="font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 8px;background:var(--surface);color:var(--tx);font-family:var(--font)">
-            ${_EMISSAO_OPTS.map(([v,l])=>`<option value="${v}"${v===(e.emissaoTipo||'nota_fiscal')?' selected':''}>${l}</option>`).join('')}
-          </select>
-        </div>`;
+    const emissaoHtml=`<select onchange="_aprovChangeEmissao(${ei},this.value)"
+          style="font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:5px 8px;background:var(--surface);color:var(--tx);font-family:var(--font);width:100%">
+          ${_EMISSAO_OPTS.map(([v,l])=>`<option value="${v}"${v===(e.emissaoTipo||'nota_fiscal')?' selected':''}>${l}</option>`).join('')}
+        </select>`;
 
     // Coluna "Detalhes" muda por tipo
     let detalhesHtml='';
@@ -12317,7 +12317,6 @@ function _aprovRenderEntradas(){
           <input type="date" value="${e.venc1||hojeStr}" oninput="_aprovChangeVenc1(${ei},this.value)"
             style="font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 8px;background:var(--surface);color:var(--tx);font-family:var(--font)">
         </div>
-        ${emissaoHtml}
       </div>`;
     } else if(isCredito){
       detalhesHtml=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -12337,7 +12336,6 @@ function _aprovRenderEntradas(){
           <input type="date" value="${e.venc1||hojeStr}" oninput="_aprovChangeVenc1(${ei},this.value)"
             style="font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 8px;background:var(--surface);color:var(--tx);font-family:var(--font)">
         </div>
-        ${emissaoHtml}
       </div>`;
     } else if(isBoleto){
       const boletoLinhas=(e.parcelasCustom||[]).map((p,pi)=>`
@@ -12357,7 +12355,6 @@ function _aprovRenderEntradas(){
           <input type="number" value="${e.desconto}" min="0" max="100" step="1" oninput="_aprovChangeDesconto(${ei},this.value)"
             style="width:52px;font-size:12px;border:1px solid var(--border);border-radius:var(--r6);padding:4px 6px;background:var(--surface);color:var(--tx);font-family:var(--font)">
           <span style="font-size:11px;color:var(--tx3)">%</span>
-          ${emissaoHtml}
         </div>
         ${boletoLinhas}
       </div>`;
@@ -12371,6 +12368,9 @@ function _aprovRenderEntradas(){
       </select>
     </div>
     <div style="${borderTop};padding:10px 12px;border-left:1px solid var(--border);display:flex;align-items:flex-start">
+      ${emissaoHtml}
+    </div>
+    <div style="${borderTop};padding:10px 12px;border-left:1px solid var(--border);display:flex;align-items:flex-start">
       ${detalhesHtml}
     </div>
     <div style="${borderTop};padding:10px 12px;border-left:1px solid var(--border);text-align:right">
@@ -12380,8 +12380,11 @@ function _aprovRenderEntradas(){
         const corSoma=Math.abs(diff)<0.01?'var(--ac)':diff>0?'#991B1B':'#065F46';
         return `<div style="font-size:13px;font-weight:700;color:${corSoma};padding:5px 8px;text-align:right;min-width:90px">R$ ${fmtMoeda(somaParc)}</div>`
           +(Math.abs(diff)>=0.01?`<div style="font-size:10px;color:${diff>0?'#991B1B':'#065F46'};margin-top:2px">${diff>0?'↑ excede':'↓ falta'} R$ ${fmtMoeda(Math.abs(diff))}</div>`:`<div style="font-size:10px;color:var(--su);margin-top:2px">✓ soma correta</div>`);
-      })():`<input type="number" value="${e.valor.toFixed(2)}" min="0" step="0.01" oninput="_aprovChangeValor(${ei},this.value)"
-        style="font-size:13px;font-weight:600;border:1px solid var(--border);border-radius:var(--r6);padding:5px 8px;background:var(--surface);color:var(--ac);font-family:var(--font);width:100%;text-align:right">`}
+      })():`<div style="display:flex;align-items:center;justify-content:flex-end;gap:4px">
+        <span style="font-size:13px;color:var(--tx3)">R$</span>
+        <input type="text" inputmode="decimal" value="${fmtMoedaValorParaInput(e.valor)}" oninput="fmtMoeda(this);_aprovChangeValor(${ei},this)"
+          style="font-size:13px;font-weight:600;border:1px solid var(--border);border-radius:var(--r6);padding:5px 8px;background:var(--surface);color:var(--ac);font-family:var(--font);width:100%;text-align:right">
+      </div>`}
       ${isCredito&&e.desconto>0?`<div style="font-size:10px;color:var(--tx3);margin-top:2px">Líquido: R$ ${fmtMoeda(e.valor*(1-e.desconto/100))}</div>`:''}
     </div>
     <div style="${borderTop};border-left:1px solid var(--border);display:flex;align-items:center;justify-content:center">
@@ -12438,7 +12441,9 @@ function _aprovChangeTipo(idx,val){
   if(val==='parcelado_boleto') _aprovInicializarBoleto(idx);
   _aprovRenderEntradas();
 }
-function _aprovChangeValor(idx,val){
+function _aprovChangeValor(idx,el){
+  // el é o próprio input mascarado (fmtMoeda já rodou no oninput e preencheu dataset.valor)
+  const val = (el && el.dataset) ? el.dataset.valor : el;
   _aprovEntradas[idx].valor=parseFloat(val)||0;
   if(_aprovEntradas[idx].tipo==='parcelado_boleto') _aprovInicializarBoleto(idx,true);
   _aprovAtualizarSaldo(); _aprovGerarPreview();
