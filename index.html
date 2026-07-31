@@ -4162,6 +4162,15 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           </select>
         </div>
       </div>
+      <div id="fin-recn-row-emissao" class="fl">
+        <label>Emissão fiscal</label>
+        <select id="fin-recn-emissao">
+          <option value="nota_fiscal">Nota fiscal</option>
+          <option value="recibo">Recibo</option>
+          <option value="sem_emissao">Sem emissão</option>
+        </select>
+        <div id="fin-recn-emissao-hint" style="display:none;margin-top:6px;font-size:11px;color:var(--tx3)">Ao salvar, este valor é aplicado a todos os títulos desta recorrência ainda em aberto. Os já liquidados não são alterados aqui — edite-os individualmente.</div>
+      </div>
       <div class="fl">
         <label>Forma da recorrência <span class="req">*</span></label>
         <select id="fin-recn-freq" onchange="finRecToggleFreq()">
@@ -4943,6 +4952,18 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="fl fg-full" id="agm-paciente-novo-wrap" style="display:none">
           <label>Telefone / WhatsApp do paciente (não cadastrado)</label>
           <input type="text" id="agm-paciente-fone" placeholder="(00) 00000-0000">
+        </div>
+        <div class="fl fg-full" id="agm-orc-vinculo-wrap" style="display:none">
+          <label>Vincular a um orçamento aprovado</label>
+          <select id="agm-orc-vinculo" onchange="agmAtualizarProcedimentosOrc()">
+            <option value="">Nenhum</option>
+          </select>
+        </div>
+        <div class="fl fg-full" id="agm-orc-item-wrap" style="display:none">
+          <label>Procedimento do orçamento</label>
+          <select id="agm-orc-item">
+            <option value="">Selecione o procedimento…</option>
+          </select>
         </div>
         <div class="fl">
           <label>Data *</label>
@@ -11530,8 +11551,18 @@ function renderPpFinanceiro(p, _filtroAtivo){
     return;
   }
 
-  const hojeFinStr=new Date().toISOString().slice(0,10);
-  titulos.forEach(t=>{ if(t.status!=='pago'&&t.vencimento&&t.vencimento<hojeFinStr) t.status='atrasado'; t._origem='paciente'; });
+  // Mesmo método usado no módulo Financeiro (_finHoje/_finStatusEfetivo): compara a data
+  // de vencimento (âncorada ao meio-dia local) com a meia-noite local de hoje. Usar
+  // toISOString().slice(0,10) aqui causava um bug de fuso horário (UTC), marcando como
+  // atrasado um título que vence hoje mesmo, em horários da noite no horário de Brasília.
+  const hojeFinD=new Date(); hojeFinD.setHours(0,0,0,0);
+  titulos.forEach(t=>{
+    if(t.status!=='pago'&&t.vencimento){
+      const vencD=new Date(t.vencimento+'T12:00:00');
+      if(!isNaN(vencD)&&vencD<hojeFinD) t.status='atrasado';
+    }
+    t._origem='paciente';
+  });
   const totalGeral=titulos.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
   const totalPago=titulos.filter(t=>t.status==='pago').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
   const totalAtrasado=titulos.filter(t=>t.status==='atrasado').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
@@ -11835,8 +11866,8 @@ function desfazerEmissaoFiscal(){
   if(idx<0) return;
   delete list[idx].emissaoFiscal;
   _efSalvarLista(_emissaoFiscalOrigem, list);
-  fecharModalEmissaoFiscal();
   _efRefreshUI();
+  fecharModalEmissaoFiscal();
 }
 
 function fecharModalEmissaoFiscal(){
@@ -11964,8 +11995,8 @@ async function confirmarEmissaoFiscal(){
     registradoPor:usuarioId
   };
   _efSalvarLista(_emissaoFiscalOrigem, list);
-  fecharModalEmissaoFiscal();
   _efRefreshUI();
+  fecharModalEmissaoFiscal();
 }
 
 function estornarPagamentoTitulo(tituloId){
@@ -22673,6 +22704,7 @@ function abrirModalAgendamento(agendamentoId, dataPre, horaPre, salaPre, usuario
   if(a && !a.pacienteId){ novoWrap.style.display=''; document.getElementById('agm-paciente-fone').value=a.pacienteFone||''; }
   else { novoWrap.style.display='none'; document.getElementById('agm-paciente-fone').value=''; }
   agmAtualizarPacienteView();
+  agmAtualizarOrcamentosVinculo(a?a.orcamentoId:'', a?a.orcItemIdx:null);
 
   document.getElementById('agm-data').value = a ? a.data : (dataPre||agendaData);
   document.getElementById('agm-hora-ini').value = a ? a.horaInicio : (horaPre||'09:00');
@@ -23076,6 +23108,7 @@ function agmSelecionarPaciente(id,nome){
   if(p && selSituacao && !agAtual?.situacaoRegistrada) selSituacao.value=p.situacao;
   agmToggleSituacao();
   agmAtualizarPacienteView();
+  agmAtualizarOrcamentosVinculo();
 }
 function agmUsarSemCadastro(nome){
   document.getElementById('agm-paciente-id').value='';
@@ -23084,11 +23117,63 @@ function agmUsarSemCadastro(nome){
   document.getElementById('agm-paciente-novo-wrap').style.display='';
   agmToggleSituacao();
   agmRenderInfoPaciente();
+  agmAtualizarOrcamentosVinculo();
 }
 
 // ── PACIENTE NO MODAL DE AGENDAMENTO — alterna entre botão (paciente vinculado) e busca ──
 function _normalizarNome(s){
   return (s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+
+// Vínculo opcional do agendamento com um procedimento específico, ainda não executado,
+// de um orçamento aprovado do paciente — permite ver, no relatório "Procedimentos a
+// realizar", quais procedimentos aprovados já têm data marcada e quais ainda não têm.
+// orcIdPre/itemIdxPre: usados para pré-selecionar ao editar um agendamento existente.
+function agmAtualizarOrcamentosVinculo(orcIdPre, itemIdxPre){
+  const wrap=document.getElementById('agm-orc-vinculo-wrap');
+  const sel=document.getElementById('agm-orc-vinculo');
+  if(!wrap||!sel) return;
+  const pacienteId=document.getElementById('agm-paciente-id').value;
+  if(!pacienteId){
+    wrap.style.display='none';
+    const itemWrap=document.getElementById('agm-orc-item-wrap');
+    if(itemWrap) itemWrap.style.display='none';
+    sel.innerHTML='<option value="">Nenhum</option>';
+    return;
+  }
+  const orcsAprovados=_orcamentos().filter(o=>String(o.pacienteId)===String(pacienteId) && o.status==='aprovado');
+  wrap.style.display='';
+  sel.innerHTML='<option value="">Nenhum</option>'+orcsAprovados.map(o=>{
+    const nome=o.nomeOrc||('Orçamento #'+(o.num||o.id.slice(-4)));
+    return `<option value="${o.id}">${esc(nome)}</option>`;
+  }).join('');
+  sel.value = (orcIdPre && orcsAprovados.some(o=>o.id===orcIdPre)) ? orcIdPre : '';
+  agmAtualizarProcedimentosOrc(itemIdxPre);
+}
+
+function agmAtualizarProcedimentosOrc(itemIdxPre){
+  const itemWrap=document.getElementById('agm-orc-item-wrap');
+  const itemSel=document.getElementById('agm-orc-item');
+  if(!itemWrap||!itemSel) return;
+  const orcId=document.getElementById('agm-orc-vinculo')?.value;
+  if(!orcId){
+    itemWrap.style.display='none';
+    itemSel.innerHTML='<option value="">Selecione o procedimento…</option>';
+    return;
+  }
+  const orc=_orcamentos().find(o=>o.id===orcId);
+  const itens=((orc&&orc.itens)||[]).map((it,idx)=>({...it,idx})).filter(it=>!it.executado);
+  itemWrap.style.display='';
+  if(!itens.length){
+    itemSel.innerHTML='<option value="">Nenhum procedimento pendente neste orçamento</option>';
+    return;
+  }
+  itemSel.innerHTML='<option value="">Selecione o procedimento…</option>'+itens.map(it=>{
+    const dentesTxt = it.dentes ? ' ('+(Array.isArray(it.dentes)?it.dentes.join(', '):it.dentes)+')' : '';
+    const valorTxt = (parseFloat(it.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+    return `<option value="${it.idx}">${esc(it.proc||'—')}${esc(dentesTxt)} — R$ ${valorTxt}</option>`;
+  }).join('');
+  if(itemIdxPre!=null && itemIdxPre!=='' && itens.some(it=>String(it.idx)===String(itemIdxPre))) itemSel.value=String(itemIdxPre);
 }
 
 function agmAtualizarPacienteView(){
@@ -23225,6 +23310,10 @@ function _salvarAgendamentoInterno(){
     ? {..._agmIndicacaoSelecionado} : null;
   const camposExtras = agmLerCamposExtras();
 
+  const orcVinculoId = document.getElementById('agm-orc-vinculo')?.value || null;
+  const orcItemIdxRaw = document.getElementById('agm-orc-item')?.value;
+  const orcItemIdx = (orcVinculoId && orcItemIdxRaw!==''&&orcItemIdxRaw!=null) ? parseInt(orcItemIdxRaw) : null;
+
   if(!agmValidarCamposExtras()) return;
 
   const situacaoWrap = document.getElementById('agm-situacao-wrap');
@@ -23282,6 +23371,7 @@ function _salvarAgendamentoInterno(){
   const existenteParaTags = editId ? agendamentos.find(a=>a.id===editId) : null;
   const item={pacienteId,pacienteNome,pacienteFone:pacienteId?'':pacienteFone,usuarioId,salaId,data,horaInicio,horaFim,status,origem:'interno',procedimento,fluxo,obs,situacaoRegistrada:situacaoPaciente,
     motivoCancelamento,motivoCancelamentoOutro,jaReagendado,recontatoStatus,recontatoResponsavel,recontatoObs,recontatoCriadoEm,recontatoResolvidoEm,primeiraConsulta,origemPaciente,origemPacienteTexto,indicacao,camposExtras,
+    orcamentoId:orcVinculoId, orcItemIdx,
     tags: existenteParaTags ? (existenteParaTags.tags||[]) : []};
 
   if(editId){
@@ -24123,13 +24213,26 @@ function _relRenderProcRealizados(wrap, de, ate){
 // execProfissional, que só existe depois de executado).
 function _relItensNaoExecutados(){
   const orcs=_orcamentos().filter(o=>o.status==='aprovado');
+  // Data agendada mais próxima para cada item de orçamento (orcId+itemIdx), a partir do
+  // vínculo opcional "Vincular a um orçamento aprovado" no modal de agendamento. Ignora
+  // agendamentos cancelados; quando há mais de um vínculo para o mesmo item, usa a data
+  // mais próxima entre eles.
+  const agsPorItem={};
+  (typeof agendamentos!=='undefined'?agendamentos:[]).forEach(a=>{
+    if(a.status==='cancelado') return;
+    if(!a.orcamentoId || a.orcItemIdx===null || a.orcItemIdx===undefined || a.orcItemIdx==='') return;
+    const chave=a.orcamentoId+'|'+a.orcItemIdx;
+    if(!agsPorItem[chave] || (a.data||'')<agsPorItem[chave]) agsPorItem[chave]=a.data||'';
+  });
   const out=[];
   orcs.forEach(orc=>{
     const dataAprovacao = orc.dataDecisao || orc.data || orc.dataCriacao || '';
     const pac=pacientes.find(x=>String(x.id)===String(orc.pacienteId));
+    const orcNome = orc.nomeOrc || ('Orçamento #'+(orc.num||orc.id.slice(-4)));
     (orc.itens||[]).forEach((it,idx)=>{
       if(it.executado) return;
-      out.push({ ...it, orcId:orc.id, itemIdx:idx, dataAprovacao, pacNome:pac?pac.nome:'Paciente', pacId:orc.pacienteId });
+      const dataAgendamento = agsPorItem[orc.id+'|'+idx] || '';
+      out.push({ ...it, orcId:orc.id, orcNome, itemIdx:idx, dataAprovacao, dataAgendamento, pacNome:pac?pac.nome:'Paciente', pacId:orc.pacienteId });
     });
   });
   return out;
@@ -24150,8 +24253,10 @@ function _relRenderProcARealizar(wrap, de, ate){
   const rows=itens.map(i=>`<tr>
     <td>${_finFmtData(i.dataAprovacao)}</td>
     <td><a href="javascript:void(0)" onclick="relAbrirPaciente('${i.pacId}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(i.pacNome)}</a></td>
+    <td>${esc(i.orcNome)||'—'}</td>
     <td>${esc(i.proc)||'—'}</td>
     <td>${esc(i.dentista)||'—'}</td>
+    <td>${i.dataAgendamento?_finFmtData(i.dataAgendamento):`<span style="color:var(--tx3)">Sem data</span>`}</td>
     <td class="fin-td-valor">${_finFmt(i.valor)}</td>
   </tr>`).join('');
 
@@ -24160,7 +24265,7 @@ function _relRenderProcARealizar(wrap, de, ate){
       <div><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3)">Procedimentos</div><div style="font-size:18px;font-weight:700">${itens.length}</div></div>
     </div>
     <div class="fin-table-wrap"><table class="fin-table">
-      <thead><tr><th>Aprovado em</th><th>Paciente</th><th>Procedimento</th><th>Profissional</th><th style="text-align:right">Valor</th></tr></thead>
+      <thead><tr><th>Aprovado em</th><th>Paciente</th><th>Orçamento</th><th>Procedimento</th><th>Profissional</th><th>Agendamento</th><th style="text-align:right">Valor</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`;
 }
@@ -26064,6 +26169,10 @@ function abrirModalFinRecorrenciaNova(chaveEdicao){
   document.getElementById('fin-recn-inicio').value='';
   document.getElementById('fin-recn-fim').value='';
   document.getElementById('fin-recn-row-cat').style.display=(isPagar||isFolha)?'':'none';
+  document.getElementById('fin-recn-row-emissao').style.display=(isPagar||isFolha)?'none':'';
+  document.getElementById('fin-recn-emissao').value='nota_fiscal';
+  const emissaoHintReset=document.getElementById('fin-recn-emissao-hint');
+  if(emissaoHintReset) emissaoHintReset.style.display='none';
   // Popular categorias conforme o tipo (mesma lista usada no modal de lançamento avulso)
   const catSel=document.getElementById('fin-recn-cat');
   const catsOpts = isFolha ? FIN_CATEGORIAS_FOLHA : FIN_CATEGORIAS;
@@ -26089,6 +26198,11 @@ function abrirModalFinRecorrenciaNova(chaveEdicao){
       document.getElementById('fin-recn-valor').value = primeiro.valor?'R$ '+(parseFloat(primeiro.valor)).toLocaleString('pt-BR',{minimumFractionDigits:2}):'';
       document.getElementById('fin-recn-cat').value = primeiro.categoria||'';
       document.getElementById('fin-recn-forma').value = primeiro.forma||'';
+      if(!isPagar&&!isFolha){
+        document.getElementById('fin-recn-emissao').value = primeiro.emissaoPrevista||'nota_fiscal';
+        const emissaoHint=document.getElementById('fin-recn-emissao-hint');
+        if(emissaoHint) emissaoHint.style.display='block';
+      }
       const freq = primeiro.freq||'mensal';
       document.getElementById('fin-recn-freq').value = freq;
       const primeiraData = new Date((primeiro.vencimento||'')+'T12:00:00');
@@ -26280,6 +26394,7 @@ function finSalvarRecorrenciaNova(){
   const parteTipo=_finRecParteSelecionada?_finRecParteSelecionada.tipo:'';
   const parteId=_finRecParteSelecionada?_finRecParteSelecionada.id:'';
   const forma=document.getElementById('fin-recn-forma').value;
+  const emissaoPrevista = tipo==='receber' ? (document.getElementById('fin-recn-emissao').value||'nota_fiscal') : undefined;
   const anexos=_finRecAnexosPendentes.slice();
 
   const datas=_finRecGerarDatas(freq,diaSemana,diaMes,inicio,fim);
@@ -26316,9 +26431,22 @@ function finSalvarRecorrenciaNova(){
       diaSemana: freq==='semanal'?diaSemana:undefined,
       diaMes: freq==='mensal'?diaMes:undefined,
       anexos, // o mesmo anexo é aplicado a todos os títulos gerados por esta recorrência
-      criadoEm:_finIso(new Date())
+      criadoEm:_finIso(new Date()),
+      ...(tipo==='receber'?{emissaoPrevista}:{})
     });
   });
+
+  // Emissão fiscal: ao editar uma recorrência de "a receber", o valor escolhido vale para
+  // TODOS os títulos desta série ainda em aberto — inclusive os anteriores ao mês atual,
+  // que não são regenerados acima. Títulos já liquidados (pagos) não são tocados aqui.
+  if(chaveEdicao && tipo==='receber'){
+    list = list.map(t=>{
+      if(t.tipo==='receber' && t.recorrente && _finChaveSerie(t)===chaveEdicao && t.status!=='pago'){
+        return {...t, emissaoPrevista};
+      }
+      return t;
+    });
+  }
   _finSalvarTitulosGestao(list);
 
   fecharModalFinRecorrenciaNova();
