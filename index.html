@@ -10790,11 +10790,24 @@ function _orcToggleDataDecisao(status){
 // ausência desse selo (equipe ainda não configurada) cai para uma escolha por
 // aproximação (criadora do orçamento, senão a primeira dentista cadastrada).
 function _orcDentistaResponsavel(nomeCriador){
-  const dentistas = equipe.filter(e=>e.cargoId==='cg_dentista');
-  if(!dentistas.length) return null;
-  const membro = dentistas.find(e=>e.respTecnico) || dentistas.find(e=>e.nome===nomeCriador) || dentistas[0];
-  const u = usuarios.find(x=>x.id===membro.usuarioId);
-  return { nome:(u&&u.nome)||membro.nome||'', cro:(u&&u.cro)||'' };
+  const dentistas = equipe.filter(e=>typeof e!=='string' && e.cargoId==='cg_dentista');
+  let nome='', cro='';
+  if(dentistas.length){
+    const membro = dentistas.find(e=>e.respTecnico) || dentistas.find(e=>e.nome===nomeCriador) || dentistas[0];
+    const u = usuarios.find(x=>x.id===membro.usuarioId);
+    nome = (u&&u.nome) || membro.nome || '';
+    cro = (u&&u.cro) || '';
+  }
+  // Fallback: se o vínculo equipe→usuário não trouxe o CRO (cadastros desalinhados),
+  // tenta casar por nome diretamente na lista de usuários — mesma lógica de reconhecimento
+  // por nome já usada na migração automática do selo "Responsável técnica".
+  if(!cro && nome){
+    const nomeNorm=_normalizarNome(nome);
+    const uPorNome = usuarios.find(x=>_normalizarNome(x.nome)===nomeNorm);
+    if(uPorNome && uPorNome.cro) cro = uPorNome.cro;
+  }
+  if(!nome && !cro) return null;
+  return { nome, cro };
 }
 
 // Migração única: instalações que já tinham dentistas cadastradas antes deste selo existir
@@ -10973,7 +10986,7 @@ table{width:100%;border-collapse:collapse;margin-bottom:3mm}
     <div class="sec-lbl">${secaoPagTitulo}</div>
     <div class="pagamentos">${pagCardsHtml}</div>`:''}
     <div class="footer">
-      <div><b>${dentistaResp?dentistaResp.nome:''}</b>${dentistaResp&&dentistaResp.cro?' · '+dentistaResp.cro:''}</div>
+      <div><b>${dentistaResp?'Responsável técnica '+dentistaResp.nome:''}</b>${dentistaResp&&dentistaResp.cro?' CRO: '+dentistaResp.cro:''}</div>
       <div>${clinicaTel?clinicaTel+' · ':''}${clinicaCnpj?'CNPJ '+clinicaCnpj:''}</div>
     </div>
   </div>
@@ -11317,6 +11330,13 @@ function abrirModalProcOrc(){
       <div class="fl" style="flex:1">
         <label>Valor (R$)</label>
         <input type="text" inputmode="decimal" id="proc-orc-valor" placeholder="0,00" oninput="_orcMascaraValorInput(this)">
+      </div>
+      <div class="fl" style="flex:1">
+        <label>Profissional</label>
+        <select id="proc-orc-dentista" style="font-size:12px">
+          <option value="">— Profissional —</option>
+          ${_dentistasDisponiveis().map(d=>`<option value="${esc(d.nome)}">${esc(d.label)}</option>`).join('')}
+        </select>
       </div>
     </div>
     <div>
@@ -12271,6 +12291,12 @@ function _aprovRenderModal(orc,totalOrc){
       </div>
     </div>
 
+    <!-- Procedimentos e profissionais -->
+    <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Procedimentos e profissionais</div>
+      <div id="aprov-itens-prof-wrap"></div>
+    </div>
+
     <!-- Indicação -->
     <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
       <div style="font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Indicação</div>
@@ -12307,6 +12333,7 @@ function _aprovRenderModal(orc,totalOrc){
   // Restaura estado da indicação (select, campo de busca e chip selecionado) após o modal renderizar
   setTimeout(()=>{
     _aprovRenderEntradas();
+    _aprovRenderItensProf();
     const selTeve = document.getElementById('aprov-indicacao-teve');
     const wrap = document.getElementById('aprov-indicacao-wrap');
     if(_aprovIndicadorSelecionado){
@@ -12327,6 +12354,41 @@ function _aprovRenderModal(orc,totalOrc){
 }
 
 function _aprovChangeDescGlobal(val){ /* desconto global removido — mantido para evitar erros de referência */ }
+
+// Lista os procedimentos do orçamento sendo aprovado, com um seletor de profissional
+// pré-preenchido com o que já estava definido no procedimento (campo "dentista"). O
+// profissional escolhido aqui é gravado em confirmarAprovacaoOrcamento, tanto no campo
+// "dentista" (planejado) quanto em "execProfissional" (usado no plano de tratamento).
+function _aprovRenderItensProf(){
+  const wrap=document.getElementById('aprov-itens-prof-wrap');
+  if(!wrap) return;
+  const dentistas=_dentistasDisponiveis();
+  if(!(_orcItens||[]).length){
+    wrap.innerHTML='<div style="font-size:12px;color:var(--tx3)">Nenhum procedimento neste orçamento.</div>';
+    return;
+  }
+  wrap.innerHTML=`<div style="display:flex;flex-direction:column;gap:6px">
+    ${_orcItens.map((it,idx)=>{
+      const dentesTxt = it.dentes&&it.dentes.length?' ('+it.dentes.join(', ')+')':'';
+      const valorTxt=(parseFloat(it.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r6)">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12.5px;font-weight:500;color:var(--tx)">${esc(it.proc||'—')}${esc(dentesTxt)}</div>
+          <div style="font-size:11px;color:var(--tx3)">R$ ${valorTxt}</div>
+        </div>
+        <select onchange="_aprovChangeItemDentista(${idx},this.value)"
+          style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);font-family:var(--font);min-width:170px;flex-shrink:0">
+          <option value="">— Profissional —</option>
+          ${dentistas.map(d=>`<option value="${esc(d.nome)}" ${it.dentista===d.nome?' selected':''}>${esc(d.label)}</option>`).join('')}
+        </select>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function _aprovChangeItemDentista(idx,val){
+  if(_orcItens[idx]) _orcItens[idx].dentista=val;
+}
 
 
 function _aprovRenderEntradas(){
@@ -12626,6 +12688,10 @@ function confirmarAprovacaoOrcamento(){
       list[idx].descontoPorc=descPorc;
       list[idx].valorFechado=valFechado;
       list[idx].indicacao = _aprovIndicadorSelecionado ? {..._aprovIndicadorSelecionado} : null;
+      // Profissional definido (ou ajustado) aqui na aprovação vira o profissional
+      // planejado do plano de tratamento (execProfissional) — continua editável lá
+      // por seletor, mas já chega pré-preenchido.
+      list[idx].itens = (_orcItens||[]).map(it=>({...it, execProfissional: it.dentista||it.execProfissional||''}));
     }
     _salvarOrcamentos(list);
   });
@@ -24213,16 +24279,19 @@ function _relRenderProcRealizados(wrap, de, ate){
 // execProfissional, que só existe depois de executado).
 function _relItensNaoExecutados(){
   const orcs=_orcamentos().filter(o=>o.status==='aprovado');
-  // Data agendada mais próxima para cada item de orçamento (orcId+itemIdx), a partir do
-  // vínculo opcional "Vincular a um orçamento aprovado" no modal de agendamento. Ignora
-  // agendamentos cancelados; quando há mais de um vínculo para o mesmo item, usa a data
-  // mais próxima entre eles.
+  // Data e profissional agendados mais próximos para cada item de orçamento (orcId+itemIdx),
+  // a partir do vínculo opcional "Vincular a um orçamento aprovado" no modal de agendamento.
+  // Ignora agendamentos cancelados; quando há mais de um vínculo para o mesmo item, usa o
+  // agendamento com a data mais próxima entre eles.
   const agsPorItem={};
   (typeof agendamentos!=='undefined'?agendamentos:[]).forEach(a=>{
     if(a.status==='cancelado') return;
     if(!a.orcamentoId || a.orcItemIdx===null || a.orcItemIdx===undefined || a.orcItemIdx==='') return;
     const chave=a.orcamentoId+'|'+a.orcItemIdx;
-    if(!agsPorItem[chave] || (a.data||'')<agsPorItem[chave]) agsPorItem[chave]=a.data||'';
+    if(!agsPorItem[chave] || (a.data||'')<agsPorItem[chave].data){
+      const prof=(typeof usuarios!=='undefined'?usuarios:[]).find(u=>u.id===a.usuarioId);
+      agsPorItem[chave]={data:a.data||'', profNome: prof?prof.nome:''};
+    }
   });
   const out=[];
   orcs.forEach(orc=>{
@@ -24231,8 +24300,12 @@ function _relItensNaoExecutados(){
     const orcNome = orc.nomeOrc || ('Orçamento #'+(orc.num||orc.id.slice(-4)));
     (orc.itens||[]).forEach((it,idx)=>{
       if(it.executado) return;
-      const dataAgendamento = agsPorItem[orc.id+'|'+idx] || '';
-      out.push({ ...it, orcId:orc.id, orcNome, itemIdx:idx, dataAprovacao, dataAgendamento, pacNome:pac?pac.nome:'Paciente', pacId:orc.pacienteId });
+      const ag=agsPorItem[orc.id+'|'+idx];
+      const dataAgendamento = ag?ag.data:'';
+      // O profissional do agendamento tem prioridade sobre o profissional planejado no
+      // procedimento — se agendou com outro dentista, é ele quem vai executar de fato.
+      const profissional = (ag&&ag.profNome) ? ag.profNome : (it.dentista||it.execProfissional||'');
+      out.push({ ...it, orcId:orc.id, orcNome, itemIdx:idx, dataAprovacao, dataAgendamento, profissional, pacNome:pac?pac.nome:'Paciente', pacId:orc.pacienteId });
     });
   });
   return out;
@@ -24243,7 +24316,7 @@ function _relRenderProcARealizar(wrap, de, ate){
   const itens=_relItensNaoExecutados().filter(i=>{
     const d=i.dataAprovacao||'';
     if(d<de || d>ate) return false;
-    if(profs.length && !profs.includes(i.dentista||'')) return false;
+    if(profs.length && !profs.includes(i.profissional||'')) return false;
     return true;
   }).sort((a,b)=> (b.dataAprovacao||'').localeCompare(a.dataAprovacao||''));
 
@@ -24255,7 +24328,7 @@ function _relRenderProcARealizar(wrap, de, ate){
     <td><a href="javascript:void(0)" onclick="relAbrirPaciente('${i.pacId}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(i.pacNome)}</a></td>
     <td>${esc(i.orcNome)||'—'}</td>
     <td>${esc(i.proc)||'—'}</td>
-    <td>${esc(i.dentista)||'—'}</td>
+    <td>${esc(i.profissional)||'—'}</td>
     <td>${i.dataAgendamento?_finFmtData(i.dataAgendamento):`<span style="color:var(--tx3)">Sem data</span>`}</td>
     <td class="fin-td-valor">${_finFmt(i.valor)}</td>
   </tr>`).join('');
