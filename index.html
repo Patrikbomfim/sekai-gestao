@@ -10245,7 +10245,9 @@ function renderPpOrcamento(p){
 
       const statusColor=o.status==='aprovado'?'#065F46':o.status==='reprovado'||o.status==='recusado'?'#991B1B':'#6B7280';
       const statusBg=o.status==='aprovado'?'#ECFDF5':o.status==='reprovado'||o.status==='recusado'?'#FEF2F2':'#F3F4F6';
-      const dataAprovTxt = o.status==='aprovado' ? fmtDataBR(o.dataDecisao) : '';
+      const aberto = (o.status||'aberto')==='aberto' || o.status==='rascunho';
+      const dataAprovTxt = o.status==='aprovado' ? fmtDataBR(o.dataDecisao) : (aberto ? fmtDataBR(o.dataCriacao||o.data) : '');
+      const dataAprovLbl = o.status==='aprovado' ? 'Aprovado em ' : (aberto ? 'Criado em ' : '');
 
       html+=`
       <div style="border:1px solid ${o.status==='aprovado'?'#A7F3D0':o.status==='reprovado'||o.status==='recusado'?'#FCA5A5':'var(--border)'};border-radius:var(--r8);margin-bottom:6px;overflow:hidden">
@@ -10259,7 +10261,7 @@ function renderPpOrcamento(p){
           <!-- nome -->
           <span style="flex:1;font-size:13px;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nome}</span>
           <!-- data de aprovação -->
-          ${dataAprovTxt?`<span style="flex-shrink:0;font-size:11px;color:var(--tx3);white-space:nowrap">Aprovado em ${dataAprovTxt}</span>`:''}
+          ${dataAprovTxt?`<span style="flex-shrink:0;font-size:11px;color:var(--tx3);white-space:nowrap">${dataAprovLbl}${dataAprovTxt}</span>`:''}
           <!-- valor: se aprovado, usa valorFechado; se há desconto real, mostra tabela riscada ao lado do valor final -->
           ${(()=>{
             const _vf=o.status==='aprovado'&&o.valorFechado!=null?o.valorFechado:total;
@@ -11571,6 +11573,11 @@ function confirmarProcOrc(){
 function _titulos(){ return carregarLS('sk3-titulos',[]); }
 function _salvarTitulos(list){ salvarLS('sk3-titulos',list); }
 
+// Lembra quais blocos de orçamento estão expandidos na aba Financeiro do paciente, para que
+// ações como anexar um arquivo de emissão fiscal (que re-renderizam a tela) não recolham o
+// bloco que o usuário estava usando.
+let _finOrcExpandidos=new Set();
+
 function renderPpFinanceiro(p, _filtroAtivo){
   const wrap=document.getElementById('pp-financeiro-wrap');
   const titulos=_titulos().filter(t=>String(t.pacienteId)===String(p.id));
@@ -11683,12 +11690,12 @@ function renderPpFinanceiro(p, _filtroAtivo){
     const tAtrasado=tits.filter(t=>t.status==='atrasado').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
     const tAberto=tits.filter(t=>t.status==='aberto').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
     const uid='fin-orc-'+orcId;
-    const expandido=!!filtro; // expande automaticamente se há filtro ativo
+    const expandido=!!filtro||_finOrcExpandidos.has(orcId); // expande automaticamente se há filtro ativo ou se o usuário já tinha aberto este bloco
 
     html+=`
     <div style="border:1px solid ${tAtrasado>0?'#FCA5A5':'var(--border)'};border-radius:var(--r8);margin-bottom:8px;overflow:hidden">
-      <div onclick="_finToggle('${uid}')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface);cursor:pointer;user-select:none;transition:background .1s"
-           onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--surface)'">
+      <div onclick="_finToggle('${uid}')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(184,150,79,.10);cursor:pointer;user-select:none;transition:background .1s;border-bottom:1px solid rgba(184,150,79,.25)"
+           onmouseover="this.style.background='rgba(184,150,79,.18)'" onmouseout="this.style.background='rgba(184,150,79,.10)'">
         <span id="${uid}-caret" style="font-size:11px;color:var(--tx3);transition:transform .18s;display:inline-block;flex-shrink:0;${expandido?'transform:rotate(90deg)':''}">▶</span>
         <span style="font-size:13px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nomeOrc}</span>
         ${orc.dataDecisao?`<span style="font-size:11px;color:var(--tx3);white-space:nowrap;flex-shrink:0">Aprovado em ${fmtData(orc.dataDecisao)}</span>`:''}
@@ -11803,6 +11810,10 @@ function _finToggle(uid){
   const open=body.style.display==='block';
   body.style.display=open?'none':'block';
   if(caret) caret.style.transform=open?'':'rotate(90deg)';
+  if(uid.indexOf('fin-orc-')===0){
+    const orcId=uid.slice('fin-orc-'.length);
+    if(open) _finOrcExpandidos.delete(orcId); else _finOrcExpandidos.add(orcId);
+  }
 }
 
 // ── MODAL RECEBER ──────────────────────────────────────────────────────────
