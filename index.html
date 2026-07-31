@@ -10793,7 +10793,10 @@ function _orcDentistaResponsavel(nomeCriador){
   const dentistas = equipe.filter(e=>typeof e!=='string' && e.cargoId==='cg_dentista');
   let nome='', cro='';
   if(dentistas.length){
-    const membro = dentistas.find(e=>e.respTecnico) || dentistas.find(e=>e.nome===nomeCriador) || dentistas[0];
+    const membro = dentistas.find(e=>e.respTecnico)
+      || dentistas.find(e=>_normalizarNome(e.nome).includes('leticia'))
+      || dentistas.find(e=>e.nome===nomeCriador)
+      || dentistas[0];
     const u = usuarios.find(x=>x.id===membro.usuarioId);
     nome = (u&&u.nome) || membro.nome || '';
     cro = (u&&u.cro) || '';
@@ -10823,6 +10826,23 @@ function _orcDentistaResponsavel(nomeCriador){
   if(jaTemSelo) return;
   const alvo = equipe.find(e=>typeof e!=='string' && e.cargoId==='cg_dentista' && _normalizarNome(e.nome).includes('leticia'));
   if(alvo){
+    equipe.forEach(e=>{ if(typeof e!=='string') e.respTecnico=false; });
+    alvo.respTecnico=true;
+    salvarLS('sk3-equipe', equipe);
+  }
+})();
+
+// Correção v2: a migração acima (v1) já rodou em algumas instalações antes de existir um
+// jeito confiável de reconhecer a Dra. Leticia, deixando o selo "Responsável técnica" preso
+// em outra dentista (ex.: quem criou o primeiro orçamento). Isso fazia o rodapé do PDF
+// puxar o nome errado. Esta correção roda uma única vez e força o selo de volta para quem
+// se chama Leticia — a responsável técnica oficial da clínica — mesmo que outra pessoa já
+// estivesse marcada. Se ninguém corresponder ao nome, não mexe em nada.
+(function corrigirRespTecnicaLeticiaV2(){
+  if(carregarLS('sk3-resp-tecnica-v2', false)) return;
+  salvarLS('sk3-resp-tecnica-v2', true);
+  const alvo = equipe.find(e=>typeof e!=='string' && e.cargoId==='cg_dentista' && _normalizarNome(e.nome).includes('leticia'));
+  if(alvo && !alvo.respTecnico){
     equipe.forEach(e=>{ if(typeof e!=='string') e.respTecnico=false; });
     alvo.respTecnico=true;
     salvarLS('sk3-equipe', equipe);
@@ -11332,7 +11352,7 @@ function abrirModalProcOrc(){
         <input type="text" inputmode="decimal" id="proc-orc-valor" placeholder="0,00" oninput="_orcMascaraValorInput(this)">
       </div>
       <div class="fl" style="flex:1">
-        <label>Profissional</label>
+        <label>Profissional *</label>
         <select id="proc-orc-dentista" style="font-size:12px">
           <option value="">— Profissional —</option>
           ${_dentistasDisponiveis().map(d=>`<option value="${esc(d.nome)}">${esc(d.label)}</option>`).join('')}
@@ -11513,6 +11533,7 @@ function confirmarProcOrc(){
   const nome=_orcProcSelecionado?_orcProcSelecionado.nome:(busca?busca.value:'');
   if(!nome||!nome.trim()){ alert('Selecione ou informe o nome do procedimento.'); return; }
   const dentista=(document.getElementById('proc-orc-dentista')||{}).value||'';
+  if(!dentista){ alert('Selecione o profissional responsável pelo procedimento.'); return; }
   const valor=_parseMoeda((document.getElementById('proc-orc-valor')||{}).value);
   const tabelaSelEl=document.getElementById('proc-orc-tabela');
   const tabelaIdSel=tabelaSelEl?tabelaSelEl.value:(_tbTabelas()[0]||{}).id;
@@ -12371,13 +12392,13 @@ function _aprovRenderItensProf(){
     ${_orcItens.map((it,idx)=>{
       const dentesTxt = it.dentes&&it.dentes.length?' ('+it.dentes.join(', ')+')':'';
       const valorTxt=(parseFloat(it.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
-      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r6)">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:12.5px;font-weight:500;color:var(--tx)">${esc(it.proc||'—')}${esc(dentesTxt)}</div>
+      return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r6)">
+        <div style="flex:1 1 200px;min-width:140px">
+          <div style="font-size:12.5px;font-weight:500;color:var(--tx);word-break:break-word">${esc(it.proc||'—')}${esc(dentesTxt)}</div>
           <div style="font-size:11px;color:var(--tx3)">R$ ${valorTxt}</div>
         </div>
         <select onchange="_aprovChangeItemDentista(${idx},this.value)"
-          style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);font-family:var(--font);min-width:170px;flex-shrink:0">
+          style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);font-family:var(--font);flex:1 1 170px;min-width:170px;max-width:100%">
           <option value="">— Profissional —</option>
           ${dentistas.map(d=>`<option value="${esc(d.nome)}" ${it.dentista===d.nome?' selected':''}>${esc(d.label)}</option>`).join('')}
         </select>
@@ -21106,6 +21127,26 @@ let camposAgendamento = carregarLS('sk3-campos-agm', [
   {id:'agm_extra_origem', label:'Origem do paciente', tipo:'lista', obrigatorio:false, locked:false, ativo:true,
    opcoes:['Indicação','Google','Instagram','Evento','Outro']},
 ]);
+
+// Migração: garante que o campo de lista "Procedimento" (configurado em Configurações →
+// Campos do agendamento) sempre tenha a opção "Endodontia" e mantém as opções em ordem
+// alfabética. Roda uma vez a cada carregamento; só grava se algo realmente mudou.
+(function _migrarOpcoesProcedimentoAgm(){
+  let mudou=false;
+  camposAgendamento.forEach(c=>{
+    if(c.tipo==='lista' && (c.label||'').toLowerCase().includes('procedimento')){
+      const opcoes = c.opcoes||[];
+      if(!opcoes.some(o=>String(o).trim().toLowerCase()==='endodontia')){
+        opcoes.push('Endodontia');
+        mudou=true;
+      }
+      const ordenadas=[...opcoes].sort((a,b)=>String(a).localeCompare(String(b),'pt-BR'));
+      if(JSON.stringify(ordenadas)!==JSON.stringify(opcoes)) mudou=true;
+      c.opcoes=ordenadas;
+    }
+  });
+  if(mudou) salvarLS('sk3-campos-agm', camposAgendamento);
+})();
 
 let camposEvento = carregarLS('sk3-campos-evt', []);
 
