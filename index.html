@@ -981,7 +981,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <div class="layout">
 <nav class="sidebar">
   <div class="slb-label">Início</div>
-  <button class="nav-btn on" onclick="goTo('hoje',this)"><span class="nav-ic">▣</span>Meu dia<span class="nav-badge" id="bdg-hoje" style="display:none">0</span></button>
+  <button class="nav-btn on" onclick="goTo('hoje',this)">Meu dia<span class="nav-badge" id="bdg-hoje" style="display:none">0</span></button>
   <button class="nav-btn" onclick="goTo('proximos',this)">Próximos 7 dias</button>
   <button class="nav-btn" onclick="goTo('empresa',this)">Empresa</button>
   <div class="slb-label">Pacientes</div>
@@ -992,15 +992,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <button class="nav-btn" onclick="goTo('pendencias',this)">Pendências<span class="nav-badge" id="bdg-pend" style="display:none">0</span></button>
   <div class="slb-label">Administrativo</div>
   <button class="nav-btn" onclick="goTo('financeiro',this)">Financeiro</button>
-  <button class="nav-btn" onclick="goTo('reuniao',this)">Reuniões</button>
   <button class="nav-btn" onclick="goTo('relatorios',this)">Relatórios</button>
-  <div class="slb-label">Gestão</div>
-  <button class="nav-btn" onclick="goTo('dashboard',this)">Dashboard</button>
   <button class="nav-btn" onclick="goTo('planejamento',this)">Planejamento</button>
   <div class="slb-label">Sistema</div>
-  <button class="nav-btn" onclick="goTo('melhorias',this)"><span class="nav-ic">🛠</span>Melhorias para o sistema</button>
+  <button class="nav-btn" onclick="goTo('reuniao',this)">Reuniões</button>
+  <button class="nav-btn" onclick="goTo('melhorias',this)">Melhorias para o sistema</button>
   <button class="nav-btn" onclick="goTo('rituais',this)">Rituais</button>
-  <button class="nav-btn" id="navbtn-desmarcados" onclick="goTo('desmarcados',this)">Pacientes desmarcados<span class="nav-badge" id="bdg-desmarcados" style="display:none">0</span></button>
 </nav>
 
 <nav class="subnav" id="financeiro-subnav">
@@ -2146,16 +2143,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <input type="date" id="pend-filtro-ate" onchange="renderPendencias()" title="Até" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6)">
   </div>
   <div class="card" id="pend-lista-wrap"></div>
-</div>
-
-<!-- PACIENTES DESMARCADOS -->
-<div id="sec-desmarcados" class="sec">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-    <div class="pg-title">Pacientes desmarcados</div>
-  </div>
-  <div class="pg-desc">Pacientes que desmarcaram e ainda não tiveram um desfecho de recontato registrado — vale para todos os profissionais da agenda, sem exceção</div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="desm-filtros"></div>
-  <div class="card" id="desm-lista-wrap"></div>
 </div>
 
 <!-- MELHORIAS PARA O SISTEMA -->
@@ -4108,17 +4095,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
-<div id="sec-dashboard" class="sec">
-  <div class="pg-title">Dashboard</div>
-  <div class="pg-desc">Visão consolidada dos indicadores de check-in de toda a equipe</div>
-  <div style="overflow-x:auto;margin-top:4px">
-    <table id="db-table" style="border-collapse:collapse;font-size:12px;width:100%;min-width:700px">
-      <thead id="db-thead"></thead>
-      <tbody id="db-tbody"></tbody>
-    </table>
-  </div>
-</div>
-
 <!-- SEÇÃO RELATÓRIOS -->
 <div id="sec-relatorios" class="sec">
   <div class="pg-title">Relatórios</div>
@@ -5416,9 +5392,7 @@ const PERM_SECAO = {
   rituais:   'rituais_ver',
   pendencias:'pendencias_ver',
   lembretes: 'agenda_ver',
-  desmarcados:'agenda_ver',
   financeiro:['fin_fluxo_ver','fin_pagar_ver','fin_folha_ver','fin_receber_ver','fin_comissao_ver','fin_recibos_ver'],
-  dashboard: 'dashboard_ver',
   relatorios:'relatorios_ver',
   empresa:   ['empresa_dados_ver','empresa_anexos_ver'],
 };
@@ -5460,9 +5434,7 @@ function aplicarPermissoesNav(){
     rituais:   'rituais_ver',
     pendencias:'pendencias_ver',
     lembretes: 'agenda_ver',
-    desmarcados:'agenda_ver',
     financeiro:['fin_fluxo_ver','fin_pagar_ver','fin_folha_ver','fin_receber_ver','fin_comissao_ver','fin_recibos_ver'],
-    dashboard: 'dashboard_ver',
     relatorios:'relatorios_ver',
     empresa:   ['empresa_dados_ver','empresa_anexos_ver'],
     config: ['cfg_usuarios_ver','cfg_cargos_ver','cfg_equipe_ver','cfg_reunioes_ver',
@@ -7850,10 +7822,8 @@ function goTo(id, btn){
   if(id==='reuniao') renderReunioes();
   if(id==='pendencias') renderPendencias();
   if(id==='lembretes') renderLembretes();
-  if(id==='desmarcados') renderDesmarcados();
   if(id==='melhorias') renderMelhorias();
   if(id==='financeiro') renderFinanceiro();
-  if(id==='dashboard') renderDashboard();
   if(id==='relatorios') renderRelatorios();
   if(id==='empresa') renderEmpresaModulo();
   if(id==='config'){
