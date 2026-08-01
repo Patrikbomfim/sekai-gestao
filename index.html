@@ -10426,14 +10426,17 @@ function renderOrcamentosGeral(){
     c.classList.toggle('on', (c.dataset.status||'')===_ogFiltroStatus);
   });
 
-  // Card "Indicados" — conta orçamentos aprovados com indicação preenchida,
+  // Botão "Indicados" — conta orçamentos aprovados com indicação preenchida,
   // dentro do mesmo período/profissional já filtrado acima.
   {
     const indicados = baseFiltrada.filter(o=>o.indicacao && o.indicacao.nome);
-    const elVal=document.getElementById('og-val-indicados');
-    if(elVal) elVal.textContent = indicados.length;
-    const card=document.getElementById('og-card-indicados');
-    if(card) card.classList.toggle('on', _ogFiltroIndicados);
+    const btn=document.getElementById('og-btn-indicados');
+    if(btn){
+      btn.textContent = indicados.length;
+      btn.style.borderColor = _ogFiltroIndicados ? 'var(--ac)' : 'var(--border)';
+      btn.style.background = _ogFiltroIndicados ? 'var(--acl)' : 'var(--surface)';
+      btn.style.color = _ogFiltroIndicados ? 'var(--ac)' : 'var(--tx)';
+    }
   }
 
   // ── Ranking por profissional: taxa de conversão + valor aprovado ─────────
@@ -24356,9 +24359,10 @@ function relRenderFiltrosAba(){
           <option value="reprovado">Reprovado</option>
         </select>
       </div>
-      <div class="fin-card fin-card-clickable" id="og-card-indicados" style="min-width:150px;padding:8px 14px" onclick="ogToggleIndicados()">
-        <div class="fin-card-label" style="font-size:10px">👥 Indicados</div>
-        <div class="fin-card-value" id="og-val-indicados" style="font-size:16px">0</div>
+      <div class="fl" style="width:110px">
+        <label>Indicados</label>
+        <button type="button" id="og-btn-indicados" onclick="ogToggleIndicados()"
+          style="height:34px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);color:var(--tx);background:var(--surface);cursor:pointer;text-align:left;width:100%;font-weight:700">0</button>
       </div>
     `;
     // Marca o select de profissional como já populado (dataset.pop) pra
@@ -25254,8 +25258,13 @@ function _relRenderPacientesAlta(wrap, de, ate){
     ({de,ate}=_relPeriodoDatas());
   }
   const pacFiltro=_relFiltros.pacientes_alta.paciente;
+  // Compara pelo LABEL da situação (não por um id fixo "alta") — a lista de situações
+  // é editável pelo usuário, então o id real da situação "Alta" pode não ser
+  // literalmente "alta". Isso evita que a aba fique vazia por causa de uma
+  // customização na lista de situações.
+  const eAlta = sid => (typeof getSituacaoLabel==='function' ? (getSituacaoLabel(sid)||'') : String(sid||'')).trim().toLowerCase()==='alta';
   const eventos=(typeof agendamentos!=='undefined'?agendamentos:[]).filter(a=>{
-    if(a.situacaoRegistrada!=='alta') return false;
+    if(!eAlta(a.situacaoRegistrada)) return false;
     if((a.data||'')<de || (a.data||'')>ate) return false;
     if(pacFiltro && String(a.pacienteId)!==String(pacFiltro.id)) return false;
     return true;
