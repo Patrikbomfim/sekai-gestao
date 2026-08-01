@@ -2349,27 +2349,27 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div style="font-size:12.5px;color:var(--tx2);margin-bottom:16px">Valores fixos e percentuais de comissão de cada colaboradora, usados no cálculo de remuneração dos painéis individuais.</div>
 
       <div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:8px">Remuneração fixa</div>
-      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Beatriz (secretária)</label>
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px"><span id="plan-ref-nome-beatriz">Beatriz</span> (secretária)</label>
       <input id="plan-ref-fixo-beatriz" type="number" step="50" min="0" placeholder="Ex: 2300" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:14px" onblur="_planSalvarReferencias()">
 
-      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Fernanda (gestora + dentista)</label>
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px"><span id="plan-ref-nome-fernanda">Fernanda</span> (gestora + dentista)</label>
       <input id="plan-ref-fixo-fernanda" type="number" step="50" min="0" placeholder="Ex: 1500" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:14px" onblur="_planSalvarReferencias()">
 
-      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Ingrid (auxiliar-dentista)</label>
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px"><span id="plan-ref-nome-ingrid">Ingrid</span> (auxiliar-dentista)</label>
       <input id="plan-ref-fixo-ingrid" type="number" step="50" min="0" placeholder="Ex: 2500" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:18px" onblur="_planSalvarReferencias()">
 
       <div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:8px;padding-top:14px;border-top:1px solid var(--border)">Comissões</div>
-      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">% comissão sobre faturamento — Beatriz</label>
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">% comissão sobre faturamento — <span id="plan-ref-nome-com-beatriz">Beatriz</span></label>
       <input id="plan-ref-com-beatriz-fat" type="number" step="0.1" min="0" max="100" placeholder="Ex: 3,5" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:14px" onblur="_planSalvarReferencias()">
 
-      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">% comissão sobre lucro — Fernanda</label>
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">% comissão sobre lucro — <span id="plan-ref-nome-com-fernanda">Fernanda</span></label>
       <input id="plan-ref-com-fernanda-lucro" type="number" step="0.1" min="0" max="100" placeholder="Ex: 15" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:14px" onblur="_planSalvarReferencias()">
 
       <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Porcentagem comissão de indicação</label>
       <input id="plan-ref-com-indicacao" type="number" step="0.1" min="0" max="100" placeholder="Ex: 3" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:18px" onblur="_planSalvarReferencias()">
 
       <div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:8px;padding-top:14px;border-top:1px solid var(--border)">Bônus por agendamento</div>
-      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Valor por primeira consulta agendada (Beatriz)</label>
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Valor por primeira consulta agendada (<span id="plan-ref-nome-bonus-beatriz">Beatriz</span>)</label>
       <input id="plan-ref-bonus-agendamento" type="number" step="1" min="0" placeholder="Ex: 20" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font)" onblur="_planSalvarReferencias()">
     </div>
   </div>
@@ -5723,6 +5723,19 @@ function _planEquipeOptionsHTML(uidSelecionado){
     return `<option value="${esc(e.usuarioId)}" ${e.usuarioId===uidSelecionado?'selected':''}>${esc(label)}</option>`;
   }).join('');
 }
+// Atualiza os rótulos da seção Remuneração/Comissões pra mostrar o nome real do
+// usuário vinculado a cada painel (Beatriz/Fernanda/Ingrid), em vez de um texto
+// fixo — assim o valor cadastrado fica claramente ligado à pessoa escolhida em
+// "Vínculo de painéis com usuários", não a um nome hardcoded.
+function _planAtualizarLabelsReferencias(){
+  const setTxt=(id,chave,fallback)=>{ const el=document.getElementById(id); if(el) el.textContent=_planNomeVinculado(chave,fallback); };
+  setTxt('plan-ref-nome-beatriz','beatriz','Beatriz');
+  setTxt('plan-ref-nome-fernanda','fernanda','Fernanda');
+  setTxt('plan-ref-nome-ingrid','ingrid','Ingrid');
+  setTxt('plan-ref-nome-com-beatriz','beatriz','Beatriz');
+  setTxt('plan-ref-nome-com-fernanda','fernanda','Fernanda');
+  setTxt('plan-ref-nome-bonus-beatriz','beatriz','Beatriz');
+}
 function _planSalvarReferencias(){
   const v=id=>{ const el=document.getElementById(id); return el?el.value:''; };
   const piso=parseFloat(v('plan-ref-piso'))||0;
@@ -5755,6 +5768,7 @@ function _planSalvarReferencias(){
     }
   });
   // Recalcula na hora os painéis que dependem dessas referências, caso estejam abertos
+  _planAtualizarLabelsReferencias();
   if(typeof _planPatrikPeriodoMudou==='function') _planPatrikPeriodoMudou();
   if(typeof _planAtualizarPainelBeatriz==='function') _planAtualizarPainelBeatriz();
   if(typeof _planAtualizarPainelIngrid==='function') _planAtualizarPainelIngrid();
@@ -5796,6 +5810,7 @@ function _planCarregarReferencias(){
     const el=document.getElementById('plan-ref-vinculo-'+chave);
     if(el) el.innerHTML=_planEquipeOptionsHTML(ref.vinculoPaineis[chave]);
   });
+  _planAtualizarLabelsReferencias();
 }
 
 // Minutos de horário útil disponíveis num único dia da semana (0=domingo … 6=sábado),
