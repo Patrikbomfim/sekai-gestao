@@ -23960,9 +23960,9 @@ let _relAbaAtual = 'proc_realizados';
 let _relPeriodoTipo = 'mes_atual';
 let _relFiltros = {
   agendamentos: { paciente: null },
-  proc_realizados: { profissionais: [] },
-  proc_a_realizar: { profissionais: [], semAgenda: false },
-  primeiras_consultas: { paciente: null },
+  proc_realizados: { profissionais: [], cardSelecionado: 'total' },
+  proc_a_realizar: { profCard: null },
+  primeiras_consultas: { paciente: null, origemCard: null },
   pacientes_indicados: { pacienteIndicado: null, indicador: null },
   pacientes_alta: { paciente: null },
   orcamentos: { profissional: '' },
@@ -24004,6 +24004,9 @@ function relRenderTabs(){
 
 function relSelecionarAba(id){
   _relAbaAtual=id;
+  // "Procedimentos realizados" sempre abre com o card "Total" ativo (não guarda a
+  // seleção de card entre visitas à aba — só o filtro de busca por profissional persiste).
+  if(id==='proc_realizados') _relFiltros.proc_realizados.cardSelecionado='total';
   renderRelatorios();
 }
 
@@ -24066,9 +24069,9 @@ function _relPeriodoDatas(){
 function relFiltroVazio(aba){
   const map={
     agendamentos:{paciente:null},
-    proc_realizados:{profissionais:[]},
-    proc_a_realizar:{profissionais:[], semAgenda:false},
-    primeiras_consultas:{paciente:null},
+    proc_realizados:{profissionais:[], cardSelecionado:'total'},
+    proc_a_realizar:{profCard:null},
+    primeiras_consultas:{paciente:null, origemCard:null},
     pacientes_indicados:{pacienteIndicado:null, indicador:null},
     pacientes_alta:{paciente:null},
     orcamentos:{profissional:''},
@@ -24106,21 +24109,25 @@ function relRenderFiltrosAba(){
     return;
   }
 
-  if(aba==='proc_realizados' || aba==='proc_a_realizar'){
-    const chave=aba+'Prof';
-    const selecionados=_relFiltros[aba].profissionais;
-    const btnLimpar = aba==='proc_a_realizar'
-      ? `<button class="btn btn-ghost btn-sm" style="height:34px" onclick="_relProcARealizarLimparFiltro()">Limpar filtro</button>`
-      : '';
+  if(aba==='proc_realizados'){
+    const chave='proc_realizadosProf';
+    const selecionados=_relFiltros.proc_realizados.profissionais;
     wrap.innerHTML=`<div class="fl" style="min-width:260px;position:relative">
       <label>Profissional</label>
       <input type="text" id="rel-ac-${chave}" placeholder="Buscar profissional..." autocomplete="off"
-        oninput="_relProfBuscar('${aba}', this.value)"
-        onfocus="_relProfBuscar('${aba}', '')"
+        oninput="_relProfBuscar('proc_realizados', this.value)"
+        onfocus="_relProfBuscar('proc_realizados', '')"
         onblur="setTimeout(()=>{const dd=document.getElementById('rel-ac-${chave}-dd'); if(dd)dd.classList.remove('open')},160)">
       <div id="rel-ac-${chave}-dd" class="fin-ac-dropdown"></div>
-      ${selecionados.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-width:320px">${selecionados.map(n=>`<span style="display:inline-flex;align-items:center;gap:5px;background:var(--acl);color:var(--ac);font-size:12px;font-weight:600;padding:3px 8px 3px 10px;border-radius:20px">${esc(n)}<span onmousedown="_relProfRemover('${aba}','${esc(n).replace(/'/g,"\\'")}')" style="cursor:pointer;font-weight:700">×</span></span>`).join('')}</div>`:''}
-    </div>${btnLimpar}`;
+      ${selecionados.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-width:320px">${selecionados.map(n=>`<span style="display:inline-flex;align-items:center;gap:5px;background:var(--acl);color:var(--ac);font-size:12px;font-weight:600;padding:3px 8px 3px 10px;border-radius:20px">${esc(n)}<span onmousedown="_relProfRemover('proc_realizados','${esc(n).replace(/'/g,"\\'")}')" style="cursor:pointer;font-weight:700">×</span></span>`).join('')}</div>`:''}
+    </div><button class="btn btn-ghost btn-sm" style="height:34px" onclick="_relProcRealizadosLimparFiltro()">Limpar filtro</button>`;
+    return;
+  }
+
+  // proc_a_realizar: sem filtro na barra — a seleção por profissional agora é feita
+  // pelos próprios cards clicáveis "Procedimentos sem agenda" no conteúdo da aba.
+  if(aba==='proc_a_realizar'){
+    wrap.innerHTML='';
     return;
   }
 
@@ -24292,10 +24299,11 @@ function _relProfRemover(aba, nome){
   relRenderConteudo();
 }
 
-// Limpa só o filtro de profissional da aba Procedimentos a realizar (não mexe
-// no card "Procedimentos sem agenda", que é um filtro à parte).
-function _relProcARealizarLimparFiltro(){
-  _relFiltros.proc_a_realizar.profissionais=[];
+// Limpa a busca por profissional da aba Procedimentos realizados e volta o
+// card selecionado para "Total".
+function _relProcRealizadosLimparFiltro(){
+  _relFiltros.proc_realizados.profissionais=[];
+  _relFiltros.proc_realizados.cardSelecionado='total';
   relRenderFiltrosAba();
   relRenderConteudo();
 }
@@ -24436,7 +24444,18 @@ function fecharModalEfTitulo(){
   relRenderConteudo();
 }
 
+// Na primeira vez que a aba é aberta nesta sessão, força o período pra "Todos os
+// períodos" — o filtro de período global padrão é "Mês atual", o que escondia
+// títulos pendentes de emissão liquidados em meses anteriores (parecia que tinham
+// "sumido" do relatório, quando na verdade só estavam fora do período selecionado).
+let _relEfIniciado=false;
 function _relRenderEmissaoFiscal(wrap, de, ate){
+  if(!_relEfIniciado){
+    _relEfIniciado=true;
+    _relPeriodoTipo='todos';
+    relRenderFiltroPeriodo();
+    ({de,ate}=_relPeriodoDatas());
+  }
   const base=_relEfBase(de, ate);
 
   let vNF=0, vRecibo=0, vSem=0, vPend=0, nNF=0, nRecibo=0, nSem=0, nPend=0;
@@ -24672,18 +24691,56 @@ function _relRenderAgendamentos(wrap, de, ate){
 
 // Procedimentos realizados: itens do plano de tratamento com executado:true,
 // pela data de execução — mesma fonte do módulo Financeiro → Comissão Dentistas.
+function _relProcRealizadosClicarCard(chave){
+  _relFiltros.proc_realizados.cardSelecionado = chave;
+  relRenderConteudo();
+}
+
 function _relRenderProcRealizados(wrap, de, ate){
   const profs=_relFiltros.proc_realizados.profissionais;
-  const itens=_finItensExecutados().filter(i=>{
+  const itensBase=_finItensExecutados().filter(i=>{
     const d=i.execData||'';
     if(d<de || d>ate) return false;
     if(profs.length && !profs.includes(i.execProfissional)) return false;
     return true;
   }).sort((a,b)=> (b.execData||'').localeCompare(a.execData||''));
 
-  if(!itens.length) return _relTabelaVazia(wrap, 'Nenhum procedimento realizado nesse período/filtro.');
+  if(!itensBase.length) return _relTabelaVazia(wrap, 'Nenhum procedimento realizado nesse período/filtro.');
 
-  const total=itens.reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+  const totalGeral=itensBase.reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+  const ticketGeral = itensBase.length ? totalGeral/itensBase.length : 0;
+
+  const porProf={};
+  itensBase.forEach(i=>{
+    const nome=i.execProfissional||'Sem profissional definido';
+    if(!porProf[nome]) porProf[nome]={nome, total:0, count:0};
+    porProf[nome].total+=(parseFloat(i.valor)||0);
+    porProf[nome].count++;
+  });
+  const cardsProf=Object.values(porProf).map(c=>({...c, ticket:c.count?c.total/c.count:0})).sort((a,b)=>b.total-a.total);
+
+  const cardSel=_relFiltros.proc_realizados.cardSelecionado||'total';
+  const onStyle='box-shadow:0 0 0 2px var(--ac) inset';
+  const cardsHtml=`<div class="fin-cards-row" style="margin-bottom:14px;flex-wrap:wrap">
+    <div class="fin-card fin-card-blue fin-card-clickable" style="${cardSel==='total'?onStyle:''}" onclick="_relProcRealizadosClicarCard('total')">
+      <div class="fin-card-label">Total</div>
+      <div class="fin-card-value">${_finFmt(totalGeral)}</div>
+      <div class="fin-card-sub">${itensBase.length} procedimento(s) · ticket médio ${_finFmt(ticketGeral)}</div>
+    </div>
+    ${cardsProf.map(c=>`<div class="fin-card fin-card-clickable" style="${cardSel===c.nome?onStyle:''}" onclick="_relProcRealizadosClicarCard('${esc(c.nome).replace(/'/g,"\\'")}')">
+      <div class="fin-card-label">${esc(c.nome)}</div>
+      <div class="fin-card-value">${_finFmt(c.total)}</div>
+      <div class="fin-card-sub">${c.count} procedimento(s) · ticket médio ${_finFmt(c.ticket)}</div>
+    </div>`).join('')}
+  </div>`;
+
+  const itens = cardSel==='total' ? itensBase : itensBase.filter(i=>(i.execProfissional||'Sem profissional definido')===cardSel);
+
+  if(!itens.length){
+    wrap.innerHTML=cardsHtml+`<div class="card" style="padding:0"><div class="fin-empty">Nenhum procedimento realizado para esse profissional nesse período.</div></div>`;
+    return;
+  }
+
   const rows=itens.map(i=>`<tr>
     <td>${_finFmtData(i.execData)}</td>
     <td><a href="javascript:void(0)" onclick="relAbrirPaciente('${i.pacId}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(i.pacNome)}</a></td>
@@ -24692,10 +24749,7 @@ function _relRenderProcRealizados(wrap, de, ate){
     <td class="fin-td-valor">${_finFmt(i.valor)}</td>
   </tr>`).join('');
 
-  wrap.innerHTML=`<div class="card" style="margin-bottom:14px;display:flex;gap:24px">
-      <div><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3)">Total no período</div><div style="font-size:18px;font-weight:700">${_finFmt(total)}</div></div>
-      <div><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3)">Procedimentos</div><div style="font-size:18px;font-weight:700">${itens.length}</div></div>
-    </div>
+  wrap.innerHTML=cardsHtml+`
     <div class="fin-table-wrap"><table class="fin-table">
       <thead><tr><th>Data</th><th>Paciente</th><th>Procedimento</th><th>Profissional</th><th style="text-align:right">Valor</th></tr></thead>
       <tbody>${rows}</tbody>
@@ -24740,43 +24794,53 @@ function _relItensNaoExecutados(){
   return out;
 }
 
-function _relProcARealizarClicarSemAgenda(){
-  _relFiltros.proc_a_realizar.semAgenda = !_relFiltros.proc_a_realizar.semAgenda;
+// Seleciona/desmarca o card de um profissional específico (baseado nos procedimentos
+// SEM agenda dele). Selecionar "Total" (profNome null) volta a mostrar todos os itens.
+function _relProcARealizarClicarProf(profNome){
+  const atual=_relFiltros.proc_a_realizar.profCard;
+  _relFiltros.proc_a_realizar.profCard = (atual===profNome) ? null : profNome;
   relRenderConteudo();
 }
 
 function _relRenderProcARealizar(wrap, de, ate){
-  const profs=_relFiltros.proc_a_realizar.profissionais;
   const todosItens=_relItensNaoExecutados().filter(i=>{
     const d=i.dataAprovacao||'';
     if(d<de || d>ate) return false;
-    if(profs.length && !profs.includes(i.profissional||'')) return false;
     return true;
   }).sort((a,b)=> (b.dataAprovacao||'').localeCompare(a.dataAprovacao||''));
 
   const totalGeral=todosItens.reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
   const semAgendaItens=todosItens.filter(i=>!i.dataAgendamento);
-  const totalSemAgenda=semAgendaItens.reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
 
-  const semAgendaAtivo=_relFiltros.proc_a_realizar.semAgenda;
-  const itens = semAgendaAtivo ? semAgendaItens : todosItens;
+  // Agrupa os itens SEM agenda por profissional — só entram profissionais que
+  // realmente têm ao menos 1 procedimento sem agenda (nada de cards zerados).
+  const porProf={};
+  semAgendaItens.forEach(i=>{
+    const nome=i.profissional||'Sem profissional definido';
+    if(!porProf[nome]) porProf[nome]={nome, total:0, count:0};
+    porProf[nome].total+=(parseFloat(i.valor)||0);
+    porProf[nome].count++;
+  });
+  const cardsProf=Object.values(porProf).sort((a,b)=>b.total-a.total);
 
-  const cardOn=semAgendaAtivo?'box-shadow:0 0 0 2px var(--ac) inset':'';
-  const cardsHtml=`<div class="fin-cards-row" style="margin-bottom:14px">
-    <div class="fin-card fin-card-blue fin-card-clickable" style="${!semAgendaAtivo?'box-shadow:0 0 0 2px var(--ac) inset':''}" onclick="${semAgendaAtivo?'_relProcARealizarClicarSemAgenda()':''}">
+  const profCard=_relFiltros.proc_a_realizar.profCard;
+  const itens = profCard ? semAgendaItens.filter(i=>(i.profissional||'Sem profissional definido')===profCard) : todosItens;
+
+  const cardsHtml=`<div class="fin-cards-row" style="margin-bottom:14px;flex-wrap:wrap">
+    <div class="fin-card fin-card-blue fin-card-clickable" style="${!profCard?'box-shadow:0 0 0 2px var(--ac) inset':''}" onclick="${profCard?"_relProcARealizarClicarProf(null)":''}">
       <div class="fin-card-label">Total a realizar</div>
       <div class="fin-card-value">${_finFmt(totalGeral)}</div>
       <div class="fin-card-sub">${todosItens.length} procedimento(s)</div>
     </div>
-    <div class="fin-card fin-card-clickable" style="${cardOn}" onclick="_relProcARealizarClicarSemAgenda()">
-      <div class="fin-card-label">Procedimentos sem agenda</div>
-      <div class="fin-card-value">${_finFmt(totalSemAgenda)}</div>
-      <div class="fin-card-sub">${semAgendaItens.length} procedimento(s) · ainda sem data agendada · clique para filtrar</div>
-    </div>
+    ${cardsProf.map(c=>`<div class="fin-card fin-card-clickable" style="${profCard===c.nome?'box-shadow:0 0 0 2px var(--ac) inset':''}" onclick="_relProcARealizarClicarProf('${esc(c.nome).replace(/'/g,"\\'")}')">
+      <div class="fin-card-label">${esc(c.nome)}</div>
+      <div class="fin-card-value">${_finFmt(c.total)}</div>
+      <div class="fin-card-sub">${c.count} procedimento(s) sem agenda · clique para filtrar</div>
+    </div>`).join('')}
   </div>`;
 
   if(!itens.length){
-    wrap.innerHTML=cardsHtml+`<div class="card" style="padding:0"><div class="fin-empty">${esc(semAgendaAtivo?'Nenhum procedimento sem agenda nesse período/filtro.':'Nenhum procedimento a realizar nesse período/filtro.')}</div></div>`;
+    wrap.innerHTML=cardsHtml+`<div class="card" style="padding:0"><div class="fin-empty">${esc(profCard?'Nenhum procedimento sem agenda para esse profissional nesse período.':'Nenhum procedimento a realizar nesse período.')}</div></div>`;
     return;
   }
 
@@ -24797,11 +24861,30 @@ function _relRenderProcARealizar(wrap, de, ate){
     </table></div>`;
 }
 
+// As 6 origens configuráveis no agendamento (ver select #agm-origem).
+const REL_ORIGENS_CONSULTA = ['Instagram','Facebook','Google','Radio','Indicação','Outro'];
+
+function _relPcClicarOrigem(origem){
+  const atual=_relFiltros.primeiras_consultas.origemCard;
+  _relFiltros.primeiras_consultas.origemCard = (atual===origem) ? null : origem;
+  relRenderConteudo();
+}
+
+// "Procedimento executado" resultante de uma primeira consulta: o primeiro item do
+// plano de tratamento executado para aquele paciente a partir da data da consulta —
+// ou seja, o que a consulta efetivamente resultou em termos de tratamento vendido.
+function _relPcProcedimentoExecutado(a){
+  const execs=_finItensExecutados().filter(i=>String(i.pacId)===String(a.pacienteId) && (i.execData||'')>=(a.data||''));
+  if(!execs.length) return null;
+  execs.sort((x,y)=>(x.execData||'').localeCompare(y.execData||''));
+  return execs[0].proc||null;
+}
+
 // Primeiras consultas: agendamentos com o checkpoint "Primeira consulta? Sim",
 // exclui cancelados — mesma fonte usada no Painel Geral (Planejamento).
 function _relRenderPrimeirasConsultas(wrap, de, ate){
   const pacFiltro=_relFiltros.primeiras_consultas.paciente;
-  const lista=(typeof agendamentos!=='undefined'?agendamentos:[]).filter(a=>{
+  const listaTodas=(typeof agendamentos!=='undefined'?agendamentos:[]).filter(a=>{
     if(a.status==='cancelado') return false;
     if(a.primeiraConsulta!=='sim') return false;
     if(a.data<de || a.data>ate) return false;
@@ -24809,7 +24892,57 @@ function _relRenderPrimeirasConsultas(wrap, de, ate){
     return true;
   }).sort((a,b)=> (b.data||'').localeCompare(a.data||''));
 
-  if(!lista.length) return _relTabelaVazia(wrap, 'Nenhuma primeira consulta nesse período/filtro.');
+  if(!listaTodas.length) return _relTabelaVazia(wrap, 'Nenhuma primeira consulta nesse período/filtro.');
+
+  // Cards por origem — só aparecem as origens que realmente têm ao menos 1
+  // agendamento no período (nada de card mostrando "0").
+  const contagemOrigem={};
+  listaTodas.forEach(a=>{
+    const o=a.origemPaciente||'';
+    if(!o) return;
+    contagemOrigem[o]=(contagemOrigem[o]||0)+1;
+  });
+
+  const origemCard=_relFiltros.primeiras_consultas.origemCard;
+  const onStyle='box-shadow:0 0 0 2px var(--ac) inset';
+  const cardsHtml=`<div class="fin-cards-row" style="margin-bottom:14px;flex-wrap:wrap">
+    <div class="fin-card fin-card-blue fin-card-clickable" style="${!origemCard?onStyle:''}" onclick="_relPcClicarOrigem(null)">
+      <div class="fin-card-label">Todas</div>
+      <div class="fin-card-value">${listaTodas.length}</div>
+      <div class="fin-card-sub">1ª consulta(s) no período</div>
+    </div>
+    ${REL_ORIGENS_CONSULTA.filter(o=>contagemOrigem[o]).map(o=>`<div class="fin-card fin-card-clickable" style="${origemCard===o?onStyle:''}" onclick="_relPcClicarOrigem('${o}')">
+      <div class="fin-card-label">${esc(o)}</div>
+      <div class="fin-card-value">${contagemOrigem[o]}</div>
+      <div class="fin-card-sub">1ª consulta(s) · clique para filtrar</div>
+    </div>`).join('')}
+  </div>`;
+
+  const lista = origemCard ? listaTodas.filter(a=>a.origemPaciente===origemCard) : listaTodas;
+
+  // Gráfico de barras horizontais: procedimentos resultantes destas primeiras
+  // consultas (o que foi de fato executado depois, não o que estava agendado) —
+  // mostra quais procedimentos mais vêm de primeira consulta na clínica.
+  const contagemProc={};
+  listaTodas.forEach(a=>{
+    const proc=_relPcProcedimentoExecutado(a) || 'Ainda sem procedimento executado';
+    contagemProc[proc]=(contagemProc[proc]||0)+1;
+  });
+  const rankingProc=Object.entries(contagemProc).sort((a,b)=>b[1]-a[1]);
+  const maxProc=rankingProc.length?rankingProc[0][1]:1;
+  const chartHtml = rankingProc.length ? `<div class="card" style="margin-bottom:14px">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.05em;margin-bottom:10px">Procedimentos mais buscados (a partir de 1ª consulta)</div>
+    ${rankingProc.map(([proc,count])=>`<div class="og-rank-row">
+      <div class="og-rank-nome" style="flex:0 0 240px">${esc(proc)}</div>
+      <div class="og-rank-bar-wrap"><div class="og-rank-bar-fill" style="width:${(count/maxProc*100).toFixed(0)}%;background:var(--ac)"></div></div>
+      <div class="og-rank-pct">${count}</div>
+    </div>`).join('')}
+  </div>` : '';
+
+  if(!lista.length){
+    wrap.innerHTML=cardsHtml+chartHtml+`<div class="card" style="padding:0"><div class="fin-empty">Nenhuma primeira consulta com essa origem nesse período.</div></div>`;
+    return;
+  }
 
   const rows=lista.map(a=>{
     const prof=(typeof usuarios!=='undefined'?usuarios:[]).find(u=>u.id===a.usuarioId);
@@ -24819,16 +24952,15 @@ function _relRenderPrimeirasConsultas(wrap, de, ate){
       <td>${a.pacienteId?`<a href="javascript:void(0)" onclick="relAbrirPaciente('${a.pacienteId}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(a.pacienteNome)}</a>`:esc(a.pacienteNome)||'—'}</td>
       <td>${esc(prof?prof.nome:'—')}</td>
       <td>${esc(sala?sala.nome:'—')}</td>
+      <td>${esc(a.origemPaciente)||'—'}</td>
       <td>${esc(a.procedimento)||'—'}</td>
       <td>${esc(a.status)||'—'}</td>
     </tr>`;
   }).join('');
 
-  wrap.innerHTML=`<div class="card" style="margin-bottom:14px">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3)">1ª consultas no período</div><div style="font-size:18px;font-weight:700">${lista.length}</div>
-    </div>
+  wrap.innerHTML=cardsHtml+chartHtml+`
     <div class="fin-table-wrap"><table class="fin-table">
-      <thead><tr><th>Data</th><th>Paciente</th><th>Profissional</th><th>Sala</th><th>Procedimento</th><th>Status</th></tr></thead>
+      <thead><tr><th>Data</th><th>Paciente</th><th>Profissional</th><th>Sala</th><th>Origem</th><th>Procedimento agendado</th><th>Status</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`;
 }
