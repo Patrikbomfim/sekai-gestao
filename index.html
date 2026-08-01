@@ -987,7 +987,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="slb-label">Pacientes</div>
   <button class="nav-btn" id="navbtn-agenda" onclick="goTo('agenda',this)">Agenda</button>
   <button class="nav-btn" id="navbtn-pacientes" onclick="goTo('pacientes',this)">Pacientes</button>
-  <button class="nav-btn" id="navbtn-orcamentosgeral" onclick="goTo('orcamentosgeral',this)">Orçamentos</button>
   <button class="nav-btn" onclick="goTo('acoes',this)">Ações</button>
   <button class="nav-btn" onclick="goTo('lembretes',this)">Lembretes<span class="nav-badge" id="bdg-lembretes" style="display:none">0</span></button>
   <button class="nav-btn" onclick="goTo('pendencias',this)">Pendências<span class="nav-badge" id="bdg-pend" style="display:none">0</span></button>
@@ -1224,126 +1223,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 </div>
 
 <!-- ORÇAMENTOS — VISÃO GERAL (agrupa todos os orçamentos de todos os pacientes) -->
-<div id="sec-orcamentosgeral" class="sec">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-    <div class="pg-title">Orçamentos</div>
-    <button class="btn btn-ghost btn-sm" onclick="ogAbrirModalIndicacoes()">👥 Quem indicou</button>
-  </div>
-
-  <!-- Filtros -->
-  <div style="display:flex;gap:10px;align-items:end;margin-bottom:16px;flex-wrap:wrap">
-    <div class="fl" style="width:140px"><label>De</label><input type="date" id="og-filtro-de" onchange="renderOrcamentosGeral()"></div>
-    <div class="fl" style="width:140px"><label>Até</label><input type="date" id="og-filtro-ate" onchange="renderOrcamentosGeral()"></div>
-    <div class="fl" style="width:200px"><label>Profissional</label>
-      <select id="og-filtro-profissional" onchange="renderOrcamentosGeral()"><option value="">Todos</option></select>
-    </div>
-    <div class="fl" style="width:150px"><label>Status</label>
-      <select id="og-filtro-status" onchange="ogSetStatus(this.value)">
-        <option value="">Todos</option>
-        <option value="aprovado">Aprovado</option>
-        <option value="aberto">Em aberto</option>
-        <option value="reprovado">Reprovado</option>
-      </select>
-    </div>
-    <button class="btn btn-primary btn-sm" onclick="renderOrcamentosGeral()" style="height:34px">Listar</button>
-  </div>
-
-  <!-- HERO: Potencial de Vendas -->
-  <div style="margin-bottom:14px">
-    <div class="og-hero og-hero-blue">
-      <div class="og-hero-label">💰 Potencial de Vendas <span style="font-weight:400;opacity:.85">— em aberto, aguardando decisão</span></div>
-      <div class="og-hero-value" id="og-hero-potencial">R$ 0,00</div>
-      <div class="og-hero-sub" id="og-hero-potencial-sub">0 orçamento(s) · idade média de 0 dias</div>
-    </div>
-  </div>
-
-  <!-- Faixas de idade dos orçamentos EM ABERTO — quanto mais tempo parado, mais frio -->
-  <div style="margin-bottom:16px">
-    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Orçamentos em aberto por tempo de espera</div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap" id="og-faixas-row">
-      <div class="og-faixa og-faixa-ok" data-faixa="0-3" onclick="ogSetFaixaIdade('0-3')">
-        <div class="og-faixa-lbl">Até 3 dias</div>
-        <div class="og-faixa-val" id="og-faixa-val-0-3">R$ 0,00</div>
-        <div class="og-faixa-count" id="og-faixa-count-0-3">0 orçamento(s)</div>
-      </div>
-      <div class="og-faixa og-faixa-morno" data-faixa="4-7" onclick="ogSetFaixaIdade('4-7')">
-        <div class="og-faixa-lbl">4 a 7 dias</div>
-        <div class="og-faixa-val" id="og-faixa-val-4-7">R$ 0,00</div>
-        <div class="og-faixa-count" id="og-faixa-count-4-7">0 orçamento(s)</div>
-      </div>
-      <div class="og-faixa og-faixa-frio" data-faixa="8-15" onclick="ogSetFaixaIdade('8-15')">
-        <div class="og-faixa-lbl">8 a 15 dias</div>
-        <div class="og-faixa-val" id="og-faixa-val-8-15">R$ 0,00</div>
-        <div class="og-faixa-count" id="og-faixa-count-8-15">0 orçamento(s)</div>
-      </div>
-      <div class="og-faixa og-faixa-gelado" data-faixa="15+" onclick="ogSetFaixaIdade('15+')">
-        <div class="og-faixa-lbl">⚠️ Mais de 15 dias</div>
-        <div class="og-faixa-val" id="og-faixa-val-15+">R$ 0,00</div>
-        <div class="og-faixa-count" id="og-faixa-count-15+">0 orçamento(s)</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Cards resumo -->
-  <div class="fin-cards-row" id="og-cards-row" style="margin-bottom:16px">
-    <div class="fin-card fin-card-green fin-card-clickable" data-status="aprovado" onclick="ogSetStatus('aprovado')">
-      <div class="fin-card-label">Aprovado</div>
-      <div class="fin-card-value" id="og-val-aprovado">R$ 0,00</div>
-      <div class="fin-card-sub" id="og-sub-aprovado">0 orçamento(s) · Ticket médio R$ 0,00</div>
-    </div>
-    <div class="fin-card fin-card-blue fin-card-clickable" data-status="aberto" onclick="ogSetStatus('aberto')">
-      <div class="fin-card-label">Em Aberto</div>
-      <div class="fin-card-value" id="og-val-aberto">R$ 0,00</div>
-      <div class="fin-card-sub" id="og-sub-aberto">0 orçamento(s) · Ticket médio R$ 0,00</div>
-    </div>
-    <div class="fin-card fin-card-red fin-card-clickable" data-status="reprovado" onclick="ogSetStatus('reprovado')">
-      <div class="fin-card-label">Reprovado</div>
-      <div class="fin-card-value" id="og-val-reprovado">R$ 0,00</div>
-      <div class="fin-card-sub" id="og-sub-reprovado">0 orçamento(s) · Ticket médio R$ 0,00</div>
-    </div>
-    <div class="fin-card fin-card-clickable" data-status="" onclick="ogSetStatus('')">
-      <div class="fin-card-label">Total</div>
-      <div class="fin-card-value" id="og-val-total">R$ 0,00</div>
-      <div class="fin-card-sub" id="og-sub-total">0 orçamento(s) · Ticket médio R$ 0,00</div>
-    </div>
-  </div>
-
-  <!-- Insights: ranking por profissional + principais motivos de reprovação -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-    <div class="og-panel">
-      <div class="og-panel-title">Conversão por profissional</div>
-      <div id="og-ranking-prof"></div>
-    </div>
-    <div class="og-panel">
-      <div class="og-panel-title">Principais motivos de reprovação</div>
-      <div id="og-ranking-motivos"></div>
-    </div>
-  </div>
-
-  <!-- Tabela -->
-  <div class="fin-table-wrap">
-    <table class="fin-table">
-      <thead>
-        <tr>
-          <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="ogOrdenar('dataCriacao')">Data Criação <span class="fin-th-sort-ic" id="og-sort-ic-dataCriacao"></span></span></div></th>
-          <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="ogOrdenar('data')">Data <span class="fin-th-sort-ic" id="og-sort-ic-data"></span></span></div></th>
-          <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="ogOrdenar('status')">Status <span class="fin-th-sort-ic" id="og-sort-ic-status"></span></span></div></th>
-          <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="ogOrdenar('motivo')">Motivo <span class="fin-th-sort-ic" id="og-sort-ic-motivo"></span></span></div></th>
-          <th>Abrir</th>
-          <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="ogOrdenar('profissional')">Profissional <span class="fin-th-sort-ic" id="og-sort-ic-profissional"></span></span></div></th>
-          <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="ogOrdenar('paciente')">Paciente <span class="fin-th-sort-ic" id="og-sort-ic-paciente"></span></span></div></th>
-          <th>Telefone</th>
-          <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="ogOrdenar('valor')">Valor <span class="fin-th-sort-ic" id="og-sort-ic-valor"></span></span></div></th>
-          <th>Observações</th>
-          <th>Como conheceu?</th>
-        </tr>
-      </thead>
-      <tbody id="og-tbody"></tbody>
-    </table>
-    <div id="og-empty" class="fin-empty" style="display:none">Nenhum orçamento encontrado com esse filtro.</div>
-  </div>
-</div>
-
 <!-- PÁGINA DE DETALHE DO PACIENTE -->
 <div id="sec-paciente-detalhe" class="sec">
   <div class="pp-header">
@@ -4257,6 +4136,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <option value="mes_atual">Este mês</option>
           <option value="mes_proximo">Próximo mês</option>
           <option value="especifica">Data específica</option>
+          <option value="todos">Todos os períodos</option>
         </select>
       </div>
       <div id="rel-periodo-custom" style="display:none;align-items:flex-end;gap:10px">
@@ -4282,6 +4162,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="pp-menu-btn" id="rel-tab-primeiras_consultas" onclick="relSelecionarAba('primeiras_consultas')">Primeiras consultas</button>
       <button class="pp-menu-btn" id="rel-tab-pacientes_indicados" onclick="relSelecionarAba('pacientes_indicados')">Pacientes indicados</button>
       <button class="pp-menu-btn" id="rel-tab-pacientes_alta" onclick="relSelecionarAba('pacientes_alta')">Pacientes de alta</button>
+      <button class="pp-menu-btn" id="rel-tab-orcamentos" onclick="relSelecionarAba('orcamentos')">Orçamentos</button>
     </nav>
     <div class="pp-content">
       <div id="rel-filtros-aba" style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:14px"></div>
@@ -5529,7 +5410,6 @@ function temPerm(permId){
 const PERM_SECAO = {
   agenda:    'agenda_ver',
   pacientes: 'pacientes_ver',
-  orcamentosgeral: 'orcamentos_geral_ver',
   acoes:     'fluxos_ver',
   rituais:   'fluxos_ver',
   reuniao:   'reunioes_ver',
@@ -5574,7 +5454,6 @@ function aplicarPermissoesNav(){
   const mapa = {
     agenda:    'agenda_ver',
     pacientes: 'pacientes_ver',
-    orcamentosgeral: 'orcamentos_geral_ver',
     acoes:     'fluxos_ver',
     rituais:   'fluxos_ver',
     reuniao:   'reunioes_ver',
@@ -7966,7 +7845,6 @@ function goTo(id, btn){
   if(id==='proximos') renderProximos();
   if(id==='agenda') renderAgenda();
   if(id==='pacientes'){ptSortColId='nome';ptSortDir='asc';filtroAtual='';pacientesPaginaAtual=1;const buscaEl=document.getElementById('pt-busca-nome');if(buscaEl)buscaEl.value='';renderFiltros();renderPacientes('');renderKanban();}
-  if(id==='orcamentosgeral') renderOrcamentosGeral();
   if(id==='acoes') renderAcoesModulo();
   if(id==='rituais') renderRituais();
   if(id==='reuniao') renderReunioes();
@@ -9564,7 +9442,9 @@ function voltarParaPacientes(){
     const sub = pacienteOrigemFinSub||'receber';
     showFinSub(sub, document.getElementById('fin-sub-'+sub));
   } else if(pacienteOrigemTab==='orcamentosgeral'){
-    goTo('orcamentosgeral', document.getElementById('navbtn-orcamentosgeral'));
+    _relAbaAtual='orcamentos';
+    const btnRel = document.querySelector('.nav-btn[onclick*="goTo(\'relatorios\'"]');
+    goTo('relatorios', btnRel);
   } else if(pacienteOrigemTab==='relatorios'){
     const btnRel = document.querySelector('.nav-btn[onclick*="goTo(\'relatorios\'"]');
     goTo('relatorios', btnRel);
@@ -10395,28 +10275,10 @@ function _ogPopularFiltros(todos){
   }
 }
 
-// Preenche De/Até com o primeiro e o último dia do mês atual, na primeira vez que o
-// módulo é aberto (só se os campos estiverem vazios — não sobrescreve escolha do usuário)
-let _ogFiltrosDataInit = false;
-function _ogInicializarFiltroData(){
-  if(_ogFiltrosDataInit) return;
-  const deEl = document.getElementById('og-filtro-de');
-  const ateEl = document.getElementById('og-filtro-ate');
-  if(deEl && ateEl && !deEl.value && !ateEl.value){
-    const d = new Date(iso(hoje)+'T00:00:00');
-    const primeiro = new Date(d.getFullYear(), d.getMonth(), 1);
-    const ultimo = new Date(d.getFullYear(), d.getMonth()+1, 0);
-    const fmt = dt => `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
-    deEl.value = fmt(primeiro);
-    ateEl.value = fmt(ultimo);
-  }
-  _ogFiltrosDataInit = true;
-}
-
 function renderOrcamentosGeral(){
-  _ogInicializarFiltroData();
-  const de = document.getElementById('og-filtro-de')?.value || '';
-  const ate = document.getElementById('og-filtro-ate')?.value || '';
+  // Período agora vem do filtro superior fixo do módulo Relatórios (vale pra
+  // todas as abas, inclusive esta) — não tem mais campos De/Até próprios.
+  const {de,ate} = (typeof _relPeriodoDatas==='function') ? _relPeriodoDatas() : {de:'',ate:''};
   const profFiltro = document.getElementById('og-filtro-profissional')?.value || '';
 
   const todos = _ogTodos();
@@ -23991,6 +23853,7 @@ let _relFiltros = {
   primeiras_consultas: { paciente: null },
   pacientes_indicados: { pacienteIndicado: null, indicador: null },
   pacientes_alta: { paciente: null },
+  orcamentos: { profissional: '' },
 };
 let _relAcTemp = {}; // resultados temporários de cada autocomplete, pra mapear clique → item
 
@@ -24001,9 +23864,15 @@ const REL_ABAS = [
   { id:'primeiras_consultas', label:'Primeiras consultas' },
   { id:'pacientes_indicados', label:'Pacientes indicados' },
   { id:'pacientes_alta',      label:'Pacientes de alta' },
+  { id:'orcamentos',          label:'Orçamentos' },
 ];
 
 function renderRelatorios(){
+  // A aba Orçamentos exige a permissão específica; se o usuário atual perdeu o
+  // acesso (ex.: trocou de usuário) e estava nela, cai pra uma aba padrão.
+  if(_relAbaAtual==='orcamentos' && !(souAdministradorReal() || temPerm('orcamentos_geral_ver'))){
+    _relAbaAtual = 'proc_realizados';
+  }
   relRenderTabs();
   relRenderFiltroPeriodo();
   relRenderFiltrosAba();
@@ -24015,6 +23884,8 @@ function relRenderTabs(){
     const btn=document.getElementById('rel-tab-'+a.id);
     if(btn) btn.classList.toggle('on', _relAbaAtual===a.id);
   });
+  const btnOrc=document.getElementById('rel-tab-orcamentos');
+  if(btnOrc) btnOrc.style.display = (souAdministradorReal() || temPerm('orcamentos_geral_ver')) ? '' : 'none';
 }
 
 function relSelecionarAba(id){
@@ -24062,6 +23933,11 @@ function _relPeriodoDatas(){
     const ate=document.getElementById('rel-periodo-ate')?.value || _finIso(hoje);
     return { de, ate };
   }
+  if(_relPeriodoTipo==='todos'){
+    // Sem período específico — faixa "aberta" que cobre qualquer data real,
+    // pra não precisar mudar a lógica de filtro (d<de || d>ate) de cada aba.
+    return { de:'0000-01-01', ate:'9999-12-31' };
+  }
   // 'mes_atual' (padrão)
   const ini=new Date(hoje.getFullYear(),hoje.getMonth(),1);
   const fim=new Date(hoje.getFullYear(),hoje.getMonth()+1,0);
@@ -24076,15 +23952,20 @@ function relFiltroVazio(aba){
     primeiras_consultas:{paciente:null},
     pacientes_indicados:{pacienteIndicado:null, indicador:null},
     pacientes_alta:{paciente:null},
+    orcamentos:{profissional:''},
   };
   return map[aba];
 }
 
+// "Limpar filtro": remove o período mensal padrão, passando a mostrar o
+// resultado em todas as datas (sem período específico), além de limpar os
+// filtros específicos da aba atual.
 function relLimparFiltro(){
-  _relPeriodoTipo='mes_atual';
+  _relPeriodoTipo='todos';
   const de=document.getElementById('rel-periodo-de'); if(de) de.value='';
   const ate=document.getElementById('rel-periodo-ate'); if(ate) ate.value='';
   _relFiltros[_relAbaAtual] = relFiltroVazio(_relAbaAtual);
+  if(_relAbaAtual==='orcamentos'){ _ogFiltroStatus=''; _ogFaixaIdade=null; }
   renderRelatorios();
 }
 
@@ -24143,6 +24024,38 @@ function relRenderFiltrosAba(){
   if(aba==='pacientes_alta'){
     const v=_relFiltros.pacientes_alta.paciente;
     wrap.innerHTML=_relPacInputHTML('altaPaciente','Paciente',v);
+    return;
+  }
+
+  if(aba==='orcamentos'){
+    if(!_relFiltros.orcamentos) _relFiltros.orcamentos={profissional:''};
+    const profFiltro=_relFiltros.orcamentos.profissional||'';
+    const nomes=[...new Set(_ogTodos().map(o=>o.profissional).filter(Boolean))].sort();
+    wrap.innerHTML=`
+      <div class="fl" style="width:200px">
+        <label>Profissional</label>
+        <select id="og-filtro-profissional" onchange="_relFiltros.orcamentos.profissional=this.value; renderOrcamentosGeral()">
+          <option value="">Todos</option>
+          ${nomes.map(n=>`<option value="${esc(n)}" ${n===profFiltro?'selected':''}>${esc(n)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="fl" style="width:150px">
+        <label>Status</label>
+        <select id="og-filtro-status" onchange="ogSetStatus(this.value)">
+          <option value="">Todos</option>
+          <option value="aprovado">Aprovado</option>
+          <option value="aberto">Em aberto</option>
+          <option value="reprovado">Reprovado</option>
+        </select>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="ogAbrirModalIndicacoes()" style="height:34px">👥 Quem indicou</button>
+    `;
+    // Marca o select de profissional como já populado (dataset.pop) pra
+    // _ogPopularFiltros não reconstruir as opções e perder a seleção acima.
+    const selProf=document.getElementById('og-filtro-profissional');
+    if(selProf) selProf.dataset.pop='1';
+    const selStatus=document.getElementById('og-filtro-status');
+    if(selStatus) selStatus.value=_ogFiltroStatus;
     return;
   }
 
@@ -24270,7 +24183,108 @@ function relRenderConteudo(){
   if(aba==='primeiras_consultas') return _relRenderPrimeirasConsultas(wrap,de,ate);
   if(aba==='pacientes_indicados') return _relRenderPacientesIndicados(wrap,de,ate);
   if(aba==='pacientes_alta')      return _relRenderPacientesAlta(wrap,de,ate);
+  if(aba==='orcamentos'){
+    wrap.innerHTML = _relOrcamentosConteudoHTML();
+    renderOrcamentosGeral();
+    return;
+  }
   wrap.innerHTML='';
+}
+
+// Conteúdo da aba Orçamentos (movida do antigo módulo standalone "Orçamentos"
+// para dentro de Relatórios). Usa o mesmo filtro de período fixo no topo do
+// módulo; profissional/status ficam nos filtros da aba (rel-filtros-aba).
+function _relOrcamentosConteudoHTML(){
+  return `
+  <div style="margin-bottom:14px">
+    <div class="og-hero og-hero-blue">
+      <div class="og-hero-label">💰 Potencial de Vendas <span style="font-weight:400;opacity:.85">— em aberto, aguardando decisão</span></div>
+      <div class="og-hero-value" id="og-hero-potencial">R$ 0,00</div>
+      <div class="og-hero-sub" id="og-hero-potencial-sub">0 orçamento(s) · idade média de 0 dias</div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:16px">
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Orçamentos em aberto por tempo de espera</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap" id="og-faixas-row">
+      <div class="og-faixa og-faixa-ok" data-faixa="0-3" onclick="ogSetFaixaIdade('0-3')">
+        <div class="og-faixa-lbl">Até 3 dias</div>
+        <div class="og-faixa-val" id="og-faixa-val-0-3">R$ 0,00</div>
+        <div class="og-faixa-count" id="og-faixa-count-0-3">0 orçamento(s)</div>
+      </div>
+      <div class="og-faixa og-faixa-morno" data-faixa="4-7" onclick="ogSetFaixaIdade('4-7')">
+        <div class="og-faixa-lbl">4 a 7 dias</div>
+        <div class="og-faixa-val" id="og-faixa-val-4-7">R$ 0,00</div>
+        <div class="og-faixa-count" id="og-faixa-count-4-7">0 orçamento(s)</div>
+      </div>
+      <div class="og-faixa og-faixa-frio" data-faixa="8-15" onclick="ogSetFaixaIdade('8-15')">
+        <div class="og-faixa-lbl">8 a 15 dias</div>
+        <div class="og-faixa-val" id="og-faixa-val-8-15">R$ 0,00</div>
+        <div class="og-faixa-count" id="og-faixa-count-8-15">0 orçamento(s)</div>
+      </div>
+      <div class="og-faixa og-faixa-gelado" data-faixa="15+" onclick="ogSetFaixaIdade('15+')">
+        <div class="og-faixa-lbl">⚠️ Mais de 15 dias</div>
+        <div class="og-faixa-val" id="og-faixa-val-15+">R$ 0,00</div>
+        <div class="og-faixa-count" id="og-faixa-count-15+">0 orçamento(s)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fin-cards-row" id="og-cards-row" style="margin-bottom:16px">
+    <div class="fin-card fin-card-green fin-card-clickable" data-status="aprovado" onclick="ogSetStatus('aprovado')">
+      <div class="fin-card-label">Aprovado</div>
+      <div class="fin-card-value" id="og-val-aprovado">R$ 0,00</div>
+      <div class="fin-card-sub" id="og-sub-aprovado">0 orçamento(s) · Ticket médio R$ 0,00</div>
+    </div>
+    <div class="fin-card fin-card-blue fin-card-clickable" data-status="aberto" onclick="ogSetStatus('aberto')">
+      <div class="fin-card-label">Em Aberto</div>
+      <div class="fin-card-value" id="og-val-aberto">R$ 0,00</div>
+      <div class="fin-card-sub" id="og-sub-aberto">0 orçamento(s) · Ticket médio R$ 0,00</div>
+    </div>
+    <div class="fin-card fin-card-red fin-card-clickable" data-status="reprovado" onclick="ogSetStatus('reprovado')">
+      <div class="fin-card-label">Reprovado</div>
+      <div class="fin-card-value" id="og-val-reprovado">R$ 0,00</div>
+      <div class="fin-card-sub" id="og-sub-reprovado">0 orçamento(s) · Ticket médio R$ 0,00</div>
+    </div>
+    <div class="fin-card fin-card-clickable" data-status="" onclick="ogSetStatus('')">
+      <div class="fin-card-label">Total</div>
+      <div class="fin-card-value" id="og-val-total">R$ 0,00</div>
+      <div class="fin-card-sub" id="og-sub-total">0 orçamento(s) · Ticket médio R$ 0,00</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+    <div class="og-panel">
+      <div class="og-panel-title">Conversão por profissional</div>
+      <div id="og-ranking-prof"></div>
+    </div>
+    <div class="og-panel">
+      <div class="og-panel-title">Principais motivos de reprovação</div>
+      <div id="og-ranking-motivos"></div>
+    </div>
+  </div>
+
+  <div class="fin-table-wrap">
+    <table class="fin-table">
+      <thead>
+        <tr>
+          <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="ogOrdenar('dataCriacao')">Data Criação <span class="fin-th-sort-ic" id="og-sort-ic-dataCriacao"></span></span></div></th>
+          <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="ogOrdenar('data')">Data <span class="fin-th-sort-ic" id="og-sort-ic-data"></span></span></div></th>
+          <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="ogOrdenar('status')">Status <span class="fin-th-sort-ic" id="og-sort-ic-status"></span></span></div></th>
+          <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="ogOrdenar('motivo')">Motivo <span class="fin-th-sort-ic" id="og-sort-ic-motivo"></span></span></div></th>
+          <th>Abrir</th>
+          <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="ogOrdenar('profissional')">Profissional <span class="fin-th-sort-ic" id="og-sort-ic-profissional"></span></span></div></th>
+          <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="ogOrdenar('paciente')">Paciente <span class="fin-th-sort-ic" id="og-sort-ic-paciente"></span></span></div></th>
+          <th>Telefone</th>
+          <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="ogOrdenar('valor')">Valor <span class="fin-th-sort-ic" id="og-sort-ic-valor"></span></span></div></th>
+          <th>Observações</th>
+          <th>Como conheceu?</th>
+        </tr>
+      </thead>
+      <tbody id="og-tbody"></tbody>
+    </table>
+    <div id="og-empty" class="fin-empty" style="display:none">Nenhum orçamento encontrado com esse filtro.</div>
+  </div>`;
 }
 
 function _relTabelaVazia(wrap, mensagem){
