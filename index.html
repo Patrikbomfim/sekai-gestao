@@ -2328,6 +2328,23 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
 
     <div class="card" style="max-width:520px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px">Vínculo de painéis com usuários</div>
+      <div style="font-size:12.5px;color:var(--tx2);margin-bottom:16px">Diz ao sistema exatamente qual usuário cadastrado (Configurações → Usuários/Equipe) é cada painel. Isso evita confusão entre pessoas com nomes iguais ou parecidos (ex.: duas "Leticia" com sobrenomes diferentes) — a "Comissão a receber" e a "Comissão por indicação" de cada painel passam a ser calculadas com base no usuário exato, não no nome.</div>
+
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Painel Beatriz</label>
+      <select id="plan-ref-vinculo-beatriz" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:14px" onchange="_planSalvarReferencias()"></select>
+
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Painel Ingrid</label>
+      <select id="plan-ref-vinculo-ingrid" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:14px" onchange="_planSalvarReferencias()"></select>
+
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Painel Fernanda</label>
+      <select id="plan-ref-vinculo-fernanda" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font);margin-bottom:14px" onchange="_planSalvarReferencias()"></select>
+
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:4px">Painel Leticia</label>
+      <select id="plan-ref-vinculo-leticia" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r8);font-size:13px;font-family:var(--font)" onchange="_planSalvarReferencias()"></select>
+    </div>
+
+    <div class="card" style="max-width:520px">
       <div style="font-size:15px;font-weight:700;margin-bottom:4px">Remuneração</div>
       <div style="font-size:12.5px;color:var(--tx2);margin-bottom:16px">Valores fixos e percentuais de comissão de cada colaboradora, usados no cálculo de remuneração dos painéis individuais.</div>
 
@@ -5652,7 +5669,11 @@ function planGetReferencias(){
     salasConsideradas: ['sala1','sala4'],
     remuneracaoFixa: { beatriz: 2300, fernanda: 1500, ingrid: 2500 },
     comissoes: { beatrizPctFaturamento: 3.5, fernandaPctLucro: 15, pctIndicacao: 3 },
-    valorBonusAgendamento: 20
+    valorBonusAgendamento: 20,
+    // Usuário do sistema (usuarioId) vinculado a cada painel individual — usado
+    // pra identificar a pessoa certa com certeza, sem depender do nome (duas
+    // pessoas podem se chamar "Leticia" com sobrenomes diferentes).
+    vinculoPaineis: { beatriz:'', ingrid:'', fernanda:'', leticia:'' }
   };
   const salvo = carregarLS('sk3-plan-referencias', null);
   if(!salvo) return def;
@@ -5666,8 +5687,41 @@ function planGetReferencias(){
     salasConsideradas: (salvo.salasConsideradas && salvo.salasConsideradas.length) ? salvo.salasConsideradas : def.salasConsideradas,
     remuneracaoFixa: { ...def.remuneracaoFixa, ...(salvo.remuneracaoFixa||{}) },
     comissoes: { ...def.comissoes, ...(salvo.comissoes||{}) },
-    valorBonusAgendamento: salvo.valorBonusAgendamento ?? def.valorBonusAgendamento
+    valorBonusAgendamento: salvo.valorBonusAgendamento ?? def.valorBonusAgendamento,
+    vinculoPaineis: { ...def.vinculoPaineis, ...(salvo.vinculoPaineis||{}) }
   };
+}
+
+// Usuário do sistema vinculado a um painel (chave: 'beatriz'|'ingrid'|'fernanda'|'leticia'),
+// configurado em Referências → "Vínculo de painéis com usuários".
+function _planUsuarioIdVinculado(chave){
+  const ref=planGetReferencias();
+  return (ref.vinculoPaineis||{})[chave] || '';
+}
+
+// Nome de equipe exato da pessoa vinculada a um painel — usado só como fallback,
+// pra itens antigos que não têm o id do profissional gravado (execProfissionalUsuarioId)
+// e pra indicações antigas sem vínculo configurado ainda. Nunca usa "contém"/case-insensitive:
+// se duas pessoas tiverem nomes parecidos, só o vínculo por usuário (acima) resolve com certeza.
+function _planNomeVinculado(chave, fallback){
+  const uid=_planUsuarioIdVinculado(chave);
+  if(uid){
+    const memb=(equipe||[]).find(e=>typeof e!=='string' && e.usuarioId===uid);
+    if(memb && memb.nome) return memb.nome;
+  }
+  return fallback||'';
+}
+
+// Opções <option> com todos os usuários vinculáveis a um painel (equipe cadastrada,
+// mostrando nome + cargo quando disponível, pra facilitar diferenciar homônimos).
+function _planEquipeOptionsHTML(uidSelecionado){
+  const cargosMap=(typeof cargos!=='undefined'?cargos:[]).reduce((m,c)=>{m[c.id]=c.nome;return m;},{});
+  const membros=(equipe||[]).filter(e=>typeof e!=='string' && e.usuarioId);
+  return '<option value="">— Não vinculado —</option>' + membros.map(e=>{
+    const cargoNome=cargosMap[e.cargoId]||'';
+    const label=cargoNome ? `${e.nome} (${cargoNome})` : e.nome;
+    return `<option value="${esc(e.usuarioId)}" ${e.usuarioId===uidSelecionado?'selected':''}>${esc(label)}</option>`;
+  }).join('');
 }
 function _planSalvarReferencias(){
   const v=id=>{ const el=document.getElementById(id); return el?el.value:''; };
@@ -5692,7 +5746,13 @@ function _planSalvarReferencias(){
       fernandaPctLucro: parseFloat(v('plan-ref-com-fernanda-lucro'))||0,
       pctIndicacao: parseFloat(v('plan-ref-com-indicacao'))||0
     },
-    valorBonusAgendamento: parseFloat(v('plan-ref-bonus-agendamento'))||0
+    valorBonusAgendamento: parseFloat(v('plan-ref-bonus-agendamento'))||0,
+    vinculoPaineis: {
+      beatriz: v('plan-ref-vinculo-beatriz'),
+      ingrid: v('plan-ref-vinculo-ingrid'),
+      fernanda: v('plan-ref-vinculo-fernanda'),
+      leticia: v('plan-ref-vinculo-leticia')
+    }
   });
   // Recalcula na hora os painéis que dependem dessas referências, caso estejam abertos
   if(typeof _planPatrikPeriodoMudou==='function') _planPatrikPeriodoMudou();
@@ -5732,6 +5792,10 @@ function _planCarregarReferencias(){
   set('plan-ref-com-indicacao', ref.comissoes.pctIndicacao);
   set('plan-ref-bonus-agendamento', ref.valorBonusAgendamento);
   _planRenderSalasReferencia(ref);
+  ['beatriz','ingrid','fernanda','leticia'].forEach(chave=>{
+    const el=document.getElementById('plan-ref-vinculo-'+chave);
+    if(el) el.innerHTML=_planEquipeOptionsHTML(ref.vinculoPaineis[chave]);
+  });
 }
 
 // Minutos de horário útil disponíveis num único dia da semana (0=domingo … 6=sábado),
@@ -5949,17 +6013,25 @@ function _planTaxaConversao(dataIniISO, dataFimISO){
 // Só entra na conta quando o indicador é alguém da equipe (tipo==='usuario') —
 // indicação de paciente, fornecedor ou indicador avulso não gera comissão aqui.
 // Comissão = % de indicação (Referências) × valor final do orçamento aprovado
-// (valorFechado, líquido — mesmo critério usado em faturamento). nomeUsuario
-// filtra para o painel de uma pessoa específica; null soma todo mundo.
-function _planComissaoIndicacaoNoPeriodo(dataIniISO, dataFimISO, nomeUsuario){
+// (valorFechado, líquido — mesmo critério usado em faturamento).
+// IMPORTANTE: quando chave é informada (painel de uma pessoa específica), a
+// identificação usa o usuário vinculado ao painel (Referências → "Vínculo de
+// painéis com usuários") comparando o.indicacao.id (que já é o usuarioId real,
+// não um texto) — nunca por nome, pra não confundir pessoas homônimas. Sem
+// vínculo configurado ainda, cai no fallback de nome EXATO da própria chave
+// (ex.: chave 'leticia' → "Leticia"). chave=null soma todo mundo.
+function _planComissaoIndicacaoNoPeriodo(dataIniISO, dataFimISO, chave){
   const ref = planGetReferencias();
+  const uid = chave ? _planUsuarioIdVinculado(chave) : '';
+  const nomeFallback = chave ? _planNomeVinculado(chave, chave.charAt(0).toUpperCase()+chave.slice(1)) : '';
   const lista = _orcamentos().filter(o=>{
     if(o.status!=='aprovado') return false;
     if(!o.indicacao || o.indicacao.tipo!=='usuario' || !o.indicacao.nome) return false;
     const dataRef = o.dataDecisao || o.data || o.dataCriacao || '';
     if(dataRef<dataIniISO || dataRef>dataFimISO) return false;
-    if(nomeUsuario){
-      if(!String(o.indicacao.nome||'').toLowerCase().includes(String(nomeUsuario).toLowerCase())) return false;
+    if(chave){
+      if(uid) return String(o.indicacao.id)===String(uid);
+      return o.indicacao.nome===nomeFallback;
     }
     return true;
   });
@@ -5976,10 +6048,22 @@ function _planComissaoIndicacaoNoPeriodo(dataIniISO, dataFimISO, nomeUsuario){
 // de comissão ainda não foi medido (comissaoMedida:false) — ou seja, ainda não
 // foi lançado/pago. Assim que alguém mede, o item some daqui (não é mais "a
 // receber"). Não tem filtro de período: é o saldo pendente agora, igual à
-// aba Comissão Dentistas. nomeProf casa com execProfissional (nome exato).
-function _planComissaoAReceber(nomeProf){
+// aba Comissão Dentistas.
+// IMPORTANTE: identifica a pessoa pelo usuário vinculado ao painel (Referências
+// → "Vínculo de painéis com usuários"), nunca por nome — assim duas pessoas
+// com nomes iguais/parecidos (ex.: duas "Leticia" com sobrenomes diferentes)
+// não se confundem. Itens executados a partir de agora já gravam o usuário
+// exato (execProfissionalUsuarioId); itens antigos, sem esse campo, caem no
+// fallback de nome EXATO (não "contém") da pessoa vinculada.
+function _planComissaoAReceber(chave, nomeFallback){
+  const uid=_planUsuarioIdVinculado(chave);
+  const nomeExato=_planNomeVinculado(chave, nomeFallback);
   return _finItensExecutados()
-    .filter(i=>i.execProfissional===nomeProf && !i.comissaoMedida)
+    .filter(i=>{
+      if(i.comissaoMedida) return false;
+      if(uid && i.execProfissionalUsuarioId) return i.execProfissionalUsuarioId===uid;
+      return !!nomeExato && i.execProfissional===nomeExato;
+    })
     .reduce((s,i)=>s+(parseFloat(i.valorComissao)||0),0);
 }
 
@@ -6065,7 +6149,7 @@ function _planAtualizarPainelBeatriz(){
   const remuneracao = faturamentoAtual>=piso ? faturamentoAtual*(ref.comissoes.beatrizPctFaturamento/100) : ref.remuneracaoFixa.beatriz;
   const qtdPrimeirasConsultas = _planPrimeirasConsultasNoPeriodo(de,ate);
   const bonusAgendamentos = ref.valorBonusAgendamento * qtdPrimeirasConsultas;
-  const comissaoIndicacao = _planComissaoIndicacaoNoPeriodo(de,ate,'Beatriz');
+  const comissaoIndicacao = _planComissaoIndicacaoNoPeriodo(de,ate,'beatriz');
   const valorTotal = remuneracao + bonusAgendamentos + comissaoIndicacao;
   set('pb-rem-faturamento', fmtMoeda(remuneracao));
   set('pb-bonus-agendamentos', fmtMoeda(bonusAgendamentos));
@@ -6088,8 +6172,8 @@ function _planAtualizarPainelIngrid(){
   const {de,ate}=_planMesAtualDatas();
 
   const remuneracao = ref.remuneracaoFixa.ingrid;
-  const comissaoReceber = _planComissaoAReceber('Ingrid');
-  const comissaoIndicacao = _planComissaoIndicacaoNoPeriodo(de,ate,'Ingrid');
+  const comissaoReceber = _planComissaoAReceber('ingrid','Ingrid');
+  const comissaoIndicacao = _planComissaoIndicacaoNoPeriodo(de,ate,'ingrid');
   const valorAcumulado = remuneracao + comissaoReceber + comissaoIndicacao;
   set('pi-remuneracao', fmtMoeda(remuneracao));
   set('pi-procedimentos', fmtMoeda(comissaoReceber));
@@ -6129,10 +6213,10 @@ function _planAtualizarPainelFernanda(){
   const barFat=document.getElementById('pf-fat-bar');
   if(barFat){ barFat.style.width=pctFat+'%'; }
 
-  const comissaoReceber = _planComissaoAReceber('Fernanda');
+  const comissaoReceber = _planComissaoAReceber('fernanda','Fernanda');
   const lucro = _planLucroClinica(de,ate);
   const lucro15 = lucro * (ref.comissoes.fernandaPctLucro/100);
-  const comissaoIndicacao = _planComissaoIndicacaoNoPeriodo(de,ate,'Fernanda');
+  const comissaoIndicacao = _planComissaoIndicacaoNoPeriodo(de,ate,'fernanda');
   const valorTotal = comissaoReceber + lucro15 + comissaoIndicacao;
   set('pf-comissao-receber', fmtMoeda(comissaoReceber));
   set('pf-lucro-15', fmtMoeda(lucro15));
@@ -6167,10 +6251,10 @@ function _planAtualizarPainelLeticia(){
 
   set('pl-ticket-medio', fmtMoeda(fat.ticketMedio));
 
-  const comissaoIndicacao = _planComissaoIndicacaoNoPeriodo(de,ate,'Leticia');
+  const comissaoIndicacao = _planComissaoIndicacaoNoPeriodo(de,ate,'leticia');
   set('pl-comissao-indicacao', fmtMoeda(comissaoIndicacao));
 
-  const comissaoReceber = _planComissaoAReceber('Leticia');
+  const comissaoReceber = _planComissaoAReceber('leticia','Leticia');
   set('pl-comissao-receber', fmtMoeda(comissaoReceber));
 
   const lucro = _planLucroClinica(de,ate);
@@ -12663,7 +12747,7 @@ function _renderProntPlano(p){
     return;
   }
   const fmtData=d=>{ if(!d) return '—'; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
-  const equipeLista=(equipe||[]).map(e=>typeof e==='string'?e:(e.nome||'')).filter(Boolean);
+  const equipeInfo=(equipe||[]).map(e=>typeof e==='string'?{nome:e,usuarioId:''}:{nome:e.nome||'',usuarioId:e.usuarioId||''}).filter(e=>e.nome);
 
   let html='';
   orcs.forEach(orc=>{
@@ -12712,9 +12796,9 @@ function _renderProntPlano(p){
               <td style="padding:10px 10px;font-size:13px;font-weight:600;color:var(--tx);text-align:right;white-space:nowrap">R$ ${vlr}</td>
               <td style="padding:10px 10px">
                 ${exec?`<span style="font-size:12px;color:var(--tx2)">${it.execProfissional||'—'}</span>`
-                  :`<select onchange="_prontUpdateItem('${orc.id}',${idx},'execProfissional',this.value)" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);max-width:130px">
+                  :`<select onchange="_prontSetExecProfissional('${orc.id}',${idx},this)" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);max-width:130px">
                     <option value="">— Profissional —</option>
-                    ${equipeLista.map(e=>`<option value="${e}" ${it.execProfissional===e?'selected':''}>${e}</option>`).join('')}
+                    ${equipeInfo.map(e=>`<option value="${esc(e.nome)}" data-uid="${esc(e.usuarioId)}" ${it.execProfissional===e.nome?'selected':''}>${esc(e.nome)}</option>`).join('')}
                   </select>`}
               </td>
               <td style="padding:10px 10px">
@@ -12762,6 +12846,24 @@ function _prontUpdateItem(orcId,idx,field,val){
     const orc=list.find(o=>o.id===orcId);
     if(!orc||!orc.itens||!orc.itens[idx]) return;
     orc.itens[idx][field]=val;
+    _salvarOrcamentos(list);
+  });
+}
+
+// Grava quem vai executar o procedimento: nome (exibição, mantém compatibilidade
+// com filtros/relatórios existentes que usam texto) + usuarioId exato (usado pelo
+// Planejamento pra identificar a pessoa com certeza, sem risco de confundir duas
+// pessoas com nomes iguais/parecidos).
+function _prontSetExecProfissional(orcId, idx, selectEl){
+  const nome = selectEl.value;
+  const opt = selectEl.selectedOptions && selectEl.selectedOptions[0];
+  const usuarioId = opt ? (opt.dataset.uid||'') : '';
+  _comSalvarImediato(()=>{
+    const list=_orcamentos();
+    const orc=list.find(o=>o.id===orcId);
+    if(!orc||!orc.itens||!orc.itens[idx]) return;
+    orc.itens[idx].execProfissional=nome;
+    orc.itens[idx].execProfissionalUsuarioId=usuarioId||null;
     _salvarOrcamentos(list);
   });
 }
