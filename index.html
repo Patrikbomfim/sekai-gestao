@@ -4158,6 +4158,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="pp-menu-btn" id="rel-tab-pacientes_indicados" onclick="relSelecionarAba('pacientes_indicados')">Pacientes indicados</button>
       <button class="pp-menu-btn" id="rel-tab-pacientes_alta" onclick="relSelecionarAba('pacientes_alta')">Pacientes de alta</button>
       <button class="pp-menu-btn" id="rel-tab-orcamentos" onclick="relSelecionarAba('orcamentos')">Orçamentos</button>
+      <button class="pp-menu-btn" id="rel-tab-emissao_fiscal" onclick="relSelecionarAba('emissao_fiscal')">Emissão fiscal</button>
     </nav>
     <div class="pp-content">
       <div id="rel-filtros-aba" style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:14px"></div>
@@ -11297,13 +11298,6 @@ function abrirModalProcOrc(){
         <label>Valor (R$)</label>
         <input type="text" inputmode="decimal" id="proc-orc-valor" placeholder="0,00" oninput="_orcMascaraValorInput(this)">
       </div>
-      <div class="fl" style="flex:1">
-        <label>Profissional *</label>
-        <select id="proc-orc-dentista" style="font-size:12px">
-          <option value="">— Profissional —</option>
-          ${_dentistasDisponiveis().map(d=>`<option value="${esc(d.nome)}">${esc(d.label)}</option>`).join('')}
-        </select>
-      </div>
     </div>
     <div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -11478,8 +11472,9 @@ function confirmarProcOrc(){
   const busca=document.getElementById('proc-orc-busca');
   const nome=_orcProcSelecionado?_orcProcSelecionado.nome:(busca?busca.value:'');
   if(!nome||!nome.trim()){ alert('Selecione ou informe o nome do procedimento.'); return; }
-  const dentista=(document.getElementById('proc-orc-dentista')||{}).value||'';
-  if(!dentista){ alert('Selecione o profissional responsável pelo procedimento.'); return; }
+  // Profissional não é definido aqui — ainda não se sabe quem vai executar no momento
+  // de orçar. Ele é definido apenas na aprovação do orçamento (ver _aprovRenderItensProf).
+  const dentista='';
   const valor=_parseMoeda((document.getElementById('proc-orc-valor')||{}).value);
   const tabelaSelEl=document.getElementById('proc-orc-tabela');
   const tabelaIdSel=tabelaSelEl?tabelaSelEl.value:(_tbTabelas()[0]||{}).id;
@@ -12336,9 +12331,10 @@ function _aprovRenderModal(orc,totalOrc){
 function _aprovChangeDescGlobal(val){ /* desconto global removido — mantido para evitar erros de referência */ }
 
 // Lista os procedimentos do orçamento sendo aprovado, com um seletor de profissional
-// pré-preenchido com o que já estava definido no procedimento (campo "dentista"). O
-// profissional escolhido aqui é gravado em confirmarAprovacaoOrcamento, tanto no campo
-// "dentista" (planejado) quanto em "execProfissional" (usado no plano de tratamento).
+// que deve SEMPRE vir em branco — nunca puxa histórico/valor previamente definido —
+// forçando quem está aprovando a escolher explicitamente quem vai executar. O
+// profissional escolhido aqui é obrigatório e é gravado em confirmarAprovacaoOrcamento,
+// tanto no campo "dentista" (planejado) quanto em "execProfissional" (plano de tratamento).
 function _aprovRenderItensProf(){
   const wrap=document.getElementById('aprov-itens-prof-wrap');
   if(!wrap) return;
@@ -12347,6 +12343,9 @@ function _aprovRenderItensProf(){
     wrap.innerHTML='<div style="font-size:12px;color:var(--tx3)">Nenhum procedimento neste orçamento.</div>';
     return;
   }
+  // Zera qualquer profissional planejado anteriormente: este campo nunca deve vir
+  // pré-preenchido na tela de aprovação, mesmo que o item já tivesse "dentista" gravado.
+  _orcItens.forEach(it=>{ it.dentista=''; });
   wrap.innerHTML=`<div style="display:flex;flex-direction:column;gap:6px">
     ${_orcItens.map((it,idx)=>{
       const dentesTxt = it.dentes&&it.dentes.length?' ('+it.dentes.join(', ')+')':'';
@@ -12356,10 +12355,10 @@ function _aprovRenderItensProf(){
           <div style="font-size:12.5px;font-weight:500;color:var(--tx);word-break:break-word">${esc(it.proc||'—')}${esc(dentesTxt)}</div>
           <div style="font-size:11px;color:var(--tx3)">R$ ${valorTxt}</div>
         </div>
-        <select onchange="_aprovChangeItemDentista(${idx},this.value)"
+        <select onchange="_aprovChangeItemDentista(${idx},this.value)" required
           style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);font-family:var(--font);flex:1 1 170px;min-width:170px;max-width:100%">
-          <option value="">— Profissional —</option>
-          ${dentistas.map(d=>`<option value="${esc(d.nome)}" ${it.dentista===d.nome?' selected':''}>${esc(d.label)}</option>`).join('')}
+          <option value="">— Profissional * —</option>
+          ${dentistas.map(d=>`<option value="${esc(d.nome)}">${esc(d.label)}</option>`).join('')}
         </select>
       </div>`;
     }).join('')}
@@ -12636,6 +12635,9 @@ function fecharModalAprovarOrcamento(){
 
 function confirmarAprovacaoOrcamento(){
   if(!_orcModalId){ alert('Salve o orçamento antes de aprovar.'); return; }
+  // Profissional é obrigatório para cada procedimento na aprovação (nunca vem pré-preenchido)
+  const semProfissional=(_orcItens||[]).some(it=>!it.dentista);
+  if(semProfissional){ alert('Selecione o profissional responsável por todos os procedimentos antes de confirmar a aprovação.'); return; }
   // Recalcula títulos na hora de confirmar (não depende do preview ter rodado)
   _aprovGerarPreview();
   const titulos=window._aprovTitulosTemp||[];
@@ -23950,6 +23952,7 @@ let _relFiltros = {
   pacientes_indicados: { pacienteIndicado: null, indicador: null },
   pacientes_alta: { paciente: null },
   orcamentos: { profissional: '' },
+  emissao_fiscal: { pagador: null, categoria: null },
 };
 let _relAcTemp = {}; // resultados temporários de cada autocomplete, pra mapear clique → item
 
@@ -23961,6 +23964,7 @@ const REL_ABAS = [
   { id:'pacientes_indicados', label:'Pacientes indicados' },
   { id:'pacientes_alta',      label:'Pacientes de alta' },
   { id:'orcamentos',          label:'Orçamentos' },
+  { id:'emissao_fiscal',      label:'Emissão fiscal' },
 ];
 
 function renderRelatorios(){
@@ -24054,6 +24058,7 @@ function relFiltroVazio(aba){
     pacientes_indicados:{pacienteIndicado:null, indicador:null},
     pacientes_alta:{paciente:null},
     orcamentos:{profissional:''},
+    emissao_fiscal:{pagador:null, categoria:null},
   };
   return map[aba];
 }
@@ -24160,6 +24165,12 @@ function relRenderFiltrosAba(){
     return;
   }
 
+  if(aba==='emissao_fiscal'){
+    const v=_relFiltros.emissao_fiscal.pagador;
+    wrap.innerHTML=_relPacInputHTML('emissaoFiscalPagador','Pagador',v);
+    return;
+  }
+
   wrap.innerHTML='';
 }
 
@@ -24179,6 +24190,7 @@ function _relSetFiltroPaciente(campoKey, valor){
   else if(campoKey==='indicadosPaciente') _relFiltros.pacientes_indicados.pacienteIndicado=valor;
   else if(campoKey==='altaPaciente') _relFiltros.pacientes_alta.paciente=valor;
   else if(campoKey==='agendamentosPaciente') _relFiltros.agendamentos.paciente=valor;
+  else if(campoKey==='emissaoFiscalPagador') _relFiltros.emissao_fiscal.pagador=valor;
 }
 
 function _relPacBuscar(campoKey, termo){
@@ -24289,7 +24301,115 @@ function relRenderConteudo(){
     renderOrcamentosGeral();
     return;
   }
+  if(aba==='emissao_fiscal')       return _relRenderEmissaoFiscal(wrap,de,ate);
   wrap.innerHTML='';
+}
+
+// ── ABA EMISSÃO FISCAL ───────────────────────────────────────────────────
+// Cobre os títulos a receber (financeiro do paciente) já liquidados (status
+// 'pago'), categorizados de acordo com o que foi combinado na aprovação do
+// orçamento (t.emissaoPrevista) e o que já foi de fato registrado (t.emissaoFiscal):
+//   • 'nota_fiscal' / 'recibo' → combinado E já emitido
+//   • 'sem_emissao'           → combinado que não haveria emissão nenhuma (nunca é pendente)
+//   • 'pendente'              → combinado nota/recibo, já liquidado, mas ainda não emitido
+function _relEfCategoria(t){
+  if(t.emissaoPrevista==='sem_emissao') return 'sem_emissao';
+  const prevista = t.emissaoPrevista || 'nota_fiscal'; // títulos antigos sem o campo: assume nota fiscal
+  const ef = t.emissaoFiscal;
+  const emitido = ef && ef.status==='concluido' && ef.tipo===prevista;
+  return emitido ? prevista : 'pendente';
+}
+
+function _relEfBase(de, ate){
+  const pagadorId = _relFiltros.emissao_fiscal.pagador?.id;
+  return _titulos().filter(t=>{
+    if(t.status!=='pago') return false;
+    const dataPag=t.dataPagamento||'';
+    if(dataPag<de || dataPag>ate) return false;
+    if(pagadorId && String(t.pacienteId)!==String(pagadorId)) return false;
+    return true;
+  });
+}
+
+function _relEfClicarCategoria(cat){
+  _relFiltros.emissao_fiscal.categoria = (_relFiltros.emissao_fiscal.categoria===cat) ? null : cat;
+  relRenderConteudo();
+}
+
+function _relRenderEmissaoFiscal(wrap, de, ate){
+  const base=_relEfBase(de, ate);
+
+  let vNF=0, vRecibo=0, vSem=0, vPend=0, nNF=0, nRecibo=0, nSem=0, nPend=0;
+  base.forEach(t=>{
+    const valor=parseFloat(t.valor)||0;
+    const cat=_relEfCategoria(t);
+    if(cat==='nota_fiscal'){ vNF+=valor; nNF++; }
+    else if(cat==='recibo'){ vRecibo+=valor; nRecibo++; }
+    else if(cat==='sem_emissao'){ vSem+=valor; nSem++; }
+    else { vPend+=valor; nPend++; }
+  });
+
+  const catAtiva=_relFiltros.emissao_fiscal.categoria;
+  const fmt=v=>v.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  const cardOn=cat=>catAtiva===cat?'box-shadow:0 0 0 2px var(--ac) inset':'';
+
+  const filtrados = base.filter(t=> !catAtiva || _relEfCategoria(t)===catAtiva)
+    .sort((a,b)=>(b.dataPagamento||'').localeCompare(a.dataPagamento||''));
+
+  const tipoLbl={nota_fiscal:'Nota fiscal',recibo:'Recibo',sem_emissao:'Sem emissão',pendente:'Pendente'};
+  const tipoCor={nota_fiscal:'var(--ac)',recibo:'#065F46',sem_emissao:'var(--tx3)',pendente:'#991B1B'};
+
+  const linhas = filtrados.map(t=>{
+    const p=pacientes.find(x=>String(x.id)===String(t.pacienteId));
+    const cat=_relEfCategoria(t);
+    return `<tr style="cursor:pointer" onclick="relAbrirPaciente('${t.pacienteId}')">
+      <td>${_finFmtData(t.dataPagamento)}</td>
+      <td>${esc(p?p.nome:'—')}</td>
+      <td>${esc(t.descricao||'—')}</td>
+      <td style="text-align:right">R$ ${fmt(parseFloat(t.valor)||0)}</td>
+      <td><span style="font-size:11.5px;font-weight:600;color:${tipoCor[cat]}">${tipoLbl[cat]}</span></td>
+      <td onclick="event.stopPropagation()">${_finAnexoIconHtml(t)}</td>
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML=`
+    <div class="fin-cards-row" style="margin-bottom:16px">
+      <div class="fin-card fin-card-blue fin-card-clickable" style="${cardOn('nota_fiscal')}" onclick="_relEfClicarCategoria('nota_fiscal')">
+        <div class="fin-card-label">Nota fiscal</div>
+        <div class="fin-card-value">R$ ${fmt(vNF)}</div>
+        <div class="fin-card-sub">${nNF} título(s) · clique para filtrar</div>
+      </div>
+      <div class="fin-card fin-card-green fin-card-clickable" style="${cardOn('recibo')}" onclick="_relEfClicarCategoria('recibo')">
+        <div class="fin-card-label">Recibo</div>
+        <div class="fin-card-value">R$ ${fmt(vRecibo)}</div>
+        <div class="fin-card-sub">${nRecibo} título(s) · clique para filtrar</div>
+      </div>
+      <div class="fin-card fin-card-clickable" style="${cardOn('sem_emissao')}" onclick="_relEfClicarCategoria('sem_emissao')">
+        <div class="fin-card-label">Sem emissão</div>
+        <div class="fin-card-value">R$ ${fmt(vSem)}</div>
+        <div class="fin-card-sub">${nSem} título(s) · combinado sem emissão · clique para filtrar</div>
+      </div>
+      <div class="fin-card fin-card-clickable" style="border:1px solid #FCA5A5;${cardOn('pendente')}" onclick="_relEfClicarCategoria('pendente')">
+        <div class="fin-card-label" style="color:#991B1B">Pendentes</div>
+        <div class="fin-card-value" style="color:#991B1B">R$ ${fmt(vPend)}</div>
+        <div class="fin-card-sub">${nPend} título(s) · liquidados, emissão ainda pendente</div>
+      </div>
+    </div>
+    <div class="fin-table-wrap">
+      <table class="fin-table">
+        <thead><tr>
+          <th style="width:110px">Data pagamento</th>
+          <th>Pagador</th>
+          <th>Descrição</th>
+          <th style="width:120px;text-align:right">Valor</th>
+          <th style="width:130px">Situação</th>
+          <th style="width:70px">Anexo</th>
+        </tr></thead>
+        <tbody>${linhas}</tbody>
+      </table>
+      ${!filtrados.length?'<div class="fin-empty">Nenhum título encontrado nesse período/filtro.</div>':''}
+    </div>
+  `;
 }
 
 // Conteúdo da aba Orçamentos (movida do antigo módulo standalone "Orçamentos"
