@@ -3781,6 +3781,18 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
+<!-- MODAL DETALHE DO TÍTULO (aba Relatórios › Emissão fiscal) — evita navegar para o
+     cadastro do paciente só para consultar/registrar a emissão fiscal de um título -->
+<div id="modal-ef-titulo" class="fin-modal-ov" style="z-index:200" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharModalEfTitulo)">
+  <div class="fin-modal-box" style="max-width:480px">
+    <div class="fin-modal-hdr">
+      <div class="fin-modal-title">Detalhes do título</div>
+      <button class="fin-modal-close" onclick="fecharModalEfTitulo()">✕</button>
+    </div>
+    <div class="fin-modal-body" id="ef-titulo-modal-body"></div>
+  </div>
+</div>
+
 <!-- MODAL EDITAR COMISSÃO DE UM PROCEDIMENTO (edição pontual — não altera a tabela de precificação) -->
 <div id="modal-fin-editar-comissao" class="fin-modal-ov" onmousedown="_ovMouseDown(event,this)" onmouseup="_ovMouseUp(event,this,fecharModalFinEditarComissao)">
   <div class="fin-modal-box" style="max-width:420px">
@@ -11837,6 +11849,8 @@ function _efRefreshUI(){
     if(p) renderPpFinanceiro(p);
   }
   if(typeof _finSubAtual!=='undefined' && _finSubAtual==='receber') renderFinLista('receber');
+  const efModal=document.getElementById('modal-ef-titulo');
+  if(efModal&&efModal.classList.contains('open')) _relEfAbrirModalTitulo(_emissaoFiscalTituloId);
 }
 
 function abrirModalEmissaoFiscal(tituloId, origem, tipoPreset){
@@ -23947,7 +23961,7 @@ let _relPeriodoTipo = 'mes_atual';
 let _relFiltros = {
   agendamentos: { paciente: null },
   proc_realizados: { profissionais: [] },
-  proc_a_realizar: { profissionais: [] },
+  proc_a_realizar: { profissionais: [], semAgenda: false },
   primeiras_consultas: { paciente: null },
   pacientes_indicados: { pacienteIndicado: null, indicador: null },
   pacientes_alta: { paciente: null },
@@ -24053,7 +24067,7 @@ function relFiltroVazio(aba){
   const map={
     agendamentos:{paciente:null},
     proc_realizados:{profissionais:[]},
-    proc_a_realizar:{profissionais:[]},
+    proc_a_realizar:{profissionais:[], semAgenda:false},
     primeiras_consultas:{paciente:null},
     pacientes_indicados:{pacienteIndicado:null, indicador:null},
     pacientes_alta:{paciente:null},
@@ -24095,6 +24109,9 @@ function relRenderFiltrosAba(){
   if(aba==='proc_realizados' || aba==='proc_a_realizar'){
     const chave=aba+'Prof';
     const selecionados=_relFiltros[aba].profissionais;
+    const btnLimpar = aba==='proc_a_realizar'
+      ? `<button class="btn btn-ghost btn-sm" style="height:34px" onclick="_relProcARealizarLimparFiltro()">Limpar filtro</button>`
+      : '';
     wrap.innerHTML=`<div class="fl" style="min-width:260px;position:relative">
       <label>Profissional</label>
       <input type="text" id="rel-ac-${chave}" placeholder="Buscar profissional..." autocomplete="off"
@@ -24103,7 +24120,7 @@ function relRenderFiltrosAba(){
         onblur="setTimeout(()=>{const dd=document.getElementById('rel-ac-${chave}-dd'); if(dd)dd.classList.remove('open')},160)">
       <div id="rel-ac-${chave}-dd" class="fin-ac-dropdown"></div>
       ${selecionados.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-width:320px">${selecionados.map(n=>`<span style="display:inline-flex;align-items:center;gap:5px;background:var(--acl);color:var(--ac);font-size:12px;font-weight:600;padding:3px 8px 3px 10px;border-radius:20px">${esc(n)}<span onmousedown="_relProfRemover('${aba}','${esc(n).replace(/'/g,"\\'")}')" style="cursor:pointer;font-weight:700">×</span></span>`).join('')}</div>`:''}
-    </div>`;
+    </div>${btnLimpar}`;
     return;
   }
 
@@ -24275,6 +24292,14 @@ function _relProfRemover(aba, nome){
   relRenderConteudo();
 }
 
+// Limpa só o filtro de profissional da aba Procedimentos a realizar (não mexe
+// no card "Procedimentos sem agenda", que é um filtro à parte).
+function _relProcARealizarLimparFiltro(){
+  _relFiltros.proc_a_realizar.profissionais=[];
+  relRenderFiltrosAba();
+  relRenderConteudo();
+}
+
 // Abre a ficha do paciente a partir de qualquer relatório, guardando a origem
 // pra "voltar" trazer de volta pra Relatórios (mesma aba/filtro, pois o
 // estado _relAbaAtual/_relFiltros não é resetado ao navegar).
@@ -24306,9 +24331,11 @@ function relRenderConteudo(){
 }
 
 // ── ABA EMISSÃO FISCAL ───────────────────────────────────────────────────
-// Cobre os títulos a receber (financeiro do paciente) já liquidados (status
-// 'pago'), categorizados de acordo com o que foi combinado na aprovação do
-// orçamento (t.emissaoPrevista) e o que já foi de fato registrado (t.emissaoFiscal):
+// É uma lente de leitura sobre os mesmos títulos a receber do módulo Financeiro
+// › Contas a Receber (mesma fonte de dados, mesma linha/visual) — só que já
+// filtrada para os títulos liquidados, e organizada para o controle fiscal.
+// Categorização de acordo com o que foi combinado na aprovação do orçamento
+// (t.emissaoPrevista) e o que já foi de fato registrado (t.emissaoFiscal):
 //   • 'nota_fiscal' / 'recibo' → combinado E já emitido
 //   • 'sem_emissao'           → combinado que não haveria emissão nenhuma (nunca é pendente)
 //   • 'pendente'              → combinado nota/recibo, já liquidado, mas ainda não emitido
@@ -24320,19 +24347,92 @@ function _relEfCategoria(t){
   return emitido ? prevista : 'pendente';
 }
 
+// Data em que o título foi efetivamente liquidado — dataBaixa (títulos manuais de
+// gestão) ou dataPagamento (títulos do financeiro do paciente).
+function _relEfDataLiq(t){ return t.dataBaixa||t.dataPagamento||''; }
+
 function _relEfBase(de, ate){
   const pagadorId = _relFiltros.emissao_fiscal.pagador?.id;
-  return _titulos().filter(t=>{
-    if(t.status!=='pago') return false;
-    const dataPag=t.dataPagamento||'';
-    if(dataPag<de || dataPag>ate) return false;
-    if(pagadorId && String(t.pacienteId)!==String(pagadorId)) return false;
+  return _finTodosTitulos().filter(t=>{
+    if(t.tipo!=='receber') return false;
+    if(_finStatusEfetivo(t)!=='recebido') return false; // só títulos já liquidados
+    const dataLiq=_relEfDataLiq(t);
+    if(dataLiq<de || dataLiq>ate) return false;
+    if(pagadorId){
+      const mesmoPagador = (t._origem==='paciente' && String(t.pacienteId)===String(pagadorId))
+        || (t.parteTipo==='paciente' && String(t.parteId)===String(pagadorId));
+      if(!mesmoPagador) return false;
+    }
     return true;
   });
 }
 
 function _relEfClicarCategoria(cat){
   _relFiltros.emissao_fiscal.categoria = (_relFiltros.emissao_fiscal.categoria===cat) ? null : cat;
+  relRenderConteudo();
+}
+
+// Abre o título ao clicar na linha — SEM navegar para o cadastro do paciente:
+// títulos manuais de gestão abrem o modal de lançamento de sempre (já é um
+// modal, não uma navegação); títulos do financeiro do paciente abrem um modal
+// de detalhe próprio desta aba (ver modal-ef-titulo), focado no controle fiscal.
+function _relEfAbrirLinha(id, origem, tipoReal){
+  if(origem==='paciente'){ _relEfAbrirModalTitulo(id); return; }
+  abrirModalFinLancamento(tipoReal||'receber', id);
+}
+
+function _relEfAbrirModalTitulo(id){
+  const t=_finTodosTitulos().find(x=>String(x.id)===String(id) && x._origem==='paciente');
+  if(!t){ alert('Título não encontrado.'); return; }
+  const p=pacientes.find(x=>String(x.id)===String(t.pacienteId));
+  const st=_finStatusEfetivo(t);
+  document.getElementById('ef-titulo-modal-body').innerHTML=`
+    <div class="fl">
+      <label>Pagador</label>
+      <div style="font-size:13px;font-weight:600;color:var(--tx)">${esc(p?p.nome:'—')}</div>
+    </div>
+    <div class="fl">
+      <label>Descrição</label>
+      <div style="font-size:13px;color:var(--tx)">${esc(t.descricao||'—')}</div>
+    </div>
+    <div class="fg">
+      <div class="fl">
+        <label>Valor</label>
+        <div style="font-size:14px;font-weight:700;color:var(--tx)">${_finFmt(t.valor)}</div>
+      </div>
+      <div class="fl">
+        <label>Data do pagamento</label>
+        <div style="font-size:13px;color:var(--tx)">${_finFmtData(t.dataPagamento)}</div>
+      </div>
+    </div>
+    <div class="fl">
+      <label>Status</label>
+      <div>${_finBadge(st)}</div>
+    </div>
+    <div class="fg">
+      <div class="fl">
+        <label>Combinado com o paciente</label>
+        <div>${_finSolicitadoHtml(t)}</div>
+      </div>
+      <div class="fl">
+        <label>Anexo</label>
+        <div>${_finAnexoIconHtml(t)}</div>
+      </div>
+    </div>
+    <div class="fl">
+      <label>Emissão fiscal</label>
+      <div>${_finEmissaoFiscalHtml(t)}</div>
+    </div>
+    <div style="margin-top:6px">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="fecharModalEfTitulo();relAbrirPaciente('${t.pacienteId}')">Ver no financeiro do paciente →</button>
+    </div>
+  `;
+  document.getElementById('modal-ef-titulo').classList.add('open');
+}
+
+function fecharModalEfTitulo(){
+  document.getElementById('modal-ef-titulo').classList.remove('open');
+  // Volta a refletir qualquer emissão fiscal registrada dentro do modal na tabela por trás
   relRenderConteudo();
 }
 
@@ -24354,23 +24454,38 @@ function _relRenderEmissaoFiscal(wrap, de, ate){
   const cardOn=cat=>catAtiva===cat?'box-shadow:0 0 0 2px var(--ac) inset':'';
 
   const filtrados = base.filter(t=> !catAtiva || _relEfCategoria(t)===catAtiva)
-    .sort((a,b)=>(b.dataPagamento||'').localeCompare(a.dataPagamento||''));
+    .sort((a,b)=>_relEfDataLiq(b).localeCompare(_relEfDataLiq(a)));
 
-  const tipoLbl={nota_fiscal:'Nota fiscal',recibo:'Recibo',sem_emissao:'Sem emissão',pendente:'Pendente'};
-  const tipoCor={nota_fiscal:'var(--ac)',recibo:'#065F46',sem_emissao:'var(--tx3)',pendente:'#991B1B'};
-
-  const linhas = filtrados.map(t=>{
-    const p=pacientes.find(x=>String(x.id)===String(t.pacienteId));
-    const cat=_relEfCategoria(t);
-    return `<tr style="cursor:pointer" onclick="relAbrirPaciente('${t.pacienteId}')">
-      <td>${_finFmtData(t.dataPagamento)}</td>
-      <td>${esc(p?p.nome:'—')}</td>
-      <td>${esc(t.descricao||'—')}</td>
-      <td style="text-align:right">R$ ${fmt(parseFloat(t.valor)||0)}</td>
-      <td><span style="font-size:11.5px;font-weight:600;color:${tipoCor[cat]}">${tipoLbl[cat]}</span></td>
+  // Linha exatamente igual à do módulo Financeiro › Contas a Receber (mesmos campos,
+  // botões e cores) — única diferença é o clique da linha, que aqui abre um modal em
+  // vez de navegar (ver _relEfAbrirLinha).
+  const renderLinha = (t)=>{
+    const st=_finStatusEfetivo(t);
+    const origemTag = `<span class="fin-origem fin-origem-${t._origem||'manual'}">${t._origem==='paciente'?'Paciente':'Manual'}</span>`;
+    const recorrIc = t.recorrente ? `<span class="fin-recorr-ic" title="Recorrente">⟳</span>` : '';
+    const isPaciente = t._origem==='paciente';
+    const pacNome = isPaciente ? (()=>{ const p=pacientes.find(x=>String(x.id)===String(t.pacienteId)); return p?p.nome:''; })() : '';
+    const parcelaCol = (t.parcelaInfo&&t.parcelaInfo.numero) ? `${t.parcelaInfo.numero}/${t.parcelaInfo.total}` : (t.recorrente ? 'Recorrente' : '—');
+    const liquidado = st==='pago'||st==='recebido';
+    const beneficiario = isPaciente ? (pacNome||'—') : (t._contraparte||'—');
+    const tipoReal = t.tipo||'receber';
+    return `<tr style="cursor:pointer" onclick="_relEfAbrirLinha('${t.id}','${t._origem||'manual'}','${tipoReal}')">
+      <td onclick="event.stopPropagation()"><input type="checkbox" disabled></td>
+      <td class="fin-td-desc"><div style="font-weight:500;color:var(--tx)">${esc(t.descricao||'—')}${recorrIc}</div></td>
+      <td><span style="font-size:12px;color:var(--tx2)">${esc(beneficiario)}</span></td>
+      <td><span style="font-size:12px;color:var(--tx2)">${esc(parcelaCol)}</span></td>
+      <td>${origemTag}</td>
+      <td style="white-space:nowrap;color:${st==='atrasado'?'var(--da)':'var(--tx2)'}">${_finFmtData(t.vencimento)}</td>
+      <td class="fin-td-valor">${_finFmt(t.valor)}</td>
+      <td>${_finBadge(st)}</td>
+      <td onclick="event.stopPropagation()">${_finSolicitadoHtml(t)}</td>
       <td onclick="event.stopPropagation()">${_finAnexoIconHtml(t)}</td>
+      <td onclick="event.stopPropagation()">${_finEmissaoFiscalHtml(t)}</td>
+      <td onclick="event.stopPropagation()">
+        ${!isPaciente?`<button class="btn btn-sm ${liquidado?'btn-ghost':''}" style="white-space:nowrap;${liquidado?'':'background:var(--sul);color:var(--su);border-color:var(--su)'}" onclick="${liquidado?`finDesfazerPagamento('${t.id}','receber')`:`abrirModalFinPagar('${t.id}','receber')`}">${liquidado?'Desfazer pagamento':'Receber'}</button>`:''}
+      </td>
     </tr>`;
-  }).join('');
+  };
 
   wrap.innerHTML=`
     <div class="fin-cards-row" style="margin-bottom:16px">
@@ -24398,14 +24513,20 @@ function _relRenderEmissaoFiscal(wrap, de, ate){
     <div class="fin-table-wrap">
       <table class="fin-table">
         <thead><tr>
-          <th style="width:110px">Data pagamento</th>
-          <th>Pagador</th>
+          <th style="width:32px"></th>
           <th>Descrição</th>
-          <th style="width:120px;text-align:right">Valor</th>
-          <th style="width:130px">Situação</th>
-          <th style="width:70px">Anexo</th>
+          <th style="width:140px">Pagador</th>
+          <th style="width:90px">Parcela</th>
+          <th style="width:90px">Origem</th>
+          <th style="width:100px">Vencimento</th>
+          <th style="width:110px">Valor</th>
+          <th style="width:90px">Status</th>
+          <th style="width:110px" title="Combinado com o paciente na aprovação do orçamento">Combinado</th>
+          <th style="width:60px">Anexo</th>
+          <th style="width:130px">Emissão fiscal</th>
+          <th style="width:80px"></th>
         </tr></thead>
-        <tbody>${linhas}</tbody>
+        <tbody>${filtrados.map(renderLinha).join('')}</tbody>
       </table>
       ${!filtrados.length?'<div class="fin-empty">Nenhum título encontrado nesse período/filtro.</div>':''}
     </div>
@@ -24619,18 +24740,46 @@ function _relItensNaoExecutados(){
   return out;
 }
 
+function _relProcARealizarClicarSemAgenda(){
+  _relFiltros.proc_a_realizar.semAgenda = !_relFiltros.proc_a_realizar.semAgenda;
+  relRenderConteudo();
+}
+
 function _relRenderProcARealizar(wrap, de, ate){
   const profs=_relFiltros.proc_a_realizar.profissionais;
-  const itens=_relItensNaoExecutados().filter(i=>{
+  const todosItens=_relItensNaoExecutados().filter(i=>{
     const d=i.dataAprovacao||'';
     if(d<de || d>ate) return false;
     if(profs.length && !profs.includes(i.profissional||'')) return false;
     return true;
   }).sort((a,b)=> (b.dataAprovacao||'').localeCompare(a.dataAprovacao||''));
 
-  if(!itens.length) return _relTabelaVazia(wrap, 'Nenhum procedimento a realizar nesse período/filtro.');
+  const totalGeral=todosItens.reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+  const semAgendaItens=todosItens.filter(i=>!i.dataAgendamento);
+  const totalSemAgenda=semAgendaItens.reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
 
-  const total=itens.reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+  const semAgendaAtivo=_relFiltros.proc_a_realizar.semAgenda;
+  const itens = semAgendaAtivo ? semAgendaItens : todosItens;
+
+  const cardOn=semAgendaAtivo?'box-shadow:0 0 0 2px var(--ac) inset':'';
+  const cardsHtml=`<div class="fin-cards-row" style="margin-bottom:14px">
+    <div class="fin-card fin-card-blue fin-card-clickable" style="${!semAgendaAtivo?'box-shadow:0 0 0 2px var(--ac) inset':''}" onclick="${semAgendaAtivo?'_relProcARealizarClicarSemAgenda()':''}">
+      <div class="fin-card-label">Total a realizar</div>
+      <div class="fin-card-value">${_finFmt(totalGeral)}</div>
+      <div class="fin-card-sub">${todosItens.length} procedimento(s)</div>
+    </div>
+    <div class="fin-card fin-card-clickable" style="${cardOn}" onclick="_relProcARealizarClicarSemAgenda()">
+      <div class="fin-card-label">Procedimentos sem agenda</div>
+      <div class="fin-card-value">${_finFmt(totalSemAgenda)}</div>
+      <div class="fin-card-sub">${semAgendaItens.length} procedimento(s) · ainda sem data agendada · clique para filtrar</div>
+    </div>
+  </div>`;
+
+  if(!itens.length){
+    wrap.innerHTML=cardsHtml+`<div class="card" style="padding:0"><div class="fin-empty">${esc(semAgendaAtivo?'Nenhum procedimento sem agenda nesse período/filtro.':'Nenhum procedimento a realizar nesse período/filtro.')}</div></div>`;
+    return;
+  }
+
   const rows=itens.map(i=>`<tr>
     <td>${_finFmtData(i.dataAprovacao)}</td>
     <td><a href="javascript:void(0)" onclick="relAbrirPaciente('${i.pacId}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(i.pacNome)}</a></td>
@@ -24641,10 +24790,7 @@ function _relRenderProcARealizar(wrap, de, ate){
     <td class="fin-td-valor">${_finFmt(i.valor)}</td>
   </tr>`).join('');
 
-  wrap.innerHTML=`<div class="card" style="margin-bottom:14px;display:flex;gap:24px">
-      <div><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3)">Total a realizar</div><div style="font-size:18px;font-weight:700">${_finFmt(total)}</div></div>
-      <div><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3)">Procedimentos</div><div style="font-size:18px;font-weight:700">${itens.length}</div></div>
-    </div>
+  wrap.innerHTML=cardsHtml+`
     <div class="fin-table-wrap"><table class="fin-table">
       <thead><tr><th>Aprovado em</th><th>Paciente</th><th>Orçamento</th><th>Procedimento</th><th>Profissional</th><th>Agendamento</th><th style="text-align:right">Valor</th></tr></thead>
       <tbody>${rows}</tbody>
