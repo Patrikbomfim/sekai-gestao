@@ -89,6 +89,9 @@
 .og-hero-value{font-size:30px;font-weight:800;letter-spacing:-.8px;line-height:1.1}
 .og-hero-sub{font-size:12px;color:var(--tx3);margin-top:6px}
 .og-hero-blue .og-hero-sub{opacity:.9}
+#og-btn-indicados{cursor:pointer;transition:filter .12s,box-shadow .12s}
+#og-btn-indicados:hover{filter:brightness(1.08)}
+#og-btn-indicados.on{box-shadow:0 0 0 3px rgba(255,255,255,.6), var(--shadow)}
 
 /* Faixas de idade (orçamentos em aberto por tempo de espera) */
 .og-faixa{flex:1;min-width:150px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r10);padding:12px 14px;cursor:pointer;transition:box-shadow .14s,transform .1s,border-color .12s}
@@ -10446,11 +10449,7 @@ function renderOrcamentosGeral(){
     const card=document.getElementById('og-btn-indicados');
     const val=document.getElementById('og-btn-indicados-val');
     if(val) val.textContent = indicados.length;
-    if(card){
-      card.style.borderColor = _ogFiltroIndicados ? 'var(--ac)' : 'var(--border)';
-      card.style.background = _ogFiltroIndicados ? 'var(--acl)' : 'var(--surface)';
-      card.style.color = _ogFiltroIndicados ? 'var(--ac)' : 'var(--tx)';
-    }
+    if(card) card.classList.toggle('on', _ogFiltroIndicados);
   }
 
   // ── Ranking por profissional: taxa de conversão + valor aprovado ─────────
@@ -15588,9 +15587,28 @@ function abrirModal(id){document.getElementById(id).classList.add('open');}
 function fecharModal(id){
   document.getElementById(id).classList.remove('open');
   // Se o modal "Nova pendência" foi fechado sem salvar (Cancelar/clique fora), limpa a
-  // marca de que ele foi aberto a partir do popover de agendamento — senão uma pendência
-  // futura, sem relação nenhuma com o popover, poderia ser atribuída a ele por engano.
-  if(id==='modal-nova-pendencia') _agPopPendenciaOrigemAtiva = false;
+  // marca de que ele foi aberto a partir do popover ou do modal completo de agendamento —
+  // senão uma pendência futura, sem relação nenhuma, poderia ser atribuída a eles por engano.
+  if(id==='modal-nova-pendencia'){
+    _agPopPendenciaOrigemAtiva = false;
+    _agmPendenciaOrigemAtiva = false;
+  }
+  // Modal completo de agendamento: se está fechando por causa de um salvamento
+  // bem-sucedido (_agmSalvouComSucesso), a pendência criada durante a sessão fica
+  // confirmada. Caso contrário (Cancelar, X, excluir, ou "ver ficha do paciente"),
+  // a pendência criada nesta sessão nunca chegou a ser salva junto — é revertida.
+  if(id==='modal-agendamento'){
+    if(_agmSalvouComSucesso){
+      _agmPendenciaCriadaId = null;
+      _agmSalvouComSucesso = false;
+    } else if(_agmPendenciaCriadaId){
+      pendenciasAvulsas = pendenciasAvulsas.filter(p=>p.id!==_agmPendenciaCriadaId);
+      salvarLS('sk3-pendencias-avulsas', pendenciasAvulsas);
+      if(typeof renderPendencias==='function') renderPendencias();
+      if(typeof atualizarBadgePendencias==='function') atualizarBadgePendencias();
+      _agmPendenciaCriadaId = null;
+    }
+  }
 }
 
 // Fecha o modal ao clicar fora, mas só se o clique (mousedown E click) começou
@@ -18814,6 +18832,7 @@ let pendModalPacienteContexto=null; // {id, nome} quando a pendência é criada 
 function agmAbrirLembretePaciente(){
   const pacienteId=document.getElementById('agm-paciente-id').value||null;
   const pacienteNome=document.getElementById('agm-paciente-busca').value.trim();
+  _agmPendenciaOrigemAtiva = true;
   abrirModalNovaPendencia();
   document.getElementById('np-modal-title').textContent='Agendar pendência'+(pacienteNome?` — ${pacienteNome}`:'');
   document.getElementById('np-modal-salvar').textContent='Agendar pendência';
@@ -18886,6 +18905,12 @@ function salvarPendenciaModal(){
       _agPopPendenciaCriadaId = novaPendencia.id;
       _agPopDirty = true;
       _agPopPendenciaOrigemAtiva = false;
+    }
+    // Mesma lógica quando a pendência nasce do "+ Agendar pendência" do modal completo
+    // de agendamento — só fica confirmada se o modal for efetivamente salvo.
+    if(_agmPendenciaOrigemAtiva){
+      _agmPendenciaCriadaId = novaPendencia.id;
+      _agmPendenciaOrigemAtiva = false;
     }
   } else if(pendModalEdit.avulsa){
     const p=pendenciasAvulsas.find(x=>x.id===pendModalEdit.pendId);
@@ -21890,6 +21915,9 @@ let _agPopDirty = false; // true quando há alguma alteração feita no popover 
 let _agPopDraftTags = []; // tags do agendamento durante a sessão do popover — só viram reais ao salvar
 let _agPopPendenciaOrigemAtiva = false; // true enquanto o modal "Nova pendência" foi aberto a partir do popover, aguardando ser salvo
 let _agPopPendenciaCriadaId = null; // id da pendência criada durante esta sessão do popover — desfeita se o usuário descartar as alterações
+let _agmPendenciaOrigemAtiva = false; // true enquanto o modal "Nova pendência" foi aberto a partir do modal completo de agendamento, aguardando ser salvo
+let _agmPendenciaCriadaId = null; // id da pendência criada durante esta sessão do modal completo — desfeita se ele for fechado sem salvar
+let _agmSalvouComSucesso = false; // sinaliza para fecharModal() que o modal-agendamento está fechando por causa de um salvamento bem-sucedido (não deve reverter a pendência)
 
 // Cancela o fechamento automático agendado (mouse voltou pro card ou entrou no popover)
 function agPopoverCancelClose(){
@@ -22354,9 +22382,11 @@ function agPopToggleSituacaoInline(){
   wrap.style.display = mostrar ? '' : 'none';
   if(mostrar){
     const sel = document.getElementById('agpop-situacao');
-    sel.innerHTML = situacaoList.map(s=>`<option value="${esc(s.id)}">${esc(s.label)}</option>`).join('');
-    const atual = a.situacaoRegistrada || (pacientes.find(p=>String(p.id)===String(a.pacienteId))||{}).situacao || '';
-    if(atual) sel.value = atual;
+    sel.innerHTML = '<option value="">— Selecione —</option>' + situacaoList.map(s=>`<option value="${esc(s.id)}">${esc(s.label)}</option>`).join('');
+    // Só reaproveita a situação se ela já foi registrada PARA ESTE atendimento — nunca
+    // pré-preenche com a situação atual do cadastro do paciente (poderia ser de um
+    // atendimento anterior, ex.: "Alta"), forçando uma escolha explícita a cada vez.
+    sel.value = a.situacaoRegistrada || '';
   }
 }
 
@@ -22556,6 +22586,9 @@ function agPopCriarTag(){
 
 // Wrapper para chamar o modal real diretamente (sem passar pelo interceptor do popover)
 function _abrirModalAgendamentoReal(agendamentoId){
+  _agmPendenciaOrigemAtiva = false;
+  _agmPendenciaCriadaId = null;
+  _agmSalvouComSucesso = false;
   const a = agendamentoId ? agendamentos.find(x=>x.id===agendamentoId) : null;
   document.getElementById('ag-modal-titulo').textContent = a ? 'Editar agendamento' : 'Novo agendamento';
   document.getElementById('agm-excluir').style.display = a ? '' : 'none';
@@ -23081,6 +23114,9 @@ function abrirModalAgendamento(agendamentoId, dataPre, horaPre, salaPre, usuario
   document.getElementById('ag-modal-titulo').textContent = a ? 'Editar agendamento' : 'Novo agendamento';
   document.getElementById('agm-excluir').style.display = a ? '' : 'none';
   document.getElementById('modal-agendamento').dataset.editId = a ? a.id : '';
+  _agmPendenciaOrigemAtiva = false;
+  _agmPendenciaCriadaId = null;
+  _agmSalvouComSucesso = false;
 
   // paciente
   document.getElementById('agm-paciente-busca').value = a ? (a.pacienteNome||'') : '';
@@ -23228,7 +23264,7 @@ function agmRenderCamposExtras(agendamentoExistente){
       const pacienteId = document.getElementById('agm-paciente-id')?.value||'';
       if(!pacienteId) return; // sem paciente vinculado, não exibe
       const situacaoSalva = agendamentoExistente ? (agendamentoExistente.situacaoRegistrada||'') : '';
-      const opcoesHtml = situacaoList.map(s=>`<option value="${esc(s.id)}" ${situacaoSalva===s.id?'selected':''}>${esc(s.label)}</option>`).join('');
+      const opcoesHtml = '<option value="">— Selecione —</option>' + situacaoList.map(s=>`<option value="${esc(s.id)}" ${situacaoSalva===s.id?'selected':''}>${esc(s.label)}</option>`).join('');
       html += `<div class="fl fg-full" id="agm-situacao-wrap" style="display:none">
         <label>Situação do paciente${labelStar}</label>
         <select id="agm-situacao">${opcoesHtml}</select>
@@ -23489,9 +23525,9 @@ function agmSelecionarPaciente(id,nome){
   const editId=document.getElementById('modal-agendamento').dataset.editId;
   const agAtual = editId ? agendamentos.find(a=>a.id===editId) : null;
   agmRenderCamposExtras(agAtual||null);
-  // Pré-seleciona o campo situação do agendamento com a situação atual do paciente
-  const selSituacao=document.getElementById('agm-situacao');
-  if(p && selSituacao && !agAtual?.situacaoRegistrada) selSituacao.value=p.situacao;
+  // Não pré-preenche com a situação atual do cadastro do paciente — o campo deve vir
+  // zerado (a menos que este agendamento específico já tenha uma situação registrada),
+  // forçando uma escolha explícita a cada atendimento marcado como Realizado.
   agmToggleSituacao();
   agmAtualizarPacienteView();
   agmAtualizarOrcamentosVinculo();
@@ -23800,6 +23836,7 @@ function _salvarAgendamentoInterno(){
     }
   }
 
+  _agmSalvouComSucesso = true;
   fecharModal('modal-agendamento');
   renderAgenda();
   if(typeof renderDesmarcados==='function') renderDesmarcados();
@@ -24471,15 +24508,6 @@ function relRenderFiltrosAba(){
           <option value="reprovado">Reprovado</option>
         </select>
       </div>
-      <div class="fl" style="width:120px">
-        <label>&nbsp;</label>
-        <div id="og-btn-indicados" onclick="ogToggleIndicados()" role="button" tabindex="0" onkeydown="if(event.key==='Enter')ogToggleIndicados()"
-          onmouseenter="this.style.boxShadow='0 4px 14px rgba(15,23,42,.12)'" onmouseleave="this.style.boxShadow='var(--shadow)'"
-          style="height:54px;padding:6px 12px;border:1px solid var(--border);border-radius:var(--r10);font-family:var(--font);color:var(--tx);background:var(--surface);box-shadow:var(--shadow);cursor:pointer;display:flex;flex-direction:column;justify-content:center;gap:2px;transition:all .12s">
-          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3)">Indicados</span>
-          <span id="og-btn-indicados-val" style="font-size:18px;font-weight:800;letter-spacing:-.3px;line-height:1.1">0</span>
-        </div>
-      </div>
       <div class="fl" style="width:auto">
         <label>&nbsp;</label>
         <button type="button" class="btn btn-ghost btn-sm" style="height:34px" onclick="ogLimparFiltrosAba()">Limpar filtros</button>
@@ -24905,11 +24933,17 @@ function _relRenderEmissaoFiscal(wrap, de, ate){
 // módulo; profissional/status ficam nos filtros da aba (rel-filtros-aba).
 function _relOrcamentosConteudoHTML(){
   return `
-  <div style="margin-bottom:14px">
-    <div class="og-hero og-hero-blue">
+  <div style="margin-bottom:14px;display:flex;gap:14px;align-items:stretch">
+    <div class="og-hero og-hero-blue" style="flex:1">
       <div class="og-hero-label">💰 Potencial de Vendas <span style="font-weight:400;opacity:.85">— em aberto, aguardando decisão</span></div>
       <div class="og-hero-value" id="og-hero-potencial">R$ 0,00</div>
       <div class="og-hero-sub" id="og-hero-potencial-sub">0 orçamento(s) · idade média de 0 dias</div>
+    </div>
+    <div id="og-btn-indicados" onclick="ogToggleIndicados()" role="button" tabindex="0" onkeydown="if(event.key==='Enter')ogToggleIndicados()"
+      class="og-hero og-hero-blue" style="width:190px;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center">
+      <div class="og-hero-label">🤝 Indicados</div>
+      <div class="og-hero-value" id="og-btn-indicados-val">0</div>
+      <div class="og-hero-sub">clique para filtrar</div>
     </div>
   </div>
 
