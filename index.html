@@ -2916,12 +2916,14 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="fl" style="min-width:170px">
         <label>Período</label>
         <select id="fin-periodo-sel" class="fin-select" onchange="finPeriodoGlobalMudou()">
+          <option value="mes_passado">Mês passado</option>
           <option value="hoje">Hoje</option>
           <option value="semana_atual">Esta semana</option>
           <option value="semana_proxima">Próxima semana</option>
           <option value="mes_atual">Este mês</option>
           <option value="mes_proximo">Próximo mês</option>
           <option value="especifica">Data específica</option>
+          <option value="todos">Todos os períodos</option>
         </select>
       </div>
       <div id="fin-periodo-custom" style="display:none;align-items:flex-end;gap:10px">
@@ -2934,9 +2936,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <input type="date" id="fin-periodo-ate" class="fin-input-date" onchange="finPeriodoGlobalCustomChange()">
         </div>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="finPeriodoGlobalLimpar()" style="margin-left:auto">Limpar filtro</button>
+      <button class="btn btn-ghost btn-sm" onclick="finPeriodoGlobalLimpar()">Limpar filtro</button>
     </div>
-    <div style="font-size:11.5px;color:var(--tx3);margin-top:8px" id="fin-periodo-global-label"></div>
   </div>
 
   <!-- FLUXO DE CAIXA -->
@@ -4106,6 +4107,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="fl" style="min-width:170px">
         <label>Período</label>
         <select id="rel-periodo-sel" class="fin-select" onchange="relPeriodoMudou()">
+          <option value="mes_passado">Mês passado</option>
           <option value="hoje">Hoje</option>
           <option value="semana_atual">Esta semana</option>
           <option value="semana_proxima">Próxima semana</option>
@@ -12643,6 +12645,10 @@ function renderPpProntuario(p){
   _renderProntDocs(p);
 }
 
+// Guarda quais grupos do Plano de tratamento estão expandidos (por uid), pra não fechar
+// tudo de novo quando o prontuário é re-renderizado (ex.: ao marcar/desfazer um procedimento).
+let _prontPlanoAbertos = new Set();
+
 function _renderProntPlano(p){
   const wrap=document.getElementById('pp-prontuario-plano-wrap');
   if(!wrap) return;
@@ -12665,12 +12671,13 @@ function _renderProntPlano(p){
     const itens=orc.itens||[];
     const total=itens.reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
     const executados=itens.filter(i=>i.executado).length;
+    const aberto=_prontPlanoAbertos.has(uid);
 
     html+=`
     <div style="border:1px solid var(--border);border-radius:var(--r8);margin-bottom:10px;overflow:hidden">
       <div onclick="_prontTogglePlano('${uid}')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;background:var(--surface);user-select:none"
            onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--surface)'">
-        <span id="${uid}-caret" style="font-size:11px;color:var(--tx3);transition:transform .18s;display:inline-block;flex-shrink:0">▶</span>
+        <span id="${uid}-caret" style="font-size:11px;color:var(--tx3);transition:transform .18s;display:inline-block;flex-shrink:0;transform:${aberto?'rotate(90deg)':''}">▶</span>
         <div style="width:8px;height:8px;border-radius:50%;background:#065F46;flex-shrink:0"></div>
         <span style="font-size:13px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${orc.nomeOrc||('Plano #'+(orc.num||orc.id.slice(-4)))}</span>
         ${orc.dataDecisao?`<span style="font-size:11px;color:var(--tx3);white-space:nowrap;flex-shrink:0">Aprovado em ${fmtData(orc.dataDecisao)}</span>`:''}
@@ -12681,7 +12688,7 @@ function _renderProntPlano(p){
           <div style="font-size:13px;font-weight:700;color:#065F46">R$ ${(orc.valorFechado||total).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
         </div>
       </div>
-      <div id="${uid}-body" style="display:none;border-top:1px solid var(--border)">
+      <div id="${uid}-body" style="display:${aberto?'block':'none'};border-top:1px solid var(--border)">
         ${itens.length?`
         <table style="width:100%;border-collapse:collapse">
           <thead>
@@ -12745,6 +12752,8 @@ function _prontTogglePlano(uid){
   const open=body.style.display==='block';
   body.style.display=open?'none':'block';
   if(caret) caret.style.transform=open?'':'rotate(90deg)';
+  if(open) _prontPlanoAbertos.delete(uid);
+  else _prontPlanoAbertos.add(uid);
 }
 
 function _prontUpdateItem(orcId,idx,field,val){
@@ -23898,6 +23907,11 @@ function _relPeriodoDatas(){
     const fim=new Date(hoje.getFullYear(),hoje.getMonth()+2,0);
     return { de:_finIso(ini), ate:_finIso(fim) };
   }
+  if(_relPeriodoTipo==='mes_passado'){
+    const ini=new Date(hoje.getFullYear(),hoje.getMonth()-1,1);
+    const fim=new Date(hoje.getFullYear(),hoje.getMonth(),0);
+    return { de:_finIso(ini), ate:_finIso(fim) };
+  }
   if(_relPeriodoTipo==='especifica'){
     const de=document.getElementById('rel-periodo-de')?.value || _finIso(hoje);
     const ate=document.getElementById('rel-periodo-ate')?.value || _finIso(hoje);
@@ -25667,6 +25681,16 @@ function _finPeriodoTipoBounds(tipo, custom){
     const fim=new Date(hoje.getFullYear(),hoje.getMonth()+2,0);
     return { de:_finIso(ini), ate:_finIso(fim) };
   }
+  if(tipo==='mes_passado'){
+    const ini=new Date(hoje.getFullYear(),hoje.getMonth()-1,1);
+    const fim=new Date(hoje.getFullYear(),hoje.getMonth(),0);
+    return { de:_finIso(ini), ate:_finIso(fim) };
+  }
+  if(tipo==='todos'){
+    // Sem período específico — faixa "aberta" que cobre qualquer data real,
+    // mesmo padrão usado no filtro de período do módulo Relatórios.
+    return { de:'0000-01-01', ate:'9999-12-31' };
+  }
   // 'mes_atual' (padrão)
   const ini=new Date(hoje.getFullYear(),hoje.getMonth(),1);
   const fim=new Date(hoje.getFullYear(),hoje.getMonth()+1,0);
@@ -25724,7 +25748,7 @@ function finPeriodoGlobalCustomChange(){
 }
 
 function finPeriodoGlobalLimpar(){
-  _finGlobalPeriodoTipo='mes_atual';
+  _finGlobalPeriodoTipo='todos';
   _finGlobalPeriodoDe=''; _finGlobalPeriodoAte='';
   finPeriodoGlobalRenderUI();
   finPeriodoGlobalAplicar();
