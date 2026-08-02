@@ -898,11 +898,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .ag-toolbar-spacer{flex:1}
 
 /* ── FAIXA DE DIAS DA SEMANA (topo da Agenda) ────────────────────── */
-.ag-day-strip{display:flex;gap:8px;padding:14px 16px 10px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0}
-.ag-day-strip-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:58px;padding:8px 10px;border-radius:var(--r10);border:1px solid transparent;background:none;cursor:pointer;transition:all .12s;font-family:var(--font)}
+.ag-day-strip{display:flex;gap:6px;padding:6px 16px 5px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0}
+.ag-day-strip-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:44px;padding:3px 8px;border-radius:var(--r10);border:1px solid transparent;background:none;cursor:pointer;transition:all .12s;font-family:var(--font)}
 .ag-day-strip-btn:hover{background:var(--s2)}
-.ag-day-strip-dow{font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--tx3)}
-.ag-day-strip-num{font-size:16px;font-weight:800;color:var(--tx);letter-spacing:-.3px}
+.ag-day-strip-dow{font-size:9px;font-weight:700;letter-spacing:.06em;color:var(--tx3)}
+.ag-day-strip-num{font-size:13px;font-weight:800;color:var(--tx);letter-spacing:-.3px}
 .ag-day-strip-btn.today .ag-day-strip-dow{color:var(--gold-d)}
 .ag-day-strip-btn.today .ag-day-strip-num{color:var(--gold-d)}
 .ag-day-strip-btn.on{background:var(--gold);border-color:var(--gold);box-shadow:0 3px 10px rgba(184,150,79,.35)}
@@ -22766,21 +22766,25 @@ function renderAgendaSemana(d){
   for(let m = ini; m < fim; m += passo) slots.push(m);
   const SLOT_H = 84;        // altura de cada slot de 1h — igual à visão por Dia (2 linhas de 42px)
   const TIME_W = 44;        // largura da coluna de horário
-  const SALA_MIN_W = 28;    // largura mínima de cada sub-coluna de sala
+  const SALA_MIN_W = 54;    // largura mínima de cada sub-coluna de sala (aumentada p/ caber "SALA 01" por extenso)
   const salas = salasParaGrade();
   const nSalas = salas.length || 1;
+  // Carregado uma única vez por render — usado para mostrar idade e situação financeira
+  // dentro dos cards, igual à visão por Dia.
+  const _agTodosTitulosPacientesSemana = _titulos();
 
   // ── cabeçalho de dias (linha 1) ──────────────────────────────────
   // Cada "dia" ocupa nSalas sub-colunas
-  let headerDias = `<div style="display:flex;position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:2px solid var(--border)">`;
+  const HEADER_DIAS_H = 34; // altura fixa do cabeçalho de dias, reduzida para economizar espaço vertical
+  let headerDias = `<div style="display:flex;position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:2px solid var(--border);height:${HEADER_DIAS_H}px">`;
   // célula do canto (horário)
   headerDias += `<div style="width:${TIME_W}px;flex-shrink:0;border-right:1px solid var(--border)"></div>`;
   dias.forEach(dia => {
     const dIso = iso(dia);
     const isHoje = dIso === isoHoje;
     const isSel = dIso === agSemanaDiaSelecionado;
-    headerDias += `<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:6px 2px;border-right:1px solid var(--border)">
-      <button class="ag-day-strip-btn${isSel?' on':''}${isHoje&&!isSel?' today':''}" style="min-width:44px;padding:5px 8px" onclick="agSemanaSelecionarDia('${dIso}')" title="${DIAS_SEMANA[dia.getDay()]}">
+    headerDias += `<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:2px;border-right:1px solid var(--border)">
+      <button class="ag-day-strip-btn${isSel?' on':''}${isHoje&&!isSel?' today':''}" style="min-width:36px;padding:1px 6px" onclick="agSemanaSelecionarDia('${dIso}')" title="${DIAS_SEMANA[dia.getDay()]}">
         <span class="ag-day-strip-dow">${DIAS_SEMANA[dia.getDay()]}</span>
         <span class="ag-day-strip-num">${dia.getDate()}</span>
       </button>
@@ -22789,13 +22793,13 @@ function renderAgendaSemana(d){
   headerDias += `</div>`;
 
   // ── sub-cabeçalho de salas (linha 2) ────────────────────────────
-  let headerSalas = `<div style="display:flex;position:sticky;top:58px;z-index:9;background:var(--surface);border-bottom:1px solid var(--border)">`;
+  let headerSalas = `<div style="display:flex;position:sticky;top:${HEADER_DIAS_H}px;z-index:9;background:var(--surface);border-bottom:1px solid var(--border)">`;
   headerSalas += `<div style="width:${TIME_W}px;flex-shrink:0;border-right:1px solid var(--border)"></div>`;
   dias.forEach(() => {
     salas.forEach((s, si) => {
       const isLast = si === nSalas - 1;
       headerSalas += `<div style="flex:1;min-width:${SALA_MIN_W}px;padding:3px 2px;text-align:center;font-size:9px;font-weight:600;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-right:${isLast?'2px':'1px'} solid var(--border);${si===0?'border-left:none':''}" title="${s.nome}">
-        <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${s.cor};margin-right:2px;vertical-align:middle"></span>${s.nome.replace('Sala ','S')}
+        <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${s.cor};margin-right:2px;vertical-align:middle"></span>${s.nome.toUpperCase()}
       </div>`;
     });
   });
@@ -22850,8 +22854,37 @@ function renderAgendaSemana(d){
           const cor = prof ? prof.cor : sala.cor;
           const dur = horaParaMin(a.horaFim) - horaParaMin(a.horaInicio);
           const hPx = Math.max(10, Math.round(dur / passo * SLOT_H)) - 2;
-          const primeiroNome = (a.pacienteNome||'').split(' ')[0];
-          body += `<div style="position:absolute;top:1px;left:1px;right:1px;height:${hPx}px;background:${cor};border-radius:3px;z-index:3;cursor:pointer;overflow:hidden;display:flex;align-items:center;padding:0 3px" onmouseenter="abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" onmouseleave="agPopoverScheduleClose()" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${a.pacienteNome||''}\n${a.horaInicio}–${a.horaFim}\n${sala.nome}"><span style="font-size:8px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1">${a.horaInicio} ${primeiroNome}</span></div>`;
+          const pacObj = pacientes.find(p=>String(p.id)===String(a.pacienteId));
+          const pacNome = a.pacienteNome || 'sem nome';
+          const pacNomeComCod = pacObj && pacObj.codigo ? `${pacNome} (${pacObj.codigo})` : pacNome;
+          const subLabel = prof ? prof.nome : sala.nome;
+          // ícone de status: agendado = ✓ vermelho; qualquer outro = ✓✓ verde
+          const statusIc = a.status==='agendado'
+            ? '<span style="color:#fca5a5;font-weight:700;margin-right:3px;flex-shrink:0">✓</span>'
+            : '<span style="color:#6ee7b7;font-weight:700;margin-right:3px;flex-shrink:0">✓✓</span>';
+          // Idade e situação financeira do paciente — só quando há espaço suficiente no card
+          let idadeSitTxt = '';
+          if(pacObj){
+            const idadePac = pacObj.nascimento ? calcularIdade(pacObj.nascimento) : null;
+            const temTituloAberto = _agTodosTitulosPacientesSemana.some(t=>String(t.pacienteId)===String(pacObj.id) && (t.status||'aberto')==='aberto');
+            const partesInfo=[];
+            if(idadePac!=null) partesInfo.push(idadePac+' anos');
+            partesInfo.push(temTituloAberto?'<span style="color:#FCA5A5;font-weight:700">Financeiro atrasado</span>':'Em dia');
+            idadeSitTxt = partesInfo.join(' · ');
+          }
+          const statusInfo = STATUS_AGENDAMENTO.find(s=>s.id===a.status);
+          const statusPillHtml = statusInfo ? `<span class="ag-status-pill" style="color:${statusInfo.cor}">${statusInfo.label}</span>` : '';
+          let cardContent;
+          if(hPx >= 46){
+            cardContent = `<div class="ag-card-tit" style="display:flex;align-items:center;justify-content:space-between;gap:4px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio}–${a.horaFim} ${pacNomeComCod}</span>${statusPillHtml}</div><div class="ag-card-sub">${subLabel}${a.procedimento?' · '+a.procedimento:''}</div>${idadeSitTxt?`<div class="ag-card-sub" style="opacity:.85">${idadeSitTxt}</div>`:''}`;
+          } else if(hPx >= 24){
+            cardContent = `<div class="ag-card-tit" style="font-size:9px;line-height:1.15;display:flex;align-items:center;overflow:hidden">${statusIc}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio} ${pacNomeComCod}</span></div><div class="ag-card-sub" style="font-size:8.5px">${subLabel}</div>`;
+          } else if(hPx >= 12){
+            cardContent = `<div class="ag-card-tit" style="font-size:8.5px;line-height:1.15;display:flex;align-items:center;overflow:hidden">${statusIc}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio} ${pacNomeComCod}</span></div>`;
+          } else {
+            cardContent = `<div class="ag-card-tit" style="font-size:8px;line-height:1.1;display:flex;align-items:center">${statusIc}<span>${a.horaInicio}</span></div>`;
+          }
+          body += `<div class="ag-card st-${a.status}" style="position:absolute;top:1px;left:1px;right:1px;height:${hPx}px;background:${cor};border-radius:3px;z-index:3;cursor:pointer;overflow:hidden;padding:1px 4px" onmouseenter="abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" onmouseleave="agPopoverScheduleClose()" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${pacNomeComCod} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}</div>`;
         });
         body += `</div>`;
       });
