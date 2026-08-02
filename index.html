@@ -8,6 +8,7 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 :root{
   --bg:#F7F8FA;--surface:#FFFFFF;--s2:#F0F2F5;--border:#E5E7EB;--border-s:#D1D5DB;
   --tx:#0F172A;--tx2:#64748B;--tx3:#94A3B8;
@@ -20,8 +21,14 @@
   --cta:#B8964F;--cta-d:#9C7D3F;
   --r4:6px;--r6:8px;--r8:10px;--r10:12px;--r12:16px;--r16:22px;
   --font:'Plus Jakarta Sans','Inter',system-ui,-apple-system,sans-serif;
-  --shadow:0 1px 2px rgba(0,0,0,.04);
-  --shadow-md:0 4px 16px rgba(0,0,0,.06);
+  --font-mono:'JetBrains Mono',ui-monospace,'SF Mono',Consolas,monospace;
+  --shadow:0 1px 3px rgba(15,23,42,.055);
+  --shadow-md:0 10px 28px rgba(15,23,42,.10);
+  --shadow-lg:0 18px 44px rgba(15,23,42,.16);
+  /* ══ Identidade "premium" do menu/cabeçalho — grafite profundo + dourado ══ */
+  --dk-bg:#15171B;--dk-bg2:#1D2025;--dk-bg3:#25282E;
+  --dk-border:#2A2D33;--dk-tx:#F1F1F0;--dk-tx2:#9BA1AC;
+  --gold:#B8964F;--gold-d:#9C7D3F;--gold-soft:rgba(184,150,79,.16);
 }
 /* ══ MÓDULO FINANCEIRO ══════════════════════════════════════════ */
 /* Mesma identidade viva definida para a Agenda, escopada só ao Financeiro:
@@ -333,18 +340,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:13px
 .hdr-search-item-meta{font-size:11px;color:var(--tx3);margin-top:1px}
 .hdr-search-avatar{width:28px;height:28px;border-radius:50%;background:var(--acl);color:var(--ac);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .hdr-search-empty{padding:12px;font-size:12px;color:var(--tx3);text-align:center}
-/* HEADER */
-.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:50px;position:sticky;top:0;z-index:100;box-shadow:none}
+/* HEADER — grafite profundo, faixa premium igual ao menu lateral */
+.hdr{background:var(--dk-bg);border-bottom:1px solid var(--dk-border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:50px;position:sticky;top:0;z-index:100;box-shadow:0 1px 0 rgba(0,0,0,.2)}
 .hdr-left{display:flex;align-items:center;gap:14px}
-.hdr-toggle{width:28px;height:28px;border:none;background:none;color:var(--tx3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;border-radius:var(--r6);flex-shrink:0;transition:background .12s,color .12s}
-.hdr-toggle:hover{background:var(--s2);color:var(--tx)}
+.hdr-toggle{width:28px;height:28px;border:none;background:none;color:var(--dk-tx2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;border-radius:var(--r6);flex-shrink:0;transition:background .12s,color .12s}
+.hdr-toggle:hover{background:var(--dk-bg3);color:var(--dk-tx)}
 .hdr-brand{display:flex;align-items:center;gap:10px}
-.hdr-logo{width:26px;height:26px;background:var(--ac);border-radius:var(--r6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;letter-spacing:-.5px;cursor:pointer;transition:opacity .12s}
-.hdr-logo:hover{opacity:.85}
-.hdr-title{font-size:13px;font-weight:600;color:var(--tx);letter-spacing:-.2px}
-.hdr-sub{font-size:12px;color:var(--tx3);margin-left:2px}
+.hdr-logo{width:28px;height:28px;background:var(--gold);border-radius:var(--r6);display:flex;align-items:center;justify-content:center;color:#1A1204;font-size:13px;font-weight:700;letter-spacing:-.5px;cursor:pointer;transition:opacity .12s;box-shadow:0 2px 8px rgba(184,150,79,.35)}
+.hdr-logo:hover{opacity:.88}
+.hdr-title{font-size:13.5px;font-weight:700;color:var(--dk-tx);letter-spacing:-.2px}
+.hdr-sub{font-size:12px;color:var(--dk-tx2);margin-left:2px}
 .hdr-alert{font-size:12px;background:var(--wal);color:var(--wa);padding:3px 10px;border-radius:var(--r6);font-weight:500;cursor:pointer;display:none;border:1px solid #FDE68A}
-.hdr-date{font-size:12px;color:var(--tx3)}
+.hdr-date{font-size:12px;color:var(--dk-tx2)}
 
 /* LAYOUT */
 .layout{display:grid;grid-template-columns:200px 1fr;min-height:calc(100vh - 50px);transition:grid-template-columns .16s ease}
@@ -389,15 +396,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:13px
 .toggle-sw.on{background:var(--ac);border-color:var(--ac)}
 .toggle-sw.on::after{transform:translateX(15px)}
 
-/* SIDEBAR */
-.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:20px 0;position:sticky;top:50px;height:calc(100vh - 50px);overflow-x:hidden;overflow-y:auto;width:200px;transition:width .12s ease}
+/* SIDEBAR — grafite profundo, mesma identidade do cabeçalho, destaque dourado */
+.sidebar{background:var(--dk-bg);border-right:1px solid var(--dk-border);padding:20px 0;position:sticky;top:50px;height:calc(100vh - 50px);overflow-x:hidden;overflow-y:auto;width:200px;transition:width .12s ease}
 .layout.nav-collapsed .sidebar{width:0;padding:20px 0;border-right:none}
-.slb-label{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.12em;padding:0 20px;margin:20px 0 6px;white-space:nowrap}
+.slb-label{font-size:10px;font-weight:700;color:var(--dk-tx2);text-transform:uppercase;letter-spacing:.14em;padding:0 20px;margin:22px 0 8px;white-space:nowrap;opacity:.75}
 .slb-label:first-child{margin-top:0}
 .nav-gap{height:14px}
-.nav-btn{display:flex;align-items:center;gap:9px;padding:8px 20px;cursor:pointer;font-size:12.5px;color:var(--tx2);border:none;border-left:2px solid transparent;background:none;width:100%;text-align:left;transition:color .1s,background .1s;font-family:var(--font);white-space:nowrap;border-radius:0}
-.nav-btn:hover{color:var(--tx);background:var(--s2)}
-.nav-btn.on{color:var(--ac);font-weight:600;border-left:2px solid var(--ac);background:var(--acl)}
+.nav-btn{display:flex;align-items:center;gap:9px;padding:9px 20px;cursor:pointer;font-size:12.5px;color:var(--dk-tx2);border:none;border-left:2px solid transparent;background:none;width:100%;text-align:left;transition:color .12s,background .12s;font-family:var(--font);white-space:nowrap;border-radius:0}
+.nav-btn:hover{color:var(--dk-tx);background:var(--dk-bg2)}
+.nav-btn.on{color:var(--gold);font-weight:600;border-left:2px solid var(--gold);background:var(--gold-soft)}
 .nav-ic{font-size:13px;flex-shrink:0;opacity:.55;width:14px;display:inline-block;text-align:center}
 .nav-btn.on .nav-ic{opacity:1}
 .nav-badge{margin-left:auto;background:var(--da);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:var(--r4);min-width:18px;text-align:center}
@@ -407,7 +414,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:13px
 .sec{display:none}.sec.on{display:block}
 #sec-agenda{display:none}
 #sec-agenda.on{display:flex}
-.pg-title{font-size:20px;font-weight:700;margin-bottom:2px;letter-spacing:-.4px;color:var(--tx)}
+.pg-title{font-size:21px;font-weight:800;margin-bottom:2px;letter-spacing:-.5px;color:var(--tx)}
 .pg-desc{font-size:13px;color:var(--tx2);margin-bottom:20px;font-weight:400}
 
 /* CARD */
@@ -789,18 +796,18 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
    Estas variáveis substituem localmente var(--ac)/(--acl)/(--act) apenas
    dentro de #sec-agenda, sem alterar a paleta usada pelo resto do sistema. */
 #sec-agenda{
-  --ag-acc:#0F5C61;      /* verde petróleo — accent principal da agenda (nova paleta) */
-  --ag-acc-d:#0B3B3E;    /* hover/variante escura do accent */
-  --ag-acc-soft:#E6EEEE; /* tom claro sólido (não transparente) p/ destaques sutis */
+  --ag-acc:#B8964F;      /* dourado — accent principal da agenda (identidade premium) */
+  --ag-acc-d:#9C7D3F;    /* hover/variante escura do accent */
+  --ag-acc-soft:#F5EFE1; /* tom claro sólido (não transparente) p/ destaques sutis */
   --font:'Plus Jakarta Sans','Inter',system-ui,-apple-system,sans-serif;
   font-family:var(--font);
 }
 .ag-grid{display:grid;min-width:560px}
-.ag-head{position:sticky;top:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:700;padding:8px 4px;border-left:1px solid rgba(255,255,255,.3);text-align:center;line-height:1.3;color:#fff;background:var(--tx3)}
-.ag-head:first-child{background:transparent;border-left:none}
-.ag-head-date{font-size:10px;font-weight:600;opacity:.85;letter-spacing:.01em}
-.ag-head-sala{font-size:12.5px;font-weight:700}
-.ag-time{font-size:10px;color:var(--tx3);padding:2px 6px;text-align:right;border-top:1px solid var(--border);display:flex;align-items:flex-start;justify-content:flex-end}
+.ag-head{position:sticky;top:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;font-weight:700;padding:12px 6px 10px;border-left:1px solid var(--border);border-bottom:2px solid var(--border);text-align:center;line-height:1.3;color:var(--tx);background:var(--surface)}
+.ag-head:first-child{background:transparent;border-left:none;border-bottom:2px solid transparent}
+.ag-head-date{font-size:9.5px;font-weight:600;opacity:.55;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3)}
+.ag-head-sala{font-size:13.5px;font-weight:800;letter-spacing:-.2px;color:var(--tx)}
+.ag-time{font-size:11px;font-weight:500;font-family:var(--font-mono);color:var(--tx3);padding:2px 8px;text-align:right;border-top:1px solid var(--border);display:flex;align-items:flex-start;justify-content:flex-end;letter-spacing:-.02em}
 .ag-cell{border-top:1px solid var(--border);border-left:1px solid var(--border);position:relative;padding:2px;overflow:visible}
 .ag-cell:first-of-type{border-left:none}
 .ag-cell.ag-empty{cursor:pointer;transition:background .1s;background:var(--tint,transparent)}
@@ -809,7 +816,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .ag-cell.ag-empty:hover::after{opacity:1}
 .ag-cell.ag-fora{background:var(--surface)}
 .ag-cell.ag-bloqueado{background:repeating-linear-gradient(135deg,#FCA5A5 0 7px,#FEE2E2 7px 14px);cursor:default}
-.ag-card{border-radius:8px;padding:3px 7px;font-size:10.5px;line-height:1.3;cursor:grab;color:#fff;overflow:hidden;position:absolute;left:2px;right:2px;z-index:3}
+.ag-card{border-radius:10px;padding:4px 8px;font-size:10.5px;line-height:1.3;cursor:grab;color:#fff;overflow:hidden;position:absolute;left:3px;right:3px;z-index:3;box-shadow:0 2px 6px rgba(15,23,42,.18);transition:box-shadow .12s,transform .12s}
+.ag-card:hover{box-shadow:0 6px 16px rgba(15,23,42,.28);transform:translateY(-1px)}
 .ag-card.ag-dragging{opacity:.3}
 .ag-drag-ghost{position:fixed;z-index:9999;pointer-events:none;box-shadow:0 10px 28px rgba(0,0,0,.35);opacity:.95;cursor:grabbing}
 .ag-mini-cal-day.ag-drop-target{outline:2px solid var(--ag-acc);outline-offset:-2px;background:var(--ag-acc-soft);border-radius:6px}
@@ -820,6 +828,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .ag-resize-handle:hover{background:rgba(255,255,255,.35)}
 .ag-card .ag-card-tit{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10.5px}
 .ag-card .ag-card-sub{opacity:.9;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ag-status-pill{display:inline-flex;align-items:center;font-family:var(--font);font-size:8.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;padding:1px 6px;border-radius:20px;background:rgba(255,255,255,.92);flex-shrink:0;line-height:1.5}
 .ag-legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--tx2)}
 .ag-legend-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
 .ag-bloqueio-tag{font-size:10px;color:var(--da);text-align:center;padding-top:2px}
@@ -953,7 +962,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <header class="hdr">
   <div class="hdr-left">
     <button class="hdr-toggle" id="nav-toggle-btn" onclick="toggleNavSidebar()" title="Esconder menu" aria-label="Esconder menu">☰</button>
-    <button onclick="goTo('hoje', document.getElementById('navbtn-hoje'))" style="height:30px;padding:0 14px;font-size:12.5px;font-weight:600;border:1px solid var(--border);border-radius:var(--r8);background:var(--surface);color:var(--tx2);cursor:pointer;white-space:nowrap;transition:background .12s,color .12s;font-family:var(--font)" onmouseover="this.style.background='var(--s2)';this.style.color='var(--tx)'" onmouseout="this.style.background='var(--surface)';this.style.color='var(--tx2)'">Início</button>
+    <button onclick="goTo('hoje', document.getElementById('navbtn-hoje'))" style="height:30px;padding:0 14px;font-size:12.5px;font-weight:600;border:1px solid var(--dk-border);border-radius:var(--r8);background:var(--dk-bg2);color:var(--dk-tx2);cursor:pointer;white-space:nowrap;transition:background .12s,color .12s;font-family:var(--font)" onmouseover="this.style.background='var(--dk-bg3)';this.style.color='var(--dk-tx)'" onmouseout="this.style.background='var(--dk-bg2)';this.style.color='var(--dk-tx2)'">Início</button>
     <div class="hdr-brand">
       <button class="hdr-logo" onclick="goTo('config')" title="Configurações" aria-label="Configurações">⚙</button>
       <span class="hdr-title">Sistema Operacional Sekai</span>
@@ -968,12 +977,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div style="display:flex;align-items:center;gap:14px">
     <div class="hdr-alert" id="hdr-alert" onclick="goTo('hoje')"></div>
     <div id="hdr-impersonar-wrap" style="display:none;align-items:center;gap:6px">
-      <span style="font-size:11px;color:var(--tx2)">Ver como:</span>
-      <select id="hdr-usuario-atual" onchange="onChangeUsuarioAtual(this.value)" style="font-size:12px;padding:4px 8px;border-radius:var(--r6);border:1px solid var(--border);background:var(--surface);color:var(--tx)"></select>
-      <button id="hdr-voltar-eu" onclick="voltarParaUsuarioPrincipal()" title="Voltar a ser você mesmo" style="display:none;font-size:11px;padding:4px 8px;border-radius:var(--r6);border:1px solid var(--border);background:var(--s2);color:var(--tx2);cursor:pointer">↩ Voltar</button>
+      <span style="font-size:11px;color:var(--dk-tx2)">Ver como:</span>
+      <select id="hdr-usuario-atual" onchange="onChangeUsuarioAtual(this.value)" style="font-size:12px;padding:4px 8px;border-radius:var(--r6);border:1px solid var(--dk-border);background:var(--dk-bg2);color:var(--dk-tx)"></select>
+      <button id="hdr-voltar-eu" onclick="voltarParaUsuarioPrincipal()" title="Voltar a ser você mesmo" style="display:none;font-size:11px;padding:4px 8px;border-radius:var(--r6);border:1px solid var(--dk-border);background:var(--dk-bg3);color:var(--dk-tx2);cursor:pointer">↩ Voltar</button>
     </div>
-    <span id="hdr-usuario-logado" style="font-size:12px;color:var(--tx2)"></span>
-    <button onclick="fazerLogout()" style="font-size:12px;padding:5px 10px;border-radius:var(--r6);border:1px solid var(--border);background:var(--surface);color:var(--tx2);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--surface)'">Sair</button>
+    <span id="hdr-usuario-logado" style="font-size:12px;color:var(--dk-tx2)"></span>
+    <button onclick="fazerLogout()" style="font-size:12px;padding:5px 10px;border-radius:var(--r6);border:1px solid var(--dk-border);background:var(--dk-bg2);color:var(--dk-tx2);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--dk-bg3)'" onmouseout="this.style.background='var(--dk-bg2)'">Sair</button>
     <span class="hdr-date" id="hdr-date"></span>
   </div>
 </header>
@@ -22937,7 +22946,7 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
   let html = `<div class="ag-grid" style="${style}">`;
   html += `<div class="ag-head"></div>`;
   cols.forEach(c=>{
-    html += `<div class="ag-head" style="background:${c.cor}"><div class="ag-head-date">${_agHeadDataTxt}</div><div class="ag-head-sala">${c.label}</div></div>`;
+    html += `<div class="ag-head" style="border-bottom-color:${c.cor}"><div class="ag-head-date">${_agHeadDataTxt}</div><div class="ag-head-sala">${c.label}</div></div>`;
   });
 
   for(let r=0;r<nLinhas;r++){
@@ -22988,8 +22997,10 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
       }
       let cardContent;
       const extraClass = heightPx < 30 ? ' ag-card-compact' : '';
+      const statusInfo = STATUS_AGENDAMENTO.find(s=>s.id===a.status);
+      const statusPillHtml = statusInfo ? `<span class="ag-status-pill" style="color:${statusInfo.cor}">${statusInfo.label}</span>` : '';
       if(heightPx >= 30){
-        cardContent = `<div class="ag-card-tit" style="display:flex;align-items:center">${statusIc}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio}–${a.horaFim} ${pacNomeComCod}</span></div><div class="ag-card-sub">${subLabel}${a.procedimento?' · '+a.procedimento:''}</div>${idadeSitTxt?`<div class="ag-card-sub" style="opacity:.85">${idadeSitTxt}</div>`:''}`;
+        cardContent = `<div class="ag-card-tit" style="display:flex;align-items:center;justify-content:space-between;gap:5px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio}–${a.horaFim} ${pacNomeComCod}</span>${statusPillHtml}</div><div class="ag-card-sub">${subLabel}${a.procedimento?' · '+a.procedimento:''}</div>${idadeSitTxt?`<div class="ag-card-sub" style="opacity:.85">${idadeSitTxt}</div>`:''}`;
       } else if(heightPx >= 12){
         const sub = subLabel ? ` · ${subLabel}` : '';
         cardContent = `<div class="ag-card-tit" style="font-size:9px;line-height:1.15;display:flex;align-items:center;overflow:hidden">${statusIc}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio}–${a.horaFim} ${pacNomeComCod}${sub}</span></div>`;
