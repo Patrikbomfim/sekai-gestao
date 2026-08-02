@@ -808,7 +808,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .ag-head-date{font-size:9.5px;font-weight:600;opacity:.55;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3)}
 .ag-head-sala{font-size:13.5px;font-weight:800;letter-spacing:-.2px;color:var(--tx)}
 .ag-time{font-size:11px;font-weight:500;font-family:var(--font-mono);color:var(--tx3);padding:2px 8px;text-align:right;border-top:1px solid var(--border);display:flex;align-items:flex-start;justify-content:flex-end;letter-spacing:-.02em}
-.ag-cell{border-top:1px solid var(--border);border-left:1px solid var(--border);position:relative;padding:2px;overflow:visible}
+.ag-cell{border-top:1px solid rgba(15,23,42,.045);border-left:1px solid var(--border);position:relative;padding:2px;overflow:visible}
+.ag-cell.ag-cell-hour{border-top:1px solid var(--border)}
 .ag-cell:first-of-type{border-left:none}
 .ag-cell.ag-empty{cursor:pointer;transition:background .1s;background:var(--tint,transparent)}
 .ag-cell.ag-empty::after{content:'';position:absolute;top:50%;left:50%;width:18px;height:18px;transform:translate(-50%,-50%);opacity:0;transition:opacity .12s;pointer-events:none;background-color:var(--ag-acc);-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='2'/%3E%3Cpath d='M12 7v5l3 2' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='2'/%3E%3Cpath d='M12 7v5l3 2' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain}
@@ -895,6 +896,17 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .ag-date-display{display:flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);cursor:pointer;transition:all .1s;font-size:12px;color:var(--tx2);font-family:var(--font)}
 .ag-date-display:hover{border-color:var(--ag-acc);background:var(--ag-acc-soft);color:var(--ag-acc-d)}
 .ag-toolbar-spacer{flex:1}
+
+/* ── FAIXA DE DIAS DA SEMANA (topo da Agenda) ────────────────────── */
+.ag-day-strip{display:flex;gap:8px;padding:14px 16px 10px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0}
+.ag-day-strip-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:58px;padding:8px 10px;border-radius:var(--r10);border:1px solid transparent;background:none;cursor:pointer;transition:all .12s;font-family:var(--font)}
+.ag-day-strip-btn:hover{background:var(--s2)}
+.ag-day-strip-dow{font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--tx3)}
+.ag-day-strip-num{font-size:16px;font-weight:800;color:var(--tx);letter-spacing:-.3px}
+.ag-day-strip-btn.today .ag-day-strip-dow{color:var(--gold-d)}
+.ag-day-strip-btn.today .ag-day-strip-num{color:var(--gold-d)}
+.ag-day-strip-btn.on{background:var(--gold);border-color:var(--gold);box-shadow:0 3px 10px rgba(184,150,79,.35)}
+.ag-day-strip-btn.on .ag-day-strip-dow,.ag-day-strip-btn.on .ag-day-strip-num{color:#fff}
 
 /* ── VISÃO SEMANA ───────────────────────────────────────────────── */
 .ag-week-header{display:grid;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
@@ -1160,6 +1172,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
   <!-- ÁREA PRINCIPAL -->
   <div class="ag-main">
+    <!-- Faixa de dias da semana — clique rápido para trocar de dia, igual ao mockup aprovado -->
+    <div class="ag-day-strip" id="ag-day-strip"></div>
+
     <!-- Topbar: navegação + busca -->
     <div class="ag-topbar">
       <button class="ag-nav-btn" onclick="agendaNavAnterior()" title="Anterior">‹</button>
@@ -22696,6 +22711,7 @@ function renderAgenda(){
 
   renderAgendaLegenda();
   renderAgSalaChips();
+  renderAgDayStrip(d);
 
   if(agendaPeriodo==='dia'){
     if(agendaView==='sala') renderAgendaPorSala(d);
@@ -22708,6 +22724,26 @@ function renderAgenda(){
 function getWeekNumber(d){
   const jan1 = new Date(d.getFullYear(),0,1);
   return Math.ceil(((d-jan1)/86400000 + jan1.getDay()+1)/7);
+}
+
+// Faixa de dias da semana no topo da Agenda (estilo do mockup aprovado) — mostra
+// os dias configurados em "Horário de funcionamento" (via semanaConfigDias) e
+// deixa trocar de dia com 1 clique, sem precisar abrir o calendário.
+function renderAgDayStrip(d){
+  const wrap = document.getElementById('ag-day-strip');
+  if(!wrap) return;
+  const dias = semanaConfigDias(d);
+  const isoHojeStr = iso(hoje);
+  wrap.innerHTML = dias.map(dia=>{
+    const dIso = iso(dia);
+    const sel = dIso===agendaData;
+    const ehHoje = dIso===isoHojeStr;
+    const dow = DIAS[dia.getDay()].slice(0,3).toUpperCase();
+    return `<button class="ag-day-strip-btn${sel?' on':''}${ehHoje&&!sel?' today':''}" onclick="agendaSetData('${dIso}');agendaSetPeriodo('dia')" title="${DIAS[dia.getDay()]}">
+      <span class="ag-day-strip-dow">${dow}</span>
+      <span class="ag-day-strip-num">${String(dia.getDate()).padStart(2,'0')}</span>
+    </button>`;
+  }).join('');
 }
 
 // MESES já declarado anteriormente no código
@@ -22930,7 +22966,7 @@ function janelaGlobalDoDia(diaSemana){
 function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo){
   const grid=document.getElementById('agenda-grid');
   const nLinhas = Math.ceil((fimMin-iniMin)/passo);
-  const SLOT_H = 34;
+  const SLOT_H = 42;
   const totalH = nLinhas * SLOT_H;
   // Carregado uma única vez por render (não por card) — usado para mostrar idade e situação
   // financeira dentro dos cards de agendamento, quando há espaço.
@@ -23050,6 +23086,7 @@ function renderAgendaCell(col, modo, slotIni, slotFim, dataIso, diaSemana, iniMi
   ));
 
   let cls='ag-cell';
+  if(slotIni % 60 === 0) cls+=' ag-cell-hour';
   if(bloqueado || erBloqueado) cls+=' ag-bloqueado';
   else if(!disponivel) cls+=' ag-fora';
   else cls+=' ag-empty';
