@@ -44,57 +44,87 @@
 .fin-area{display:none}
 .fin-area.on{display:block}
 
-/* ══ MÓDULO RELATÓRIOS — nova identidade visual (escopada só a este módulo) ══
-   Mesmo princípio das identidades da Agenda/Financeiro acima: redeclara as
-   variáveis GLOBAIS de cor/raio/sombra localmente, só dentro de #sec-relatorios
-   — como quase todo .card/.fin-*/.og-*/.pp-* já referencia essas variáveis,
-   isso já muda a cor e o "clima" de praticamente tudo no módulo (as 8 abas:
-   Agendamentos, Procedimentos realizados/a realizar, Primeiras consultas,
-   Pacientes de alta, Agendamentos sem baixa, Orçamentos e Emissão fiscal)
-   sem precisar editar regra por regra nem mexer no HTML/JS de cada aba.
-   Fora do #sec-relatorios nada muda — Financeiro, Agenda, Pacientes e o
-   restante do sistema continuam exatamente como estavam. */
+/* ══ MÓDULO RELATÓRIOS — identidade visual "premium" (escopada só a este módulo) ══
+   Fiel ao mockup aprovado: fundo porcelana quente, dourado como accent único,
+   verde esmeralda/terracota nos status, Space Grotesk nos títulos e números
+   de destaque, IBM Plex Mono nas legendas/dados. Tudo isolado dentro de
+   #sec-relatorios — Financeiro, Agenda, Pacientes e o resto do sistema
+   continuam exatamente como estavam. */
 #sec-relatorios{
-  --ac:#A9822E;   --acl:#F4EEDF; --act:#8A6A25;   /* dourado — accent principal do módulo */
-  --su:#1F6F54;   --sul:#E9F2EE;                   /* verde esmeralda — aprovado/sucesso */
-  --da:#AC5F4F;   --dal:#F6ECE9;                   /* terracota — reprovado/atenção (mais discreto que vermelho puro) */
-  --wa:#A9822E;   --wal:#F4EEDF;                   /* alerta usa o próprio dourado, pra não competir com o accent */
-  --pu:#1F6F54;   --pul:#E9F2EE;
-  --cta:#A9822E;  --cta-d:#8A6A25;
-  --border:#E7E2D6; --border-s:#D8D0BF;
-  --tx3:#93968E;  --tx2:#66695F;
-  --r4:5px;--r6:7px;--r8:8px;--r10:9px;--r12:11px;--r16:14px;
-  --shadow:0 1px 2px rgba(24,23,17,.05);
-  --shadow-md:0 8px 22px rgba(24,23,17,.07);
+  --ac:#A9822E;   --acl:#F2E9D3; --act:#7C6023;   /* dourado — accent principal do módulo */
+  --su:#1F6F54;   --sul:#E1EEE7;                   /* verde esmeralda — aprovado/sucesso */
+  --da:#A6564A;   --dal:#F3E1DD;                   /* terracota — reprovado/atenção */
+  --wa:#A9822E;   --wal:#F2E9D3;
+  --pu:#1F6F54;   --pul:#E1EEE7;
+  --cta:#A9822E;  --cta-d:#7C6023;
+  --bg:#F2EEE3;   --surface:#FFFFFF; --s2:#EDE6D6;
+  --border:#E3DAC5; --border-s:#D2C6A8;
+  --tx:#22201A;   --tx2:#615A46;  --tx3:#948C74;
+  --r4:6px;--r6:8px;--r8:10px;--r10:12px;--r12:14px;--r16:18px;
+  --shadow:0 1px 3px rgba(34,32,26,.06);
+  --shadow-md:0 10px 28px rgba(34,32,26,.10);
   --font-display:'Space Grotesk','Plus Jakarta Sans',sans-serif;
   --font-mono:'IBM Plex Mono',monospace;
-  background:#FAF8F2;
+  background:var(--bg);
   margin:-24px -28px;
-  padding:24px 28px;
+  padding:28px 32px 60px;
+  color:var(--tx);
 }
 
-/* Título da página e números de destaque — fonte de exibição mais forte */
-#sec-relatorios .pg-title,
+/* Cabeçalho do módulo */
+#sec-relatorios .pg-title{
+  font-family:var(--font-display);
+  font-size:26px;
+  font-weight:700;
+  letter-spacing:-.02em;
+  color:var(--tx);
+}
+#sec-relatorios .pg-desc{ color:var(--tx2); font-size:13.5px; }
+
+/* Números de destaque (cards e hero) — fonte de exibição, mais fortes */
 #sec-relatorios .fin-card-value,
 #sec-relatorios .og-hero-value,
 #sec-relatorios .og-faixa-val{
   font-family:var(--font-display);
-  letter-spacing:-.01em;
+  font-size:26px;
+  letter-spacing:-.02em;
 }
 
-/* Legendas pequenas (contadores, ticket médio, cabeçalhos de tabela e % de
-   conversão) — fonte "de precisão", reforça a leitura de dado/número */
+/* Rótulos e legendas — fonte "de precisão", tracking mais largo */
+#sec-relatorios .fin-card-label,
 #sec-relatorios .fin-card-sub,
 #sec-relatorios .og-hero-sub,
 #sec-relatorios .og-faixa-count,
 #sec-relatorios .og-rank-pct,
 #sec-relatorios .fin-table thead th{
   font-family:var(--font-mono);
+  letter-spacing:.04em;
+}
+#sec-relatorios .fin-card-label{ font-size:10.5px; }
+
+/* Valores monetários dentro das tabelas — também na fonte de precisão */
+#sec-relatorios .fin-table td.fin-td-valor{
+  font-family:var(--font-mono);
+  color:var(--tx);
 }
 
-/* Cards, painéis e tabela — cantos e sombra mais discretos (pedido: minimalista) */
+/* Cards de métrica — respiro maior, cantos e sombra mais suaves,
+   com uma lasca de cor à esquerda indicando o tipo (padrão do mockup) */
+#sec-relatorios .fin-card{
+  padding:18px 20px;
+  border-radius:var(--r10);
+  box-shadow:var(--shadow);
+  border-left:3px solid var(--border-s);
+  transition:transform .12s, box-shadow .12s;
+}
+#sec-relatorios .fin-card:hover{ transform:translateY(-1px); box-shadow:var(--shadow-md); }
+#sec-relatorios .fin-card-blue{ border-left-color:var(--ac); }
+#sec-relatorios .fin-card-green{ border-left-color:var(--su); }
+#sec-relatorios .fin-card-red{ border-left-color:var(--da); }
+#sec-relatorios .fin-card-amber{ border-left-color:var(--wa); }
+
+/* Painéis, tabela e menu — mesmo tratamento de cantos/sombra suave */
 #sec-relatorios .card,
-#sec-relatorios .fin-card,
 #sec-relatorios .og-hero,
 #sec-relatorios .og-faixa,
 #sec-relatorios .og-panel,
@@ -102,20 +132,45 @@
 #sec-relatorios .pp-menu{
   border-radius:var(--r10);
   box-shadow:var(--shadow);
+  border-color:var(--border);
+}
+
+/* Tabela — cabeçalho discreto e mais espaçado, linhas com hairline só */
+#sec-relatorios .fin-table thead th{
+  padding-top:2px;
+  border-bottom:1px solid var(--border-s);
+}
+#sec-relatorios .fin-table tr:hover td{
+  background:var(--acl);
 }
 
 /* Hero "Potencial de Vendas" / "Indicados" — tira o degradê azul antigo,
-   passa a usar o dourado do módulo */
+   passa a usar o dourado do módulo em degradê suave */
 #sec-relatorios .og-hero-blue{
   background:linear-gradient(135deg,var(--ac) 0%,var(--act) 100%);
+  box-shadow:var(--shadow-md);
 }
 
-/* Aba ativa no menu lateral do módulo (Agendamentos / Orçamentos / etc.) */
+/* Menu lateral de abas do módulo — pill com lasca dourada na aba ativa,
+   igual ao item de navegação do mockup */
+#sec-relatorios .pp-menu{ padding:10px; }
+#sec-relatorios .pp-menu-btn{
+  border-radius:var(--r6);
+  border-left:2px solid transparent;
+  font-family:'Plus Jakarta Sans',var(--font);
+}
 #sec-relatorios .pp-menu-btn.on{
   background:var(--acl);
   color:var(--act);
   font-weight:600;
+  border-left-color:var(--ac);
 }
+#sec-relatorios .pp-menu-btn:hover{ background:var(--s2); }
+
+/* Botões dentro do módulo — dourado como cor de ação */
+#sec-relatorios .btn-primary{ background:var(--cta); border-color:var(--cta); }
+#sec-relatorios .btn-primary:hover{ background:var(--cta-d); border-color:var(--cta-d); }
+#sec-relatorios .btn-ghost{ background:var(--surface); border-color:var(--border-s); color:var(--tx2); }
 
 /* ══ PLANEJAMENTO — campos/blocos editáveis (Remuneração e Funções) ══ */
 .plan-editable{outline:none;border-radius:var(--r6);transition:box-shadow .12s,background .12s;cursor:text}
