@@ -191,6 +191,36 @@
 #sec-relatorios .card{ margin-bottom:20px; padding:18px 20px; }
 #sec-relatorios .og-panel{ padding:18px 20px; }
 
+/* ══ PEÇAS PEQUENAS QUE FICARAM DE FORA DA PRIMEIRA PASSADA ══
+   Etiquetas de status, tags de origem, botões pequenos e checkboxes usados
+   dentro das tabelas de todas as 8 abas. A maioria já usa var(--su)/var(--da)/
+   var(--ac)/etc., então já herda a paleta nova sozinha — mas 3 pontos no
+   código tinham cor "grudada" (hexadecimal fixo, não variável) e por isso
+   continuavam com a cor antiga mesmo com o resto do módulo mudando. */
+
+/* Card "Pendentes" (aba Emissão fiscal) tinha borda/texto vermelho fixos */
+#sec-relatorios [style*="#FCA5A5"]{ border-color:var(--da) !important; }
+#sec-relatorios [style*="color:#991B1B"]{ color:var(--da) !important; }
+
+/* Selo de status da tabela de Orçamentos (Aprovado/Em aberto/Reprovado) tinha
+   cor e fundo fixos — passam a usar as mesmas cores do resto do módulo */
+#sec-relatorios [style*="#065F46"]{ color:var(--su) !important; background:var(--sul) !important; }
+#sec-relatorios [style*="#ECFDF5"]{ background:var(--sul) !important; }
+#sec-relatorios [style*="color:#991B1B"][style*="background:#FEF2F2"]{ color:var(--da) !important; background:var(--dal) !important; }
+#sec-relatorios [style*="#374151"]{ color:var(--tx2) !important; background:var(--s2) !important; }
+
+/* Checkbox das tabelas — usa o dourado do módulo em vez do azul padrão do navegador */
+#sec-relatorios input[type="checkbox"]{ accent-color:var(--ac); }
+
+/* Botões pequenos ("Desfazer pagamento", "Receber" etc.) — mesmo raio/形 dos
+   botões grandes, mais consistente com o resto do módulo */
+#sec-relatorios .btn-sm{ border-radius:var(--r6); font-weight:600; }
+
+/* Selo de origem (MANUAL / Paciente) e status (fin-badge) — mais tracking,
+   reforça a leitura rápida, no espírito do mockup */
+#sec-relatorios .fin-badge,
+#sec-relatorios .fin-origem{ letter-spacing:.03em; }
+
 /* ══ PLANEJAMENTO — campos/blocos editáveis (Remuneração e Funções) ══ */
 .plan-editable{outline:none;border-radius:var(--r6);transition:box-shadow .12s,background .12s;cursor:text}
 .plan-editable:hover{background:var(--s2)}
