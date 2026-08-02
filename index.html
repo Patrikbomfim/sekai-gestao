@@ -144,12 +144,25 @@
   background:var(--acl);
 }
 
-/* Hero "Potencial de Vendas" / "Indicados" — tira o degradê azul antigo,
-   passa a usar o dourado do módulo em degradê suave */
+/* Hero "Potencial de Vendas" — tira o degradê azul antigo, passa a usar o
+   dourado do módulo. O card "Indicados" ao lado (mesma classe no HTML)
+   volta a ser um card neutro, pra não deixar a tela "toda dourada" —
+   no mockup só o indicador de oportunidade principal ganha destaque forte. */
 #sec-relatorios .og-hero-blue{
   background:linear-gradient(135deg,var(--ac) 0%,var(--act) 100%);
   box-shadow:var(--shadow-md);
 }
+#sec-relatorios .og-hero-blue[style*="width:190px"]{
+  background:var(--surface);
+  border:1px solid var(--border);
+  box-shadow:var(--shadow);
+}
+#sec-relatorios .og-hero-blue[style*="width:190px"] .og-hero-label,
+#sec-relatorios .og-hero-blue[style*="width:190px"] .og-hero-value,
+#sec-relatorios .og-hero-blue[style*="width:190px"] .og-hero-sub{
+  color:var(--tx);
+}
+#sec-relatorios .og-hero-blue[style*="width:190px"] .og-hero-sub{ color:var(--tx3); opacity:1; }
 
 /* Menu lateral de abas do módulo — pill com lasca dourada na aba ativa,
    igual ao item de navegação do mockup */
@@ -167,10 +180,16 @@
 }
 #sec-relatorios .pp-menu-btn:hover{ background:var(--s2); }
 
-/* Botões dentro do módulo — dourado como cor de ação */
+/* Botões dentro do módulo — dourado como cor de ação, formato mais generoso */
+#sec-relatorios .btn{ padding:9px 18px; border-radius:var(--r8); }
 #sec-relatorios .btn-primary{ background:var(--cta); border-color:var(--cta); }
 #sec-relatorios .btn-primary:hover{ background:var(--cta-d); border-color:var(--cta-d); }
 #sec-relatorios .btn-ghost{ background:var(--surface); border-color:var(--border-s); color:var(--tx2); }
+
+/* Respiro geral maior entre blocos, mais fiel ao clima "arejado" do mockup */
+#sec-relatorios .fin-cards-row{ gap:16px; margin-bottom:20px; }
+#sec-relatorios .card{ margin-bottom:20px; padding:18px 20px; }
+#sec-relatorios .og-panel{ padding:18px 20px; }
 
 /* ══ PLANEJAMENTO — campos/blocos editáveis (Remuneração e Funções) ══ */
 .plan-editable{outline:none;border-radius:var(--r6);transition:box-shadow .12s,background .12s;cursor:text}
@@ -531,6 +550,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:13px
 .nav-ic{font-size:13px;flex-shrink:0;opacity:.55;width:14px;display:inline-block;text-align:center}
 .nav-btn.on .nav-ic{opacity:1}
 .nav-badge{margin-left:auto;background:var(--da);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:var(--r4);min-width:18px;text-align:center}
+
+/* ══ BARRA LATERAL — tema escuro em todo o sistema (pedido do Patrik) ══
+   Sobrescreve só a cor/fundo dos componentes acima; estrutura, grupos e
+   funcionalidade continuam exatamente iguais. */
+.sidebar, .subnav{ background:#14171A; border-right:1px solid rgba(255,255,255,.07); }
+.slb-label, .subnav-title{ color:#6E736C; }
+.nav-btn, .subnav-btn{ color:#B7BBB6; }
+.nav-btn:hover{ color:#F2F0EA; background:#1E2226; }
+.subnav-btn:hover{ color:#F2F0EA; }
+.nav-btn.on{ color:#D9B968; background:rgba(217,185,104,.14); border-left-color:#D9B968; }
+.subnav-btn.on{ color:#F2F0EA; border-left-color:#D9B968; }
+.nav-badge{ background:#B5675A; }
 
 /* MAIN */
 .main{padding:24px 28px;overflow-y:auto}
