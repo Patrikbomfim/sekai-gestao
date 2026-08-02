@@ -8,6 +8,8 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+/* Fontes usadas só dentro do módulo Relatórios (identidade visual nova, aprovada em mockup) */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --bg:#F7F8FA;--surface:#FFFFFF;--s2:#F0F2F5;--border:#E5E7EB;--border-s:#D1D5DB;
   --tx:#0F172A;--tx2:#64748B;--tx3:#94A3B8;
@@ -41,6 +43,79 @@
 }
 .fin-area{display:none}
 .fin-area.on{display:block}
+
+/* ══ MÓDULO RELATÓRIOS — nova identidade visual (escopada só a este módulo) ══
+   Mesmo princípio das identidades da Agenda/Financeiro acima: redeclara as
+   variáveis GLOBAIS de cor/raio/sombra localmente, só dentro de #sec-relatorios
+   — como quase todo .card/.fin-*/.og-*/.pp-* já referencia essas variáveis,
+   isso já muda a cor e o "clima" de praticamente tudo no módulo (as 8 abas:
+   Agendamentos, Procedimentos realizados/a realizar, Primeiras consultas,
+   Pacientes de alta, Agendamentos sem baixa, Orçamentos e Emissão fiscal)
+   sem precisar editar regra por regra nem mexer no HTML/JS de cada aba.
+   Fora do #sec-relatorios nada muda — Financeiro, Agenda, Pacientes e o
+   restante do sistema continuam exatamente como estavam. */
+#sec-relatorios{
+  --ac:#A9822E;   --acl:#F4EEDF; --act:#8A6A25;   /* dourado — accent principal do módulo */
+  --su:#1F6F54;   --sul:#E9F2EE;                   /* verde esmeralda — aprovado/sucesso */
+  --da:#AC5F4F;   --dal:#F6ECE9;                   /* terracota — reprovado/atenção (mais discreto que vermelho puro) */
+  --wa:#A9822E;   --wal:#F4EEDF;                   /* alerta usa o próprio dourado, pra não competir com o accent */
+  --pu:#1F6F54;   --pul:#E9F2EE;
+  --cta:#A9822E;  --cta-d:#8A6A25;
+  --border:#E7E2D6; --border-s:#D8D0BF;
+  --tx3:#93968E;  --tx2:#66695F;
+  --r4:5px;--r6:7px;--r8:8px;--r10:9px;--r12:11px;--r16:14px;
+  --shadow:0 1px 2px rgba(24,23,17,.05);
+  --shadow-md:0 8px 22px rgba(24,23,17,.07);
+  --font-display:'Space Grotesk','Plus Jakarta Sans',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+  background:#FAF8F2;
+  margin:-24px -28px;
+  padding:24px 28px;
+}
+
+/* Título da página e números de destaque — fonte de exibição mais forte */
+#sec-relatorios .pg-title,
+#sec-relatorios .fin-card-value,
+#sec-relatorios .og-hero-value,
+#sec-relatorios .og-faixa-val{
+  font-family:var(--font-display);
+  letter-spacing:-.01em;
+}
+
+/* Legendas pequenas (contadores, ticket médio, cabeçalhos de tabela e % de
+   conversão) — fonte "de precisão", reforça a leitura de dado/número */
+#sec-relatorios .fin-card-sub,
+#sec-relatorios .og-hero-sub,
+#sec-relatorios .og-faixa-count,
+#sec-relatorios .og-rank-pct,
+#sec-relatorios .fin-table thead th{
+  font-family:var(--font-mono);
+}
+
+/* Cards, painéis e tabela — cantos e sombra mais discretos (pedido: minimalista) */
+#sec-relatorios .card,
+#sec-relatorios .fin-card,
+#sec-relatorios .og-hero,
+#sec-relatorios .og-faixa,
+#sec-relatorios .og-panel,
+#sec-relatorios .fin-table-wrap,
+#sec-relatorios .pp-menu{
+  border-radius:var(--r10);
+  box-shadow:var(--shadow);
+}
+
+/* Hero "Potencial de Vendas" / "Indicados" — tira o degradê azul antigo,
+   passa a usar o dourado do módulo */
+#sec-relatorios .og-hero-blue{
+  background:linear-gradient(135deg,var(--ac) 0%,var(--act) 100%);
+}
+
+/* Aba ativa no menu lateral do módulo (Agendamentos / Orçamentos / etc.) */
+#sec-relatorios .pp-menu-btn.on{
+  background:var(--acl);
+  color:var(--act);
+  font-weight:600;
+}
 
 /* ══ PLANEJAMENTO — campos/blocos editáveis (Remuneração e Funções) ══ */
 .plan-editable{outline:none;border-radius:var(--r6);transition:box-shadow .12s,background .12s;cursor:text}
