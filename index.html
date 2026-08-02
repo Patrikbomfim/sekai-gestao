@@ -21723,6 +21723,13 @@ function agToggleSala(id){
 }
 let agendaPeriodo = 'dia'; // 'dia' | 'semana' | 'mes'
 let agMiniCalMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+// Dia "marcado" no cabeçalho da visão por Semana — é só um destaque visual (não muda
+// o que está sendo exibido, nem volta pra visão por Dia). Começa já em hoje.
+let agSemanaDiaSelecionado = iso(hoje);
+function agSemanaSelecionarDia(dIso){
+  agSemanaDiaSelecionado = dIso;
+  renderAgendaSemana(parseIso(agendaData));
+}
 
 function agendaSetData(v){ agendaData=v; renderAgenda(); }
 function agendaMudarDia(n){ agendaData = iso(addDays(parseIso(agendaData),n)); renderAgenda(); }
@@ -22757,7 +22764,7 @@ function renderAgendaSemana(d){
   const passo = 60;
   const slots = [];
   for(let m = ini; m < fim; m += passo) slots.push(m);
-  const SLOT_H = 26;        // altura de cada slot de 1h
+  const SLOT_H = 84;        // altura de cada slot de 1h — igual à visão por Dia (2 linhas de 42px)
   const TIME_W = 44;        // largura da coluna de horário
   const SALA_MIN_W = 28;    // largura mínima de cada sub-coluna de sala
   const salas = salasParaGrade();
@@ -22771,15 +22778,18 @@ function renderAgendaSemana(d){
   dias.forEach(dia => {
     const dIso = iso(dia);
     const isHoje = dIso === isoHoje;
-    headerDias += `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 2px;border-right:1px solid var(--border);cursor:pointer;${isHoje?'background:var(--acl);':''}" onclick="agendaSetData('${dIso}');agendaSetPeriodo('dia')" title="Ver dia">
-      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:${isHoje?'var(--ac)':'var(--tx3)'}">${DIAS_SEMANA[dia.getDay()]}</div>
-      <div style="font-size:16px;font-weight:700;line-height:1.2;${isHoje?'background:var(--ac);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;':'color:var(--tx)'}">${dia.getDate()}</div>
+    const isSel = dIso === agSemanaDiaSelecionado;
+    headerDias += `<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:6px 2px;border-right:1px solid var(--border)">
+      <button class="ag-day-strip-btn${isSel?' on':''}${isHoje&&!isSel?' today':''}" style="min-width:44px;padding:5px 8px" onclick="agSemanaSelecionarDia('${dIso}')" title="${DIAS_SEMANA[dia.getDay()]}">
+        <span class="ag-day-strip-dow">${DIAS_SEMANA[dia.getDay()]}</span>
+        <span class="ag-day-strip-num">${dia.getDate()}</span>
+      </button>
     </div>`;
   });
   headerDias += `</div>`;
 
   // ── sub-cabeçalho de salas (linha 2) ────────────────────────────
-  let headerSalas = `<div style="display:flex;position:sticky;top:52px;z-index:9;background:var(--surface);border-bottom:1px solid var(--border)">`;
+  let headerSalas = `<div style="display:flex;position:sticky;top:58px;z-index:9;background:var(--surface);border-bottom:1px solid var(--border)">`;
   headerSalas += `<div style="width:${TIME_W}px;flex-shrink:0;border-right:1px solid var(--border)"></div>`;
   dias.forEach(() => {
     salas.forEach((s, si) => {
@@ -22978,7 +22988,7 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
   const _agHeadDataObj = parseIso(dataIso);
   const _agHeadDataTxt = _agHeadDataObj ? `${DIAS[_agHeadDataObj.getDay()]}, ${_agHeadDataObj.getDate()} de ${MESES[_agHeadDataObj.getMonth()]}` : '';
 
-  let style = `grid-template-columns: 64px repeat(${cols.length}, 1fr); grid-auto-rows: ${SLOT_H}px;`;
+  let style = `grid-template-columns: 64px repeat(${cols.length}, 300px); grid-auto-rows: ${SLOT_H}px;`;
   let html = `<div class="ag-grid" style="${style}">`;
   html += `<div class="ag-head"></div>`;
   cols.forEach(c=>{
@@ -22997,7 +23007,7 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
   html += `</div>`;
 
   // Overlay de cards posicionados com precisao de minuto
-  html += `<div style="position:relative;margin-top:-${totalH}px;height:${totalH}px;pointer-events:none;display:grid;grid-template-columns:64px repeat(${cols.length},1fr)">`;
+  html += `<div style="position:relative;margin-top:-${totalH}px;height:${totalH}px;pointer-events:none;display:grid;grid-template-columns:64px repeat(${cols.length},300px)">`;
   html += `<div></div>`;
   cols.forEach(c=>{
     const agsDaCol = agendamentos.filter(a => {
