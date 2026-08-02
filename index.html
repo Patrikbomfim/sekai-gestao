@@ -22764,7 +22764,7 @@ function renderAgendaSemana(d){
   const passo = 60;
   const slots = [];
   for(let m = ini; m < fim; m += passo) slots.push(m);
-  const SLOT_H = 84;        // altura de cada slot de 1h — igual à visão por Dia (2 linhas de 42px)
+  const SLOT_H = 104;       // altura de cada slot de 1h — aumentada para caber as 4 linhas de informação do card
   const TIME_W = 44;        // largura da coluna de horário
   const SALA_MIN_W = 130;   // largura mínima de cada sub-coluna de sala (aumentada p/ caber o conteúdo completo do card, igual à visão por Dia)
   const salas = salasParaGrade();
@@ -22873,10 +22873,10 @@ function renderAgendaSemana(d){
             idadeSitTxt = partesInfo.join(' · ');
           }
           const statusInfo = STATUS_AGENDAMENTO.find(s=>s.id===a.status);
-          const statusPillHtml = statusInfo ? `<span class="ag-status-pill" style="color:${statusInfo.cor}">${statusInfo.label}</span>` : '';
+          const statusPillHtml = statusInfo ? `<span class="ag-status-pill" style="color:${statusInfo.cor};font-size:7px;padding:0px 4px;line-height:1.3">${statusInfo.label}</span>` : '';
           let cardContent;
-          if(hPx >= 30){
-            cardContent = `<div class="ag-card-tit" style="display:flex;align-items:center;justify-content:space-between;gap:4px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio}–${a.horaFim} ${pacNomeComCod}</span>${statusPillHtml}</div><div class="ag-card-sub">${subLabel}${a.procedimento?' · '+a.procedimento:''}</div>${idadeSitTxt?`<div class="ag-card-sub" style="opacity:.85">${idadeSitTxt}</div>`:''}`;
+          if(hPx >= 44){
+            cardContent = `<div class="ag-card-tit" style="display:flex;align-items:center;gap:5px">${statusPillHtml}<span>${a.horaInicio}–${a.horaFim}</span></div><div class="ag-card-tit" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${pacNomeComCod}</div><div class="ag-card-sub">${subLabel}${a.procedimento?' · '+a.procedimento:''}</div>${idadeSitTxt?`<div class="ag-card-sub" style="opacity:.85">${idadeSitTxt}</div>`:''}`;
           } else if(hPx >= 12){
             cardContent = `<div class="ag-card-tit" style="font-size:9px;line-height:1.15;display:flex;align-items:center;overflow:hidden">${statusIc}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio}–${a.horaFim} ${pacNomeComCod}${subLabel?' · '+subLabel:''}</span></div>`;
           } else {
