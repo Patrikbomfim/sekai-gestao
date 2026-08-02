@@ -57,12 +57,12 @@
   --wa:#A9822E;   --wal:#F2E9D3;
   --pu:#1F6F54;   --pul:#E1EEE7;
   --cta:#A9822E;  --cta-d:#7C6023;
-  --bg:#F2EEE3;   --surface:#FFFFFF; --s2:#EDE6D6;
-  --border:#E3DAC5; --border-s:#D2C6A8;
-  --tx:#22201A;   --tx2:#615A46;  --tx3:#948C74;
+  --bg:#ECE3CC;   --surface:#FFFFFF; --s2:#E7DCC0;
+  --border:#D6C79C; --border-s:#C4AF78;
+  --tx:#22201A;   --tx2:#615A46;  --tx3:#8C8064;
   --r4:6px;--r6:8px;--r8:10px;--r10:12px;--r12:14px;--r16:18px;
-  --shadow:0 1px 3px rgba(34,32,26,.06);
-  --shadow-md:0 10px 28px rgba(34,32,26,.10);
+  --shadow:0 1px 3px rgba(34,32,26,.07);
+  --shadow-md:0 10px 28px rgba(34,32,26,.12);
   --font-display:'Space Grotesk','Plus Jakarta Sans',sans-serif;
   --font-mono:'IBM Plex Mono',monospace;
   background:var(--bg);
@@ -74,19 +74,21 @@
 /* Cabeçalho do módulo */
 #sec-relatorios .pg-title{
   font-family:var(--font-display);
-  font-size:26px;
-  font-weight:700;
+  font-size:32px;
+  font-weight:800;
   letter-spacing:-.02em;
   color:var(--tx);
 }
-#sec-relatorios .pg-desc{ color:var(--tx2); font-size:13.5px; }
+#sec-relatorios .pg-desc{ color:var(--tx2); font-size:14px; }
+#sec-relatorios .pg-desc::after{ content:''; display:block; width:52px; height:3px; background:var(--ac); margin-top:16px; border-radius:2px; }
 
-/* Números de destaque (cards e hero) — fonte de exibição, mais fortes */
+/* Números de destaque (cards e hero) — fonte de exibição, bem mais fortes */
 #sec-relatorios .fin-card-value,
 #sec-relatorios .og-hero-value,
 #sec-relatorios .og-faixa-val{
   font-family:var(--font-display);
-  font-size:26px;
+  font-size:32px;
+  font-weight:800;
   letter-spacing:-.02em;
 }
 
@@ -111,10 +113,11 @@
 /* Cards de métrica — respiro maior, cantos e sombra mais suaves,
    com uma lasca de cor à esquerda indicando o tipo (padrão do mockup) */
 #sec-relatorios .fin-card{
-  padding:18px 20px;
+  padding:22px 24px;
   border-radius:var(--r10);
   box-shadow:var(--shadow);
-  border-left:3px solid var(--border-s);
+  border:1.5px solid var(--border);
+  border-left:4px solid var(--border-s);
   transition:transform .12s, box-shadow .12s;
 }
 #sec-relatorios .fin-card:hover{ transform:translateY(-1px); box-shadow:var(--shadow-md); }
@@ -123,7 +126,8 @@
 #sec-relatorios .fin-card-red{ border-left-color:var(--da); }
 #sec-relatorios .fin-card-amber{ border-left-color:var(--wa); }
 
-/* Painéis, tabela e menu — mesmo tratamento de cantos/sombra suave */
+/* Painéis, tabela e menu — mesmo tratamento de cantos/sombra suave, mas com
+   borda mais visível (não só sombra) pra destacar de verdade do fundo */
 #sec-relatorios .card,
 #sec-relatorios .og-hero,
 #sec-relatorios .og-faixa,
@@ -132,7 +136,7 @@
 #sec-relatorios .pp-menu{
   border-radius:var(--r10);
   box-shadow:var(--shadow);
-  border-color:var(--border);
+  border:1.5px solid var(--border);
 }
 
 /* Tabela — cabeçalho discreto e mais espaçado, linhas com hairline só */
