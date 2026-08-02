@@ -100,23 +100,6 @@
 #og-btn-indicados:hover{filter:brightness(1.08)}
 #og-btn-indicados.on{box-shadow:0 0 0 3px rgba(255,255,255,.6), var(--shadow)}
 
-/* Faixas de idade (orçamentos em aberto por tempo de espera) */
-.og-faixa{flex:1;min-width:150px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r10);padding:12px 14px;cursor:pointer;transition:box-shadow .14s,transform .1s,border-color .12s}
-.og-faixa:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
-.og-faixa.on{border-width:2px}
-.og-faixa-lbl{font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
-.og-faixa-val{font-size:17px;font-weight:700;color:var(--tx)}
-.og-faixa-count{font-size:11px;color:var(--tx3);margin-top:2px}
-.og-faixa-ok{border-left:4px solid var(--su)}
-.og-faixa-ok.on{border-color:var(--su);background:var(--sul)}
-.og-faixa-morno{border-left:4px solid var(--ac)}
-.og-faixa-morno.on{border-color:var(--ac);background:var(--acl)}
-.og-faixa-frio{border-left:4px solid var(--wa)}
-.og-faixa-frio.on{border-color:var(--wa);background:var(--wal)}
-.og-faixa-gelado{border-left:4px solid var(--da)}
-.og-faixa-gelado.on{border-color:var(--da);background:var(--dal)}
-.og-faixa-gelado .og-faixa-val{color:var(--da)}
-
 /* Painéis de insight (ranking profissional / motivos de reprovação) */
 .og-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r10);padding:14px 16px;box-shadow:var(--shadow)}
 .og-panel-title{font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
@@ -2411,7 +2394,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div id="plan-painel_beatriz" class="plan-sub" style="display:none">
     <div class="card">
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px">
-        <div class="fin-card">
+        <div class="fin-card fin-card-clickable" style="cursor:pointer" onclick="_planToggleFaturamento('pb')">
           <div class="fin-card-label">Faturamento do mês</div>
           <div class="fin-card-value" id="pb-fat-atual">R$ 70.200</div>
           <div class="fin-card-sub" id="pb-fat-sub">de R$ 90.000 (piso) — faltam R$ 19.800</div>
@@ -2421,12 +2404,16 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
         <div id="pb-ocup-salas-wrap" style="display:contents"></div>
       </div>
+      <div id="pb-detalhe-fat" style="display:none;margin-bottom:16px"></div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
         <div class="fin-card"><div class="fin-card-label">Remuneração</div><div class="fin-card-value" id="pb-rem-faturamento">R$ 0</div></div>
-        <div class="fin-card fin-card-green"><div class="fin-card-label">Bônus por agendamentos</div><div class="fin-card-value" id="pb-bonus-agendamentos">R$ 340</div></div>
-        <div class="fin-card"><div class="fin-card-label">Comissão por indicação</div><div class="fin-card-value" id="pb-comissao-indicacao">R$ 0</div></div>
+        <div class="fin-card fin-card-green fin-card-clickable" style="cursor:pointer" onclick="_planToggleBonusAgendamentos('pb')"><div class="fin-card-label">Bônus por agendamentos</div><div class="fin-card-value" id="pb-bonus-agendamentos">R$ 340</div></div>
+        <div class="fin-card fin-card-clickable" style="cursor:pointer" onclick="_planToggleComissaoIndicacao('pb','beatriz')"><div class="fin-card-label">Comissão por indicação</div><div class="fin-card-value" id="pb-comissao-indicacao">R$ 0</div></div>
         <div class="fin-card fin-card-blue"><div class="fin-card-label">Valor total</div><div class="fin-card-value" id="pb-valor-total">R$ 2.300</div></div>
       </div>
+      <div id="pb-detalhe-bonus" style="display:none;margin-bottom:16px"></div>
+      <div id="pb-detalhe-comissao" style="display:none;margin-bottom:16px"></div>
+
       <div style="font-size:13px;font-weight:700;margin-bottom:8px">Orçamentos em aberto por urgência</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <span style="background:var(--s2);color:var(--tx2);font-size:12px;padding:4px 10px;border-radius:20px">3 dias · 4</span>
@@ -2443,9 +2430,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
         <div class="fin-card fin-card-blue"><div class="fin-card-label">Remuneração</div><div class="fin-card-value" id="pi-remuneracao">R$ 2.500</div></div>
         <div class="fin-card"><div class="fin-card-label">Comissão a receber</div><div class="fin-card-value" id="pi-procedimentos">R$ 1.180</div></div>
-        <div class="fin-card"><div class="fin-card-label">Comissão por indicação</div><div class="fin-card-value" id="pi-comissao-indicacao">R$ 0</div></div>
+        <div class="fin-card fin-card-clickable" style="cursor:pointer" onclick="_planToggleComissaoIndicacao('pi','ingrid')"><div class="fin-card-label">Comissão por indicação</div><div class="fin-card-value" id="pi-comissao-indicacao">R$ 0</div></div>
         <div class="fin-card fin-card-green"><div class="fin-card-label">Valor acumulado</div><div class="fin-card-value" id="pi-valor-acumulado">R$ 3.680</div></div>
       </div>
+      <div id="pi-detalhe-comissao" style="display:none;margin-bottom:16px"></div>
       <div id="pi-ocup-salas-wrap"></div>
     </div>
   </div>
@@ -2453,21 +2441,25 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <!-- PAINEL LETICIA -->
   <div id="plan-painel_leticia" class="plan-sub" style="display:none">
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-        <span style="font-size:14px;font-weight:700">Faturamento vs meta</span>
-        <span style="font-size:12px;color:var(--tx2)" id="pl-fat-sub">R$ 87.400 / R$ 120.000</span>
+      <div style="cursor:pointer" onclick="_planToggleFaturamento('pl')">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+          <span style="font-size:14px;font-weight:700">Faturamento vs meta</span>
+          <span style="font-size:12px;color:var(--tx2)" id="pl-fat-sub">R$ 87.400 / R$ 120.000</span>
+        </div>
+        <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden;margin-bottom:16px">
+          <div id="pl-fat-bar" style="height:100%;width:73%;border-radius:6px;background:var(--ac)"></div>
+        </div>
       </div>
-      <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden;margin-bottom:16px">
-        <div id="pl-fat-bar" style="height:100%;width:73%;border-radius:6px;background:var(--ac)"></div>
-      </div>
+      <div id="pl-detalhe-fat" style="display:none;margin-bottom:16px"></div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:12px">
         <div class="fin-card fin-card-green"><div class="fin-card-label">Comissão a receber</div><div class="fin-card-value" id="pl-comissao-receber">R$ 23.940</div></div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
         <div class="fin-card"><div class="fin-card-label">Lucro da clínica</div><div class="fin-card-value" id="pl-lucro-clinica">R$ 19.800</div></div>
         <div class="fin-card"><div class="fin-card-label">Ticket médio</div><div class="fin-card-value" id="pl-ticket-medio">R$ 3.850</div></div>
-        <div class="fin-card"><div class="fin-card-label">Comissão por indicação</div><div class="fin-card-value" id="pl-comissao-indicacao">R$ 0</div></div>
+        <div class="fin-card fin-card-clickable" style="cursor:pointer" onclick="_planToggleComissaoIndicacao('pl','leticia')"><div class="fin-card-label">Comissão por indicação</div><div class="fin-card-value" id="pl-comissao-indicacao">R$ 0</div></div>
       </div>
+      <div id="pl-detalhe-comissao" style="display:none;margin-bottom:16px"></div>
       <div id="pl-ocup-salas-wrap" style="margin-bottom:16px"></div>
       <div style="font-size:13px;font-weight:700;margin-bottom:8px">Orçamentos em aberto por urgência</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -2482,19 +2474,23 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <!-- PAINEL FERNANDA -->
   <div id="plan-painel_fernanda" class="plan-sub" style="display:none">
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-        <span style="font-size:14px;font-weight:700">Faturamento vs meta</span>
-        <span style="font-size:12px;color:var(--tx2)" id="pf-fat-sub">R$ 87.400 / R$ 120.000</span>
+      <div style="cursor:pointer" onclick="_planToggleFaturamento('pf')">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+          <span style="font-size:14px;font-weight:700">Faturamento vs meta</span>
+          <span style="font-size:12px;color:var(--tx2)" id="pf-fat-sub">R$ 87.400 / R$ 120.000</span>
+        </div>
+        <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden;margin-bottom:16px">
+          <div id="pf-fat-bar" style="height:100%;width:73%;border-radius:6px;background:var(--ac)"></div>
+        </div>
       </div>
-      <div style="height:10px;border-radius:6px;background:var(--s2);overflow:hidden;margin-bottom:16px">
-        <div id="pf-fat-bar" style="height:100%;width:73%;border-radius:6px;background:var(--ac)"></div>
-      </div>
+      <div id="pf-detalhe-fat" style="display:none;margin-bottom:16px"></div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px">
         <div class="fin-card fin-card-green"><div class="fin-card-label">Comissão a receber</div><div class="fin-card-value" id="pf-comissao-receber">R$ 6.780</div></div>
         <div class="fin-card"><div class="fin-card-label">Lucro + 15%</div><div class="fin-card-value" id="pf-lucro-15">R$ 2.970</div></div>
-        <div class="fin-card"><div class="fin-card-label">Comissão por indicação</div><div class="fin-card-value" id="pf-comissao-indicacao">R$ 0</div></div>
+        <div class="fin-card fin-card-clickable" style="cursor:pointer" onclick="_planToggleComissaoIndicacao('pf','fernanda')"><div class="fin-card-label">Comissão por indicação</div><div class="fin-card-value" id="pf-comissao-indicacao">R$ 0</div></div>
         <div class="fin-card fin-card-blue"><div class="fin-card-label">Valor total</div><div class="fin-card-value" id="pf-valor-total">R$ 9.750</div></div>
       </div>
+      <div id="pf-detalhe-comissao" style="display:none;margin-bottom:16px"></div>
       <div id="pf-ocup-salas-wrap" style="margin-bottom:16px"></div>
       <div style="font-size:13px;font-weight:700;margin-bottom:8px">Status dos eixos que audita</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -4166,7 +4162,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <!-- Filtro de período: geral, fixo no topo, vale pra todas as abas -->
   <div class="card" style="margin-bottom:16px;position:sticky;top:0;z-index:15">
     <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
-      <button class="btn btn-ghost btn-sm" style="height:34px" onclick="relExportarPDF()"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar em PDF</button>
       <div class="fl" style="min-width:170px">
         <label>Período</label>
         <select id="rel-periodo-sel" class="fin-select" onchange="relPeriodoMudou()">
@@ -4191,6 +4186,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
       </div>
       <button class="btn btn-ghost btn-sm" onclick="relLimparFiltro()">Limpar filtro</button>
+      <button class="btn btn-ghost btn-sm" style="height:34px;margin-left:auto" onclick="relExportarPDF()"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar em PDF</button>
     </div>
   </div>
 
@@ -4204,7 +4200,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="pp-menu-btn" id="rel-tab-pacientes_alta" onclick="relSelecionarAba('pacientes_alta')">Pacientes de alta</button>
       <button class="pp-menu-btn" id="rel-tab-agendamentos_sem_baixa" onclick="relSelecionarAba('agendamentos_sem_baixa')">Agendamentos sem baixa</button>
       <button class="pp-menu-btn" id="rel-tab-orcamentos" onclick="relSelecionarAba('orcamentos')">Orçamentos</button>
-      <button class="pp-menu-btn" id="rel-tab-emissao_fiscal" onclick="relSelecionarAba('emissao_fiscal')">Emissão fiscal</button>
+      <button class="pp-menu-btn" id="rel-tab-emissao_fiscal" onclick="relSelecionarAba('emissao_fiscal')">Emissão de recebidos</button>
     </nav>
     <div class="pp-content">
       <div id="rel-filtros-aba" style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:14px"></div>
@@ -6048,12 +6044,15 @@ function _planRecebidoNoPeriodo(dataIniISO, dataFimISO){
 // Número de agendamentos marcados como "Primeira consulta? → Sim" no período
 // (checkpoint do próprio modal de agendamento), excluindo cancelados. Filtra
 // pela data do agendamento.
-function _planPrimeirasConsultasNoPeriodo(dataIniISO, dataFimISO){
+function _planListaPrimeirasConsultasNoPeriodo(dataIniISO, dataFimISO){
   return (typeof agendamentos!=='undefined' ? agendamentos : []).filter(a=>{
     if(a.status==='cancelado') return false;
     if(a.primeiraConsulta!=='sim') return false;
     return a.data>=dataIniISO && a.data<=dataFimISO;
-  }).length;
+  }).sort((a,b)=>(a.data||'').localeCompare(b.data||'')||(a.horaInicio||'').localeCompare(b.horaInicio||''));
+}
+function _planPrimeirasConsultasNoPeriodo(dataIniISO, dataFimISO){
+  return _planListaPrimeirasConsultasNoPeriodo(dataIniISO, dataFimISO).length;
 }
 
 // Taxa de conversão = orçamentos fechados (aprovados) ÷ orçamentos decididos
@@ -6083,7 +6082,7 @@ function _planTaxaConversao(dataIniISO, dataFimISO){
 // não um texto) — nunca por nome, pra não confundir pessoas homônimas. Sem
 // vínculo configurado ainda, cai no fallback de nome EXATO da própria chave
 // (ex.: chave 'leticia' → "Leticia"). chave=null soma todo mundo.
-function _planComissaoIndicacaoNoPeriodo(dataIniISO, dataFimISO, chave){
+function _planListaComissaoIndicacaoNoPeriodo(dataIniISO, dataFimISO, chave){
   const ref = planGetReferencias();
   const uid = chave ? _planUsuarioIdVinculado(chave) : '';
   const nomeFallback = chave ? _planNomeVinculado(chave, chave.charAt(0).toUpperCase()+chave.slice(1)) : '';
@@ -6098,11 +6097,97 @@ function _planComissaoIndicacaoNoPeriodo(dataIniISO, dataFimISO, chave){
     }
     return true;
   });
-  const base = lista.reduce((s,o)=>{
+  return lista.map(o=>{
+    const p = pacientes.find(x=>String(x.id)===String(o.pacienteId));
+    const valorBase = (o.valorFechado!=null) ? parseFloat(o.valorFechado) : (o.itens||[]).reduce((si,i)=>si+(parseFloat(i.valor)||0),0);
+    return {
+      paciente: p ? p.nome : '(paciente não encontrado)',
+      data: o.dataDecisao || o.data || o.dataCriacao || '',
+      valor: (valorBase||0) * (ref.comissoes.pctIndicacao/100),
+    };
+  }).sort((a,b)=>b.valor-a.valor);
+}
+function _planComissaoIndicacaoNoPeriodo(dataIniISO, dataFimISO, chave){
+  return _planListaComissaoIndicacaoNoPeriodo(dataIniISO, dataFimISO, chave).reduce((s,o)=>s+o.valor, 0);
+}
+
+// Lista de orçamentos fechados (aprovados) no período — mesma regra e mesma
+// fonte de _planFaturamentoFechado, mas devolvendo os orçamentos em si (não só
+// a soma), pra alimentar o painel clicável do card "Faturamento do mês".
+function _planListaFaturamentoFechado(dataIniISO, dataFimISO){
+  return _orcamentos().filter(o=>{
+    if(o.status!=='aprovado') return false;
+    const dataRef = o.dataDecisao || o.data || o.dataCriacao || '';
+    if(dataIniISO && dataRef < dataIniISO) return false;
+    if(dataFimISO && dataRef > dataFimISO) return false;
+    return true;
+  }).map(o=>{
+    const p = pacientes.find(x=>String(x.id)===String(o.pacienteId));
     const valor = (o.valorFechado!=null) ? parseFloat(o.valorFechado) : (o.itens||[]).reduce((si,i)=>si+(parseFloat(i.valor)||0),0);
-    return s + (valor||0);
-  }, 0);
-  return base * (ref.comissoes.pctIndicacao/100);
+    return { paciente: p ? p.nome : '(paciente não encontrado)', data: o.dataDecisao || o.data || o.dataCriacao || '', valor: valor||0 };
+  }).sort((a,b)=>b.valor-a.valor);
+}
+
+// ── CARDS CLICÁVEIS DOS PAINÉIS (Faturamento do mês / Comissão por indicação /
+// Bônus por agendamentos) — clicar no card mostra a lista por trás do número;
+// clicar de novo esconde. Cada card abre/fecha seu próprio painel, sem afetar
+// os outros.
+function _planToggleDetalhe(containerId, renderFn){
+  const el=document.getElementById(containerId);
+  if(!el) return;
+  const abrir = el.style.display==='none' || !el.style.display;
+  if(abrir){ el.innerHTML = renderFn(); el.style.display='block'; }
+  else { el.style.display='none'; el.innerHTML=''; }
+}
+
+function _planRenderListaOrcamentos(lista, msgVazio){
+  const fmtMoeda=v=>'R$ '+(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(!lista.length) return `<div style="padding:10px 2px;font-size:12px;color:var(--tx3)">${msgVazio}</div>`;
+  return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">`
+    + lista.map(o=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r8);margin-bottom:6px">
+        <div>
+          <div style="font-size:12.5px;font-weight:600">${esc(o.paciente)}</div>
+          <div style="font-size:11px;color:var(--tx3)">${_finFmtData(o.data)}</div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:var(--ac)">${fmtMoeda(o.valor)}</div>
+      </div>`).join('')
+    + `</div>`;
+}
+
+function _planRenderListaAgendamentos(lista, msgVazio){
+  if(!lista.length) return `<div style="padding:10px 2px;font-size:12px;color:var(--tx3)">${msgVazio}</div>`;
+  return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">`
+    + lista.map(a=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r8);margin-bottom:6px">
+        <div style="font-size:12.5px;font-weight:600">${esc(a.pacienteNome||'—')}</div>
+        <div style="font-size:11px;color:var(--tx3)">${_finFmtData(a.data)}${a.horaInicio?' · '+a.horaInicio:''}</div>
+      </div>`).join('')
+    + `</div>`;
+}
+
+function _planToggleComissaoIndicacao(prefixo, chave){
+  _planToggleDetalhe(prefixo+'-detalhe-comissao', ()=>{
+    const {de,ate}=_planMesAtualDatas();
+    const lista=_planListaComissaoIndicacaoNoPeriodo(de,ate,chave);
+    return _planRenderListaOrcamentos(lista, 'Nenhum orçamento indicado aprovado neste período.');
+  });
+}
+
+function _planToggleFaturamento(prefixo){
+  _planToggleDetalhe(prefixo+'-detalhe-fat', ()=>{
+    const {de,ate}=_planMesAtualDatas();
+    const lista=_planListaFaturamentoFechado(de,ate);
+    return _planRenderListaOrcamentos(lista, 'Nenhum orçamento fechado neste período.');
+  });
+}
+
+function _planToggleBonusAgendamentos(prefixo){
+  _planToggleDetalhe(prefixo+'-detalhe-bonus', ()=>{
+    const {de,ate}=_planMesAtualDatas();
+    const lista=_planListaPrimeirasConsultasNoPeriodo(de,ate);
+    return _planRenderListaAgendamentos(lista, 'Nenhum agendamento de primeira consulta neste período.');
+  });
 }
 
 // Comissão a receber = mesma fonte e mesma regra do módulo Financeiro →
@@ -6186,7 +6271,7 @@ function _planAtualizarPainelBeatriz(){
   if(!painel) return;
   const ref=planGetReferencias();
   const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val; };
-  const fmtMoeda=n=>'R$ '+Math.round(n).toLocaleString('pt-BR');
+  const fmtMoeda=n=>'R$ '+(parseFloat(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const {de,ate}=_planMesAtualDatas();
 
   // Faturamento do mês vs. piso — orçamentos fechados da clínica toda, valor líquido
@@ -6231,7 +6316,7 @@ function _planAtualizarPainelIngrid(){
   if(!painel) return;
   const ref=planGetReferencias();
   const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val; };
-  const fmtMoeda=n=>'R$ '+Math.round(n).toLocaleString('pt-BR');
+  const fmtMoeda=n=>'R$ '+(parseFloat(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const {de,ate}=_planMesAtualDatas();
 
   const remuneracao = ref.remuneracaoFixa.ingrid;
@@ -6265,7 +6350,7 @@ function _planAtualizarPainelFernanda(){
   if(!painel) return;
   const ref=planGetReferencias();
   const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val; };
-  const fmtMoeda=n=>'R$ '+Math.round(n).toLocaleString('pt-BR');
+  const fmtMoeda=n=>'R$ '+(parseFloat(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const {de,ate}=_planMesAtualDatas();
 
   // Faturamento vs meta (clínica toda, mês corrente)
@@ -6302,7 +6387,7 @@ function _planAtualizarPainelLeticia(){
   const painel=document.getElementById('plan-painel_leticia');
   if(!painel) return;
   const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val; };
-  const fmtMoeda=n=>'R$ '+Math.round(n).toLocaleString('pt-BR');
+  const fmtMoeda=n=>'R$ '+(parseFloat(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const {de,ate}=_planMesAtualDatas();
 
   const fat=_planFaturamentoFechado(de,ate,null);
@@ -6410,7 +6495,7 @@ const PATRIK_METRICAS = [
 ];
 
 function _planFormatarValor(tipo, valor){
-  if(tipo==='moeda') return 'R$ '+Math.round(valor).toLocaleString('pt-BR');
+  if(tipo==='moeda') return 'R$ '+(parseFloat(valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   if(tipo==='percentual') return Math.round(valor)+'%';
   if(tipo==='multiplicador') return valor.toFixed(1).replace('.',',')+'x';
   return Math.round(valor).toLocaleString('pt-BR');
@@ -10308,7 +10393,6 @@ function orcamentoMudarStatus(orcId,novoStatus,pacId){
 // ══════════════════════════════════════════════════════════════════════
 let _ogFiltroStatus = '';
 let _ogFiltroIndicados = false;
-let _ogFaixaIdade = null; // null | '0-3' | '4-7' | '8-15' | '15+' — só se aplica quando status==='aberto'
 let _ogOrdem = { campo:'data', dir:'desc' };
 
 function _ogStatusNorm(s){
@@ -10358,13 +10442,16 @@ function _ogTodos(){
       obs: o.obs || '',
       comoConheceu: _ogComoConheceu(p),
       idadeDias, faixa,
+      // Indicação: usa a da aprovação se existir; senão, cai pra indicação
+      // informada já na criação do orçamento — assim o card "Indicados" conta
+      // orçamentos indicados de forma geral, mesmo antes de aprovar.
+      indicacao: o.indicacao || o.indicacaoCriacao || null,
     };
   });
 }
 
 function ogSetStatus(v){
   _ogFiltroStatus = v || '';
-  if(_ogFiltroStatus!=='aberto') _ogFaixaIdade = null; // faixas só fazem sentido dentro de "Em aberto"
   const sel = document.getElementById('og-filtro-status');
   if(sel) sel.value = _ogFiltroStatus;
   renderOrcamentosGeral();
@@ -10379,25 +10466,14 @@ function ogToggleIndicados(){
   renderOrcamentosGeral();
 }
 
-// Botão "Limpar filtros" da aba Orçamentos — reseta profissional, status, faixa de
-// idade e o filtro de indicados (não mexe no período, que tem seu próprio "Limpar
+// Botão "Limpar filtros" da aba Orçamentos — reseta profissional, status e o
+// filtro de indicados (não mexe no período, que tem seu próprio "Limpar
 // filtro" no topo do módulo Relatórios, compartilhado entre todas as abas).
 function ogLimparFiltrosAba(){
   if(_relFiltros.orcamentos) _relFiltros.orcamentos.profissional = '';
   _ogFiltroStatus = '';
-  _ogFaixaIdade = null;
   _ogFiltroIndicados = false;
   relRenderFiltrosAba();
-  renderOrcamentosGeral();
-}
-
-// Clique numa faixa de idade (0-3 / 4-7 / 8-15 / 15+): força o status "Em aberto" e filtra por essa faixa.
-// Clicar de novo na mesma faixa remove o filtro de faixa (mantém o status aberto).
-function ogSetFaixaIdade(faixa){
-  _ogFiltroStatus = 'aberto';
-  const sel = document.getElementById('og-filtro-status');
-  if(sel) sel.value = 'aberto';
-  _ogFaixaIdade = (_ogFaixaIdade===faixa) ? null : faixa;
   renderOrcamentosGeral();
 }
 
@@ -10442,17 +10518,6 @@ function renderOrcamentosGeral(){
   const idadeMedia = abertos.length ? (abertos.reduce((s,o)=>s+(o.idadeDias||0),0)/abertos.length) : 0;
   document.getElementById('og-hero-potencial').textContent = 'R$ ' + fmtMoeda(somaPotencial);
   document.getElementById('og-hero-potencial-sub').textContent = `${abertos.length} orçamento(s) · idade média de ${idadeMedia.toFixed(1).replace('.0','')} dia(s)`;
-
-  // ── Faixas de idade (só entre os orçamentos em aberto) ───────────────────
-  ['0-3','4-7','8-15','15+'].forEach(faixa=>{
-    const doFaixa = abertos.filter(o=>o.faixa===faixa);
-    const soma = doFaixa.reduce((s,o)=>s+o.valor,0);
-    document.getElementById('og-faixa-val-'+faixa).textContent = 'R$ ' + fmtMoeda(soma);
-    document.getElementById('og-faixa-count-'+faixa).textContent = `${doFaixa.length} orçamento(s)`;
-  });
-  document.querySelectorAll('#og-faixas-row .og-faixa').forEach(el=>{
-    el.classList.toggle('on', _ogFiltroStatus==='aberto' && (el.dataset.faixa||'')===_ogFaixaIdade);
-  });
 
   // ── Cards de status ──────────────────────────────────────────────────────
   const porStatus = st => baseFiltrada.filter(o=>o.status===st);
@@ -10530,11 +10595,8 @@ function renderOrcamentosGeral(){
     }
   }
 
-  // ── Lista da tabela: aplica status + faixa de idade ──────────────────────
+  // ── Lista da tabela: aplica status + indicados ──────────────────────
   let lista = baseFiltrada.filter(o=>!_ogFiltroStatus || o.status===_ogFiltroStatus);
-  if(_ogFiltroStatus==='aberto' && _ogFaixaIdade){
-    lista = lista.filter(o=>o.faixa===_ogFaixaIdade);
-  }
   if(_ogFiltroIndicados){
     lista = lista.filter(o=>o.indicacao && o.indicacao.nome);
   }
@@ -11100,40 +11162,40 @@ function gerarPdfOrcamento(){
 *{margin:0;padding:0;box-sizing:border-box}
 @import url('https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
 body{background:#FFFFFF;font-family:'Poppins',sans-serif;color:#211E1A;width:210mm;min-height:297mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.faixa{background:#0A0A0B;padding:15mm 20mm 12mm;text-align:center}
+.faixa{background:#0A0A0B;padding:10mm 20mm 8mm;text-align:center}
 .faixa .nome{font-family:'Lora',serif;color:#C9A560;font-size:26px;letter-spacing:4px;text-transform:uppercase;font-weight:600}
 .faixa .sub{color:#8A8680;font-size:9.5px;letter-spacing:2px;text-transform:uppercase;margin-top:6px}
-.corpo{padding:14mm 20mm 18mm}
+.corpo{padding:10mm 20mm 12mm}
 .titulo{font-family:'Lora',serif;font-size:27px;font-weight:600;color:#0A0A0B;text-align:center;margin-top:2mm}
-.regua{width:70px;height:2px;background:#C9A560;margin:5mm auto 8mm}
-.meta{display:flex;justify-content:space-between;margin-bottom:9mm}
+.regua{width:70px;height:2px;background:#C9A560;margin:4mm auto 6mm}
+.meta{display:flex;justify-content:space-between;margin-bottom:6mm}
 .meta-item{text-align:left}
 .meta-item:last-child{text-align:right}
 .meta-lbl{font-size:8.5px;letter-spacing:1.5px;text-transform:uppercase;color:#B3A57C;font-weight:600;margin-bottom:2px}
 .meta-val{font-size:13px;font-weight:600;color:#0A0A0B}
-.plano{background:#FCFBF8;border:1px solid #ECE7DC;border-radius:3px;padding:6mm 8mm;margin-bottom:9mm}
+.plano{background:#FCFBF8;border:1px solid #ECE7DC;border-radius:3px;padding:5mm 8mm;margin-bottom:6mm}
 .plano-tit{font-family:'Lora',serif;font-size:15px;font-weight:600;color:#0A0A0B;margin-bottom:2mm}
 .plano-obs{font-size:11px;color:#726A5A;font-style:italic}
-.sec-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#B3A57C;font-weight:700;margin-bottom:4mm;border-bottom:1px solid #ECE7DC;padding-bottom:2mm}
-table{width:100%;border-collapse:collapse;margin-bottom:3mm}
-.t-nome{font-size:12px;color:#211E1A;padding:3.2mm 3mm 3.2mm 0;border-bottom:1px solid #ECE7DC;font-weight:500}
+.sec-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#B3A57C;font-weight:700;margin-bottom:3mm;border-bottom:1px solid #ECE7DC;padding-bottom:2mm}
+table{width:100%;border-collapse:collapse;margin-bottom:2mm}
+.t-nome{font-size:12px;color:#211E1A;padding:2.4mm 3mm 2.4mm 0;border-bottom:1px solid #ECE7DC;font-weight:500}
 .p-det{font-size:10px;color:#A39C8C;margin-top:1mm}
-.t-val{font-size:12.5px;color:#0A0A0B;font-weight:600;padding:3.2mm 0;border-bottom:1px solid #ECE7DC;text-align:right;white-space:nowrap;vertical-align:top}
-.total-bar{background:#C9A560;display:flex;justify-content:space-between;align-items:center;padding:6mm 8mm;margin:8mm 0 10mm;border-radius:2px}
+.t-val{font-size:12.5px;color:#0A0A0B;font-weight:600;padding:2.4mm 0;border-bottom:1px solid #ECE7DC;text-align:right;white-space:nowrap;vertical-align:top}
+.total-bar{background:#C9A560;display:flex;justify-content:space-between;align-items:center;padding:5mm 8mm;margin:6mm 0 8mm;border-radius:2px}
 .total-lbl{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#2B2000;font-weight:700}
 .total-val{font-family:'Lora',serif;font-size:22px;color:#0A0A0B;font-weight:700}
-.pagamentos{display:flex;flex-wrap:wrap;gap:5mm;margin-bottom:10mm}
-.pag-card{flex:1 1 25%;min-width:45mm;border:1px solid #ECE7DC;border-radius:3px;padding:6mm 5mm;text-align:center;background:#FFFFFF}
+.pagamentos{display:flex;flex-wrap:wrap;gap:5mm;margin-bottom:7mm}
+.pag-card{flex:1 1 25%;min-width:45mm;border:1px solid #ECE7DC;border-radius:3px;padding:5mm 5mm;text-align:center;background:#FFFFFF}
 .pag-card.destaque{background:#0A0A0B;border-color:#0A0A0B}
 .pag-card.destaque .pag-tit{color:#C9A560}
 .pag-card.destaque .pag-l1{color:#fff}
 .pag-card.destaque .pag-l2{color:#E9E1CC}
 .pag-card.destaque .pag-desc{color:#C9A560}
-.pag-tit{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#B3A57C;font-weight:700;margin-bottom:3mm}
+.pag-tit{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#B3A57C;font-weight:700;margin-bottom:2mm}
 .pag-l1{font-size:14px;font-weight:700;color:#0A0A0B;margin-bottom:1.5mm}
 .pag-l2{font-size:9.5px;color:#A39C8C;margin-bottom:1.5mm}
 .pag-desc{font-size:9.5px;color:#9C7D3F;font-weight:600}
-.footer{border-top:1px solid #ECE7DC;padding-top:5mm;display:flex;justify-content:space-between;align-items:flex-start;font-size:9px;color:#A39C8C;line-height:1.6}
+.footer{border-top:1px solid #ECE7DC;padding-top:4mm;display:flex;justify-content:space-between;align-items:flex-start;font-size:9px;color:#A39C8C;line-height:1.6}
 .footer b{color:#726A5A}
 </style>
 </head>
@@ -24413,7 +24475,7 @@ const REL_ABAS = [
   { id:'pacientes_alta',      label:'Pacientes de alta' },
   { id:'agendamentos_sem_baixa', label:'Agendamentos sem baixa' },
   { id:'orcamentos',          label:'Orçamentos' },
-  { id:'emissao_fiscal',      label:'Emissão fiscal' },
+  { id:'emissao_fiscal',      label:'Emissão de recebidos' },
 ];
 
 function renderRelatorios(){
@@ -24559,7 +24621,7 @@ function relLimparFiltro(){
   const de=document.getElementById('rel-periodo-de'); if(de) de.value='';
   const ate=document.getElementById('rel-periodo-ate'); if(ate) ate.value='';
   _relFiltros[_relAbaAtual] = relFiltroVazio(_relAbaAtual);
-  if(_relAbaAtual==='orcamentos'){ _ogFiltroStatus=''; _ogFaixaIdade=null; _ogFiltroIndicados=false; }
+  if(_relAbaAtual==='orcamentos'){ _ogFiltroStatus=''; _ogFiltroIndicados=false; }
   renderRelatorios();
 }
 
@@ -25069,32 +25131,6 @@ function _relOrcamentosConteudoHTML(){
       <div class="og-hero-label">🤝 Indicados</div>
       <div class="og-hero-value" id="og-btn-indicados-val">0</div>
       <div class="og-hero-sub">clique para filtrar</div>
-    </div>
-  </div>
-
-  <div style="margin-bottom:16px">
-    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Orçamentos em aberto por tempo de espera</div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap" id="og-faixas-row">
-      <div class="og-faixa og-faixa-ok" data-faixa="0-3" onclick="ogSetFaixaIdade('0-3')">
-        <div class="og-faixa-lbl">Até 3 dias</div>
-        <div class="og-faixa-val" id="og-faixa-val-0-3">R$ 0,00</div>
-        <div class="og-faixa-count" id="og-faixa-count-0-3">0 orçamento(s)</div>
-      </div>
-      <div class="og-faixa og-faixa-morno" data-faixa="4-7" onclick="ogSetFaixaIdade('4-7')">
-        <div class="og-faixa-lbl">4 a 7 dias</div>
-        <div class="og-faixa-val" id="og-faixa-val-4-7">R$ 0,00</div>
-        <div class="og-faixa-count" id="og-faixa-count-4-7">0 orçamento(s)</div>
-      </div>
-      <div class="og-faixa og-faixa-frio" data-faixa="8-15" onclick="ogSetFaixaIdade('8-15')">
-        <div class="og-faixa-lbl">8 a 15 dias</div>
-        <div class="og-faixa-val" id="og-faixa-val-8-15">R$ 0,00</div>
-        <div class="og-faixa-count" id="og-faixa-count-8-15">0 orçamento(s)</div>
-      </div>
-      <div class="og-faixa og-faixa-gelado" data-faixa="15+" onclick="ogSetFaixaIdade('15+')">
-        <div class="og-faixa-lbl">⚠️ Mais de 15 dias</div>
-        <div class="og-faixa-val" id="og-faixa-val-15+">R$ 0,00</div>
-        <div class="og-faixa-count" id="og-faixa-count-15+">0 orçamento(s)</div>
-      </div>
     </div>
   </div>
 
@@ -29526,7 +29562,7 @@ function finSelecionarProf(btn, nome){
           <thead><tr>
             <th style="width:24px"></th>
             <th>Nº de procedimentos</th><th style="text-align:right">Valor dos tratamentos</th><th style="text-align:right">Valor da medição</th>
-            <th>Data da medição</th><th>Data do pagamento</th><th>Status</th><th style="width:130px"></th>
+            <th>Data da medição</th><th>Data do pagamento</th><th>Status</th><th style="width:230px"></th>
           </tr></thead>
           <tbody>
             ${medicoes.map(m=>{
@@ -29544,7 +29580,9 @@ function finSelecionarProf(btn, nome){
                 <td style="color:var(--tx2)">${_finFmtData(m.dataMedicao)}</td>
                 <td style="color:var(--tx2)">${dataPagamento?_finFmtData(dataPagamento):'—'}</td>
                 <td>${tit?_finBadge(pago?'pago':(stEfetivo||'aberto')):'<span style="font-size:11px;color:var(--tx3)">Título não encontrado</span>'}</td>
-                <td onclick="event.stopPropagation()">${pago
+                <td onclick="event.stopPropagation()" style="display:flex;gap:6px;justify-content:flex-end">
+                  <button class="btn btn-ghost btn-sm" style="white-space:nowrap" onclick="_finExportarMedicaoPDF('${m.id}')">Exportar medição</button>
+                  ${pago
                   ? `<button class="btn btn-ghost btn-sm" disabled title="Desfaça o pagamento do título antes de desfazer a medição" style="white-space:nowrap;opacity:.5;cursor:not-allowed">Desfazer medição</button>`
                   : `<button class="btn btn-ghost btn-sm" style="white-space:nowrap;color:var(--da);border-color:#FCA5A5" onclick="finDesfazerMedicao('${m.id}')">Desfazer medição</button>`}</td>
               </tr>
@@ -29702,7 +29740,11 @@ function finEscolherSubmoduloMedicao(tipoDestino){
   abrirModalFinLancamento(tipoDestino);
 
   // Pré-preenche o modal genérico de lançamento com os dados da medição
-  const mesRef=new Date().toLocaleDateString('pt-BR',{month:'2-digit',year:'numeric'});
+  // Mês de referência dos procedimentos medidos: sempre o mês ANTERIOR ao mês
+  // corrente, já que quem mede em agosto está medindo o que foi executado em julho.
+  const hojeMedicao=new Date();
+  const mesAnteriorRef=new Date(hojeMedicao.getFullYear(), hojeMedicao.getMonth()-1, 1);
+  const mesRef=mesAnteriorRef.toLocaleDateString('pt-BR',{month:'2-digit',year:'numeric'});
   document.getElementById('fin-modal-desc').value=`Comissão ${nome} — medição ${mesRef}`;
   document.getElementById('fin-modal-valor').value='R$ '+total.toLocaleString('pt-BR',{minimumFractionDigits:2});
   document.getElementById('fin-modal-venc').value=_finIso(new Date());
@@ -29777,6 +29819,58 @@ function _finConcluirMedicaoAposLancamento(tituloId){
   renderFinComissao();
   const btn=[...document.querySelectorAll('.fin-prof-btn')].find(b=>b.dataset.nome===nome);
   if(btn) finSelecionarProf(btn,nome);
+}
+
+// Gera um PDF simples com os procedimentos que compõem uma medição já lançada
+// (mesma lista que aparece ao expandir a linha na tela) — pra encaminhar junto
+// com o comprovante de pagamento da comissão.
+function _finExportarMedicaoPDF(medicaoId){
+  const medicoes=_finMedicoesGestao();
+  const m=medicoes.find(x=>x.id===medicaoId);
+  if(!m) return;
+  const emp=getEmpresaAtual()||{};
+  const clinicaNome=(emp.dados&&emp.dados.nome)||'Clínica Sekai';
+  const fmtData=d=>{ if(!d) return '—'; const [y,mo,day]=d.split('-'); return `${day}/${mo}/${y}`; };
+  const totalTrat=(m.totalTratamentos!==undefined)?m.totalTratamentos:(m.itens||[]).reduce((s,it)=>s+(parseFloat(it.valor)||0),0);
+
+  const linhas=(m.itens||[]).map(it=>`<tr>
+    <td style="padding:7px 10px;font-size:12px">${esc(it.proc||'—')}</td>
+    <td style="padding:7px 10px;font-size:12px;color:#4B5563">${esc(it.pacNome||'—')}</td>
+    <td style="padding:7px 10px;font-size:12px;color:#4B5563">${fmtData(it.execData||'')}</td>
+    <td style="padding:7px 10px;font-size:12px;text-align:right;color:#4B5563">${it.valor!==undefined?'R$ '+(parseFloat(it.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'}</td>
+    <td style="padding:7px 10px;font-size:12px;text-align:right;font-weight:600">R$ ${(parseFloat(it.valorComissao)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+  </tr>`).join('');
+
+  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Medição — ${esc(m.prof||'')}</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1a1a1a;font-size:13px;padding:32px 36px;max-width:820px;margin:auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @media print{body{padding:16px 20px}@page{margin:14mm 12mm;size:A4}}
+  table{width:100%;border-collapse:collapse}
+  thead th{padding:7px 10px;font-size:10px;font-weight:700;color:#9a9a9a;text-transform:uppercase;letter-spacing:.06em;text-align:left;border-bottom:1.5px solid #1a1a1a}
+  thead th:last-child,thead th:nth-last-child(2){text-align:right}
+  tbody tr:nth-child(even){background:#F8F9FA}
+  </style></head>
+  <body>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px">
+      <div><div style="font-size:20px;font-weight:700">${esc(clinicaNome)}</div><div style="font-size:11px;color:#9a9a9a;margin-top:2px">Medição de comissão</div></div>
+      <div style="text-align:right"><div style="font-size:14px;font-weight:700">${esc(m.prof||'')}</div><div style="font-size:11px;color:#9a9a9a;margin-top:2px">Medido em ${fmtData(m.dataMedicao)}</div></div>
+    </div>
+    <table>
+      <thead><tr><th>Procedimento</th><th>Paciente</th><th>Data execução</th><th>Valor procedimento</th><th>Comissão</th></tr></thead>
+      <tbody>${linhas}</tbody>
+    </table>
+    <div style="display:flex;justify-content:flex-end;gap:24px;margin-top:16px;padding-top:12px;border-top:1.5px solid #1a1a1a">
+      <div style="font-size:12px;color:#4B5563">Valor dos tratamentos: <strong style="color:#1a1a1a">R$ ${totalTrat.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong></div>
+      <div style="font-size:13px">Valor da medição: <strong>R$ ${(parseFloat(m.total)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong></div>
+    </div>
+  <script>window.onload=()=>window.print();<\/script>
+  </body></html>`;
+
+  const blob=new Blob([html],{type:'text/html; charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.target='_blank'; a.rel='noopener';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 10000);
 }
 
 // Desfaz uma medição já lançada: só é permitido se o título gerado ainda estiver em aberto
