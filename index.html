@@ -50,49 +50,54 @@
    de destaque, IBM Plex Mono nas legendas/dados. Tudo isolado dentro de
    #sec-relatorios — Financeiro, Agenda, Pacientes e o resto do sistema
    continuam exatamente como estavam. */
+/* ══ MÓDULO RELATÓRIOS — cores/fontes EXATAS do arquivo mockup-agenda-sekai.html
+   (brass #C6A15B, emerald #2E7D5B, terra #B5675A, Space Grotesk/Inter/IBM Plex
+   Mono) — nada inventado, só adaptado de fundo escuro pro claro que você pediu.
+   Isolado dentro de #sec-relatorios; resto do sistema não muda. */
 #sec-relatorios{
-  --ac:#A9822E;   --acl:#F2E9D3; --act:#7C6023;   /* dourado — accent principal do módulo */
-  --su:#1F6F54;   --sul:#E1EEE7;                   /* verde esmeralda — aprovado/sucesso */
-  --da:#A6564A;   --dal:#F3E1DD;                   /* terracota — reprovado/atenção */
-  --wa:#A9822E;   --wal:#F2E9D3;
-  --pu:#1F6F54;   --pul:#E1EEE7;
-  --cta:#A9822E;  --cta-d:#7C6023;
-  --bg:#ECE3CC;   --surface:#FFFFFF; --s2:#E7DCC0;
-  --border:#D6C79C; --border-s:#C4AF78;
-  --tx:#22201A;   --tx2:#615A46;  --tx3:#8C8064;
+  --ac:#C6A15B;   --acl:rgba(198,161,91,.14); --act:#9C7F44;  /* brass — igual ao mockup */
+  --su:#2E7D5B;   --sul:rgba(46,125,91,.12);                   /* emerald — igual ao mockup */
+  --da:#B5675A;   --dal:rgba(181,103,90,.12);                  /* terra — igual ao mockup */
+  --wa:#C6A15B;   --wal:rgba(198,161,91,.14);
+  --pu:#2E7D5B;   --pul:rgba(46,125,91,.12);
+  --cta:#C6A15B;  --cta-d:#9C7F44;
+  --bg:#FAF8F3;   --surface:#FFFFFF; --s2:#F1ECE1;
+  --border:rgba(20,23,26,.09); --border-s:rgba(20,23,26,.16);
+  --tx:#1E2023;   --tx2:#6B6F6C;  --tx3:#94978F;
   --r4:6px;--r6:8px;--r8:10px;--r10:12px;--r12:14px;--r16:18px;
-  --shadow:0 1px 3px rgba(34,32,26,.07);
-  --shadow-md:0 10px 28px rgba(34,32,26,.12);
-  --font-display:'Space Grotesk','Plus Jakarta Sans',sans-serif;
+  --shadow:0 1px 2px rgba(20,23,26,.05);
+  --shadow-md:0 8px 22px rgba(20,23,26,.08);
+  --font:'Inter',system-ui,-apple-system,sans-serif;
+  --font-display:'Space Grotesk',sans-serif;
   --font-mono:'IBM Plex Mono',monospace;
   background:var(--bg);
   margin:-24px -28px;
   padding:28px 32px 60px;
   color:var(--tx);
+  font-family:var(--font);
 }
 
 /* Cabeçalho do módulo */
 #sec-relatorios .pg-title{
   font-family:var(--font-display);
-  font-size:32px;
-  font-weight:800;
-  letter-spacing:-.02em;
+  font-size:28px;
+  font-weight:700;
+  letter-spacing:-.01em;
   color:var(--tx);
 }
-#sec-relatorios .pg-desc{ color:var(--tx2); font-size:14px; }
-#sec-relatorios .pg-desc::after{ content:''; display:block; width:52px; height:3px; background:var(--ac); margin-top:16px; border-radius:2px; }
+#sec-relatorios .pg-desc{ color:var(--tx3); font-size:13px; }
 
-/* Números de destaque (cards e hero) — fonte de exibição, bem mais fortes */
+/* Números de destaque (cards e hero) — Space Grotesk, igual ao mockup */
 #sec-relatorios .fin-card-value,
 #sec-relatorios .og-hero-value,
 #sec-relatorios .og-faixa-val{
   font-family:var(--font-display);
-  font-size:32px;
-  font-weight:800;
-  letter-spacing:-.02em;
+  font-size:28px;
+  font-weight:700;
+  letter-spacing:-.01em;
 }
 
-/* Rótulos e legendas — fonte "de precisão", tracking mais largo */
+/* Rótulos e legendas — mono, uppercase e tracked, igual às tags do mockup */
 #sec-relatorios .fin-card-label,
 #sec-relatorios .fin-card-sub,
 #sec-relatorios .og-hero-sub,
@@ -100,9 +105,9 @@
 #sec-relatorios .og-rank-pct,
 #sec-relatorios .fin-table thead th{
   font-family:var(--font-mono);
-  letter-spacing:.04em;
+  letter-spacing:.05em;
 }
-#sec-relatorios .fin-card-label{ font-size:10.5px; }
+#sec-relatorios .fin-card-label{ font-size:10px; text-transform:uppercase; }
 
 /* Valores monetários dentro das tabelas — também na fonte de precisão */
 #sec-relatorios .fin-table td.fin-td-valor{
@@ -110,56 +115,60 @@
   color:var(--tx);
 }
 
-/* Cards de métrica — respiro maior, cantos e sombra mais suaves,
-   com uma lasca de cor à esquerda indicando o tipo (padrão do mockup) */
+/* Cards de métrica — linha fina (hairline) como no mockup, com uma lasca de
+   cor à esquerda indicando o tipo (o único elemento "forte" do card) */
 #sec-relatorios .fin-card{
-  padding:22px 24px;
-  border-radius:var(--r10);
-  box-shadow:var(--shadow);
-  border:1.5px solid var(--border);
-  border-left:4px solid var(--border-s);
-  transition:transform .12s, box-shadow .12s;
+  padding:16px 18px;
+  border-radius:var(--r8);
+  box-shadow:none;
+  border:1px solid var(--border);
+  border-left:3px solid var(--border-s);
+  transition:border-color .12s, transform .1s;
 }
-#sec-relatorios .fin-card:hover{ transform:translateY(-1px); box-shadow:var(--shadow-md); }
+#sec-relatorios .fin-card:hover{ transform:translateY(-1px); border-color:var(--border-s); }
 #sec-relatorios .fin-card-blue{ border-left-color:var(--ac); }
 #sec-relatorios .fin-card-green{ border-left-color:var(--su); }
 #sec-relatorios .fin-card-red{ border-left-color:var(--da); }
 #sec-relatorios .fin-card-amber{ border-left-color:var(--wa); }
 
-/* Painéis, tabela e menu — mesmo tratamento de cantos/sombra suave, mas com
-   borda mais visível (não só sombra) pra destacar de verdade do fundo */
+/* Painéis, tabela e menu — linha fina, sem sombra pesada, igual ao mockup */
 #sec-relatorios .card,
 #sec-relatorios .og-hero,
 #sec-relatorios .og-faixa,
 #sec-relatorios .og-panel,
 #sec-relatorios .fin-table-wrap,
 #sec-relatorios .pp-menu{
-  border-radius:var(--r10);
-  box-shadow:var(--shadow);
-  border:1.5px solid var(--border);
+  border-radius:var(--r8);
+  box-shadow:none;
+  border:1px solid var(--border);
 }
 
-/* Tabela — cabeçalho discreto e mais espaçado, linhas com hairline só */
+/* Tabela — cabeçalho discreto, linhas finas só */
 #sec-relatorios .fin-table thead th{
   padding-top:2px;
   border-bottom:1px solid var(--border-s);
+  text-transform:uppercase;
 }
 #sec-relatorios .fin-table tr:hover td{
   background:var(--acl);
 }
 
-/* Hero "Potencial de Vendas" — tira o degradê azul antigo, passa a usar o
-   dourado do módulo. O card "Indicados" ao lado (mesma classe no HTML)
-   volta a ser um card neutro, pra não deixar a tela "toda dourada" —
-   no mockup só o indicador de oportunidade principal ganha destaque forte. */
+/* Hero "Potencial de Vendas" — brass sólido (sem degradê), texto escuro em
+   cima do brass (igual ao botão do mockup, que usa texto escuro sobre brass,
+   não branco). "Indicados" ao lado volta a ser card neutro. */
 #sec-relatorios .og-hero-blue{
-  background:linear-gradient(135deg,var(--ac) 0%,var(--act) 100%);
-  box-shadow:var(--shadow-md);
+  background:var(--ac);
+  box-shadow:none;
 }
+#sec-relatorios .og-hero-blue .og-hero-label,
+#sec-relatorios .og-hero-blue .og-hero-value,
+#sec-relatorios .og-hero-blue .og-hero-sub{
+  color:#1E2023;
+}
+#sec-relatorios .og-hero-blue .og-hero-sub{ opacity:.75; }
 #sec-relatorios .og-hero-blue[style*="width:190px"]{
   background:var(--surface);
   border:1px solid var(--border);
-  box-shadow:var(--shadow);
 }
 #sec-relatorios .og-hero-blue[style*="width:190px"] .og-hero-label,
 #sec-relatorios .og-hero-blue[style*="width:190px"] .og-hero-value,
@@ -168,32 +177,34 @@
 }
 #sec-relatorios .og-hero-blue[style*="width:190px"] .og-hero-sub{ color:var(--tx3); opacity:1; }
 
-/* Menu lateral de abas do módulo — pill com lasca dourada na aba ativa,
-   igual ao item de navegação do mockup */
-#sec-relatorios .pp-menu{ padding:10px; }
+/* Menu lateral de abas do módulo — pill com lasca brass na aba ativa, igual
+   ao .nav-item do mockup */
+#sec-relatorios .pp-menu{ padding:8px; }
 #sec-relatorios .pp-menu-btn{
   border-radius:var(--r6);
   border-left:2px solid transparent;
-  font-family:'Plus Jakarta Sans',var(--font);
+  font-family:var(--font);
+  font-weight:500;
 }
 #sec-relatorios .pp-menu-btn.on{
   background:var(--acl);
-  color:var(--act);
+  color:var(--tx);
   font-weight:600;
   border-left-color:var(--ac);
 }
 #sec-relatorios .pp-menu-btn:hover{ background:var(--s2); }
 
-/* Botões dentro do módulo — dourado como cor de ação, formato mais generoso */
-#sec-relatorios .btn{ padding:9px 18px; border-radius:var(--r8); }
-#sec-relatorios .btn-primary{ background:var(--cta); border-color:var(--cta); }
+/* Botões — brass sólido com texto escuro (não branco), igual ao .btn-new do
+   mockup */
+#sec-relatorios .btn{ padding:9px 16px; border-radius:var(--r6); font-family:var(--font); font-weight:600; }
+#sec-relatorios .btn-primary{ background:var(--cta); border-color:var(--cta); color:#1E2023; }
 #sec-relatorios .btn-primary:hover{ background:var(--cta-d); border-color:var(--cta-d); }
 #sec-relatorios .btn-ghost{ background:var(--surface); border-color:var(--border-s); color:var(--tx2); }
 
-/* Respiro geral maior entre blocos, mais fiel ao clima "arejado" do mockup */
-#sec-relatorios .fin-cards-row{ gap:16px; margin-bottom:20px; }
-#sec-relatorios .card{ margin-bottom:20px; padding:18px 20px; }
-#sec-relatorios .og-panel{ padding:18px 20px; }
+/* Respiro geral entre blocos */
+#sec-relatorios .fin-cards-row{ gap:14px; margin-bottom:18px; }
+#sec-relatorios .card{ margin-bottom:18px; padding:16px 18px; }
+#sec-relatorios .og-panel{ padding:16px 18px; }
 
 /* ══ PEÇAS PEQUENAS QUE FICARAM DE FORA DA PRIMEIRA PASSADA ══
    Etiquetas de status, tags de origem, botões pequenos e checkboxes usados
