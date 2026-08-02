@@ -153,29 +153,26 @@
   background:var(--acl);
 }
 
-/* Hero "Potencial de Vendas" — brass sólido (sem degradê), texto escuro em
-   cima do brass (igual ao botão do mockup, que usa texto escuro sobre brass,
-   não branco). "Indicados" ao lado volta a ser card neutro. */
+/* Hero "Potencial de Vendas" — no mockup, o dourado nunca preenche um bloco
+   inteiro (só aparece em bordas, texto e no botão pequeno). Por isso esse
+   card volta a ser branco como os demais, só com uma lasca dourada mais
+   grossa à esquerda pra continuar chamando atenção, sem virar uma parede
+   de cor. "Indicados" ao lado fica idêntico aos outros cards neutros. */
 #sec-relatorios .og-hero-blue{
-  background:var(--ac);
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-left:4px solid var(--ac);
   box-shadow:none;
 }
 #sec-relatorios .og-hero-blue .og-hero-label,
 #sec-relatorios .og-hero-blue .og-hero-value,
 #sec-relatorios .og-hero-blue .og-hero-sub{
-  color:#1E2023;
-}
-#sec-relatorios .og-hero-blue .og-hero-sub{ opacity:.75; }
-#sec-relatorios .og-hero-blue[style*="width:190px"]{
-  background:var(--surface);
-  border:1px solid var(--border);
-}
-#sec-relatorios .og-hero-blue[style*="width:190px"] .og-hero-label,
-#sec-relatorios .og-hero-blue[style*="width:190px"] .og-hero-value,
-#sec-relatorios .og-hero-blue[style*="width:190px"] .og-hero-sub{
   color:var(--tx);
 }
-#sec-relatorios .og-hero-blue[style*="width:190px"] .og-hero-sub{ color:var(--tx3); opacity:1; }
+#sec-relatorios .og-hero-blue .og-hero-sub{ color:var(--tx3); opacity:1; }
+#sec-relatorios .og-hero-blue[style*="width:190px"]{
+  border-left:1px solid var(--border);
+}
 
 /* Menu lateral de abas do módulo — pill com lasca brass na aba ativa, igual
    ao .nav-item do mockup */
