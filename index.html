@@ -4597,6 +4597,23 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
+<!-- MODAL CARGOS DA EQUIPE (múltiplos cargos por pessoa) -->
+<div class="modal-ov" id="modal-equipe-cargos">
+  <div class="modal" style="width:420px">
+    <div class="modal-header">
+      <div class="modal-title">Cargos de <span id="mec-nome"></span></div>
+    </div>
+    <div class="modal-body">
+      <div class="input-hint" style="margin-bottom:10px">Marque todos os cargos que essa pessoa exerce. As permissões dela passam a ser a soma de todos os cargos marcados.</div>
+      <div id="mec-lista" style="display:flex;flex-direction:column;gap:2px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-equipe-cargos')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarCargosEquipe()">Salvar →</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL CARGO -->
 <div class="modal-ov" id="modal-cargo">
   <div class="modal" style="width:620px">
@@ -5387,7 +5404,7 @@ function getUsuarioPrincipal(){
   if(p) return p;
   // fallback (ex.: ambiente de teste sem login real / dado antigo sem `principal`):
   // usa o primeiro administrador encontrado na equipe, se houver.
-  return equipe.find(e=>typeof e!=='string' && cargoEhAdministrador(e.cargoId)) || null;
+  return equipe.find(e=>typeof e!=='string' && membroEhAdministrador(e)) || null;
 }
 function cargoEhAdministrador(cargoId){
   const cargo = cargos.find(c=>c.id===cargoId);
@@ -5400,14 +5417,27 @@ function cargoEhDentista(cargoId){
   const cargo = cargos.find(c=>c.id===cargoId);
   return !!cargo && (cargo.id==='cg_dentista' || (cargo.nome||'').trim().toLowerCase()==='dentista');
 }
+// Uma pessoa na Equipe agora pode ter MAIS DE UM CARGO ao mesmo tempo (ex: Dentista
+// + Gestão). `cargoIds` é a lista de cargos dela. Este helper devolve essa lista já
+// tratada, e também entende o formato antigo (`cargoId` único), pra não quebrar
+// dados salvos antes dessa mudança.
+function cargoIdsDoMembro(e){
+  if(!e || typeof e==='string') return [];
+  if(Array.isArray(e.cargoIds)) return e.cargoIds;
+  return e.cargoId ? [e.cargoId] : [];
+}
+function membroEhAdministrador(e){ return cargoIdsDoMembro(e).some(cargoEhAdministrador); }
+function membroEhDentista(e){ return cargoIdsDoMembro(e).some(cargoEhDentista); }
 // Monta o nome de exibição de uma pessoa (usado em `equipe` e em todo o sistema):
-// nome puro + "Dr./Dra." na frente, somente se ela tiver o cargo de Dentista E
-// tiver escolhido um tratamento no cadastro de Usuários. O nome puro (sem prefixo)
-// continua sendo o que fica salvo em `usuarios`, editável no cadastro.
-function nomeComTratamento(usuarioId, cargoId){
+// nome puro + "Dr./Dra." na frente, somente se ela tiver o cargo de Dentista (em
+// qualquer um dos cargos dela) E tiver escolhido um tratamento no cadastro de
+// Usuários. O nome puro (sem prefixo) continua sendo o que fica salvo em
+// `usuarios`, editável no cadastro.
+function nomeComTratamento(usuarioId, cargoIds){
   const u = usuarios.find(x=>x.id===usuarioId);
   if(!u) return '';
-  if(cargoEhDentista(cargoId) && u.tratamento) return `${u.tratamento} ${u.nome}`;
+  const ids = Array.isArray(cargoIds) ? cargoIds : (cargoIds ? [cargoIds] : []);
+  if(ids.some(cargoEhDentista) && u.tratamento) return `${u.tratamento} ${u.nome}`;
   return u.nome;
 }
 // Permissão pra usar o seletor "Ver como" — baseada em QUEM VOCÊ É DE VERDADE,
@@ -5415,7 +5445,7 @@ function nomeComTratamento(usuarioId, cargoId){
 function souAdministradorReal(){
   const principal = getUsuarioPrincipal();
   if(!principal) return true; // equipe vazia/sem dado = ambiente de teste, libera
-  return cargoEhAdministrador(principal.cargoId);
+  return membroEhAdministrador(principal);
 }
 function atualizarIndicadorImpersonar(){
   const wrap = document.getElementById('hdr-impersonar-wrap');
@@ -5464,8 +5494,14 @@ function getPermissoesUsuarioAtual(){
   // Antes retornava acesso total nesse caso, o que é perigoso: qualquer usuário
   // sem vínculo correto em "equipe" virava admin por padrão.
   if(!membroEquipe) return new Set();
-  const cargo = cargos.find(c=>c.id===membroEquipe.cargoId);
-  return new Set(cargo?.permissoes || []);
+  // Uma pessoa pode ter mais de um cargo agora — a permissão dela é a SOMA das
+  // permissões de todos os cargos que ela tiver (ex: Dentista + Gestão).
+  const perms = new Set();
+  cargoIdsDoMembro(membroEquipe).forEach(id=>{
+    const cargo = cargos.find(c=>c.id===id);
+    (cargo?.permissoes||[]).forEach(p=>perms.add(p));
+  });
+  return perms;
 }
 
 function temPerm(permId){
@@ -5790,7 +5826,7 @@ function _planEquipeOptionsHTML(uidSelecionado){
   const cargosMap=(typeof cargos!=='undefined'?cargos:[]).reduce((m,c)=>{m[c.id]=c.nome;return m;},{});
   const membros=(equipe||[]).filter(e=>typeof e!=='string' && e.usuarioId);
   return '<option value="">— Não vinculado —</option>' + membros.map(e=>{
-    const cargoNome=cargosMap[e.cargoId]||'';
+    const cargoNome=cargoIdsDoMembro(e).map(id=>cargosMap[id]).filter(Boolean).join(', ');
     const label=cargoNome ? `${e.nome} (${cargoNome})` : e.nome;
     return `<option value="${esc(e.usuarioId)}" ${e.usuarioId===uidSelecionado?'selected':''}>${esc(label)}</option>`;
   }).join('');
@@ -6742,8 +6778,8 @@ let regrasLembretes = carregarLS('sk3-regras-lembretes', [
 //  concluidoEm, concluidoPorId}
 let lembretesGerados = carregarLS('sk3-lembretes-gerados', []);
 let equipe = carregarLS('sk3-equipe', [
-  {nome:'Patrik Bomfim',usuarioId:'us_owner',cargoId:'cg_administrador',principal:true},
-  {nome:'Leticia',usuarioId:'us_leticia',cargoId:'cg_dentista'},
+  {nome:'Patrik Bomfim',usuarioId:'us_owner',cargoIds:['cg_administrador'],principal:true},
+  {nome:'Leticia',usuarioId:'us_leticia',cargoIds:['cg_dentista']},
 ]);
 let indicacoesMes = carregarLS('sk3-indicacoes', 0);
 
@@ -7413,10 +7449,15 @@ let cargos = carregarLS('sk3-cargos', CARGOS_PADRAO);
 // Migração (uma vez só): antes, o "Dr./Dra." vinha digitado junto do nome
 // (ex: "Dra. Fernanda Cancelli"). Agora o nome do usuário fica puro, e o
 // tratamento passa a ser um campo próprio, aplicado automaticamente pelo
-// sistema. Este bloco separa o que já estava salvo, e ajusta a Equipe:
-// remove quem estava lá sem nenhum cargo definido (equipe = só gente ativa).
-(function _migrarTratamentoELimparEquipe(){
-  if(carregarLS('sk3-migrou-tratamento-equipe-v1', false)) return;
+// sistema. Este bloco roda a cada carregamento (é seguro rodar sempre — cada
+// passo não faz nada se já estiver correto, igual a migração de permissões
+// do Administrador logo acima) e faz 3 coisas:
+// 1) separa um "Dr./Dra." que ainda esteja digitado junto do nome;
+// 2) converte o formato antigo de cargo único (cargoId) pro novo, de lista
+//    de cargos (cargoIds) — uma pessoa pode ter mais de um cargo agora;
+// 3) remove da Equipe quem não tem nenhum cargo (e não é a conta principal),
+//    e recalcula o nome de exibição (nome puro + Dr./Dra. quando aplicável).
+(function _normalizarNomesCargosEEquipe(){
   let usuariosMudaram=false;
   usuarios.forEach(u=>{
     const m = (u.nome||'').match(/^(Dr\.|Dra\.)\s+(.+)$/i);
@@ -7428,17 +7469,28 @@ let cargos = carregarLS('sk3-cargos', CARGOS_PADRAO);
   });
   if(usuariosMudaram) salvarLS('sk3-usuarios', usuarios);
 
+  let equipeMudou=false;
+  // formato antigo (cargoId único) → formato novo (cargoIds, lista)
+  equipe.forEach(e=>{
+    if(typeof e!=='string' && !Array.isArray(e.cargoIds)){
+      e.cargoIds = e.cargoId ? [e.cargoId] : [];
+      delete e.cargoId;
+      equipeMudou=true;
+    }
+  });
   const antesEquipe = equipe.length;
   // Remove da Equipe quem não tem cargo nenhum (e não é a conta principal) —
-  // a Equipe passa a representar só quem está ativo na clínica, com um cargo definido.
-  equipe = equipe.filter(e => typeof e==='string' ? true : (e.principal || e.cargoId));
+  // a Equipe passa a representar só quem está ativo na clínica, com cargo definido.
+  equipe = equipe.filter(e => typeof e==='string' ? true : (e.principal || cargoIdsDoMembro(e).length));
+  if(equipe.length!==antesEquipe) equipeMudou=true;
   // Recalcula o nome de exibição de todo mundo (nome puro + Dr./Dra. quando aplicável)
   equipe.forEach(e=>{
-    if(typeof e!=='string' && e.usuarioId) e.nome = nomeComTratamento(e.usuarioId, e.cargoId);
+    if(typeof e!=='string' && e.usuarioId){
+      const novoNome = nomeComTratamento(e.usuarioId, cargoIdsDoMembro(e));
+      if(novoNome && novoNome!==e.nome){ e.nome=novoNome; equipeMudou=true; }
+    }
   });
-  if(equipe.length!==antesEquipe || usuariosMudaram) salvarLS('sk3-equipe', equipe);
-
-  salvarLS('sk3-migrou-tratamento-equipe-v1', true);
+  if(equipeMudou || usuariosMudaram) salvarLS('sk3-equipe', equipe);
 })();
 let pendenciasAvulsas = carregarLS('sk3-pendencias-avulsas', []);
 // melhorias: [{id, texto, data(ISO), criadoPor(usuarioId), resolvido(bool)}] — lembretes de erros/melhorias do sistema
@@ -11002,7 +11054,7 @@ function _orcToggleDataDecisao(status){
 // ausência desse selo (equipe ainda não configurada) cai para uma escolha por
 // aproximação (criadora do orçamento, senão a primeira dentista cadastrada).
 function _orcDentistaResponsavel(nomeCriador){
-  const dentistas = equipe.filter(e=>typeof e!=='string' && e.cargoId==='cg_dentista');
+  const dentistas = equipe.filter(e=>typeof e!=='string' && membroEhDentista(e));
   let nome='', cro='';
   if(dentistas.length){
     const membro = dentistas.find(e=>e.respTecnico)
@@ -11036,7 +11088,7 @@ function _orcDentistaResponsavel(nomeCriador){
   salvarLS('sk3-resp-tecnica-v1', true);
   const jaTemSelo = equipe.some(e=>typeof e!=='string'&&e.respTecnico);
   if(jaTemSelo) return;
-  const alvo = equipe.find(e=>typeof e!=='string' && e.cargoId==='cg_dentista' && _normalizarNome(e.nome).includes('leticia'));
+  const alvo = equipe.find(e=>typeof e!=='string' && membroEhDentista(e) && _normalizarNome(e.nome).includes('leticia'));
   if(alvo){
     equipe.forEach(e=>{ if(typeof e!=='string') e.respTecnico=false; });
     alvo.respTecnico=true;
@@ -11053,7 +11105,7 @@ function _orcDentistaResponsavel(nomeCriador){
 (function corrigirRespTecnicaLeticiaV2(){
   if(carregarLS('sk3-resp-tecnica-v2', false)) return;
   salvarLS('sk3-resp-tecnica-v2', true);
-  const alvo = equipe.find(e=>typeof e!=='string' && e.cargoId==='cg_dentista' && _normalizarNome(e.nome).includes('leticia'));
+  const alvo = equipe.find(e=>typeof e!=='string' && membroEhDentista(e) && _normalizarNome(e.nome).includes('leticia'));
   if(alvo && !alvo.respTecnico){
     equipe.forEach(e=>{ if(typeof e!=='string') e.respTecnico=false; });
     alvo.respTecnico=true;
@@ -14682,7 +14734,7 @@ const _CAMPO_MANUAL_TIPO_LABEL={texto:'texto',numero:'número',moeda:'moeda (R$)
 // já que secretária/auxiliar não se responsabilizam clinicamente pelo paciente.
 function _dentistasDisponiveis(){
   return equipe.filter(e=>typeof e!=='string' && e.usuarioId).map(e=>{
-    if(!cargoEhDentista(e.cargoId)) return null;
+    if(!membroEhDentista(e)) return null;
     const u=usuarios.find(x=>x.id===e.usuarioId);
     const nome=e.nome||u?.nome||'';
     const cro=u?.cro||'';
@@ -17550,23 +17602,26 @@ function renderEquipe(){
   if(!equipe.length){
     lista.innerHTML='<div class="empty"><div class="empty-ic">◉</div>Nenhuma pessoa na equipe ainda. Selecione um usuário e um cargo abaixo para adicionar.</div>';
   } else {
-    const header=`<div style="display:grid;grid-template-columns:1fr 200px 220px 110px;gap:14px;padding:0 0 8px;border-bottom:1px solid var(--border);margin-bottom:4px">
+    const header=`<div style="display:grid;grid-template-columns:1fr 240px 220px 110px;gap:14px;padding:0 0 8px;border-bottom:1px solid var(--border);margin-bottom:4px">
       <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Nome</div>
-      <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Cargo</div>
+      <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Cargo(s)</div>
       <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Responsável técnica</div>
       <div></div>
     </div>`;
     const linhas=equipe.map((e,i)=>{
       const nome=nomeEquipeItem(e);
-      const cargoIdAtual=(typeof e!=='string')?(e.cargoId||''):'';
+      const cargoIdsAtual=cargoIdsDoMembro(e);
       const ehPrincipal=typeof e!=='string'&&e.principal;
-      const ehDentista=cargoEhDentista(cargoIdAtual);
+      const ehDentista=membroEhDentista(e);
       const ehRespTecnica=typeof e!=='string'&&!!e.respTecnico;
-      // Não existe mais opção "Sem cargo": pra tirar o cargo de alguém, remove-se
-      // a pessoa da Equipe (ela continua existindo normalmente como usuário).
-      const selCargo=`<select onchange="updateCargoEquipe(${i},this.value)" style="font-size:12px;padding:5px 8px;width:100%">
-        ${cargos.map(c=>`<option value="${c.id}" ${c.id===cargoIdAtual?'selected':''}>${esc(c.nome)}</option>`).join('')}
-      </select>`;
+      // Uma pessoa pode ter mais de um cargo — mostra como "etiquetas" e um botão
+      // que abre a lista de marcar/desmarcar. Pra tirar TODOS os cargos de alguém,
+      // remove-se a pessoa da Equipe (ela continua existindo normalmente como usuário).
+      const nomesCargos=cargoIdsAtual.map(id=>cargos.find(c=>c.id===id)?.nome).filter(Boolean);
+      const cargoDisplay=`<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+        ${nomesCargos.length?nomesCargos.map(n=>`<span class="pill p-neutral" style="font-size:10.5px">${esc(n)}</span>`).join(''):'<span style="font-size:12px;color:var(--tx3)">—</span>'}
+        <button class="btn btn-ghost btn-sm" onclick="abrirModalCargosEquipe(${i})" style="font-size:11px;padding:3px 8px">${nomesCargos.length?'Editar':'+ Cargo'}</button>
+      </div>`;
       // Selo/ação de "Responsável técnica" — só faz sentido para quem tem cargo de dentista.
       // É quem assina (nome + CRO) em todas as propostas de tratamento geradas pelo sistema.
       const respTecnicaHtml = ehDentista
@@ -17574,9 +17629,9 @@ function renderEquipe(){
             ? '<span class="pill p-gold" title="Nome e CRO usados nas propostas de tratamento">★ Responsável técnica</span>'
             : `<button class="btn btn-ghost btn-sm" onclick="definirRespTecnica(${i})" title="Usar nome e CRO desta pessoa nas propostas de tratamento">Definir como responsável técnica</button>`)
         : '';
-      return `<div style="display:grid;grid-template-columns:1fr 200px 220px 110px;gap:14px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
+      return `<div style="display:grid;grid-template-columns:1fr 240px 220px 110px;gap:14px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
       <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(nome)}">${esc(nome)}</span>
-      ${selCargo}
+      ${cargoDisplay}
       <div>${respTecnicaHtml}</div>
       <div style="text-align:right">${ehPrincipal?'<span class="pill p-green">Conta principal</span>':`<button class="btn btn-danger btn-sm" onclick="removeEquipe(${i})">Remover</button>`}</div>
     </div>`;
@@ -17607,6 +17662,9 @@ function definirRespTecnica(i){
   renderEquipe();
 }
 
+// Adiciona alguém à equipe já com 1 cargo inicial (o primeiro). Pra dar mais de
+// um cargo à mesma pessoa, depois de adicionada, usa-se o botão "Editar" na
+// coluna de Cargo(s), que abre a lista com todos os cargos pra marcar.
 async function addEquipe(){
   const usuarioId=document.getElementById('eq-usuario').value;
   const cargoId=document.getElementById('eq-cargo').value;
@@ -17615,28 +17673,54 @@ async function addEquipe(){
   const u=usuarios.find(x=>x.id===usuarioId);
   if(!u)return;
   if(equipe.some(e=>typeof e!=='string'&&e.usuarioId===usuarioId)){alert('Este usuário já está na equipe.');return;}
-  const r = await chamarAdminUsuarios({ action:'editar_cargo', user_id:usuarioId, cargo_id:cargoId, nome:u.nome });
+  const r = await chamarAdminUsuarios({ action:'editar_cargo', user_id:usuarioId, cargo_ids:[cargoId], nome:u.nome });
   if(r.error){ alert('Erro ao definir o cargo: '+r.error); return; }
-  equipe.push({nome:nomeComTratamento(usuarioId,cargoId),usuarioId,cargoId});
+  equipe.push({nome:nomeComTratamento(usuarioId,[cargoId]),usuarioId,cargoIds:[cargoId]});
   salvarLS('sk3-equipe',equipe);
   renderEquipe();
 }
-async function updateCargoEquipe(i,cargoId){
-  if(!cargoId){alert('Selecione um cargo. Pra tirar a pessoa da equipe, use o botão Remover.');renderEquipe();return;}
+
+// ── Modal: marcar/desmarcar os cargos de uma pessoa da Equipe (múltiplos) ──
+let mecEquipeIndex=null;
+function abrirModalCargosEquipe(i){
+  mecEquipeIndex=i;
   const item=equipe[i];
+  document.getElementById('mec-nome').textContent=nomeEquipeItem(item);
+  const atuais=new Set(cargoIdsDoMembro(item));
+  document.getElementById('mec-lista').innerHTML=cargos.map(c=>`
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400;color:var(--tx);cursor:pointer;padding:4px 0">
+      <input type="checkbox" value="${c.id}" ${atuais.has(c.id)?'checked':''} style="width:16px;height:16px;cursor:pointer">
+      ${esc(c.nome)}
+    </label>`).join('');
+  document.getElementById('modal-equipe-cargos').classList.add('open');
+}
+async function salvarCargosEquipe(){
+  if(mecEquipeIndex===null) return;
+  const marcados=[...document.querySelectorAll('#mec-lista input[type="checkbox"]:checked')].map(c=>c.value);
+  if(!marcados.length){ alert('Selecione pelo menos um cargo. Pra tirar a pessoa da equipe (sem nenhum cargo), use o botão Remover na lista.'); return; }
+  const item=equipe[mecEquipeIndex];
   const usuarioId=(typeof item!=='string')?item.usuarioId:null;
+  const btn=document.querySelector('#modal-equipe-cargos .btn-primary');
+  if(btn){ btn.disabled=true; btn.textContent='Salvando…'; }
   if(usuarioId){
     const u=usuarios.find(x=>x.id===usuarioId);
-    const r = await chamarAdminUsuarios({ action:'editar_cargo', user_id:usuarioId, cargo_id:cargoId, nome:u?.nome||item.nome });
-    if(r.error){ alert('Erro ao atualizar o cargo: '+r.error); renderEquipe(); return; }
+    const r = await chamarAdminUsuarios({ action:'editar_cargo', user_id:usuarioId, cargo_ids:marcados, nome:u?.nome||item.nome });
+    if(r.error){
+      if(btn){ btn.disabled=false; btn.textContent='Salvar →'; }
+      alert('Erro ao atualizar os cargos: '+r.error);
+      return;
+    }
   }
-  if(typeof equipe[i]==='string'){
-    equipe[i]={nome:equipe[i],usuarioId:null,cargoId};
+  if(typeof equipe[mecEquipeIndex]==='string'){
+    equipe[mecEquipeIndex]={nome:equipe[mecEquipeIndex],usuarioId:null,cargoIds:marcados};
   } else {
-    equipe[i].cargoId=cargoId;
-    if(usuarioId) equipe[i].nome=nomeComTratamento(usuarioId,cargoId);
+    equipe[mecEquipeIndex].cargoIds=marcados;
+    if(usuarioId) equipe[mecEquipeIndex].nome=nomeComTratamento(usuarioId,marcados);
   }
   salvarLS('sk3-equipe',equipe);
+  if(btn){ btn.disabled=false; btn.textContent='Salvar →'; }
+  fecharModal('modal-equipe-cargos');
+  mecEquipeIndex=null;
   renderEquipe();
 }
 
@@ -17802,7 +17886,7 @@ async function salvarUsuario(){
     if(!modalUsuarioId){
       // ── NOVO USUÁRIO: cria login real + perfil, sem cargo ──
       // O cargo (e a entrada na equipe) é atribuído depois, no módulo "Equipe".
-      const r = await chamarAdminUsuarios({ action:'criar', email:emailAuth, senha, nome, cargo_id:null });
+      const r = await chamarAdminUsuarios({ action:'criar', email:emailAuth, senha, nome, cargo_ids:[] });
       if(r.error){ mostrarErroUsuario(r.error); return; }
       usuarios.push({id:r.id, ...dadosLocais});
       salvarLS('sk3-usuarios',usuarios);
@@ -17822,15 +17906,15 @@ async function salvarUsuario(){
       }
       const membroEquipe=equipe.find(e=>typeof e!=='string'&&e.usuarioId===modalUsuarioId);
       if(u.nome!==nome){
-        // Mantém o cargo atual (definido no módulo Equipe) — aqui só atualizamos o nome.
-        const cargoAtual = membroEquipe?.cargoId ?? null;
-        const r = await chamarAdminUsuarios({ action:'editar_cargo', user_id:modalUsuarioId, cargo_id:cargoAtual, nome });
+        // Mantém os cargos atuais (definidos no módulo Equipe) — aqui só atualizamos o nome.
+        const cargoIdsAtual = membroEquipe ? cargoIdsDoMembro(membroEquipe) : [];
+        const r = await chamarAdminUsuarios({ action:'editar_cargo', user_id:modalUsuarioId, cargo_ids:cargoIdsAtual, nome });
         if(r.error){ mostrarErroUsuario(r.error); return; }
       }
       Object.assign(u,dadosLocais);
       // Recalcula sempre o nome de exibição da Equipe (nome puro + "Dr./Dra." quando
       // aplicável) — não só quando o nome muda, pois o Tratamento também pode ter mudado.
-      if(membroEquipe){ membroEquipe.nome=nomeComTratamento(modalUsuarioId, membroEquipe.cargoId); salvarLS('sk3-equipe',equipe); }
+      if(membroEquipe){ membroEquipe.nome=nomeComTratamento(modalUsuarioId, cargoIdsDoMembro(membroEquipe)); salvarLS('sk3-equipe',equipe); }
       salvarLS('sk3-usuarios',usuarios);
     }
   }catch(e){
@@ -18070,8 +18154,8 @@ async function salvarCargo(){
 
 async function excluirCargo(){
   if(!modalCargoId)return;
-  if(equipe.some(e=>typeof e!=='string'&&e.cargoId===modalCargoId)){
-    alert('Este cargo está atribuído a alguém na Equipe. Altere o cargo dessa pessoa antes de excluir.');
+  if(equipe.some(e=>typeof e!=='string'&&cargoIdsDoMembro(e).includes(modalCargoId))){
+    alert('Este cargo está atribuído a alguém na Equipe. Remova esse cargo dessa pessoa antes de excluir.');
     return;
   }
   if(!confirm('Excluir este cargo? Não pode ser desfeito.'))return;
@@ -26165,7 +26249,7 @@ async function _carregarDadosEAtivar(){
 
   const [{ data: dados, error: e1 }, { data: perfis, error: e2 }, { data: cargosDb, error: e3 }] = await Promise.all([
     supa.from('dados_sistema').select('chave,valor'),
-    supa.from('profiles').select('id,nome,cpf,nascimento,cargo_id,ativo,email'),
+    supa.from('profiles').select('id,nome,cpf,nascimento,cargo_ids,ativo,email'),
     supa.from('cargos').select('id,nome,permissoes'),
   ]);
 
@@ -26182,9 +26266,10 @@ async function _carregarDadosEAtivar(){
   const { data: sessao } = await supa.auth.getSession();
   const meuId = sessao?.session?.user?.id;
 
-  // Preserva CPF, nascimento, CEP, cidade, rua, número, complemento e observação
-  // já salvos no banco (tabela dados_sistema) — a tabela "profiles" não tem essas colunas,
-  // então sem isso esses campos eram sempre zerados a cada recarregamento.
+  // Preserva CPF, nascimento, telefone, CRO, tratamento, CEP, cidade, rua, número,
+  // complemento e observação já salvos no banco (tabela dados_sistema) — a tabela
+  // "profiles" não tem essas colunas, então sem isso esses campos eram sempre
+  // zerados a cada recarregamento.
   let usuariosSalvos = [];
   try{ usuariosSalvos = JSON.parse(localStorage.getItem('sk3-usuarios') || '[]'); }catch(e){}
 
@@ -26192,14 +26277,16 @@ async function _carregarDadosEAtivar(){
     const existente = usuariosSalvos.find(u => u.id === p.id) || {};
     return {
       id: p.id, nome: p.nome || '', email: p.email || '',
+      telefone: existente.telefone || '',
       cpf: p.cpf || existente.cpf || '',
       nascimento: p.nascimento || existente.nascimento || '',
+      cro: existente.cro || '', tratamento: existente.tratamento || '',
       cep: existente.cep || '', cidade: existente.cidade || '', rua: existente.rua || '',
       numero: existente.numero || '', complemento: existente.complemento || '', obs: existente.obs || ''
     };
   });
   const equipeMap = (perfis || []).filter(p => p.ativo !== false).map(p => ({
-    nome: p.nome || '', usuarioId: p.id, cargoId: p.cargo_id || null, principal: p.id === meuId
+    nome: p.nome || '', usuarioId: p.id, cargoIds: p.cargo_ids || [], principal: p.id === meuId
   }));
 
   localStorage.setItem('sk3-usuarios', JSON.stringify(usuariosMap));
