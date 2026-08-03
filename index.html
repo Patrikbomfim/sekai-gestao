@@ -1410,7 +1410,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
               <button class="btn btn-ghost btn-sm" onclick="_prontExportarFichaCompleta()" style="display:flex;align-items:center;gap:5px">
                 <span style="font-size:13px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span> Exportar ficha completa em PDF
               </button>
-              <button class="btn btn-primary btn-sm" onclick="abrirModalAtendimento()">+ Adicionar atendimento</button>
+              <button class="btn btn-primary btn-sm" id="pront-btn-novo-atendimento" onclick="abrirModalAtendimento()">+ Adicionar atendimento</button>
             </div>
           </div>
           <div id="pp-prontuario-ficha-wrap"></div>
@@ -4616,11 +4616,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 <!-- MODAL CARGO -->
 <div class="modal-ov" id="modal-cargo">
-  <div class="modal" style="width:620px">
+  <div class="modal" style="width:min(1040px,94vw)">
     <div class="modal-header">
       <div class="modal-title" id="mc-titulo">Novo cargo</div>
     </div>
-    <div class="modal-body" style="max-height:70vh;overflow-y:auto">
+    <div class="modal-body" style="max-height:82vh;overflow-y:auto">
       <div class="fl fg-full" style="margin-bottom:14px"><label>Nome do cargo *</label><input type="text" id="mc-nome" placeholder="Ex: Dentista, Recepção, Gestor..."></div>
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <div class="sl" style="margin:0">Permissões</div>
@@ -4629,7 +4629,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <input type="text" id="mc-busca" list="mc-busca-lista" placeholder="Buscar por módulo/aba ou permissão..." oninput="mcFiltrarPermissoes()" style="width:100%;font-size:12px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6);margin-top:8px">
       <datalist id="mc-busca-lista"></datalist>
       <div id="mc-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-bottom:8px;border-bottom:1px solid var(--border)"></div>
-      <div id="mc-permissoes" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-top:12px"></div>
+      <div id="mc-permissoes" style="display:grid;grid-template-columns:1fr 1fr;gap:14px 20px;margin-top:12px"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-danger btn-sm" id="mc-excluir" style="display:none" onclick="excluirCargo()">Excluir</button>
@@ -5428,6 +5428,14 @@ function cargoIdsDoMembro(e){
 }
 function membroEhAdministrador(e){ return cargoIdsDoMembro(e).some(cargoEhAdministrador); }
 function membroEhDentista(e){ return cargoIdsDoMembro(e).some(cargoEhDentista); }
+// Verifica se um cargo é "Secretária" (pelo id padrão ou pelo nome) — usado só pra
+// ordenar a lista de Configurações → Equipe (conta principal, depois responsável
+// técnica, depois secretária, depois o resto).
+function cargoEhSecretaria(cargoId){
+  const cargo = cargos.find(c=>c.id===cargoId);
+  return !!cargo && (cargo.id==='cg_secretaria' || (cargo.nome||'').trim().toLowerCase()==='secretária');
+}
+function membroEhSecretaria(e){ return cargoIdsDoMembro(e).some(cargoEhSecretaria); }
 // Monta o nome de exibição de uma pessoa (usado em `equipe` e em todo o sistema):
 // nome puro + "Dr./Dra." na frente, somente se ela tiver o cargo de Dentista (em
 // qualquer um dos cargos dela) E tiver escolhido um tratamento no cadastro de
@@ -5560,7 +5568,8 @@ function aplicarPermissoesNav(){
     reuniao:   'reunioes_ver',
     rituais:   'rituais_ver',
     pendencias:'pendencias_ver',
-    lembretes: 'agenda_ver',
+    lembretes: 'lembretes_ver',
+    melhorias: 'melhorias_ver',
     financeiro:['fin_fluxo_ver','fin_pagar_ver','fin_folha_ver','fin_receber_ver','fin_comissao_ver','fin_recibos_ver'],
     relatorios:'relatorios_ver',
     empresa:   ['empresa_dados_ver','empresa_anexos_ver'],
@@ -5574,7 +5583,7 @@ function aplicarPermissoesNav(){
     const m = btn.getAttribute('onclick').match(/goTo\('([^']+)'/);
     if(!m) return;
     const sec = m[1];
-    if(sec==='hoje'||sec==='proximos'||sec==='melhorias') return; // sempre visível
+    if(sec==='hoje'||sec==='proximos') return; // sempre visível (não são módulos com permissão própria)
     if(sec==='planejamento'){
       const planPerms=['planejamento_remuneracao_ver','planejamento_funcoes_ver','planejamento_referencias_ver','planejamento_painel_beatriz_ver','planejamento_painel_ingrid_ver','planejamento_painel_leticia_ver','planejamento_painel_fernanda_ver','planejamento_painel_patrik_ver'];
       btn.style.display = (souAdministradorReal() || planPerms.some(p=>perms.has(p))) ? '' : 'none';
@@ -6895,30 +6904,43 @@ const PERMISSOES_GRUPOS = [
     grupo:'Pacientes — Aba Orçamento',
     itens:[
       {id:'pacientes_orcamento_ver',label:'Visualizar esta aba na ficha do paciente'},
+      {id:'pacientes_orcamento_criar',label:'Criar orçamento'},
+      {id:'pacientes_orcamento_editar',label:'Editar/aprovar/reprovar orçamento'},
+      {id:'pacientes_orcamento_excluir',label:'Excluir orçamento'},
     ]
   },
   {
     grupo:'Pacientes — Aba Financeiro',
     itens:[
       {id:'pacientes_financeiro_ver',label:'Visualizar esta aba na ficha do paciente'},
+      {id:'pacientes_financeiro_criar',label:'Lançar'},
+      {id:'pacientes_financeiro_editar',label:'Editar'},
+      {id:'pacientes_financeiro_excluir',label:'Excluir'},
     ]
   },
   {
     grupo:'Pacientes — Aba Prontuário',
     itens:[
       {id:'pacientes_prontuario_ver',label:'Visualizar esta aba na ficha do paciente'},
+      {id:'pacientes_prontuario_criar',label:'Criar registro'},
+      {id:'pacientes_prontuario_editar',label:'Editar registro'},
+      {id:'pacientes_prontuario_excluir',label:'Excluir registro'},
     ]
   },
   {
     grupo:'Pacientes — Aba Documentos',
     itens:[
       {id:'pacientes_documentos_ver',label:'Visualizar esta aba na ficha do paciente'},
+      {id:'pacientes_documentos_criar',label:'Enviar documento'},
+      {id:'pacientes_documentos_excluir',label:'Excluir documento'},
     ]
   },
   {
     grupo:'Pacientes — Aba Fotos',
     itens:[
       {id:'pacientes_fotos_ver',label:'Visualizar esta aba na ficha do paciente'},
+      {id:'pacientes_fotos_criar',label:'Enviar foto'},
+      {id:'pacientes_fotos_excluir',label:'Excluir foto'},
     ]
   },
   {
@@ -7029,15 +7051,20 @@ const PERMISSOES_GRUPOS = [
     ]
   },
   {
+    grupo:'Lembretes',
+    itens:[
+      {id:'lembretes_ver',label:'Visualizar'},
+    ]
+  },
+  {
     grupo:'Relatórios',
     itens:[
       {id:'relatorios_ver',label:'Visualizar'},
     ]
   },
   {
-    grupo:'Dashboard',
+    grupo:'Configurações — Dashboard',
     itens:[
-      {id:'dashboard_ver',label:'Visualizar dashboard'},
       {id:'dashboard_cfg',label:'Configurar dashboard'},
     ]
   },
@@ -7184,6 +7211,12 @@ const PERMISSOES_GRUPOS = [
       {id:'cfg_tabelas_excluir',label:'Excluir'},
     ]
   },
+  {
+    grupo:'Melhorias para o sistema',
+    itens:[
+      {id:'melhorias_ver',label:'Visualizar'},
+    ]
+  },
   // Planejamento inteiro não tinha NENHUMA permissão — o acesso era travado no
   // código só para a conta "administrador real", sem possibilidade de delegar
   // via Cargos. Um grupo por painel, porque cada um mostra dados de uma pessoa
@@ -7252,7 +7285,6 @@ const CARGO_TABS = [
   {id:'inicio', label:'Início'},
   {id:'pacientes', label:'Pacientes'},
   {id:'administrativo', label:'Administrativo'},
-  {id:'gestao', label:'Gestão'},
   {id:'sistema', label:'Sistema'},
 ];
 
@@ -7271,7 +7303,12 @@ const GRUPO_TAB_MAP = {
   'Agenda':'pacientes',
   'Pendências':'pacientes',
   'Fluxos de ação':'pacientes',
-  // Administrativo
+  // Monitoramento de equipe é usado como um modo dentro de Ações/Pendências,
+  // por isso mora na mesma aba delas (Pacientes) — não é mais uma página própria.
+  'Monitoramento de equipe':'pacientes',
+  'Lembretes':'pacientes',
+  // Administrativo — inclui Planejamento, que hoje vive dentro do menu
+  // "Administrativo" no sistema (não existe mais um grupo "Gestão" separado).
   'Financeiro — Fluxo de Caixa':'administrativo',
   'Financeiro — A pagar operacional':'administrativo',
   'Financeiro — A pagar total (restrito, une operacional + folha)':'administrativo',
@@ -7280,11 +7317,17 @@ const GRUPO_TAB_MAP = {
   'Financeiro — Recibos (Pessoa Física)':'administrativo',
   'Reunião periódica':'administrativo',
   'Relatórios':'administrativo',
-  // Gestão
-  'Dashboard':'gestao',
-  'Monitoramento de equipe':'gestao',
+  'Planejamento — Remuneração':'administrativo',
+  'Planejamento — Funções':'administrativo',
+  'Planejamento — Referências':'administrativo',
+  'Planejamento — Painel Beatriz':'administrativo',
+  'Planejamento — Painel Ingrid':'administrativo',
+  'Planejamento — Painel Leticia':'administrativo',
+  'Planejamento — Painel Fernanda':'administrativo',
+  'Planejamento — Painel Patrik (geral)':'administrativo',
   // Sistema
   'Rituais de atendimento':'sistema',
+  'Melhorias para o sistema':'sistema',
   'Configurações — Usuários':'sistema',
   'Configurações — Cargos':'sistema',
   'Configurações — Equipe':'sistema',
@@ -7300,15 +7343,7 @@ const GRUPO_TAB_MAP = {
   'Configurações — Atestados (modelos)':'sistema',
   'Configurações — Encaminhamentos (modelos)':'sistema',
   'Configurações — Tabelas de precificação':'sistema',
-  // Planejamento — mesma aba "Gestão" onde o botão "Planejamento" já vive no menu lateral
-  'Planejamento — Remuneração':'gestao',
-  'Planejamento — Funções':'gestao',
-  'Planejamento — Referências':'gestao',
-  'Planejamento — Painel Beatriz':'gestao',
-  'Planejamento — Painel Ingrid':'gestao',
-  'Planejamento — Painel Leticia':'gestao',
-  'Planejamento — Painel Fernanda':'gestao',
-  'Planejamento — Painel Patrik (geral)':'gestao',
+  'Configurações — Dashboard':'sistema',
 };
 // Confere, ao carregar, se todo grupo de PERMISSOES_GRUPOS tem aba mapeada — evita
 // que um grupo "suma" silenciosamente do modal de Cargo caso alguém crie um grupo
@@ -7330,9 +7365,14 @@ const CARGOS_PADRAO = [
     nome:'Gestor',
     permissoes:[
       'pacientes_ver','pacientes_criar','pacientes_editar','pacientes_excluir',
-      'pacientes_orcamento_ver','pacientes_financeiro_ver','pacientes_prontuario_ver','pacientes_documentos_ver','pacientes_fotos_ver',
+      'pacientes_orcamento_ver','pacientes_orcamento_criar','pacientes_orcamento_editar','pacientes_orcamento_excluir',
+      'pacientes_financeiro_ver','pacientes_financeiro_criar','pacientes_financeiro_editar','pacientes_financeiro_excluir',
+      'pacientes_prontuario_ver','pacientes_prontuario_criar','pacientes_prontuario_editar','pacientes_prontuario_excluir',
+      'pacientes_documentos_ver','pacientes_documentos_criar','pacientes_documentos_excluir',
+      'pacientes_fotos_ver','pacientes_fotos_criar','pacientes_fotos_excluir',
       'orcamentos_geral_ver',
       'agenda_ver','agenda_gerenciar',
+      'lembretes_ver','melhorias_ver',
       'fin_fluxo_ver',
       'fin_pagar_ver','fin_pagar_criar','fin_pagar_editar','fin_pagar_excluir',
       'fin_folha_ver','fin_folha_criar','fin_folha_editar','fin_folha_excluir',
@@ -7345,7 +7385,7 @@ const CARGOS_PADRAO = [
       'fluxos_ver','fluxos_criar','fluxos_editar','fluxos_excluir',
       'monitoramento_equipe',
       'relatorios_ver',
-      'dashboard_ver','dashboard_cfg',
+      'dashboard_cfg',
       'cfg_usuarios_ver','cfg_usuarios_criar','cfg_usuarios_editar',
       'cfg_equipe_ver','cfg_equipe_criar','cfg_equipe_editar','cfg_equipe_excluir',
       'cfg_reunioes_ver','cfg_reunioes_criar','cfg_reunioes_editar','cfg_reunioes_excluir',
@@ -7359,9 +7399,14 @@ const CARGOS_PADRAO = [
     nome:'Dentista',
     permissoes:[
       'pacientes_ver','pacientes_criar','pacientes_editar',
-      'pacientes_orcamento_ver','pacientes_financeiro_ver','pacientes_prontuario_ver','pacientes_documentos_ver','pacientes_fotos_ver',
+      'pacientes_orcamento_ver','pacientes_orcamento_criar','pacientes_orcamento_editar','pacientes_orcamento_excluir',
+      'pacientes_financeiro_ver','pacientes_financeiro_criar','pacientes_financeiro_editar','pacientes_financeiro_excluir',
+      'pacientes_prontuario_ver','pacientes_prontuario_criar','pacientes_prontuario_editar','pacientes_prontuario_excluir',
+      'pacientes_documentos_ver','pacientes_documentos_criar','pacientes_documentos_excluir',
+      'pacientes_fotos_ver','pacientes_fotos_criar','pacientes_fotos_excluir',
       'orcamentos_geral_ver',
       'agenda_ver','agenda_gerenciar',
+      'lembretes_ver','melhorias_ver',
       'reunioes_ver','reunioes_participar',
       'pendencias_ver','pendencias_criar','pendencias_editar','pendencias_concluir','pendencias_reabrir',
       'rituais_ver',
@@ -7373,8 +7418,10 @@ const CARGOS_PADRAO = [
     nome:'Secretária',
     permissoes:[
       'pacientes_ver','pacientes_criar','pacientes_editar',
-      'pacientes_financeiro_ver','pacientes_documentos_ver',
+      'pacientes_financeiro_ver','pacientes_financeiro_criar','pacientes_financeiro_editar','pacientes_financeiro_excluir',
+      'pacientes_documentos_ver','pacientes_documentos_criar','pacientes_documentos_excluir',
       'agenda_ver','agenda_gerenciar',
+      'lembretes_ver','melhorias_ver',
       'pendencias_ver','pendencias_criar','pendencias_concluir',
       'reunioes_ver',
     ]
@@ -7384,8 +7431,10 @@ const CARGOS_PADRAO = [
     nome:'Auxiliar',
     permissoes:[
       'pacientes_ver',
-      'pacientes_prontuario_ver','pacientes_documentos_ver',
+      'pacientes_prontuario_ver','pacientes_prontuario_criar','pacientes_prontuario_editar','pacientes_prontuario_excluir',
+      'pacientes_documentos_ver','pacientes_documentos_criar','pacientes_documentos_excluir',
       'agenda_ver',
+      'lembretes_ver','melhorias_ver',
       'pendencias_ver','pendencias_criar',
     ]
   },
@@ -7445,6 +7494,38 @@ let cargos = carregarLS('sk3-cargos', CARGOS_PADRAO);
     cargos[idxAdmin].permissoes = [...atuais, ...faltando];
     _comSalvarImediato(()=>salvarLS('sk3-cargos', cargos));
   }
+})();
+// Migração (uma vez só) — revisão de 02/08/2026 da tela Cargos: 1) tira a permissão
+// "Visualizar dashboard", que não existe mais (não trava nenhuma tela hoje); 2) cria
+// permissão própria pra "Melhorias para o sistema" e "Lembretes" (antes eram sempre
+// visíveis / emprestavam permissão de outro módulo) — dá pra quem já tinha acesso
+// equivalente, pra ninguém perder nada; 3) detalha as abas Orçamento/Financeiro/
+// Prontuário/Documentos/Fotos da ficha do paciente em Visualizar/Criar/Editar/Excluir
+// — quem já podia ver a aba passa a poder também criar/editar/excluir nela, porque é
+// exatamente o que essa pessoa já conseguia fazer antes dessas permissões existirem.
+(function _migrarPermissoesRevisao20260802(){
+  if(carregarLS('sk3-perms-revisao-20260802', false)) return;
+  salvarLS('sk3-perms-revisao-20260802', true);
+  const expandirAbaPaciente = {
+    pacientes_orcamento_ver:  ['pacientes_orcamento_criar','pacientes_orcamento_editar','pacientes_orcamento_excluir'],
+    pacientes_financeiro_ver: ['pacientes_financeiro_criar','pacientes_financeiro_editar','pacientes_financeiro_excluir'],
+    pacientes_prontuario_ver: ['pacientes_prontuario_criar','pacientes_prontuario_editar','pacientes_prontuario_excluir'],
+    pacientes_documentos_ver: ['pacientes_documentos_criar','pacientes_documentos_excluir'],
+    pacientes_fotos_ver:      ['pacientes_fotos_criar','pacientes_fotos_excluir'],
+  };
+  let mudou=false;
+  cargos.forEach(c=>{
+    if(!Array.isArray(c.permissoes)) return;
+    const atuais=new Set(c.permissoes);
+    if(atuais.has('dashboard_ver')){ atuais.delete('dashboard_ver'); mudou=true; }
+    if(!atuais.has('melhorias_ver')){ atuais.add('melhorias_ver'); mudou=true; } // era visível pra todos
+    if(atuais.has('agenda_ver') && !atuais.has('lembretes_ver')){ atuais.add('lembretes_ver'); mudou=true; }
+    Object.entries(expandirAbaPaciente).forEach(([verId,novos])=>{
+      if(atuais.has(verId)) novos.forEach(n=>{ if(!atuais.has(n)){ atuais.add(n); mudou=true; } });
+    });
+    c.permissoes=[...atuais];
+  });
+  if(mudou) _comSalvarImediato(()=>salvarLS('sk3-cargos', cargos));
 })();
 // Migração (uma vez só): antes, o "Dr./Dra." vinha digitado junto do nome
 // (ex: "Dra. Fernanda Cancelli"). Agora o nome do usuário fica puro, e o
@@ -10312,9 +10393,10 @@ function renderPpOrcamento(p){
     recusado: {lbl:'Reprovado',dot:'#991B1B', bg:'#FEF2F2'},
   };
 
+  const podeCriarOrc = souAdministradorReal() || temPerm('pacientes_orcamento_criar');
   let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <div style="font-size:13px;font-weight:600">Orçamentos (${orcamentos.length})</div>
-    <button class="btn btn-primary btn-sm" onclick="abrirModalOrcamento('${p.id}')">+ Novo orçamento</button>
+    ${podeCriarOrc?`<button class="btn btn-primary btn-sm" onclick="abrirModalOrcamento('${p.id}')">+ Novo orçamento</button>`:''}
   </div>`;
 
   if(!orcamentos.length){
@@ -10861,6 +10943,9 @@ function _orcRenderIndicacaoState(){
 }
 
 function abrirModalOrcamento(pacId, orcId){
+  if(!souAdministradorReal() && !temPerm(orcId?'pacientes_orcamento_editar':'pacientes_orcamento_criar')){
+    alert('Você não tem permissão para esta ação.'); return;
+  }
   _orcModalPacId=pacId;
   _orcModalId=orcId||null;
   _orcItens=[];
@@ -10998,6 +11083,9 @@ function fecharModalOrcamento(){
 }
 
 function reprovarOrcamento(){
+  if(!souAdministradorReal() && !temPerm('pacientes_orcamento_editar')){
+    alert('Você não tem permissão para esta ação.'); return;
+  }
   if(!_orcModalId){ alert('Salve o orçamento antes de reprovar.'); return; }
   if(!confirm('Confirmar reprovação deste orçamento?')) return;
   const motivo = prompt('Motivo da reprovação (opcional):','') || '';
@@ -11021,6 +11109,9 @@ function reprovarOrcamento(){
 // o status para "Em aberto" — daí dá pra ajustar valores/formas/datas e aprovar de novo.
 // Bloqueado (pela própria cancelarTitulosOrcamento) se algum título já tiver sido recebido.
 function desaprovarOrcamento(){
+  if(!souAdministradorReal() && !temPerm('pacientes_orcamento_editar')){
+    alert('Você não tem permissão para esta ação.'); return;
+  }
   if(!_orcModalId) return;
   const orcId=_orcModalId, pacId=_orcModalPacId;
   const antes=_orcamentos().find(o=>o.id===orcId);
@@ -11332,6 +11423,9 @@ function _renderOrcTotal(){
 }
 
 function salvarOrcamento(){
+  if(!souAdministradorReal() && !temPerm(_orcModalId?'pacientes_orcamento_editar':'pacientes_orcamento_criar')){
+    alert('Você não tem permissão para esta ação.'); return;
+  }
   const nomeOrc=(document.getElementById('orc-input-nome')||{}).value||'';
   if(!nomeOrc.trim()){
     const el=document.getElementById('orc-input-nome');
@@ -12426,6 +12520,9 @@ function confirmarRenegociacao(){
 
 // ── EXCLUIR ORÇAMENTO ──────────────────────────────────────────────────────
 function excluirOrcamento(){
+  if(!souAdministradorReal() && !temPerm('pacientes_orcamento_excluir')){
+    alert('Você não tem permissão para esta ação.'); return;
+  }
   if(!_orcModalId){ alert('Salve o orçamento primeiro para poder excluí-lo.'); return; }
   // Bloquear se há títulos vinculados
   const titsVinculados=_titulos().filter(t=>t.orcamentoId===_orcModalId);
@@ -13294,6 +13391,10 @@ function _prontDesfazerItem(orcId,idx){
 function _renderProntFicha(p){
   const wrap=document.getElementById('pp-prontuario-ficha-wrap');
   if(!wrap) return;
+  const btnNovo=document.getElementById('pront-btn-novo-atendimento');
+  if(btnNovo) btnNovo.style.display = (souAdministradorReal()||temPerm('pacientes_prontuario_criar')) ? '' : 'none';
+  const podeEditarPront = souAdministradorReal()||temPerm('pacientes_prontuario_editar');
+  const podeExcluirPront = souAdministradorReal()||temPerm('pacientes_prontuario_excluir');
   const fichas=_prontuarios().filter(f=>String(f.pacienteId)===String(p.id)).sort((a,b)=>b.data.localeCompare(a.data));
   if(!fichas.length){
     wrap.innerHTML='<div class="empty"><div class="empty-ic">🗒️</div><div style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:4px">Nenhum atendimento registrado</div><div style="font-size:12px;color:var(--tx3)">Clique em "＋ Adicionar atendimento" para registrar o primeiro atendimento clínico.</div></div>';
@@ -13333,8 +13434,8 @@ function _renderProntFicha(p){
           </label>
           <div style="width:1px;height:18px;background:var(--border)"></div>
           ${statusPill(f.status||'realizado')}
-          <button onclick="_prontEditarFicha('${f.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--tx2)">Editar</button>
-          <button onclick="_prontExcluirFicha('${f.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--da)">Excluir</button>
+          ${podeEditarPront?`<button onclick="_prontEditarFicha('${f.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--tx2)">Editar</button>`:''}
+          ${podeExcluirPront?`<button onclick="_prontExcluirFicha('${f.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--da)">Excluir</button>`:''}
         </div>
       </div>
 
@@ -17608,7 +17709,25 @@ function renderEquipe(){
       <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em">Responsável técnica</div>
       <div></div>
     </div>`;
-    const linhas=equipe.map((e,i)=>{
+    // Ordem de exibição fixa (não muda como os dados são guardados, só a ordem que
+    // aparece na tela): 1) conta principal, 2) responsável técnica, 3) secretária,
+    // 4) o resto (demais dentistas e outros cargos), mantendo entre si a ordem em
+    // que já estavam. `i` de cada item continua sendo o índice real dela dentro de
+    // `equipe` — é o que os botões (Editar, Remover, Definir...) usam por trás.
+    function _prioridadeExibicaoEquipe(e){
+      if(typeof e!=='string'&&e.principal) return 0;
+      if(typeof e!=='string'&&e.respTecnico) return 1;
+      if(membroEhSecretaria(e)) return 2;
+      return 3;
+    }
+    const ordemExibicao=equipe
+      .map((e,i)=>({e,i}))
+      .sort((a,b)=>_prioridadeExibicaoEquipe(a.e)-_prioridadeExibicaoEquipe(b.e));
+    // Já existe alguém com o selo? Enquanto existir, as outras dentistas não mostram
+    // botão nenhum nessa coluna (só quem já é responsável técnica mostra o selo +
+    // "Trocar", que libera a escolha de novo pra qualquer dentista).
+    const temRespTecnica=equipe.some(e=>typeof e!=='string'&&e.respTecnico);
+    const linhas=ordemExibicao.map(({e,i})=>{
       const nome=nomeEquipeItem(e);
       const cargoIdsAtual=cargoIdsDoMembro(e);
       const ehPrincipal=typeof e!=='string'&&e.principal;
@@ -17624,10 +17743,17 @@ function renderEquipe(){
       </div>`;
       // Selo/ação de "Responsável técnica" — só faz sentido para quem tem cargo de dentista.
       // É quem assina (nome + CRO) em todas as propostas de tratamento geradas pelo sistema.
+      // Só existe uma por vez: quem já tem o selo mostra "Trocar" (libera a escolha de
+      // novo); enquanto alguém tiver o selo, as demais não mostram botão nenhum aqui.
       const respTecnicaHtml = ehDentista
         ? (ehRespTecnica
-            ? '<span class="pill p-gold" title="Nome e CRO usados nas propostas de tratamento">★ Responsável técnica</span>'
-            : `<button class="btn btn-ghost btn-sm" onclick="definirRespTecnica(${i})" title="Usar nome e CRO desta pessoa nas propostas de tratamento">Definir como responsável técnica</button>`)
+            ? `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <span class="pill p-gold" title="Nome e CRO usados nas propostas de tratamento">★ Responsável técnica</span>
+                <button class="btn btn-ghost btn-sm" onclick="liberarRespTecnica()" title="Libera a escolha de uma nova responsável técnica" style="font-size:11px;padding:3px 8px">Trocar</button>
+              </div>`
+            : (temRespTecnica
+                ? ''
+                : `<button class="btn btn-ghost btn-sm" onclick="definirRespTecnica(${i})" title="Usar nome e CRO desta pessoa nas propostas de tratamento">Definir como responsável técnica</button>`))
         : '';
       return `<div style="display:grid;grid-template-columns:1fr 240px 220px 110px;gap:14px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
       <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(nome)}">${esc(nome)}</span>
@@ -17658,6 +17784,15 @@ function renderEquipe(){
 function definirRespTecnica(i){
   equipe.forEach(e=>{ if(typeof e!=='string') e.respTecnico=false; });
   if(typeof equipe[i]!=='string') equipe[i].respTecnico=true;
+  salvarLS('sk3-equipe',equipe);
+  renderEquipe();
+}
+
+// Chamado pelo botão "Trocar", ao lado de quem já é a responsável técnica. Tira o
+// selo de todo mundo, o que faz o botão "Definir como responsável técnica" voltar
+// a aparecer em todas as dentistas elegíveis — permitindo escolher outra pessoa.
+function liberarRespTecnica(){
+  equipe.forEach(e=>{ if(typeof e!=='string') e.respTecnico=false; });
   salvarLS('sk3-equipe',equipe);
   renderEquipe();
 }
@@ -17993,6 +18128,14 @@ function mcContarPorAba(abaId){
     .filter(g=>GRUPO_TAB_MAP[g.grupo]===abaId)
     .reduce((soma,g)=>soma+g.itens.length,0);
 }
+// Quantas dessas permissões da aba já estão marcadas — vira o "X" do "X/Y" na aba,
+// pra dar pra ver de longe se ali dentro está tudo liberado, tudo bloqueado, ou
+// só uma parte.
+function mcContarSelecionadasPorAba(abaId){
+  return PERMISSOES_GRUPOS
+    .filter(g=>GRUPO_TAB_MAP[g.grupo]===abaId)
+    .reduce((soma,g)=>soma+g.itens.filter(p=>mcPermSelecionadas.has(p.id)).length,0);
+}
 
 function mcRenderTabs(){
   const wrap = document.getElementById('mc-tabs');
@@ -18000,7 +18143,7 @@ function mcRenderTabs(){
   wrap.innerHTML = CARGO_TABS.map(t=>{
     const ativo = t.id===mcAbaAtual;
     return `<button type="button" class="btn btn-ghost btn-sm" onclick="mcSelecionarAba('${t.id}')" style="${ativo?'background:var(--ac);color:#fff;border-color:var(--ac)':''}">
-      ${t.label} <span class="pill p-neutral" style="font-size:10px;${ativo?'background:rgba(255,255,255,.25);color:#fff':''}">${mcContarPorAba(t.id)}</span>
+      ${t.label} <span class="pill p-neutral" style="font-size:10px;${ativo?'background:rgba(255,255,255,.25);color:#fff':''}">${mcContarSelecionadasPorAba(t.id)}/${mcContarPorAba(t.id)}</span>
     </button>`;
   }).join('');
 }
@@ -18029,6 +18172,42 @@ function mcPopularDatalist(){
 function mcToggleChecagem(el){
   if(el.checked) mcPermSelecionadas.add(el.value);
   else mcPermSelecionadas.delete(el.value);
+  const grupo = el.getAttribute('data-grupo');
+  if(grupo) mcAtualizarCabecalhoGrupo(grupo);
+  mcRenderTabs(); // atualiza o "X/Y" de cada aba
+  mcAtualizarContadorTotal();
+}
+
+// Acha o grupo (módulo/aba) pelo nome exato — usado pelo check geral do bloco.
+function mcGrupoPorNome(nome){ return PERMISSOES_GRUPOS.find(g=>g.grupo===nome); }
+
+// Atualiza o contador "X/Y" e o check geral no cabeçalho de UM bloco de permissão,
+// sem precisar redesenhar a grade toda (evita perder a posição do scroll enquanto
+// a pessoa vai marcando várias caixinhas em sequência).
+function mcAtualizarCabecalhoGrupo(grupoNome){
+  const g = mcGrupoPorNome(grupoNome);
+  if(!g) return;
+  const sel = g.itens.filter(p=>mcPermSelecionadas.has(p.id)).length;
+  const total = g.itens.length;
+  const contadorEl = document.querySelector(`[data-grupo-contador="${CSS.escape(grupoNome)}"]`);
+  if(contadorEl) contadorEl.textContent = `${sel}/${total}`;
+  const checkEl = document.querySelector(`.mc-grupo-check[data-grupo="${CSS.escape(grupoNome)}"]`);
+  if(checkEl){ checkEl.checked = total>0 && sel===total; checkEl.indeterminate = sel>0 && sel<total; }
+}
+
+// Chamado pelo check geral ao lado do nome do módulo/aba: marca (ou desmarca)
+// de uma vez todas as permissões daquele bloco.
+function mcToggleGrupo(grupoNome, marcarTudo){
+  const g = mcGrupoPorNome(grupoNome);
+  if(!g) return;
+  g.itens.forEach(p=>{
+    if(marcarTudo) mcPermSelecionadas.add(p.id);
+    else mcPermSelecionadas.delete(p.id);
+    const cb = document.querySelector(`.mc-perm-check[value="${CSS.escape(p.id)}"]`);
+    if(cb) cb.checked = marcarTudo;
+  });
+  mcAtualizarCabecalhoGrupo(grupoNome);
+  mcRenderTabs();
   mcAtualizarContadorTotal();
 }
 
@@ -18061,17 +18240,32 @@ function mcRenderPermissoes(){
 
   const abaLabel = id => CARGO_TABS.find(t=>t.id===id)?.label || id;
 
-  document.getElementById('mc-permissoes').innerHTML = grupos.length ? grupos.map(g=>`
-    <div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;margin-top:10px;padding-bottom:3px;border-bottom:1px solid var(--border)">
-      ${g.grupo}
+  document.getElementById('mc-permissoes').innerHTML = grupos.length ? grupos.map(g=>{
+    const grupoAttr = g.grupo.replace(/"/g,'&quot;');
+    const sel = g.itens.filter(p=>mcPermSelecionadas.has(p.id)).length;
+    return `
+    <div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;margin-top:14px;padding-bottom:5px;border-bottom:1px solid var(--border)">
+      <input type="checkbox" class="mc-grupo-check" data-grupo="${grupoAttr}" onchange="mcToggleGrupo(this.getAttribute('data-grupo'), this.checked)" title="Marcar/desmarcar tudo deste módulo" style="width:14px;height:14px;cursor:pointer;flex-shrink:0">
+      <span style="flex:1">${g.grupo}</span>
+      <span class="pill p-neutral" data-grupo-contador="${grupoAttr}" style="font-size:9.5px;text-transform:none;letter-spacing:normal;font-weight:600">${sel}/${g.itens.length}</span>
       ${busca?`<span class="pill p-info" style="font-size:9px;text-transform:none;letter-spacing:normal;font-weight:600">${abaLabel(GRUPO_TAB_MAP[g.grupo])}</span>`:''}
     </div>
     ${g.itens.map(p=>`
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400;text-transform:none;letter-spacing:normal;color:var(--tx);cursor:pointer;padding:4px 0">
-      <input type="checkbox" value="${p.id}" ${mcPermSelecionadas.has(p.id)?'checked':''} onchange="mcToggleChecagem(this)" style="width:15px;height:15px;cursor:pointer">
+      <input type="checkbox" class="mc-perm-check" data-grupo="${grupoAttr}" value="${p.id}" ${mcPermSelecionadas.has(p.id)?'checked':''} onchange="mcToggleChecagem(this)" style="width:15px;height:15px;cursor:pointer">
       ${p.label}
     </label>`).join('')}
-  `).join('') : `<div class="empty" style="grid-column:1/-1"><div class="empty-ic">🔍</div>Nenhum módulo ou permissão encontrado para "${buscaEl?.value||''}".</div>`;
+  `;
+  }).join('') : `<div class="empty" style="grid-column:1/-1"><div class="empty-ic">🔍</div>Nenhum módulo ou permissão encontrado para "${buscaEl?.value||''}".</div>`;
+
+  // O check geral de cada bloco não dá pra deixar "pela metade" (indeterminado) só
+  // com o atributo HTML — isso só existe via JS, então ajusta aqui logo depois de
+  // desenhar a grade.
+  grupos.forEach(g=>{
+    const sel = g.itens.filter(p=>mcPermSelecionadas.has(p.id)).length;
+    const checkEl = document.querySelector(`.mc-grupo-check[data-grupo="${CSS.escape(g.grupo)}"]`);
+    if(checkEl) checkEl.indeterminate = sel>0 && sel<g.itens.length;
+  });
 
   mcAtualizarContadorTotal();
 }
