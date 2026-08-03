@@ -17782,9 +17782,11 @@ function renderEquipe(){
 // que passam a ser usados em todas as propostas de tratamento geradas pelo sistema. Só uma
 // pessoa por vez tem o selo: marcar aqui remove automaticamente de qualquer outra.
 function definirRespTecnica(i){
-  equipe.forEach(e=>{ if(typeof e!=='string') e.respTecnico=false; });
-  if(typeof equipe[i]!=='string') equipe[i].respTecnico=true;
-  salvarLS('sk3-equipe',equipe);
+  _comSalvarImediato(()=>{
+    equipe.forEach(e=>{ if(typeof e!=='string') e.respTecnico=false; });
+    if(typeof equipe[i]!=='string') equipe[i].respTecnico=true;
+    salvarLS('sk3-equipe',equipe);
+  });
   renderEquipe();
 }
 
@@ -17792,8 +17794,10 @@ function definirRespTecnica(i){
 // selo de todo mundo, o que faz o botão "Definir como responsável técnica" voltar
 // a aparecer em todas as dentistas elegíveis — permitindo escolher outra pessoa.
 function liberarRespTecnica(){
-  equipe.forEach(e=>{ if(typeof e!=='string') e.respTecnico=false; });
-  salvarLS('sk3-equipe',equipe);
+  _comSalvarImediato(()=>{
+    equipe.forEach(e=>{ if(typeof e!=='string') e.respTecnico=false; });
+    salvarLS('sk3-equipe',equipe);
+  });
   renderEquipe();
 }
 
@@ -26479,9 +26483,19 @@ async function _carregarDadosEAtivar(){
       numero: existente.numero || '', complemento: existente.complemento || '', obs: existente.obs || ''
     };
   });
-  const equipeMap = (perfis || []).filter(p => p.ativo !== false).map(p => ({
-    nome: p.nome || '', usuarioId: p.id, cargoIds: p.cargo_ids || [], principal: p.id === meuId
-  }));
+  // Preserva o selo "Responsável técnica" já salvo (tabela dados_sistema) — a tabela
+  // "profiles" não tem essa coluna, então sem isso o selo era sempre apagado a cada
+  // recarregamento/login, mesmo depois de escolhido em Configurações → Equipe.
+  let equipeSalva = [];
+  try{ equipeSalva = JSON.parse(localStorage.getItem('sk3-equipe') || '[]'); }catch(e){}
+
+  const equipeMap = (perfis || []).filter(p => p.ativo !== false).map(p => {
+    const existenteEq = equipeSalva.find(e => typeof e!=='string' && e.usuarioId === p.id) || {};
+    return {
+      nome: p.nome || '', usuarioId: p.id, cargoIds: p.cargo_ids || [], principal: p.id === meuId,
+      respTecnico: !!existenteEq.respTecnico,
+    };
+  });
 
   localStorage.setItem('sk3-usuarios', JSON.stringify(usuariosMap));
   localStorage.setItem('sk3-cargos', JSON.stringify(cargosDb || []));
