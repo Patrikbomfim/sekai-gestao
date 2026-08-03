@@ -5688,21 +5688,10 @@ function aplicarPermissoesNav(){
 let _pendingSaves = {}; // key → value, queued for manual save
 let _bypassQueue = false; // when true, salvarLS writes immediately (modal saves)
 
-// AJUSTE (03/08/2026): Orçamento e Prontuário guardam o histórico inteiro da
-// clínica (inclusive tudo que veio da migração do Clinicorp) e podem ficar
-// grandes demais para caber no espaço de armazenamento local do navegador
-// (localStorage tem um limite de poucos MB por site). Quando esse limite
-// estoura, o navegador recusa silenciosamente guardar o dado — o sistema não
-// trava, mas o módulo afetado passa a aparecer "vazio" até a página buscar
-// os dados de novo no banco.
-// Para evitar isso, essas duas chaves específicas não usam mais o
-// localStorage: ficam guardadas só na memória da aba aberta (window._memStore).
-// Continuam funcionando exatamente igual durante o uso — a única diferença é
-// que, se a aba for fechada/recarregada, o sistema busca essas duas partes de
-// novo no banco (que é rápido) em vez de reaproveitar do navegador.
-const _CHAVES_SOMENTE_MEMORIA = new Set(['sk3-orcamentos', 'sk3-prontuarios']);
-window._memStore = window._memStore || {};
-
+// AJUSTE (03/08/2026): Orçamento e Prontuário usam a lista de "chaves só de
+// memória" (_CHAVES_SOMENTE_MEMORIA) e a gaveta window._memStore — ambas
+// definidas mais acima no arquivo, perto da conexão com o banco, porque
+// precisam existir ANTES do login (esta parte do código só liga DEPOIS).
 function _salvarLSReal(k,v){
   if(_CHAVES_SOMENTE_MEMORIA.has(k)){ window._memStore[k] = JSON.stringify(v); return; }
   try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}
@@ -25966,6 +25955,20 @@ function _atualizarBotaoToggleMenu(collapsed){
 const SUPABASE_URL = 'https://bryfvifstvbkiqmjgwdt.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJyeWZ2aWZzdHZia2lxbWpnd2R0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NzIxNzUsImV4cCI6MjA5NzU0ODE3NX0.DJz8OJaj9GC9TGgMELHMwQ3-R9Z4mywg5y_28zlJRGc';
 const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// AJUSTE (03/08/2026): Orçamento e Prontuário guardam o histórico inteiro da
+// clínica (inclusive tudo que veio da migração do Clinicorp) e podem ficar
+// grandes demais para caber no espaço de armazenamento local do navegador
+// (localStorage tem um limite de poucos MB por site). Quando esse limite
+// estoura, o navegador recusa silenciosamente guardar o dado — o sistema não
+// trava, mas o módulo afetado passa a aparecer "vazio" até a página buscar
+// os dados de novo no banco.
+// Para evitar isso, essas duas chaves específicas não usam mais o
+// localStorage: ficam guardadas só na memória da aba aberta (window._memStore).
+// Precisa estar definido aqui (disponível desde o carregamento da página),
+// porque é usado tanto no login quanto no resto do sistema.
+const _CHAVES_SOMENTE_MEMORIA = new Set(['sk3-orcamentos', 'sk3-prontuarios']);
+window._memStore = window._memStore || {};
 
 // Link público de anamnese ou de cadastro não exige login
 function _ehModoPublicoSemLogin(){
