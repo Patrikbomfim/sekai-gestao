@@ -5688,7 +5688,25 @@ function aplicarPermissoesNav(){
 let _pendingSaves = {}; // key → value, queued for manual save
 let _bypassQueue = false; // when true, salvarLS writes immediately (modal saves)
 
-function _salvarLSReal(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
+// AJUSTE (03/08/2026): Orçamento e Prontuário guardam o histórico inteiro da
+// clínica (inclusive tudo que veio da migração do Clinicorp) e podem ficar
+// grandes demais para caber no espaço de armazenamento local do navegador
+// (localStorage tem um limite de poucos MB por site). Quando esse limite
+// estoura, o navegador recusa silenciosamente guardar o dado — o sistema não
+// trava, mas o módulo afetado passa a aparecer "vazio" até a página buscar
+// os dados de novo no banco.
+// Para evitar isso, essas duas chaves específicas não usam mais o
+// localStorage: ficam guardadas só na memória da aba aberta (window._memStore).
+// Continuam funcionando exatamente igual durante o uso — a única diferença é
+// que, se a aba for fechada/recarregada, o sistema busca essas duas partes de
+// novo no banco (que é rápido) em vez de reaproveitar do navegador.
+const _CHAVES_SOMENTE_MEMORIA = new Set(['sk3-orcamentos', 'sk3-prontuarios']);
+window._memStore = window._memStore || {};
+
+function _salvarLSReal(k,v){
+  if(_CHAVES_SOMENTE_MEMORIA.has(k)){ window._memStore[k] = JSON.stringify(v); return; }
+  try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}
+}
 
 // Salva imediatamente (localStorage + Supabase) e garante que o botão
 // flutuante não apareça / suma se não houver mais nada pendente.
@@ -5747,7 +5765,12 @@ function _comSalvarImediato(fn){
   _bypassQueue=true;
   try{ fn(); } finally{ _bypassQueue=false; }
 }
-function carregarLS(k,def){ try{const v=localStorage.getItem(k);return v?JSON.parse(v):JSON.parse(JSON.stringify(def));}catch(e){return JSON.parse(JSON.stringify(def));} }
+function carregarLS(k,def){
+  if(_CHAVES_SOMENTE_MEMORIA.has(k)){
+    try{ const v = window._memStore[k]; return v?JSON.parse(v):JSON.parse(JSON.stringify(def)); }catch(e){ return JSON.parse(JSON.stringify(def)); }
+  }
+  try{const v=localStorage.getItem(k);return v?JSON.parse(v):JSON.parse(JSON.stringify(def));}catch(e){return JSON.parse(JSON.stringify(def));}
+}
 
 // ── PLANEJAMENTO: blocos editáveis (Remuneração / Funções) + Referências ──
 // Cada tabela/lista marcada com .plan-editable vira "contenteditable" e seu
@@ -26458,6 +26481,7 @@ async function _carregarDadosEAtivar(){
   }
 
   (dados || []).forEach(row => {
+    if(_CHAVES_SOMENTE_MEMORIA.has(row.chave)){ window._memStore[row.chave] = JSON.stringify(row.valor); return; }
     try{ localStorage.setItem(row.chave, JSON.stringify(row.valor)); }catch(e){}
   });
 
