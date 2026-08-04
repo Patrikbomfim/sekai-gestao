@@ -25963,11 +25963,15 @@ const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // estoura, o navegador recusa silenciosamente guardar o dado — o sistema não
 // trava, mas o módulo afetado passa a aparecer "vazio" até a página buscar
 // os dados de novo no banco.
-// Para evitar isso, essas duas chaves específicas não usam mais o
+// Para evitar isso, essas chaves específicas não usam mais o
 // localStorage: ficam guardadas só na memória da aba aberta (window._memStore).
 // Precisa estar definido aqui (disponível desde o carregamento da página),
 // porque é usado tanto no login quanto no resto do sistema.
-const _CHAVES_SOMENTE_MEMORIA = new Set(['sk3-orcamentos', 'sk3-prontuarios']);
+// AJUSTE (04/08/2026): estendido ao Financeiro — mesma lógica, agora também
+// para os títulos do paciente, os títulos de gestão, os recibos e as
+// medições de comissão, que passam a guardar o histórico trazido do
+// Clinicorp e correm o mesmo risco de estourar o espaço do navegador.
+const _CHAVES_SOMENTE_MEMORIA = new Set(['sk3-orcamentos', 'sk3-prontuarios', 'sk3-titulos', 'sk3-fin-titulos-gestao', 'sk3-recibos', 'sk3-fin-medicoes-comissao']);
 window._memStore = window._memStore || {};
 
 // Link público de anamnese ou de cadastro não exige login
