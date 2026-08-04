@@ -3223,6 +3223,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
     </div>
 
+    <!-- Cards por forma de recebimento — preenchidos dinamicamente em renderFinLista('receber') -->
+    <div class="fin-cards-row" id="fin-rc-forma-cards" style="margin-top:10px;flex-wrap:wrap"></div>
+
     <!-- Toolbar -->
     <div class="fin-toolbar" style="margin-top:14px">
       <button class="btn btn-ghost btn-sm" onclick="abrirModalFinRecorrentes('receber')"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Recorrentes cadastrados</button>
@@ -26562,7 +26565,20 @@ let _finListaAtual = { pagar: [], folha: [], receber: [] };
 
 const FIN_CATEGORIAS = ['Aluguel','Material','Impostos','Financiamento','Marketing','Serviços','Manutenção','Outros']; // Operacional (Sicoob)
 const FIN_CATEGORIAS_FOLHA = ['Salário Fixo','Repasse Dentista','Transferência C6','Outros']; // Folha (C6)
-function _finFiltroVazio(){ return { cats:[], origem:'', status:'', emisDe:'', emisAte:'', vencDe:'', vencAte:'', liqDe:'', liqAte:'', parte:'' }; }
+
+// Todas as formas de recebimento que o sistema reconhece hoje — as 5 usadas no
+// registro manual do dia a dia (pix/dinheiro/debito/credito/boleto) e as vindas
+// da importação do Clinicorp, que distinguem maquininha Clinipay de outra
+// maquininha (ex: Sicoob). Usada para montar 1 card por forma em Contas a Receber,
+// sempre nessa ordem, mesmo com valor zerado no período.
+const FIN_FORMAS_RECEBIMENTO = [
+  'pix','dinheiro','boleto','boleto_clinipay',
+  'cartao_credito_clinipay','cartao_debito_clinipay',
+  'cartao_credito_outra_maquininha','cartao_debito_outra_maquininha',
+  'credito','debito','cartao_credito_nao_identificado','nao_informado',
+];
+
+function _finFiltroVazio(){ return { cats:[], origem:'', status:'', forma:'', emisDe:'', emisAte:'', vencDe:'', vencAte:'', liqDe:'', liqAte:'', parte:'' }; }
 let _finFiltrosAdv = { pagar:_finFiltroVazio(), folha:_finFiltroVazio(), receber:_finFiltroVazio() };
 
 // Atalho de período ativo nas listas "a pagar" (operacional e folha) — padrão: mês atual
@@ -26679,14 +26695,51 @@ function finFiltrarPorStatusCard(tipo, status){
   renderFinLista(tipo);
 }
 
+// Clique num card de forma de recebimento (Pix/Boleto/Cartão.../Sem forma): filtra a
+// lista por essa forma. Clicar de novo no mesmo card ativo desliga o filtro.
+function finFiltrarPorFormaCard(tipo, forma){
+  const adv = _finFiltrosAdv[tipo] || (_finFiltrosAdv[tipo]=_finFiltroVazio());
+  adv.forma = (adv.forma===forma) ? '' : forma;
+  _finUpdateFiltrosBadge(tipo);
+  renderFinLista(tipo);
+}
+
 // Marca visualmente qual card de resumo está ativo, conforme o status filtrado atualmente
 function _finAtualizarCardsAtivos(tipo){
   const area = document.getElementById('fin-area-'+tipo);
   if(!area) return;
   const adv = _finFiltrosAdv[tipo] || _finFiltroVazio();
   area.querySelectorAll('.fin-card-clickable').forEach(card=>{
-    card.classList.toggle('on', (card.dataset.status||'')===(adv.status||''));
+    if(card.dataset.forma!==undefined){
+      card.classList.toggle('on', (card.dataset.forma||'')===(adv.forma||''));
+    } else {
+      card.classList.toggle('on', (card.dataset.status||'')===(adv.status||''));
+    }
   });
+}
+
+// Monta a linha de cards "1 por forma de recebimento" em Contas a Receber. Os totais
+// ignoram o filtro de forma atualmente selecionado (pra sempre mostrar todas as formas
+// lado a lado, mesmo com uma já escolhida), mas respeitam os demais filtros (período,
+// status, busca) — assim os valores batem com o que está sendo mostrado na tabela.
+function _finRenderCardsForma(tipo, todos, adv, isPagar){
+  const wrap = document.getElementById('fin-rc-forma-cards');
+  if(!wrap) return;
+  const base = _finAplicarFiltrosAdv(todos, adv, tipo, isPagar, false, true);
+  const somas = {};
+  let semForma = 0;
+  base.forEach(t=>{
+    const v = parseFloat(t.valor)||0;
+    if(!t.formaRecebimento){ semForma += v; return; }
+    somas[t.formaRecebimento] = (somas[t.formaRecebimento]||0) + v;
+  });
+  const cardHtml = (valor, label, formaKey) => `
+    <div class="fin-card fin-card-clickable" data-forma="${formaKey}" onclick="finFiltrarPorFormaCard('${tipo}','${formaKey}')">
+      <div class="fin-card-label">${label}</div>
+      <div class="fin-card-value">${_finFmt(valor)}</div>
+    </div>`;
+  wrap.innerHTML = FIN_FORMAS_RECEBIMENTO.map(f=>cardHtml(somas[f]||0, _finFormaLabel(f), f)).join('')
+    + cardHtml(semForma, 'Sem forma definida', '__sem_forma__');
 }
 
 // ── Utilitários ──────────────────────────────────────────────────────
@@ -27224,7 +27277,7 @@ function renderFinFluxo(){
 // Quando ignorarStatus=true, o filtro de status é propositalmente ignorado — usado para calcular
 // os cards de resumo (pagar/folha), que devem sempre mostrar a composição completa por status
 // dentro do período, independentemente de qual card esteja selecionado no momento.
-function _finAplicarFiltrosAdv(todos, adv, tipo, isPagar, ignorarStatus){
+function _finAplicarFiltrosAdv(todos, adv, tipo, isPagar, ignorarStatus, ignorarForma){
   const recorrFil = _finFiltroRapido[tipo]==='recorrente';
   return todos.filter(t=>{
     const st = _finStatusEfetivo(t);
@@ -27234,6 +27287,10 @@ function _finAplicarFiltrosAdv(todos, adv, tipo, isPagar, ignorarStatus){
       if(adv.status==='pago'&&t.status!=='pago') return false;
       if(adv.status==='recebido'&&t.status!=='recebido') return false;
       if(adv.status==='cancelado'&&t.status!=='cancelado') return false;
+    }
+    if(!ignorarForma&&adv.forma){
+      if(adv.forma==='__sem_forma__'){ if(t.formaRecebimento) return false; }
+      else if((t.formaRecebimento||'')!==adv.forma) return false;
     }
     if(adv.cats&&adv.cats.length&&!adv.cats.includes(t.categoria||'')) return false;
     if(!isPagar&&adv.origem&&t._origem!==adv.origem) return false;
@@ -27331,6 +27388,7 @@ function renderFinLista(tipo){
     setEl('rc-val-atrasado',_finFmt(sumAtrasado));
   }
 
+  if(tipo==='receber') _finRenderCardsForma(tipo, todos, adv, isPagar);
   _finAtualizarCardsAtivos(tipo);
   _finAtualizarHeadersOrdenacao(tipo);
 
