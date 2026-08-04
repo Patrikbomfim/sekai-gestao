@@ -3250,6 +3250,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             <th style="width:100px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','vencimento')" title="Ordenar por vencimento">Vencimento <span class="fin-th-sort-ic" id="rc-sort-ic-vencimento"></span></span><button type="button" class="fin-th-group-btn" id="rc-group-btn-vencimento" onclick="finAgruparColuna('receber','vencimento')" title="Agrupar por vencimento">⊞</button></div></th>
             <th style="width:110px"><div class="fin-th-wrap" style="justify-content:flex-end"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','valor')" title="Ordenar por valor">Valor <span class="fin-th-sort-ic" id="rc-sort-ic-valor"></span></span></div></th>
             <th style="width:90px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','status')" title="Ordenar por status">Status <span class="fin-th-sort-ic" id="rc-sort-ic-status"></span></span><button type="button" class="fin-th-group-btn" id="rc-group-btn-status" onclick="finAgruparColuna('receber','status')" title="Agrupar por status">⊞</button></div></th>
+            <th style="width:150px">Forma</th>
             <th style="width:60px" title="Combinado com o paciente na aprovação do orçamento">Combinado</th>
             <th style="width:60px">Anexo</th>
             <th style="width:130px">Emissão fiscal</th>
@@ -12085,6 +12086,7 @@ function renderPpFinanceiro(p, _filtroAtivo){
                 <th style="width:100px">Vencimento</th>
                 <th style="width:110px;text-align:right">Valor</th>
                 <th style="width:90px">Status</th>
+                <th style="width:150px">Forma</th>
                 <th style="width:60px" title="Combinado com o paciente na aprovação do orçamento">Combinado</th>
                 <th style="width:60px">Anexo</th>
                 <th style="width:130px">Emissão fiscal</th>
@@ -12113,8 +12115,7 @@ function renderPpFinanceiro(p, _filtroAtivo){
                   const quemNome=(typeof usuarios!=='undefined'&&t.recebidoPor)
                     ?(usuarios.find(u=>u.id===t.recebidoPor)?.nome||''):'';
                   const horaStr=t.recebidoEm?fmtTs(t.recebidoEm):'';
-                  const formaMap={pix:'Pix/Transferência',dinheiro:'Dinheiro',debito:'Débito',credito:'Crédito',boleto:'Boleto'};
-                  const formaStr=t.formaRecebimento?(formaMap[t.formaRecebimento]||t.formaRecebimento):'';
+                  const formaStr=t.formaRecebimento?_finFormaLabel(t.formaRecebimento):'';
                   const partes=[quemNome,horaStr||fmtData(t.dataPagamento),formaStr].filter(Boolean);
                   recebidoInfo=`<div style="font-size:10px;color:var(--su);margin-top:2px">Recebido${partes.length?' — '+partes.join(' · '):''}</div>`;
                 }
@@ -12131,6 +12132,7 @@ function renderPpFinanceiro(p, _filtroAtivo){
                   <td style="white-space:nowrap;color:${t.status==='atrasado'?'var(--da)':'var(--tx2)'}">${fmtData(t.vencimento)}</td>
                   <td class="fin-td-valor">R$ ${fmtMoeda(t.valor)}</td>
                   <td>${_finBadge(stBadge)}</td>
+                  <td><span style="font-size:12px;color:var(--tx2)">${_finFormaLabel(t.formaRecebimento)}</span></td>
                   <td>${_finSolicitadoHtml(t)}</td>
                   <td>${_finAnexoIconHtml(t)}</td>
                   <td>${_finEmissaoFiscalHtml(t)}</td>
@@ -26689,6 +26691,23 @@ function _finAtualizarCardsAtivos(tipo){
 
 // ── Utilitários ──────────────────────────────────────────────────────
 function _finFmt(v){ return (parseFloat(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+
+// Traduz o código salvo em t.formaRecebimento para um texto legível. Usada tanto
+// na lista "Contas a Receber" do módulo Financeiro quanto no Financeiro do
+// paciente, pra manter a mesma tradução nos dois lugares.
+function _finFormaLabel(forma){
+  const map = {
+    pix:'Pix', dinheiro:'Dinheiro', debito:'Cartão Débito', credito:'Cartão Crédito', boleto:'Boleto',
+    boleto_clinipay:'Boleto (Clinipay)',
+    cartao_credito_clinipay:'Cartão Crédito (Clinipay)',
+    cartao_debito_clinipay:'Cartão Débito (Clinipay)',
+    cartao_credito_outra_maquininha:'Cartão Crédito (outra maquininha)',
+    cartao_debito_outra_maquininha:'Cartão Débito (outra maquininha)',
+    cartao_credito_nao_identificado:'Cartão Crédito (não identificado)',
+    nao_informado:'Não informado',
+  };
+  return forma ? (map[forma]||forma) : '—';
+}
 function _finFmtData(s){ if(!s)return'—'; const[y,m,d]=s.split('-'); return`${d}/${m}/${y}`; }
 function _finHoje(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
 function _finIso(d){ return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
@@ -27369,7 +27388,7 @@ function renderFinLista(tipo){
       <td style="white-space:nowrap;color:${st==='atrasado'?'var(--da)':'var(--tx2)'}">${_finFmtData(t.vencimento)}</td>
       <td class="fin-td-valor">${_finFmt(t.valor)}</td>
       <td>${_finBadge(st)}</td>
-      ${tipo==='receber'?`<td onclick="event.stopPropagation()">${_finSolicitadoHtml(t)}</td><td onclick="event.stopPropagation()">${_finAnexoIconHtml(t)}</td><td onclick="event.stopPropagation()">${_finEmissaoFiscalHtml(t)}</td>`:''}
+      ${tipo==='receber'?`<td><span style="font-size:12px;color:var(--tx2)">${_finFormaLabel(t.formaRecebimento)}</span></td><td onclick="event.stopPropagation()">${_finSolicitadoHtml(t)}</td><td onclick="event.stopPropagation()">${_finAnexoIconHtml(t)}</td><td onclick="event.stopPropagation()">${_finEmissaoFiscalHtml(t)}</td>`:''}
       <td onclick="event.stopPropagation()">
         ${isPaciente
           ? (liquidado
@@ -27383,7 +27402,7 @@ function renderFinLista(tipo){
   const grupoCampo = _finAgruparColuna[tipo];
   if(grupoCampo){
     const grupos = _finAgruparLista(lista, tipo);
-    const colspanBase = tipo==='receber' ? 12 : (tipo==='folha' ? 10 : 9);
+    const colspanBase = tipo==='receber' ? 13 : (tipo==='folha' ? 10 : 9);
     tbody.innerHTML = grupos.map(g=>{
       const subtotal = g.itens.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
       return `<tr class="fin-grupo-row"><td colspan="${colspanBase}">${esc(String(g.label))} <span style="font-weight:400;color:var(--tx3)">· ${g.itens.length} título${g.itens.length!==1?'s':''} · ${_finFmt(subtotal)}</span></td></tr>`
