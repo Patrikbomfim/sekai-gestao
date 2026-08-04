@@ -9800,7 +9800,7 @@ function switchPpArea(area){
 // abre a ficha do paciente já na aba Financeiro, expandindo e rolando até o bloco do
 // orçamento correspondente — pra ver a situação real ali, onde a edição de verdade
 // acontece (desaprovando o orçamento, se for o caso).
-function irParaFinanceiroOrcamento(pacienteId, orcamentoId){
+function irParaFinanceiroOrcamento(pacienteId, orcamentoId, tituloId){
   // Guarda de onde veio, pra "voltar" retornar exatamente pra cá (mesma sub-aba do Financeiro)
   pacienteOrigemTab='financeiro';
   pacienteOrigemFinSub=_finSubAtual;
@@ -9818,7 +9818,18 @@ function irParaFinanceiroOrcamento(pacienteId, orcamentoId){
     const uid='fin-orc-'+orcamentoId;
     const body=document.getElementById(uid);
     if(body && body.style.display!=='block') _finToggle(uid);
-    if(body) body.scrollIntoView({behavior:'smooth', block:'center'});
+    // Se veio de uma parcela específica (clique em Contas a Receber), rola e destaca
+    // exatamente essa linha — não só o bloco do orçamento, que pode ter várias parcelas.
+    const linhaTit = tituloId ? document.getElementById('fin-tit-'+tituloId) : null;
+    const alvo = linhaTit || body;
+    if(alvo){
+      alvo.scrollIntoView({behavior:'smooth', block:'center'});
+      if(linhaTit){
+        linhaTit.style.transition='background-color .3s';
+        linhaTit.style.backgroundColor='var(--acl)';
+        setTimeout(()=>{ linhaTit.style.backgroundColor=''; }, 1800);
+      }
+    }
   }, 60);
 }
 
@@ -12126,7 +12137,7 @@ function renderPpFinanceiro(p, _filtroAtivo){
                 // mostram "Recebido" em vez de "Pago" quando liquidados)
                 const stBadge = t.status==='pago' ? 'recebido' : (t.status||'aberto');
                 return `
-                <tr>
+                <tr id="fin-tit-${t.id}">
                   <td class="fin-td-desc">
                     <div style="font-weight:500;color:var(--tx)">${t.descricao||'—'}</div>
                     ${recebidoInfo}
@@ -27429,7 +27440,7 @@ function renderFinLista(tipo){
     // Importante: usa o tipo REAL do título (tipoReal) e não o tipo da aba/subnav — na
     // aba unificada isso garante que o modal abra com as categorias e a conta corretas.
     const rowClick = isPaciente
-      ? `onclick="irParaFinanceiroOrcamento('${t.pacienteId}','${t.orcamentoId}')"`
+      ? `onclick="irParaFinanceiroOrcamento('${t.pacienteId}','${t.orcamentoId}','${t.id}')"`
       : `onclick="abrirModalFinLancamento('${tipoReal}','${t.id}')"`;
 
     const beneficiario = isPaciente ? (pacNome ? pacNome.replace(' — ','') : '—') : (t._contraparte || '—');
