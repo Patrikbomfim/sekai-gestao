@@ -3253,7 +3253,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             <th style="width:100px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','vencimento')" title="Ordenar por vencimento">Vencimento <span class="fin-th-sort-ic" id="rc-sort-ic-vencimento"></span></span><button type="button" class="fin-th-group-btn" id="rc-group-btn-vencimento" onclick="finAgruparColuna('receber','vencimento')" title="Agrupar por vencimento">⊞</button></div></th>
             <th style="width:110px"><div class="fin-th-wrap" style="justify-content:flex-end"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','valor')" title="Ordenar por valor">Valor <span class="fin-th-sort-ic" id="rc-sort-ic-valor"></span></span></div></th>
             <th style="width:90px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','status')" title="Ordenar por status">Status <span class="fin-th-sort-ic" id="rc-sort-ic-status"></span></span><button type="button" class="fin-th-group-btn" id="rc-group-btn-status" onclick="finAgruparColuna('receber','status')" title="Agrupar por status">⊞</button></div></th>
-            <th style="width:150px">Forma</th>
+            <th style="width:150px"><div class="fin-th-wrap"><span class="fin-th-sort" onclick="finOrdenarColuna('receber','forma')" title="Ordenar por forma">Forma <span class="fin-th-sort-ic" id="rc-sort-ic-forma"></span></span><button type="button" class="fin-th-group-btn" id="rc-group-btn-forma" onclick="finAgruparColuna('receber','forma')" title="Agrupar por forma">⊞</button></div></th>
             <th style="width:60px" title="Combinado com o paciente na aprovação do orçamento">Combinado</th>
             <th style="width:60px">Anexo</th>
             <th style="width:130px">Emissão fiscal</th>
@@ -11135,6 +11135,12 @@ function reprovarOrcamento(){
 // gerados (reaproveitando a mesma lógica/confirmação de "cancelarTitulosOrcamento") e volta
 // o status para "Em aberto" — daí dá pra ajustar valores/formas/datas e aprovar de novo.
 // Bloqueado (pela própria cancelarTitulosOrcamento) se algum título já tiver sido recebido.
+// Desaprova um orçamento já aprovado, direto do modal do orçamento: cancela os títulos
+// gerados (reaproveitando a mesma lógica/confirmação de "cancelarTitulosOrcamento") e volta
+// o status para "Em aberto". Fecha o modal em seguida — se o usuário quiser reabrir pra
+// ajustar e aprovar de novo (ou excluir, agora que os títulos já não existem mais), é só
+// clicar no orçamento de novo na lista, já atualizada.
+// Bloqueado (pela própria cancelarTitulosOrcamento) se algum título já tiver sido recebido.
 function desaprovarOrcamento(){
   if(!souAdministradorReal() && !temPerm('pacientes_orcamento_editar')){
     alert('Você não tem permissão para esta ação.'); return;
@@ -11146,8 +11152,9 @@ function desaprovarOrcamento(){
   cancelarTitulosOrcamento(orcId); // confirma, cancela títulos e volta status pra "aberto"
   const depois=_orcamentos().find(o=>o.id===orcId);
   if(depois && depois.status==='aberto' && antes.status!=='aberto'){
-    // Reabre o próprio modal já atualizado (status "Em aberto"), pronto pra editar e aprovar de novo
-    abrirModalOrcamento(pacId, orcId);
+    fecharModalOrcamento();
+    const p=pacientes.find(x=>String(x.id)===String(pacId));
+    if(p) renderPpOrcamento(p);
   }
 }
 
@@ -11944,6 +11951,36 @@ function _salvarTitulos(list){ salvarLS('sk3-titulos',list); }
 // ações como anexar um arquivo de emissão fiscal (que re-renderizam a tela) não recolham o
 // bloco que o usuário estava usando.
 let _finOrcExpandidos=new Set();
+// Ordenação da tabela de títulos dentro de cada bloco de orçamento, no Financeiro do
+// paciente. Padrão: vencimento, do mais antigo pro mais novo (parcela 1 em cima).
+let _ppFinOrdem={campo:'vencimento',dir:'asc'};
+let _ppFinFiltroAtivo=null;
+function _ppFinValorColuna(t, campo){
+  switch(campo){
+    case 'descricao': return (t.descricao||'').toLowerCase();
+    case 'vencimento': return t.vencimento||'';
+    case 'valor': return parseFloat(t.valor)||0;
+    case 'status': return t.status||'aberto';
+    case 'forma': return _finFormaLabel(t.formaRecebimento||'').toLowerCase();
+    default: return '';
+  }
+}
+function _ppFinOrdenarLista(lista){
+  const ord=_ppFinOrdem;
+  lista.sort((a,b)=>{
+    const va=_ppFinValorColuna(a,ord.campo), vb=_ppFinValorColuna(b,ord.campo);
+    let cmp;
+    if(typeof va==='number'&&typeof vb==='number') cmp=va-vb;
+    else cmp=String(va).localeCompare(String(vb),'pt-BR');
+    return ord.dir==='desc'?-cmp:cmp;
+  });
+  return lista;
+}
+function ppFinOrdenarColuna(campo){
+  if(_ppFinOrdem.campo===campo) _ppFinOrdem.dir = _ppFinOrdem.dir==='asc'?'desc':'asc';
+  else { _ppFinOrdem={campo,dir:'asc'}; }
+  if(_ppPacienteAtual) renderPpFinanceiro(_ppPacienteAtual, _ppFinFiltroAtivo);
+}
 
 function renderPpFinanceiro(p, _filtroAtivo){
   const wrap=document.getElementById('pp-financeiro-wrap');
@@ -11999,6 +12036,7 @@ function renderPpFinanceiro(p, _filtroAtivo){
 
   // Filtro ativo: null | 'pago' | 'aberto' | 'atrasado'
   const filtro=_filtroAtivo||null;
+  _ppFinFiltroAtivo=filtro;
 
   const cardStyle=(ativo, cor, bg, border)=>`
     border:1.5px solid ${ativo?cor:border||'var(--border)'};border-radius:var(--r8);padding:12px 14px;cursor:pointer;
@@ -12048,6 +12086,7 @@ function renderPpFinanceiro(p, _filtroAtivo){
   orcIdsOrdenados.forEach(orcId=>{
     const orc=orcamentos.find(o=>o.id===orcId)||{};
     let tits=titulos.filter(t=>t.orcamentoId===orcId);
+    tits=_ppFinOrdenarLista(tits);
     // Aplica filtro se ativo
     const titsVisiveis=filtro?tits.filter(t=>t.status===filtro):tits;
     if(filtro&&!titsVisiveis.length) return; // pula bloco se não há títulos no filtro
@@ -12096,11 +12135,11 @@ function renderPpFinanceiro(p, _filtroAtivo){
           <table class="fin-table">
             <thead>
               <tr>
-                <th>Descrição</th>
-                <th style="width:100px">Vencimento</th>
-                <th style="width:110px;text-align:right">Valor</th>
-                <th style="width:90px">Status</th>
-                <th style="width:150px">Forma</th>
+                <th><span style="cursor:pointer" onclick="ppFinOrdenarColuna('descricao')">Descrição ${_ppFinOrdem.campo==='descricao'?(_ppFinOrdem.dir==='asc'?'▲':'▼'):''}</span></th>
+                <th style="width:100px"><span style="cursor:pointer" onclick="ppFinOrdenarColuna('vencimento')">Vencimento ${_ppFinOrdem.campo==='vencimento'?(_ppFinOrdem.dir==='asc'?'▲':'▼'):''}</span></th>
+                <th style="width:110px;text-align:right"><span style="cursor:pointer" onclick="ppFinOrdenarColuna('valor')">Valor ${_ppFinOrdem.campo==='valor'?(_ppFinOrdem.dir==='asc'?'▲':'▼'):''}</span></th>
+                <th style="width:90px"><span style="cursor:pointer" onclick="ppFinOrdenarColuna('status')">Status ${_ppFinOrdem.campo==='status'?(_ppFinOrdem.dir==='asc'?'▲':'▼'):''}</span></th>
+                <th style="width:150px"><span style="cursor:pointer" onclick="ppFinOrdenarColuna('forma')">Forma ${_ppFinOrdem.campo==='forma'?(_ppFinOrdem.dir==='asc'?'▲':'▼'):''}</span></th>
                 <th style="width:60px" title="Combinado com o paciente na aprovação do orçamento">Combinado</th>
                 <th style="width:60px">Anexo</th>
                 <th style="width:130px">Emissão fiscal</th>
@@ -26616,6 +26655,7 @@ function _finValorColuna(t, campo){
     case 'vencimento': return t.vencimento||'';
     case 'valor': return parseFloat(t.valor)||0;
     case 'status': return _finStatusEfetivo(t);
+    case 'forma': return _finFormaLabel(t.formaRecebimento||'').toLowerCase();
     default: return '';
   }
 }
@@ -26640,6 +26680,7 @@ function _finRotuloGrupo(t, campo){
   if(campo==='origem') return t._origem==='paciente'?'Paciente':'Manual';
   if(campo==='tipoPagto') return t.tipo==='folha'?'Folha':'Operacional';
   if(campo==='vencimento') return _finFmtData(t.vencimento);
+  if(campo==='forma') return _finFormaLabel(t.formaRecebimento);
   return '—';
 }
 
@@ -26676,7 +26717,7 @@ function _finAtualizarHeadersOrdenacao(tipo){
   const prefix = tipo==='pagar'?'pg':(tipo==='folha'?'fl':'rc');
   const ord = _finOrdemColuna[tipo] || {campo:'vencimento',dir:'asc'};
   const grp = _finAgruparColuna[tipo];
-  ['tipoPagto','descricao','beneficiario','parcela','categoria','origem','vencimento','valor','status'].forEach(campo=>{
+  ['tipoPagto','descricao','beneficiario','parcela','categoria','origem','vencimento','valor','status','forma'].forEach(campo=>{
     const ic=document.getElementById(`${prefix}-sort-ic-${campo}`);
     if(ic) ic.textContent = ord.campo===campo ? (ord.dir==='asc'?'▲':'▼') : '';
     const gb=document.getElementById(`${prefix}-group-btn-${campo}`);
@@ -26744,11 +26785,20 @@ function _finRenderCardsForma(tipo, todos, adv, isPagar){
     if(!t.formaRecebimento){ semForma += v; return; }
     somas[t.formaRecebimento] = (somas[t.formaRecebimento]||0) + v;
   });
-  const cardHtml = (valor, label, formaKey) => `
-    <div class="fin-card fin-card-clickable" data-forma="${formaKey}" onclick="finFiltrarPorFormaCard('${tipo}','${formaKey}')">
-      <div class="fin-card-label">${label}</div>
+  // Cards "planos" (sem variante de cor azul/verde/âmbar/vermelho) não têm estilo de
+  // seleção no CSS — por isso o destaque é aplicado direto aqui, igual ao padrão já
+  // usado nos cards de categoria de Emissão Fiscal. O rótulo tem altura fixa (2 linhas)
+  // pra o valor sempre começar na mesma altura, mesmo quando o nome da forma é longo
+  // e quebra linha (ex: "Cartão Crédito (outra maquininha)").
+  const cardHtml = (valor, label, formaKey) => {
+    const ativo = (adv.forma||'')===formaKey;
+    return `
+    <div class="fin-card fin-card-clickable" data-forma="${formaKey}" onclick="finFiltrarPorFormaCard('${tipo}','${formaKey}')"
+      style="${ativo?'border:1.5px solid var(--ac);background:var(--acl);box-shadow:0 0 0 2px var(--ac) inset':''}">
+      <div class="fin-card-label" style="min-height:28px">${label}</div>
       <div class="fin-card-value">${_finFmt(valor)}</div>
     </div>`;
+  };
   wrap.innerHTML = FIN_FORMAS_RECEBIMENTO.map(f=>cardHtml(somas[f]||0, _finFormaLabel(f), f)).join('')
     + cardHtml(semForma, 'Sem forma definida', '__sem_forma__');
 }
