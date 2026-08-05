@@ -6628,6 +6628,11 @@ window.addEventListener('beforeunload', (e)=>{
   }
 });
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+// O campo itens[].dentes de um orçamento normalmente é uma lista (ex: ['17','18']),
+// mas orçamentos importados do Clinicorp guardaram esse campo como texto solto (ex:
+// '17'), o que quebrava a tela (".join is not a function") em vários lugares que
+// assumiam sempre ser lista. Esse helper junta os dentes com segurança nos dois casos.
+function _dentesTxt(d){ return Array.isArray(d) ? d.join(', ') : String(d||''); }
 
 // ── MÁSCARA DE TELEFONE (DDD + número, separados por espaço) ────────────
 function maskFone(v){
@@ -11269,7 +11274,7 @@ function gerarPdfOrcamento(){
   const linhasProc=_orcItens.map(it=>{
     const detalhes=[];
     if(it.dentista) detalhes.push(it.dentista);
-    if(it.dentes&&it.dentes.length) detalhes.push('Dente(s) '+it.dentes.join(', '));
+    if(it.dentes&&it.dentes.length) detalhes.push('Dente(s) '+_dentesTxt(it.dentes));
     const detalheHtml=detalhes.length?`<div class="p-det">${detalhes.join(' · ')}</div>`:'';
     return `<tr>
       <td class="t-nome">${it.proc||'—'}${detalheHtml}</td>
@@ -11426,7 +11431,7 @@ function _renderOrcItens(){
     <tbody>
       ${_orcItens.map((it,idx)=>`<tr style="border-bottom:1px solid var(--border)">
         <td style="padding:9px 8px;font-weight:500">${it.proc||'—'}</td>
-        <td style="padding:9px 8px;color:var(--tx2)">${it.dentes&&it.dentes.length?it.dentes.join(', '):'Geral'}</td>
+        <td style="padding:9px 8px;color:var(--tx2)">${it.dentes&&it.dentes.length?_dentesTxt(it.dentes):'Geral'}</td>
         <td style="padding:9px 8px;text-align:right;font-weight:600">
           <input type="text" inputmode="decimal" value="${_fmtMoeda(it.valor||0)}" oninput="_orcMascaraValor(this,${idx})" style="width:100px;text-align:right;padding:4px 7px;font-size:12px">
         </td>
@@ -12836,7 +12841,7 @@ function _aprovRenderItensProf(){
   _orcItens.forEach(it=>{ it.dentista=''; });
   wrap.innerHTML=`<div style="display:flex;flex-direction:column;gap:6px">
     ${_orcItens.map((it,idx)=>{
-      const dentesTxt = it.dentes&&it.dentes.length?' ('+it.dentes.join(', ')+')':'';
+      const dentesTxt = it.dentes&&it.dentes.length?' ('+_dentesTxt(it.dentes)+')':'';
       const valorTxt=(parseFloat(it.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
       return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r6)">
         <div style="flex:1 1 200px;min-width:140px">
@@ -13297,7 +13302,7 @@ function _renderProntPlano(p){
             const vlr=(parseFloat(it.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
             return `<tr style="border-bottom:1px solid var(--border);background:${exec?'#F0FDF6':'var(--surface)'}">
               <td style="padding:10px 14px;font-size:13px;font-weight:500">${it.proc||'—'}</td>
-              <td style="padding:10px 10px;font-size:12px;color:var(--tx2)">${it.dentes&&it.dentes.length?it.dentes.join(', '):'Geral'}</td>
+              <td style="padding:10px 10px;font-size:12px;color:var(--tx2)">${it.dentes&&it.dentes.length?_dentesTxt(it.dentes):'Geral'}</td>
               <td style="padding:10px 10px;font-size:13px;font-weight:600;color:var(--tx);text-align:right;white-space:nowrap">R$ ${vlr}</td>
               <td style="padding:10px 10px">
                 ${exec?`<span style="font-size:12px;color:var(--tx2)">${it.execProfissional||'—'}</span>`
@@ -15807,7 +15812,7 @@ function _atdCarregarProcs(selecionado){
   if(!orcId){ sel.innerHTML='<option value="">— Selecione o procedimento —</option>'; return; }
   const orc=_orcamentos().find(o=>o.id===orcId);
   const itens=(orc&&orc.itens)||[];
-  sel.innerHTML='<option value="">— Selecione o procedimento —</option>'+itens.map(it=>`<option value="${it.proc||''}">${it.proc||'—'}${it.dentes&&it.dentes.length?' ('+it.dentes.join(', ')+')':''}</option>`).join('');
+  sel.innerHTML='<option value="">— Selecione o procedimento —</option>'+itens.map(it=>`<option value="${it.proc||''}">${it.proc||'—'}${it.dentes&&it.dentes.length?' ('+_dentesTxt(it.dentes)+')':''}</option>`).join('');
   if(selecionado) sel.value=selecionado;
 }
 
