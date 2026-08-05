@@ -12095,7 +12095,7 @@ function renderPpFinanceiro(p, _filtroAtivo){
     // Aplica filtro se ativo
     const titsVisiveis=filtro?tits.filter(t=>t.status===filtro):tits;
     if(filtro&&!titsVisiveis.length) return; // pula bloco se não há títulos no filtro
-    const nomeOrc=orc.nomeOrc||('Orçamento #'+(orc.num||orcId.slice(-4)));
+    const nomeOrc=orc.nomeOrc||(orcId?('Orçamento #'+(orc.num||orcId.slice(-4))):'Sem orçamento vinculado');
     const tTotal=tits.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
     const tPago=tits.filter(t=>t.status==='pago').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
     const tAtrasado=tits.filter(t=>t.status==='atrasado').reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
