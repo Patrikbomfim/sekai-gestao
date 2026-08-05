@@ -628,7 +628,7 @@ input.invalid{border-color:var(--da);background:var(--dal)}
 .modal-ov.open{display:flex}
 
 /* POPOVER DE AGENDAMENTO */
-#ag-popover{display:none;position:fixed;z-index:250;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 12px 32px rgba(15,23,42,.16);width:300px;max-width:94vw;max-height:calc(100vh - 16px);padding:0;overflow:hidden;flex-direction:column}
+#ag-popover,#blq-popover{display:none;position:fixed;z-index:250;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 12px 32px rgba(15,23,42,.16);width:300px;max-width:94vw;max-height:calc(100vh - 16px);padding:0;overflow:hidden;flex-direction:column}
 
 /* ══ MESMA IDENTIDADE VIVA DA AGENDA, agora nos modais/popover que ela abre ══
    Esses modais/popover ficam fora de #sec-agenda no DOM (são overlays soltos),
@@ -683,6 +683,7 @@ input.invalid{border-color:var(--da);background:var(--dal)}
   border-top:1px solid var(--border);border-radius:0 0 22px 22px;
 }
 #ag-popover.open{display:flex}
+#blq-popover.open{display:flex}
 .agpop-header{padding:12px 14px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-shrink:0}
 .agpop-status{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
 .agpop-close{background:none;border:none;cursor:pointer;color:var(--tx3);font-size:15px;line-height:1;padding:2px 4px;border-radius:var(--r4)}
@@ -5355,6 +5356,37 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="agpop-footer">
     <button class="btn btn-ghost" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="agPopAbrirModal()" title="Abrir agendamento"><svg viewBox="0 0 24 24" width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Abrir agendamento</button>
     <button class="btn btn-primary" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="agPopSalvar()" title="Salvar alterações"><svg viewBox="0 0 24 24" width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Salvar</button>
+  </div>
+</div>
+
+<div id="blq-popover" onmouseenter="blqPopoverCancelClose()" onmouseleave="blqPopoverScheduleClose()">
+  <div class="agpop-header">
+    <span class="agpop-status" style="background:#C0392B;color:#fff;border:none">Bloqueio</span>
+    <button class="agpop-close" onclick="fecharBlqPopover()">✕</button>
+  </div>
+  <div class="agpop-body">
+    <div class="agpop-row">
+      <span class="agpop-val">
+        <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:1px">Motivo</span>
+        <span id="blqpop-motivo" style="font-weight:700;font-size:13px;color:var(--tx)"></span>
+      </span>
+    </div>
+    <div class="agpop-row">
+      <span class="agpop-val">
+        <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:1px">Data / Horário</span>
+        <span id="blqpop-quando" style="font-size:12.5px;color:var(--tx)"></span>
+      </span>
+    </div>
+    <div class="agpop-row">
+      <span class="agpop-val">
+        <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:1px">Onde</span>
+        <span id="blqpop-onde" style="font-size:12.5px;color:var(--tx)"></span>
+      </span>
+    </div>
+  </div>
+  <div class="agpop-footer">
+    <button class="btn btn-ghost" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="blqPopEditar()">Editar</button>
+    <button class="btn btn-primary" style="flex:1;background:#C0392B;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="blqPopExcluir()">Excluir</button>
   </div>
 </div>
 
@@ -22746,6 +22778,98 @@ function fecharAgPopover(){
   _agPopPendenciaCriadaId = null;
 }
 
+// ── POPOVER DE BLOQUEIO/COMPROMISSO — mesmo comportamento do popover de
+// agendamento (abre ao passar o mouse ou clicar no card, some com um pequeno
+// atraso ao tirar o mouse, fecha ao clicar fora), mas com conteúdo simples de
+// leitura + atalhos para editar/excluir o bloqueio.
+let _blqPopoverIdx = null;
+let _blqPopoverCloseTimer = null;
+
+function blqPopoverCancelClose(){
+  if(_blqPopoverCloseTimer){ clearTimeout(_blqPopoverCloseTimer); _blqPopoverCloseTimer=null; }
+}
+function blqPopoverScheduleClose(){
+  blqPopoverCancelClose();
+  _blqPopoverCloseTimer = setTimeout(()=>{ fecharBlqPopover(); _blqPopoverCloseTimer=null; }, 200);
+}
+
+function blqAbrirPopoverSeNaoArrastando(idx, targetEl){
+  blqPopoverCancelClose();
+  if(_blqPopoverIdx===idx) return; // já aberto neste mesmo bloqueio
+  const b = bloqueios[idx];
+  if(!b) return;
+  _blqPopoverIdx = idx;
+
+  document.getElementById('blqpop-motivo').textContent = b.motivo || 'Bloqueado';
+  const d = b.dataInicio ? b.dataInicio.split('-').reverse().join('/') : '';
+  const horarioTxt = b.diaTodo ? 'Dia todo' : `${b.horaInicio||''} – ${b.horaFim||''}`;
+  document.getElementById('blqpop-quando').textContent = `${d} · ${horarioTxt}`;
+  let ondeTxt = '';
+  if(b.tipo==='sala' || b.tipo==='ambos'){
+    const s = salas.find(x=>x.id===b.salaId);
+    ondeTxt = s ? s.nome : '';
+  }
+  if(b.tipo==='profissional' || b.tipo==='ambos'){
+    const nomeProf = nomeUsuario(b.usuarioId) || '';
+    ondeTxt = ondeTxt ? `${ondeTxt} · ${nomeProf}` : nomeProf;
+  }
+  document.getElementById('blqpop-onde').textContent = ondeTxt;
+
+  const pop = document.getElementById('blq-popover');
+  pop.classList.add('open');
+  if(targetEl){
+    const rect = targetEl.getBoundingClientRect();
+    const pw = 300, phEstimado = 220;
+    let left = rect.right + 8;
+    let top = rect.top;
+    if(left + pw > window.innerWidth - 8) left = rect.left - pw - 8;
+    if(left < 8) left = 8;
+    if(top + phEstimado > window.innerHeight - 8) top = window.innerHeight - phEstimado - 8;
+    if(top < 8) top = 8;
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    pop.style.right = 'auto';
+    pop.style.transform = '';
+  } else {
+    pop.style.left = '50%';
+    pop.style.top = '50%';
+    pop.style.right = 'auto';
+    pop.style.transform = 'translate(-50%, -50%)';
+  }
+  setTimeout(()=>{ document.addEventListener('mousedown', _blqPopoverOutsideClick); }, 10);
+}
+
+function _blqPopoverOutsideClick(e){
+  const pop = document.getElementById('blq-popover');
+  if(pop.contains(e.target)) return;
+  if(e.target.closest('.modal-ov.open, .fin-drawer-ov.open, .fin-modal-ov.open')) return;
+  fecharBlqPopover();
+}
+
+function fecharBlqPopover(){
+  blqPopoverCancelClose();
+  document.getElementById('blq-popover').classList.remove('open');
+  document.getElementById('blq-popover').style.transform = '';
+  document.removeEventListener('mousedown', _blqPopoverOutsideClick);
+  _blqPopoverIdx = null;
+}
+
+function blqPopEditar(){
+  const idx = _blqPopoverIdx;
+  fecharBlqPopover();
+  if(idx!=null) abrirModalBloqueio(idx);
+}
+
+function blqPopExcluir(){
+  const idx = _blqPopoverIdx;
+  if(idx==null) return;
+  if(!confirm('Excluir este bloqueio/compromisso?')) return;
+  bloqueios.splice(idx,1);
+  salvarLS('sk3-bloqueios',bloqueios);
+  fecharBlqPopover();
+  renderAgenda();
+}
+
 function agPopAbrirPaciente(e){
   e.preventDefault();
   const id = document.getElementById('agpop-nome').dataset.pacienteId;
@@ -23524,6 +23648,33 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
       const resizeHandles = `<div class="ag-resize-handle ag-resize-top" onmousedown="agIniciarResize(event,'${a.id}','top',${topPx},${heightPx},${pxPerMin},${iniMin})" title="Arraste para mudar o início"></div><div class="ag-resize-handle ag-resize-bottom" onmousedown="agIniciarResize(event,'${a.id}','bottom',${topPx},${heightPx},${pxPerMin},${iniMin})" title="Arraste para mudar o fim"></div>`;
       html += `<div class="ag-card st-${a.status}${extraClass}" data-ag-id="${a.id}" style="background:${cor};top:${topPx}px;height:${heightPx}px;pointer-events:all;padding:1px 4px" onmouseenter="agAbrirPopoverSeNaoArrastando('${a.id}',event.currentTarget)" onmouseleave="agPopoverScheduleClose()" onmousedown="agIniciarMoverCard(event,'${a.id}')" onclick="event.stopPropagation();agAbrirPopoverSeNaoArrastando('${a.id}',event.currentTarget)" title="${pacNomeComCod} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}${resizeHandles}</div>`;
     });
+
+    // Cards de bloqueio/compromisso — mesma lógica de posicionamento dos agendamentos:
+    // um único card cobrindo a duração inteira (não mais um por célula), clicável em
+    // qualquer ponto e com o motivo sempre visível no topo. Hover ou clique abrem o
+    // minimodal (#blq-popover), igual ao popover de agendamento.
+    const blqsDaCol = bloqueios.filter(b=>{
+      if(dataIso < b.dataInicio || dataIso > b.dataFim) return false;
+      return modo==='sala' ? (b.tipo==='sala'||b.tipo==='ambos') && b.salaId===c.id
+                            : (b.tipo==='profissional'||b.tipo==='ambos') && b.usuarioId===c.id;
+    });
+    blqsDaCol.forEach(b=>{
+      const blqIdx = bloqueios.indexOf(b);
+      const blqIniReal = b.diaTodo ? iniMin : horaParaMin(b.horaInicio||'00:00');
+      const blqFimReal = b.diaTodo ? fimMin : horaParaMin(b.horaFim||'23:59');
+      const blqIni = Math.max(blqIniReal, iniMin);
+      const blqFim = Math.min(blqFimReal, fimMin);
+      if(blqFim <= blqIni) return; // fora da janela visível do dia
+      const topPx = Math.round((blqIni - iniMin) / passo * SLOT_H) + 1;
+      const heightPx = Math.max(18, Math.round((blqFim - blqIni) / passo * SLOT_H) - 2);
+      const motivoTxt = (b.motivo || 'Bloqueado');
+      const horarioTxt = b.diaTodo ? 'Dia todo' : `${b.horaInicio||''}–${b.horaFim||''}`;
+      html += `<div class="ag-block-card" data-blq-idx="${blqIdx}" style="top:${topPx}px;height:${heightPx}px;pointer-events:all" onmouseenter="blqAbrirPopoverSeNaoArrastando(${blqIdx},event.currentTarget)" onmouseleave="blqPopoverScheduleClose()" onclick="event.stopPropagation();blqAbrirPopoverSeNaoArrastando(${blqIdx},event.currentTarget)" title="${motivoTxt.replace(/"/g,'&quot;')} · ${horarioTxt}">
+        <div class="ag-card-tit" style="display:flex;align-items:center;gap:4px">${AGI('block',11)} ${motivoTxt}</div>
+        ${heightPx>=30 ? `<div class="ag-card-sub">${horarioTxt}</div>` : ''}
+      </div>`;
+    });
+
     html += `</div>`;
   });
   html += `</div>`;
@@ -23592,19 +23743,8 @@ function renderAgendaCell(col, modo, slotIni, slotFim, dataIso, diaSemana, iniMi
       </div>`;
     }
   }
-  if(bloqueado){
-    const blqIniMin = bloqueado.diaTodo ? iniMin : horaParaMin(bloqueado.horaInicio||'00:00');
-    const blqFimMin = bloqueado.diaTodo ? (iniMin + (horaParaMin(bloqueado.horaFim||'23:59') - blqIniMin)) : horaParaMin(bloqueado.horaFim||'23:59');
-    if(slotIni === blqIniMin || (slotIni <= blqIniMin && slotFim > blqIniMin)){
-      const dur = bloqueado.diaTodo ? (horaParaMin(bloqueado.horaFim||'23:59') - iniMin) : (blqFimMin - blqIniMin);
-      const heightPx = Math.max(SLOT_H - 4, (dur / passo) * SLOT_H - 4);
-      const blqIdx = bloqueios.indexOf(bloqueado);
-      conteudo = `<div class="ag-block-card" style="top:2px;height:${heightPx}px" onclick="event.stopPropagation();abrirModalBloqueio(${blqIdx})">
-        <div class="ag-card-tit" style="display:flex;align-items:center;gap:4px">${AGI('block',11)} ${bloqueado.motivo||'Bloqueado'}</div>
-        ${bloqueado.diaTodo ? '' : `<div class="ag-card-sub">${bloqueado.horaInicio||''}–${bloqueado.horaFim||''}</div>`}
-      </div>`;
-    }
-  }
+  // Card de bloqueio: renderizado no overlay (renderAgendaGrid), não aqui — veja o
+  // comentário abaixo. A célula em si só fica com o fundo listrado (classe ag-bloqueado).
 
   // Cards renderizados no overlay (renderAgendaGrid) — não renderizar aqui
 
