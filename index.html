@@ -23393,7 +23393,7 @@ function renderAgendaSemana(d){
         const onClickCell = (estaBloqueado || !podeAgenda) ? '' : `onclick="abrirModalAgendamento(null,'${dIso}','${minParaHora(slotMin)}','${sala.id}',null)"`;
         const hoverHandlers = (estaBloqueado || !podeAgenda) ? '' : `onmouseenter="this.style.background='var(--ag-acc-soft)'" onmouseleave="this.style.background='${bgBloq}'"`;
         body += `<div style="flex:1;min-width:${SALA_MIN_W}px;height:${SLOT_H}px;position:relative;border-right:${isLastSala?'2px':'1px'} solid var(--border);background:${bgBloq};${(estaBloqueado||!podeAgenda)?'cursor:default':'cursor:pointer'}" ${hoverHandlers} ${onClickCell}>`;
-        // Card de bloqueio — só mostra na primeira célula do bloqueio
+        // Card de bloqueio — só mostra na primeira célula do bloqueio, igual à visão por Dia
         if(estaBloqueado){
           const bRef = blq || erBlq;
           const bIni = blq ? (blq.diaTodo ? ini : horaParaMin(blq.horaInicio||'00:00'))
@@ -23404,9 +23404,19 @@ function renderAgendaSemana(d){
             const dur = Math.max(passo, bFim - bIni);
             const hPx = Math.round(dur / passo * SLOT_H) - 2;
             const motivo = (blq ? blq.motivo : erBlq.motivo) || 'Bloqueado';
-            body += `<div style="position:absolute;top:1px;left:1px;right:1px;height:${hPx}px;background:#7A1F1F;border-radius:2px;z-index:4;overflow:hidden;display:flex;align-items:center;padding:2px 3px" title="${motivo}">
-              ${AGI('block',9)}
-            </div>`;
+            const horarioTxt = (blq && blq.diaTodo) ? 'Dia todo' : `${blq?blq.horaInicio:erBlq.horaIni||''}–${blq?blq.horaFim:erBlq.horaFim||''}`;
+            if(blq){
+              const blqIdx = bloqueios.indexOf(blq);
+              body += `<div class="ag-block-card" style="position:absolute;top:1px;left:1px;right:1px;height:${hPx}px" onmouseenter="blqAbrirPopoverSeNaoArrastando(${blqIdx},event.currentTarget)" onmouseleave="blqPopoverScheduleClose()" onclick="event.stopPropagation();blqAbrirPopoverSeNaoArrastando(${blqIdx},event.currentTarget)" title="${motivo.replace(/"/g,'&quot;')} · ${horarioTxt}">
+                <div class="ag-card-tit" style="display:flex;align-items:center;gap:4px">${AGI('block',9)} ${motivo}</div>
+                ${hPx>=28 ? `<div class="ag-card-sub">${horarioTxt}</div>` : ''}
+              </div>`;
+            } else {
+              // evento recorrente — mantém o comportamento original (não é um "bloqueio" avulso)
+              body += `<div style="position:absolute;top:1px;left:1px;right:1px;height:${hPx}px;background:#7A1F1F;border-radius:2px;z-index:4;overflow:hidden;display:flex;align-items:center;padding:2px 3px;cursor:pointer" onclick="event.stopPropagation();abrirModalEventosRecorrentes()" title="${motivo.replace(/"/g,'&quot;')}">
+                ${AGI('block',9)} <span style="font-size:9px;color:#fff;margin-left:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${motivo}</span>
+              </div>`;
+            }
           }
         }
         agmsAqui.forEach(a => {
