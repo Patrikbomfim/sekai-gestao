@@ -818,6 +818,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .ag-cell.ag-empty:hover::after{opacity:1}
 .ag-cell.ag-fora{background:var(--surface)}
 .ag-cell.ag-bloqueado{background:repeating-linear-gradient(135deg,#FCA5A5 0 7px,#FEE2E2 7px 14px);cursor:default}
+.ag-cell.ag-almoco{box-shadow:inset 0 2px 0 var(--border-s), inset 0 -2px 0 var(--border-s), inset 0 0 0 999px rgba(15,23,42,.045)}
 .ag-card{border-radius:10px;padding:4px 8px;font-size:10.5px;line-height:1.3;cursor:grab;color:#fff;overflow:hidden;position:absolute;left:3px;right:3px;z-index:3;box-shadow:0 2px 6px rgba(15,23,42,.18);transition:box-shadow .12s,transform .12s}
 .ag-card:hover{box-shadow:0 6px 16px rgba(15,23,42,.28);transform:translateY(-1px)}
 .ag-card.ag-dragging{opacity:.3}
@@ -1158,8 +1159,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="ag-sidebar-label">Ações</div>
       <button class="ag-sidebar-btn primary" onclick="abrirModalAgendamento(null,null,null,null)" data-perm="agenda_gerenciar">＋ Agendamento</button>
       <button class="ag-sidebar-btn" onclick="addLinkAgenda()" data-perm="agenda_gerenciar"><svg viewBox="0 0 24 24" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><path d="M9 17H7a5 5 0 0 1 0-10h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><path d="M8 12h8"/></svg> Gerar link</button>
-      <button class="ag-sidebar-btn" onclick="abrirModalEventosRecorrentes()" data-perm="agenda_gerenciar"><svg viewBox="0 0 24 24" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Recorrentes</button>
-      <button class="ag-sidebar-btn" onclick="addBloqueio()" data-perm="agenda_gerenciar"><svg viewBox="0 0 24 24" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><circle cx="12" cy="12" r="9"/><path d="M5.5 5.5l13 13"/></svg> Bloquear horário</button>
+      <button class="ag-sidebar-btn" onclick="abrirModalEventosRecorrentes()" data-perm="agenda_gerenciar"><svg viewBox="0 0 24 24" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Bloqueios recorrentes</button>
     </div>
 
     <div class="ag-sidebar-divider"></div>
@@ -23439,7 +23439,7 @@ function renderAgendaSemana(d){
     const dIso = iso(dia);
     const isHoje = dIso === isoHoje;
     const isSel = dIso === agSemanaDiaSelecionado;
-    headerDias += `<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:2px;border-right:1px solid var(--border)">
+    headerDias += `<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:2px;border-right:3px solid var(--border-s)">
       <button class="ag-day-strip-btn${isSel?' on':''}${isHoje&&!isSel?' today':''}" style="min-width:36px;padding:1px 6px" onclick="agSemanaSelecionarDia('${dIso}')" title="${DIAS_SEMANA[dia.getDay()]}">
         <span class="ag-day-strip-dow">${DIAS_SEMANA[dia.getDay()]}</span>
         <span class="ag-day-strip-num">${dia.getDate()}</span>
@@ -23454,7 +23454,7 @@ function renderAgendaSemana(d){
   dias.forEach(() => {
     salas.forEach((s, si) => {
       const isLast = si === nSalas - 1;
-      headerSalas += `<div style="flex:1;min-width:${SALA_MIN_W}px;padding:3px 2px;text-align:center;font-size:9px;font-weight:600;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-right:${isLast?'2px':'1px'} solid var(--border);${si===0?'border-left:none':''}" title="${s.nome}">
+      headerSalas += `<div style="flex:1;min-width:${SALA_MIN_W}px;padding:3px 2px;text-align:center;font-size:9px;font-weight:600;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-right:${isLast?'3px solid var(--border-s)':'1px solid var(--border)'};${si===0?'border-left:none':''}" title="${s.nome}">
         <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${s.cor};margin-right:2px;vertical-align:middle"></span>${s.nome.toUpperCase()}
       </div>`;
     });
@@ -23488,7 +23488,19 @@ function renderAgendaSemana(d){
         const podeAgenda = temPerm('agenda_gerenciar');
         const onClickCell = (estaBloqueado || !podeAgenda) ? '' : `onclick="agAbrirEscolhaCelula('${dIso}','${minParaHora(slotMin)}','${sala.id}',null)"`;
         const hoverHandlers = (estaBloqueado || !podeAgenda) ? '' : `onmouseenter="this.style.background='var(--ag-acc-soft)'" onmouseleave="this.style.background='${bgBloq}'"`;
-        body += `<div style="flex:1;min-width:${SALA_MIN_W}px;height:${SLOT_H}px;position:relative;border-right:${isLastSala?'2px':'1px'} solid var(--border);background:${bgBloq};${(estaBloqueado||!podeAgenda)?'cursor:default':'cursor:pointer'}" ${hoverHandlers} ${onClickCell}>`;
+        // Quando o bloco (bloqueio ou evento recorrente) começa nesta célula e é mais alto do
+        // que uma linha, o card interno "vaza" visualmente por cima das linhas seguintes. Como
+        // cada linha é uma faixa independente na grade, essa célula precisa de um z-index maior
+        // que o das células das linhas de baixo — senão o fundo delas corta o card ao meio.
+        let zCelula = '';
+        if(estaBloqueado){
+          const bRefZ = blq || erBlq;
+          const bIniZ = blq ? (blq.diaTodo ? ini : horaParaMin(blq.horaInicio||'00:00'))
+                             : horaParaMin(erBlq.horaIni||'00:00');
+          if(slotMin <= bIniZ && slotFim > bIniZ) zCelula = 'z-index:6;';
+        }
+        const almocoShadow = (slotMin>=720 && slotMin<780) ? 'box-shadow:inset 0 2px 0 var(--border-s), inset 0 -2px 0 var(--border-s), inset 0 0 0 999px rgba(15,23,42,.045);' : '';
+        body += `<div style="flex:1;min-width:${SALA_MIN_W}px;height:${SLOT_H}px;position:relative;${zCelula}${almocoShadow}border-right:${isLastSala?'3px solid var(--border-s)':'1px solid var(--border)'};background:${bgBloq};${(estaBloqueado||!podeAgenda)?'cursor:default':'cursor:pointer'}" ${hoverHandlers} ${onClickCell}>`;
         // Card de bloqueio — só mostra na primeira célula do bloqueio, igual à visão por Dia
         if(estaBloqueado){
           const bRef = blq || erBlq;
@@ -23821,6 +23833,7 @@ function renderAgendaCell(col, modo, slotIni, slotFim, dataIso, diaSemana, iniMi
 
   let cls='ag-cell';
   if(slotIni % 60 === 0) cls+=' ag-cell-hour';
+  if(slotIni>=720 && slotIni<780) cls+=' ag-almoco'; // 12:00–13:00, horário de almoço
   if(bloqueado || erBloqueado) cls+=' ag-bloqueado';
   else if(!disponivel) cls+=' ag-fora';
   else cls+=' ag-empty';
@@ -24683,6 +24696,7 @@ function excluirAgendamento(){
     'salvarPendenciaModal','salvarCheckinValor','salvarCheckinItem','salvarFeriado',
     'salvarAgendaProfissional','salvarDisponibilidade','salvarBloqueio','salvarLinkAgenda',
     'salvarAgendamento','excluirAgendamento',
+    'erSalvar','erExcluir',
     'togglePendenciaCentral','excluirPendenciaCentral','removerPendenciaAvulsa',
     'salvarRecontato','addRegraRecontato','deleteRegraRecontato',
     // Structural actions that immediately change data (add/remove items)
