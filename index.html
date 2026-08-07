@@ -7793,6 +7793,37 @@ let camposCadastro = carregarLS('sk3-camposcadastro', CAMPOS_CADASTRO_PADRAO);
   salvarLS('sk3-migracao-dedup-campos-v1', true);
 })();
 
+// Migração única (v2): a faxina acima (v1) só juntava campos com o MESMO rótulo,
+// letra por letra. Em alguns cadastros o campo de e-mail "avulso" tinha um nome
+// levemente diferente do oficial (ex: "Email" em vez de "E-mail", ou com espaço/
+// hífen a mais), então não era reconhecido como duplicata e continuava aparecendo
+// junto do campo oficial. Aqui comparamos os rótulos ignorando espaços, hífen e
+// maiúsculas/minúsculas, só para o e-mail, e fundimos tudo no campo oficial (id
+// 'email'), preservando o dado já preenchido — sem perder nada dos pacientes.
+(function _migrarCamposCadastroEmailDuplicado(){
+  if(carregarLS('sk3-migracao-dedup-email-v2', false)) return;
+  const normalizaEmailLabel = s => (s||'').trim().toLowerCase().replace(/[\s\-]/g,'');
+  const candidatos = camposCadastro.filter(c=>!c.locked && normalizaEmailLabel(c.label)==='email');
+  if(candidatos.length>1){
+    const canonico = candidatos.find(c=>c.id==='email') || candidatos[0];
+    const idsRemover=[];
+    candidatos.forEach(c=>{
+      if(c.id===canonico.id) return;
+      pacientes.forEach(p=>{
+        const cf=p.customFields||{};
+        const val=cf[c.id];
+        if(val && !cf[canonico.id]){ cf[canonico.id]=val; }
+        delete cf[c.id];
+      });
+      idsRemover.push(c.id);
+    });
+    camposCadastro = camposCadastro.filter(c=>!idsRemover.includes(c.id));
+    salvarLS('sk3-camposcadastro', camposCadastro);
+    salvarLS('sk3-pacientes', pacientes);
+  }
+  salvarLS('sk3-migracao-dedup-email-v2', true);
+})();
+
 // ── EMPRESA — campos configuráveis do cadastro ──────────────────────────
 // id 'razaoSocial','nomeFantasia','cnpj': campos do sistema (locked), usados como
 // identificador da empresa nos cartões/seletores. Os demais são livres.
@@ -11340,7 +11371,7 @@ function gerarPdfOrcamento(){
       const parcelas=pg.parcelas||1;
       const destaque=desconto>0&&desconto===maiorDesconto;
       let linha1,linha2Html;
-      if(pg.tipo==='credito'&&parcelas>1){
+      if((pg.tipo==='credito'||pg.tipo==='boleto')&&parcelas>1){
         linha1=`${parcelas}x de R$ ${fmtMoedaPdf(final/parcelas)}`;
         linha2Html=`<div class="pag-l2">Total R$ ${fmtMoedaPdf(final)}</div>`;
       } else {
@@ -11608,7 +11639,7 @@ function _renderOrcPagamentos(){
     const final=(pg.valorTotal||0)*(1-desconto/100);
     const parcelas=pg.parcelas||1;
     let desc='';
-    if(pg.tipo==='credito'&&parcelas>1) desc=parcelas+'x de R$ '+(final/parcelas).toLocaleString('pt-BR',{minimumFractionDigits:2})+(desconto>0?' ('+desconto+'% off)':'');
+    if((pg.tipo==='credito'||pg.tipo==='boleto')&&parcelas>1) desc=parcelas+'x de R$ '+(final/parcelas).toLocaleString('pt-BR',{minimumFractionDigits:2})+(desconto>0?' ('+desconto+'% off)':'');
     else if(desconto>0) desc=desconto+'% de desconto \u2192 R$ '+final.toLocaleString('pt-BR',{minimumFractionDigits:2});
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r8);margin-bottom:6px;background:var(--surface)">'
       +'<div style="display:flex;align-items:center;gap:10px">'
@@ -11711,7 +11742,7 @@ function _criarModalFormaPagamento(){
 function _orcAtualizarCamposPagto(){
   const tipo=(document.getElementById('pgto-tipo')||{}).value||'dinheiro';
   const parc=document.getElementById('pgto-campos-parcelas');
-  if(parc) parc.style.display=(tipo==='credito')?'block':'none';
+  if(parc) parc.style.display=(tipo==='credito'||tipo==='boleto')?'block':'none';
   _orcAtualizarPreviewPagto();
 }
 
@@ -11724,7 +11755,7 @@ function _orcAtualizarPreviewPagto(){
   const parcelas=parseInt((document.getElementById('pgto-parcelas')||{}).value)||1;
   const final=valor*(1-desconto/100);
   let txt='';
-  if(tipo==='credito' && parcelas>1){
+  if((tipo==='credito'||tipo==='boleto') && parcelas>1){
     const parcVal=final/parcelas;
     txt=`${parcelas}x de R$ ${parcVal.toLocaleString('pt-BR',{minimumFractionDigits:2})}${desconto>0?` (${desconto}% off sobre R$ ${valor.toLocaleString('pt-BR',{minimumFractionDigits:2})})`:''} = R$ ${final.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
   } else {
@@ -16318,7 +16349,7 @@ function renderAbaAnamnese(p){
 function _campoInputEdicaoHtml(c, val, valCond){
   const idBase = 'mea-' + c.id;
   if(c.tipo === 'sim_nao'){
-    const opts = [['sim','Sim'],['nao','Não'],['outro','Prefiro não informar']];
+    const opts = [['sim','Sim'],['nao','Não']];
     const radios = opts.map(([v,label])=>`<label style="display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r8);cursor:pointer">
         <input type="radio" name="${idBase}" value="${v}" ${val===v?'checked':''}> ${label}
       </label>`).join('');
@@ -16555,7 +16586,6 @@ function exportarAnamnesePDF(pacienteId){
         areaResposta = `<div style="display:flex;gap:16px;margin-top:4px">
           <label style="display:flex;align-items:center;gap:6px;font-size:13px"><span style="display:inline-block;width:16px;height:16px;border:1.5px solid #374151;border-radius:50%"></span> Sim</label>
           <label style="display:flex;align-items:center;gap:6px;font-size:13px"><span style="display:inline-block;width:16px;height:16px;border:1.5px solid #374151;border-radius:50%"></span> Não</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:13px"><span style="display:inline-block;width:16px;height:16px;border:1.5px solid #374151;border-radius:50%"></span> Prefiro não informar</label>
         </div>
         ${c.condicionalLabel ? `<div style="margin-top:8px;font-size:12px;color:#6B7280">${c.condicionalLabel}: <span style="display:inline-block;width:200px;border-bottom:1px solid #aaa;margin-left:4px">&nbsp;</span></div>` : ''}`;
       } else if(c.tipo === 'selecao' && c.opcoes && c.opcoes.length){
@@ -26232,7 +26262,7 @@ var _MASK_META = {
 function _renderCampoPublico(c){
   if(c.tipo==='sim_nao'){
     var cond=c.condicionalLabel?'<div class="cond-field" id="cond-'+c.id+'"><label style="font-size:13px;color:#6B7280;font-weight:400;margin-bottom:6px">'+c.condicionalLabel+'</label><input type="text" id="cond-input-'+c.id+'" placeholder="Escreva aqui..."></div>':'';
-    return '<div class="radio-group-row"><label class="radio-opt"><input type="radio" name="'+c.id+'" value="sim" onchange="toggleCondP(this.name,true)"> Sim</label><label class="radio-opt"><input type="radio" name="'+c.id+'" value="nao" onchange="toggleCondP(this.name,false)"> Não</label><label class="radio-opt"><input type="radio" name="'+c.id+'" value="outro" onchange="toggleCondP(this.name,false)"> Prefiro não informar</label></div>'+cond;
+    return '<div class="radio-group-row"><label class="radio-opt"><input type="radio" name="'+c.id+'" value="sim" onchange="toggleCondP(this.name,true)"> Sim</label><label class="radio-opt"><input type="radio" name="'+c.id+'" value="nao" onchange="toggleCondP(this.name,false)"> Não</label></div>'+cond;
   }
   if(c.tipo==='data'){
     return '<input type="date" id="'+c.id+'" style="width:100%;padding:10px 12px;border:1.5px solid #DDE0E7;border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:#111827">';
