@@ -991,7 +991,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="hdr-alert" id="hdr-alert" onclick="goTo('hoje')"></div>
     <div id="hdr-impersonar-wrap" style="display:none;align-items:center;gap:6px">
       <span style="font-size:11px;color:var(--dk-tx2)">Ver como:</span>
-      <select id="hdr-usuario-atual" onchange="onChangeUsuarioAtual(this.value)" style="font-size:12px;padding:4px 8px;border-radius:var(--r6);border:1px solid var(--dk-border);background:var(--dk-bg2);color:var(--dk-tx)"></select>
+      <select id="hdr-usuario-atual" onchange="onChangeUsuarioAtual(this.value)" style="font-size:12px;padding:4px 8px;border-radius:var(--r6);border:1px solid var(--dk-border);background:var(--dk-bg2);color:var(--dk-tx);color-scheme:light"></select>
       <button id="hdr-voltar-eu" onclick="voltarParaUsuarioPrincipal()" title="Voltar a ser você mesmo" style="display:none;font-size:11px;padding:4px 8px;border-radius:var(--r6);border:1px solid var(--dk-border);background:var(--dk-bg3);color:var(--dk-tx2);cursor:pointer">↩ Voltar</button>
     </div>
     <span id="hdr-usuario-logado" style="font-size:12px;color:var(--dk-tx2)"></span>
@@ -5124,8 +5124,23 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
+<!-- MODAL ESCOLHA: AGENDAMENTO OU BLOQUEIO (ao clicar numa célula vazia da agenda) -->
+<div class="modal-ov" id="modal-escolha-ag">
+  <div class="modal" style="width:340px;height:auto;max-height:none">
+    <div class="modal-header ag-modal-header">
+      <div class="modal-title" style="margin-bottom:0">O que você quer criar?</div>
+      <button class="ag-modal-close" onclick="fecharModal('modal-escolha-ag')" aria-label="Fechar">&times;</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="agEscolhaConfirmar('agendamento')">📅 Agendamento</button>
+      <button class="btn btn-ghost" style="width:100%;justify-content:center;padding:12px;border:1px solid var(--border)" onclick="agEscolhaConfirmar('bloqueio')">🚫 Bloqueio / evento</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL EVENTOS RECORRENTES -->
 <div class="modal-ov" id="modal-eventos-recorrentes">
+
   <div class="modal" style="width:560px;max-height:90vh;display:flex;flex-direction:column">
     <div class="modal-header ag-modal-header">
       <div class="modal-title" id="er-titulo" style="margin-bottom:0">Eventos Recorrentes</div>
@@ -11742,12 +11757,11 @@ function _orcAtualizarCamposPagto(){
   if(parc) parc.style.display=(tipo==='credito'||tipo==='boleto')?'block':'none';
   const sel=document.getElementById('pgto-parcelas');
   if(sel){
-    const valorAnterior=sel.value;
     const opcoes = tipo==='boleto'
       ? Array.from({length:24},(_,i)=>i+1)
       : [2,3,4,5,6,7,8,9,10,11,12];
     sel.innerHTML = opcoes.map(n=>`<option value="${n}">${n}x</option>`).join('');
-    sel.value = opcoes.includes(parseInt(valorAnterior)) ? valorAnterior : String(opcoes[0]);
+    sel.value = String(opcoes[0]);
   }
   _orcAtualizarPreviewPagto();
 }
@@ -21562,6 +21576,49 @@ function toggleBlqDiaTodo(){
   document.getElementById('blq-hora-fim-wrap').style.display = diaTodo ? 'none' : '';
 }
 
+// ── ESCOLHA AO CLICAR NUMA CÉLULA VAZIA DA AGENDA: Agendamento ou Bloqueio ──
+let _agEscolhaCtx = null;
+function agAbrirEscolhaCelula(dataIso, hora, salaId, usuarioId){
+  _agEscolhaCtx = {dataIso, hora, salaId: salaId||null, usuarioId: usuarioId||null};
+  document.getElementById('modal-escolha-ag').classList.add('open');
+}
+function agEscolhaConfirmar(opcao){
+  const ctx = _agEscolhaCtx;
+  _agEscolhaCtx = null;
+  fecharModal('modal-escolha-ag');
+  if(!ctx) return;
+  if(opcao==='agendamento'){
+    abrirModalAgendamento(null, ctx.dataIso, ctx.hora, ctx.salaId, ctx.usuarioId);
+  } else {
+    abrirModalBloqueioPreenchido(ctx);
+  }
+}
+// Abre o modal de bloqueio já com a data/horário/sala/profissional da célula que foi
+// clicada na agenda — a pessoa só confirma ou ajusta, sem ter que preencher tudo de novo.
+function abrirModalBloqueioPreenchido(ctx){
+  abrirModalBloqueio(null);
+  if(ctx.dataIso){
+    document.getElementById('blq-data-ini').value = ctx.dataIso;
+    document.getElementById('blq-data-fim').value = ctx.dataIso;
+  }
+  const tipoSel = document.getElementById('blq-tipo');
+  if(ctx.salaId && !ctx.usuarioId){
+    tipoSel.value = 'sala';
+    document.getElementById('blq-sala').value = ctx.salaId;
+  } else if(ctx.usuarioId && !ctx.salaId){
+    tipoSel.value = 'profissional';
+    document.getElementById('blq-usuario').value = ctx.usuarioId;
+  }
+  blqAtualizarCampos();
+  // Desliga "dia todo" pra já vir com o horário clicado preenchido, em vez do padrão do dia inteiro
+  const sw = document.getElementById('blq-dia-todo-sw');
+  if(sw && sw.classList.contains('on')) toggleBlqDiaTodo();
+  if(ctx.hora){
+    document.getElementById('blq-hora-ini').value = ctx.hora;
+    document.getElementById('blq-hora-fim').value = somarMinutosHora(ctx.hora, 30);
+  }
+}
+
 function abrirModalBloqueio(i){
   const b = i!=null ? bloqueios[i] : null;
   document.getElementById('blq-titulo').textContent = b ? 'Editar bloqueio / evento' : 'Novo bloqueio / evento';
@@ -23426,7 +23483,7 @@ function renderAgendaSemana(d){
         // fundo: bloqueio = listras vermelhas marcantes, normal = tingimento leve da cor da sala
         const bgBloq = estaBloqueado ? 'repeating-linear-gradient(135deg,#F1B4B4 0 5px,#FBDADA 5px 10px)' : agColTint(sala.cor,0.05);
         const podeAgenda = temPerm('agenda_gerenciar');
-        const onClickCell = (estaBloqueado || !podeAgenda) ? '' : `onclick="abrirModalAgendamento(null,'${dIso}','${minParaHora(slotMin)}','${sala.id}',null)"`;
+        const onClickCell = (estaBloqueado || !podeAgenda) ? '' : `onclick="agAbrirEscolhaCelula('${dIso}','${minParaHora(slotMin)}','${sala.id}',null)"`;
         const hoverHandlers = (estaBloqueado || !podeAgenda) ? '' : `onmouseenter="this.style.background='var(--ag-acc-soft)'" onmouseleave="this.style.background='${bgBloq}'"`;
         body += `<div style="flex:1;min-width:${SALA_MIN_W}px;height:${SLOT_H}px;position:relative;border-right:${isLastSala?'2px':'1px'} solid var(--border);background:${bgBloq};${(estaBloqueado||!podeAgenda)?'cursor:default':'cursor:pointer'}" ${hoverHandlers} ${onClickCell}>`;
         // Card de bloqueio — só mostra na primeira célula do bloqueio, igual à visão por Dia
@@ -23768,9 +23825,9 @@ function renderAgendaCell(col, modo, slotIni, slotFim, dataIso, diaSemana, iniMi
   let onclick='';
   if(!bloqueado && !erBloqueado && !agsNoSlot.length && temPerm('agenda_gerenciar')){
     if(modo==='sala'){
-      onclick = `onclick="abrirModalAgendamento(null,'${dataIso}','${minParaHora(slotIni)}','${col.id}')"`;
+      onclick = `onclick="agAbrirEscolhaCelula('${dataIso}','${minParaHora(slotIni)}','${col.id}',null)"`;
     } else {
-      onclick = `onclick="abrirModalAgendamento(null,'${dataIso}','${minParaHora(slotIni)}',null,'${col.id}')"`;
+      onclick = `onclick="agAbrirEscolhaCelula('${dataIso}','${minParaHora(slotIni)}',null,'${col.id}')"`;
     }
   }
 
@@ -24418,6 +24475,29 @@ function _salvarAgendamentoInterno(){
   if(horaInicio>=horaFim){ alert('A hora de início deve ser anterior à hora de fim.'); return; }
   const usuarioId=document.getElementById('agm-profissional').value;
   const salaId=document.getElementById('agm-sala').value;
+
+  // Impede agendar em cima de um horário bloqueado (profissional indisponível ou sala
+  // bloqueada) — só verifica quando o dia/horário/sala/profissional está de fato mudando
+  // (agendamento novo, ou edição que move o horário), pra não travar quem só está
+  // atualizando status/observação de um agendamento antigo que ficou dentro de um
+  // bloqueio criado depois dele.
+  {
+    const original = editId ? agendamentos.find(a=>a.id===editId) : null;
+    const mudouSlot = !original || original.data!==data || original.horaInicio!==horaInicio ||
+      original.horaFim!==horaFim || original.salaId!==salaId || original.usuarioId!==usuarioId;
+    if(mudouSlot){
+      const iniMin=horaParaMin(horaInicio), fimMin=horaParaMin(horaFim);
+      const bloqueioProf = bloqueios.find(b=>(b.tipo==='profissional'||b.tipo==='ambos') && b.usuarioId===usuarioId && bloqueioCobre(b,data,iniMin,fimMin));
+      const bloqueioSala = bloqueios.find(b=>(b.tipo==='sala'||b.tipo==='ambos') && b.salaId===salaId && bloqueioCobre(b,data,iniMin,fimMin));
+      const bAlvo = bloqueioProf || bloqueioSala;
+      if(bAlvo){
+        const quem = bloqueioProf ? 'A profissional selecionada está indisponível' : 'A sala selecionada está bloqueada';
+        alert(`${quem} nesse dia/horário${bAlvo.motivo?` (${bAlvo.motivo})`:''}. Escolha outro horário, sala ou profissional.`);
+        return;
+      }
+    }
+  }
+
   const status=document.getElementById('agm-status').value;
   const procedimentoEl=document.getElementById('agm-procedimento');
   let procedimento=procedimentoEl ? procedimentoEl.value.trim() : '';
