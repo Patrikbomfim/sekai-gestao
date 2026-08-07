@@ -5131,7 +5131,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="modal-title" style="margin-bottom:0">O que você quer criar?</div>
       <button class="ag-modal-close" onclick="fecharModal('modal-escolha-ag')" aria-label="Fechar">&times;</button>
     </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;gap:10px">
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;padding-top:18px;padding-bottom:24px">
       <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="agEscolhaConfirmar('agendamento')">📅 Agendamento</button>
       <button class="btn btn-ghost" style="width:100%;justify-content:center;padding:12px;border:1px solid var(--border)" onclick="agEscolhaConfirmar('bloqueio')">🚫 Bloqueio / evento</button>
     </div>
@@ -5525,7 +5525,7 @@ function popularUsuarioAtual(){
   if(!sel)return;
   if(!usuarios.find(u=>u.id===usuarioAtualId)) usuarioAtualId=usuarios[0]?.id||null;
   const principal = getUsuarioPrincipal();
-  sel.innerHTML=usuarios.map(u=>`<option value="${u.id}" style="color:#0a0a0a" ${u.id===usuarioAtualId?'selected':''}>${u.nome}${principal && u.id===principal.usuarioId?' (você)':''}</option>`).join('');
+  sel.innerHTML=usuarios.map(u=>`<option value="${u.id}" style="color:#0a0a0a;background:#ffffff" ${u.id===usuarioAtualId?'selected':''}>${u.nome}${principal && u.id===principal.usuarioId?' (você)':''}</option>`).join('');
   atualizarIndicadorImpersonar();
 }
 function onChangeUsuarioAtual(id){
@@ -13118,7 +13118,10 @@ function _aprovAddEntrada(){
 function _aprovRemoverEntrada(idx){ _aprovEntradas.splice(idx,1); _aprovRenderEntradas(); }
 function _aprovChangeTipo(idx,val){
   _aprovEntradas[idx].tipo=val;
-  if(val==='parcelado_boleto') _aprovInicializarBoleto(idx);
+  if(val==='parcelado_boleto'){
+    _aprovEntradas[idx].nParcelas=1;
+    _aprovInicializarBoleto(idx,true);
+  }
   _aprovRenderEntradas();
 }
 function _aprovChangeValor(idx,el){
@@ -13134,7 +13137,7 @@ function _aprovChangeDesconto(idx,val){
   _aprovAtualizarSaldo(); _aprovGerarPreview();
 }
 function _aprovChangeNParc(idx,val){
-  _aprovEntradas[idx].nParcelas=parseInt(val)||2;
+  _aprovEntradas[idx].nParcelas=parseInt(val)||1;
   if(_aprovEntradas[idx].tipo==='parcelado_boleto') _aprovInicializarBoleto(idx,true);
   _aprovRenderEntradas();
 }
@@ -13150,7 +13153,7 @@ function _aprovUpdateBoleto(ei,pi,campo,val){
 }
 function _aprovInicializarBoleto(idx,force){
   const e=_aprovEntradas[idx];
-  const n=e.nParcelas||2;
+  const n=e.nParcelas||1;
   // Trabalha em centavos inteiros para evitar erro de ponto flutuante
   const totalCents=Math.round(e.valor*(1-(e.desconto||0)/100)*100);
   const parcCents=Math.floor(totalCents/n);
