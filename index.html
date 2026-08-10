@@ -22996,7 +22996,7 @@ function _agResizeEnd(e){
     const novoFim = minParaHora(novoFimMin);
     if(novoIni!==a.horaInicio || novoFim!==a.horaFim){
       a.horaInicio=novoIni; a.horaFim=novoFim;
-      salvarLS('sk3-agendamentos', agendamentos);
+      _comSalvarImediato(()=>{ salvarLS('sk3-agendamentos', agendamentos); });
     }
   }
   _agResizeState=null;
@@ -23077,7 +23077,7 @@ function _agMoveEnd(e){
     const novaData = mcDay.dataset.mcDate;
     if(novaData && novaData!==a.data){
       a.data = novaData;
-      salvarLS('sk3-agendamentos', agendamentos);
+      _comSalvarImediato(()=>{ salvarLS('sk3-agendamentos', agendamentos); });
       showSaveToast('Agendamento movido para '+_finFmtData(novaData));
     }
     renderAgenda();
@@ -23107,7 +23107,7 @@ function _agMoveEnd(e){
   if(modo==='sala' && colId && colId!==String(a.salaId)){ a.salaId=colId; mudou=true; }
   if(modo==='profissional' && colId && colId!==String(a.usuarioId)){ a.usuarioId=colId; mudou=true; }
 
-  if(mudou) salvarLS('sk3-agendamentos', agendamentos);
+  if(mudou) _comSalvarImediato(()=>{ salvarLS('sk3-agendamentos', agendamentos); });
   renderAgenda();
 }
 
