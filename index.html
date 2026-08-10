@@ -7025,6 +7025,7 @@ const PERMISSOES_GRUPOS = [
       {id:'pacientes_prontuario_criar',label:'Criar registro'},
       {id:'pacientes_prontuario_editar',label:'Editar registro'},
       {id:'pacientes_prontuario_excluir',label:'Excluir registro'},
+      {id:'pacientes_prontuario_desfazer_outros',label:'Desfazer execução de procedimentos realizados por outros profissionais (sem esta permissão, só desfaz os que ele mesmo executou)'},
     ]
   },
   {
@@ -7467,7 +7468,7 @@ const CARGOS_PADRAO = [
       'pacientes_ver','pacientes_criar','pacientes_editar','pacientes_excluir',
       'pacientes_orcamento_ver','pacientes_orcamento_criar','pacientes_orcamento_editar','pacientes_orcamento_excluir',
       'pacientes_financeiro_ver','pacientes_financeiro_criar','pacientes_financeiro_editar','pacientes_financeiro_excluir',
-      'pacientes_prontuario_ver','pacientes_prontuario_criar','pacientes_prontuario_editar','pacientes_prontuario_excluir',
+      'pacientes_prontuario_ver','pacientes_prontuario_criar','pacientes_prontuario_editar','pacientes_prontuario_excluir','pacientes_prontuario_desfazer_outros',
       'pacientes_documentos_ver','pacientes_documentos_criar','pacientes_documentos_excluir',
       'pacientes_fotos_ver','pacientes_fotos_criar','pacientes_fotos_excluir',
       'orcamentos_geral_ver',
@@ -13443,8 +13444,11 @@ function _renderProntPlano(p){
                   :`<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#F3F4F6;color:#6B7280">Não realizado</span>`}
               </td>
               <td style="padding:10px 10px;text-align:center">
-                ${exec?`<button onclick="_prontDesfazerItem('${orc.id}',${idx})" style="font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--tx3)">Desfazer</button>`
-                  :`<button onclick="_prontAprovarItem('${orc.id}',${idx})" style="font-size:11px;padding:3px 10px;border:1px solid #065F46;border-radius:var(--r4);background:#065F46;color:#fff;cursor:pointer;font-weight:600">Realizar</button>`}
+                ${exec
+                  ? (_prontPodeDesfazer(it)
+                      ? `<button onclick="_prontDesfazerItem('${orc.id}',${idx})" style="font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--tx3)">Desfazer</button>`
+                      : `<span style="font-size:11px;color:var(--tx3)" title="Só quem executou (ou um administrador/gestor/secretária) pode desfazer">—</span>`)
+                  : `<button onclick="_prontAprovarItem('${orc.id}',${idx})" style="font-size:11px;padding:3px 10px;border:1px solid #065F46;border-radius:var(--r4);background:#065F46;color:#fff;cursor:pointer;font-weight:600">Realizar</button>`}
               </td>
             </tr>`;
           }).join('')}
@@ -13455,6 +13459,18 @@ function _renderProntPlano(p){
     </div>`;
   });
   wrap.innerHTML=html;
+}
+
+// Quem pode desfazer a execução de UM item específico do plano de tratamento:
+// - administrador real, ou quem tem a permissão "desfazer de outros" (Gestor/Secretária); ou
+// - a própria pessoa que executou aquele procedimento (casa pelo usuarioId gravado na hora
+//   de marcar como Realizado; se o item for antigo e não tiver esse id, cai pro nome).
+// Sem isso, um profissional poderia desfazer a execução registrada por outro colega.
+function _prontPodeDesfazer(it){
+  if(souAdministradorReal() || temPerm('pacientes_prontuario_desfazer_outros')) return true;
+  if(it.execProfissionalUsuarioId) return String(it.execProfissionalUsuarioId)===String(usuarioAtualId);
+  const meuNome=(usuarios.find(u=>u.id===usuarioAtualId)||{}).nome||'';
+  return !!(it.execProfissional && meuNome && it.execProfissional===meuNome);
 }
 
 function _prontTogglePlano(uid){
@@ -13556,6 +13572,14 @@ function _prontAprovarItem(orcId,idx){
 }
 
 function _prontDesfazerItem(orcId,idx){
+  const listAtual=_orcamentos();
+  const orcAtual=listAtual.find(o=>o.id===orcId);
+  const itAtual=orcAtual&&orcAtual.itens?orcAtual.itens[idx]:null;
+  if(!itAtual) return;
+  if(!_prontPodeDesfazer(itAtual)){
+    alert('Só quem executou este procedimento (ou um administrador, gestor ou secretária) pode desfazer a execução.');
+    return;
+  }
   let bloqueado=false;
   _comSalvarImediato(()=>{
     const list=_orcamentos();
@@ -13600,6 +13624,11 @@ function _renderProntFicha(p){
     <div style="font-size:13px;color:var(--tx);white-space:pre-line;line-height:1.55">${val}</div>
   </div>`:'';
 
+  const fieldSempre=(label,val)=>`<div style="margin-bottom:10px">
+    <div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">${label}</div>
+    <div style="font-size:13px;color:${val?'var(--tx)':'var(--tx3)'};white-space:pre-line;line-height:1.55">${val||'—'}</div>
+  </div>`;
+
   wrap.innerHTML=fichas.map(f=>{
     const temAnexo=!!(f.anexoNome);
     return `
@@ -13641,20 +13670,17 @@ function _renderProntFicha(p){
 
         <!-- Col 2: Descrição -->
         <div style="padding:14px 14px;border-right:1px solid var(--border)">
-          ${field('Descrição do atendimento', f.descricao)}
-          ${!f.descricao?'<div style="font-size:12px;color:var(--tx3)">—</div>':''}
+          ${fieldSempre('Descrição do atendimento', f.descricao)}
         </div>
 
         <!-- Col 3: Orientações -->
         <div style="padding:14px 14px;border-right:1px solid var(--border)">
-          ${field('Orientações ao paciente', f.orientacoes)}
-          ${!f.orientacoes?'<div style="font-size:12px;color:var(--tx3)">—</div>':''}
+          ${fieldSempre('Orientações ao paciente', f.orientacoes)}
         </div>
 
         <!-- Col 4: Próxima consulta -->
         <div style="padding:14px 14px">
-          ${field('Detalhes próxima consulta', f.proximaConsulta)}
-          ${!f.proximaConsulta?'<div style="font-size:12px;color:var(--tx3)">—</div>':''}
+          ${fieldSempre('Próxima consulta', f.proximaConsulta)}
         </div>
 
       </div>
