@@ -1274,7 +1274,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="pp-menu-btn on" id="pp-menu-dados" onclick="switchPpArea('dados')">Cadastro</button>
       <button class="pp-menu-btn" id="pp-menu-agenda" onclick="switchPpArea('agenda')">Agendamentos</button>
       <div style="height:1px;background:var(--border);margin:6px 2px"></div>
-      <button class="pp-menu-btn" id="pp-menu-anamnese" onclick="switchPpArea('anamnese')">Anamnese inicial</button>
+      <button class="pp-menu-btn" id="pp-menu-anamnese" onclick="switchPpArea('anamnese')">Anamnese pré consulta</button>
       <div style="height:1px;background:var(--border);margin:6px 2px"></div>
       <button class="pp-menu-btn" id="pp-menu-orcamento" onclick="switchPpArea('orcamento')">Orçamento</button>
       <button class="pp-menu-btn" id="pp-menu-financeiro" onclick="switchPpArea('financeiro')">Financeiro</button>
@@ -1350,15 +1350,15 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div id="pp-agenda-wrap"></div>
       </div>
 
-      <!-- ANAMNESE INICIAL -->
+      <!-- ANAMNESE PRÉ CONSULTA -->
       <div class="pp-area" id="pp-area-anamnese">
-        <div class="pp-area-title">Anamnese inicial</div>
-        <div class="pp-area-desc">Ficha de saúde geral preenchida pelo paciente antes do início do tratamento.</div>
+        <div class="pp-area-title">Anamnese pré consulta</div>
+        <div class="pp-area-desc">Ficha rápida preenchida pelo paciente pelo celular, antes da primeira consulta.</div>
         <div class="card" id="pp-anamnese-wrap">
           <div class="empty" style="padding:32px 0;text-align:center">
             <div style="font-size:32px;margin-bottom:8px">🩺</div>
             <div style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:4px">Anamnese não preenchida</div>
-            <div style="font-size:12px;color:var(--tx3);margin-bottom:16px">O paciente ainda não respondeu a ficha de anamnese inicial.</div>
+            <div style="font-size:12px;color:var(--tx3);margin-bottom:16px">O paciente ainda não respondeu a ficha de anamnese pré consulta.</div>
             <button class="btn btn-primary btn-sm" onclick="alert('Em desenvolvimento')">Enviar link de anamnese</button>
           </div>
         </div>
@@ -4332,7 +4332,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <textarea id="mca-opcoes" rows="4" placeholder="Sim&#10;Não&#10;Às vezes"></textarea>
         </div>
         <div class="fl fg-full" id="mca-condicional-wrap" style="display:none">
-          <label>Se SIM, mostrar campo de texto adicional com label:</label>
+          <label>Mostrar campo de texto adicional (se responder Sim, ou selecionar "Outro" numa lista) com label:</label>
           <input type="text" id="mca-condicional-label" placeholder="Ex: Qual alergia?">
         </div>
       </div>
@@ -16464,16 +16464,50 @@ document.addEventListener('click', e => {
 
 // ── Dados ──────────────────────────────────────────────────────────────
 const CAMPOS_ANAMNESE_PADRAO = [
-  {id:'an_queixa',    label:'Qual o motivo da sua consulta hoje?',           tipo:'texto',   obrigatorio:true,  locked:true},
+  // Identificação — preenchem automaticamente o cadastro do paciente
+  {id:'an_custom_1782694710595', label:'Nome completo',        tipo:'texto', obrigatorio:false, locked:false, vinculoCadastro:'nome'},
+  {id:'an_custom_1782694383654', label:'Data de nascimento',   tipo:'data',  obrigatorio:false, locked:false, vinculoCadastro:'nasc'},
+  {id:'an_custom_1782694716492', label:'Telefone / WhatsApp',  tipo:'texto', obrigatorio:false, locked:false, vinculoCadastro:'fone'},
+  {id:'an_custom_1782694720865', label:'CPF',                  tipo:'texto', obrigatorio:false, locked:false, vinculoCadastro:'cpf'},
+  {id:'an_custom_1782695883711', label:'Email',                tipo:'texto', obrigatorio:false, locked:false, vinculoCadastro:'custom_1781482166892'},
+
+  // Motivo da consulta e desejos de tratamento
+  {id:'an_queixa', label:'Qual o motivo da sua consulta hoje?', tipo:'selecao', obrigatorio:true, locked:true,
+    opcoes:['Avaliação geral / check-up','Dor ou desconforto','Estética do sorriso','Ortodontia (aparelho)','Prótese ou implante','Limpeza / prevenção','Outro'],
+    condicionalLabel:'Qual?'},
+  {id:'an_tratamento_desejado', label:'Além do motivo de hoje, o que você gostaria de melhorar no seu sorriso?', tipo:'multiplo', obrigatorio:false, locked:false,
+    opcoes:['Nada em especial, quero uma avaliação','Aparência / cor dos dentes','Dentes tortos ou desalinhados','Falta de dente(s)','Sangramento na gengiva','Outro'],
+    condicionalLabel:'Qual?'},
+
+  // Saúde básica (segurança clínica)
   {id:'an_medicamentos', label:'Você usa algum medicamento de uso contínuo?', tipo:'sim_nao', obrigatorio:true,  locked:false, condicionalLabel:'Quais medicamentos?'},
   {id:'an_alergia',   label:'Você tem alergia a alguma medicação?',          tipo:'sim_nao', obrigatorio:true,  locked:false, condicionalLabel:'A qual medicação?'},
   {id:'an_pressao',   label:'Tem pressão alta ou problema cardíaco?',        tipo:'sim_nao', obrigatorio:true,  locked:false, condicionalLabel:'Descreva:'},
-  {id:'an_diabetes',  label:'Tem diabetes?',                                 tipo:'sim_nao', obrigatorio:true, locked:false},
-  {id:'an_gestante',  label:'Está grávida ou amamentando?',                  tipo:'sim_nao', obrigatorio:true, locked:false},
-  {id:'an_fumante',   label:'É fumante?',                                    tipo:'sim_nao', obrigatorio:true, locked:false},
-  {id:'an_hemorragia',label:'Tem ou já teve problema de hemorragia/coagulação?', tipo:'sim_nao', obrigatorio:true, locked:false},
-  {id:'an_cirurgia',  label:'Já fez alguma cirurgia ou internação recente?', tipo:'sim_nao', obrigatorio:true, locked:false, condicionalLabel:'Qual?'},
-  {id:'an_obs',       label:'Alguma informação adicional que queira nos contar?', tipo:'texto', obrigatorio:false, locked:false},
+  {id:'an_diabetes',  label:'Tem diabetes?',                                 tipo:'sim_nao', obrigatorio:false, locked:false},
+  {id:'an_gestante',  label:'Está grávida ou amamentando?',                  tipo:'sim_nao', obrigatorio:false, locked:false},
+  {id:'an_fumante',   label:'É fumante?',                                    tipo:'sim_nao', obrigatorio:false, locked:false},
+  {id:'an_hemorragia',label:'Tem ou já teve problema de hemorragia/coagulação?', tipo:'sim_nao', obrigatorio:false, locked:false},
+  {id:'an_cirurgia',  label:'Já fez alguma cirurgia ou internação recente?', tipo:'sim_nao', obrigatorio:false, locked:false, condicionalLabel:'Qual?'},
+
+  // Perfil odontológico
+  {id:'an_ultima_visita', label:'Qual a última vez que foi ao dentista?', tipo:'selecao', obrigatorio:false, locked:false,
+    opcoes:['Nos últimos 6 meses','Entre 6 meses e 1 ano','Entre 1 e 2 anos','Mais de 2 anos','Não lembro / nunca fui']},
+  {id:'an_satisfacao_sorriso', label:'Você está satisfeito(a) com a estética do seu sorriso?', tipo:'selecao', obrigatorio:false, locked:false,
+    opcoes:['Sim, estou satisfeito(a)','Mais ou menos, gostaria de melhorar alguns pontos','Não, quero melhorar bastante']},
+  {id:'an_medo_dentista', label:'Tem medo ou ansiedade de ir ao dentista?', tipo:'selecao', obrigatorio:false, locked:false,
+    opcoes:['Não, fico tranquilo(a)','Um pouco de ansiedade','Sim, tenho bastante medo']},
+  {id:'an_como_conheceu', label:'Como você conheceu a nossa clínica?', tipo:'selecao', obrigatorio:false, locked:false,
+    opcoes:['Indicação de amigo ou familiar','Instagram ou Facebook','Google / Internet','Já sou paciente','Passei em frente','Outro'],
+    condicionalLabel:'Qual?'},
+  {id:'an_dor_estalo', label:'Sente dor, incômodo ou estalo ao abrir a boca?', tipo:'sim_nao', obrigatorio:false, locked:false, condicionalLabel:'Descreva:'},
+  {id:'an_sensibilidade', label:'Tem sensibilidade em algum dente?', tipo:'sim_nao', obrigatorio:false, locked:false, condicionalLabel:'Em quais dentes, se souber:'},
+  {id:'an_bruxismo', label:'Tem o hábito de ranger ou apertar os dentes (bruxismo)?', tipo:'sim_nao', obrigatorio:false, locked:false},
+
+  // Perfil pessoal (quebra-gelo)
+  {id:'an_esporte', label:'Você acompanha algum esporte ou torce para algum time?', tipo:'sim_nao', obrigatorio:false, locked:false, condicionalLabel:'Qual?'},
+
+  // Observações finais
+  {id:'an_obs', label:'Alguma informação adicional que queira nos contar?', tipo:'texto', obrigatorio:false, locked:false},
 ];
 
 let camposAnamnese = carregarLS('sk3-campos-anamnese', CAMPOS_ANAMNESE_PADRAO);
@@ -16729,13 +16763,21 @@ function _campoInputEdicaoHtml(c, val, valCond){
   }
   if(c.tipo === 'selecao'){
     const opts = (c.opcoes||[]).map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('');
-    return `<select id="${idBase}"><option value="">Selecione...</option>${opts}</select>`;
+    const condSel = c.condicionalLabel ? `<div style="margin-top:8px">
+        <label style="font-size:11px;color:var(--tx3)">${c.condicionalLabel}</label>
+        <input type="text" id="${idBase}-cond" value="${esc(valCond||'')}">
+      </div>` : '';
+    return `<select id="${idBase}"><option value="">Selecione...</option>${opts}</select>${condSel}`;
   }
   if(c.tipo === 'multiplo'){
     const selecionados = (val||'').split(',').map(s=>s.trim()).filter(Boolean);
+    const condMul = c.condicionalLabel ? `<div style="margin-top:8px">
+        <label style="font-size:11px;color:var(--tx3)">${c.condicionalLabel}</label>
+        <input type="text" id="${idBase}-cond" value="${esc(valCond||'')}">
+      </div>` : '';
     return `<div style="display:flex;flex-direction:column;gap:6px">${(c.opcoes||[]).map(o=>`<label style="display:flex;align-items:center;gap:8px;font-size:13px">
         <input type="checkbox" name="${idBase}" value="${esc(o)}" ${selecionados.includes(o)?'checked':''}> ${esc(o)}
-      </label>`).join('')}</div>`;
+      </label>`).join('')}</div>${condMul}`;
   }
   // texto (padrão)
   return `<textarea id="${idBase}" rows="2">${esc(val||'')}</textarea>`;
@@ -16778,6 +16820,17 @@ function salvarEdicaoAnamnese(){
     } else if(c.tipo === 'multiplo'){
       const marcados = Array.from(document.querySelectorAll(`input[name="${idBase}"]:checked`)).map(x=>x.value);
       resp[c.id] = marcados.length ? marcados.join(', ') : undefined;
+      if(c.condicionalLabel){
+        const condEl = document.getElementById(idBase + '-cond');
+        if(condEl) resp[c.id + '_cond'] = condEl.value.trim() || undefined;
+      }
+    } else if(c.tipo === 'selecao'){
+      const el = document.getElementById(idBase);
+      if(el) resp[c.id] = el.value.trim() || undefined;
+      if(c.condicionalLabel){
+        const condEl = document.getElementById(idBase + '-cond');
+        if(condEl) resp[c.id + '_cond'] = condEl.value.trim() || undefined;
+      }
     } else {
       const el = document.getElementById(idBase);
       if(el) resp[c.id] = el.value.trim() || undefined;
@@ -17532,7 +17585,7 @@ function onVinculoCadastroChange(){
 function atualizarVisibilidadeCamposModalAnamnese(){
   const tipo = document.getElementById('mca-tipo').value;
   document.getElementById('mca-opcoes-wrap').style.display = (tipo==='selecao'||tipo==='multiplo') ? '' : 'none';
-  document.getElementById('mca-condicional-wrap').style.display = tipo==='sim_nao' ? '' : 'none';
+  document.getElementById('mca-condicional-wrap').style.display = (tipo==='sim_nao'||tipo==='selecao'||tipo==='multiplo') ? '' : 'none';
   // Campo de vínculo sempre visível
   const vinculoWrap = document.getElementById('mca-vinculo-wrap');
   if(vinculoWrap) vinculoWrap.style.display = '';
@@ -26724,10 +26777,16 @@ function _renderCampoPublico(c){
   }
   if(c.tipo==='selecao'){
     var opts=(c.opcoes||[]).map(function(o){return '<option value="'+o+'">'+o+'</option>';}).join('');
-    return '<select id="'+c.id+'"><option value="">Selecione...</option>'+opts+'</select>';
+    var condSel=c.condicionalLabel?'<div class="cond-field" id="cond-'+c.id+'"><label style="font-size:13px;color:#6B7280;font-weight:400;margin-bottom:6px">'+c.condicionalLabel+'</label><input type="text" id="cond-input-'+c.id+'" placeholder="Escreva aqui..."></div>':'';
+    return '<select id="'+c.id+'" onchange="toggleCondP(this.id,this.value===\'Outro\')"><option value="">Selecione...</option>'+opts+'</select>'+condSel;
   }
   if(c.tipo==='multiplo'){
-    return '<div class="check-group">'+(c.opcoes||[]).map(function(o){return '<label class="check-opt"><input type="checkbox" name="'+c.id+'" value="'+o+'"> '+o+'</label>';}).join('')+'</div>';
+    var condMul=c.condicionalLabel?'<div class="cond-field" id="cond-'+c.id+'"><label style="font-size:13px;color:#6B7280;font-weight:400;margin-bottom:6px">'+c.condicionalLabel+'</label><input type="text" id="cond-input-'+c.id+'" placeholder="Escreva aqui..."></div>':'';
+    var checks=(c.opcoes||[]).map(function(o){
+      var onch = (o==='Outro') ? ' onchange="toggleCondP(\''+c.id+'\',this.checked)"' : '';
+      return '<label class="check-opt"><input type="checkbox" name="'+c.id+'" value="'+o+'"'+onch+'> '+o+'</label>';
+    }).join('');
+    return '<div class="check-group">'+checks+'</div>'+condMul;
   }
   return '';
 }
@@ -26834,8 +26893,8 @@ function _montarAnamneseNaPagina(nomeCompleto, token, pacienteId, campos){
     campos.forEach(function(c){
       if(c.tipo==='sim_nao'){var ch=document.querySelector('input[name="'+c.id+'"]:checked');resp[c.id]=ch?ch.value:'';if(c.condicionalLabel){var ci=document.getElementById('cond-input-'+c.id);resp[c.id+'_cond']=ci?ci.value.trim():'';}}
       else if(c.tipo==='texto'||c.tipo==='data'){var el=document.getElementById(c.id);resp[c.id]=el?el.value.trim():'';}
-      else if(c.tipo==='selecao'){var el=document.getElementById(c.id);resp[c.id]=el?el.value:'';}
-      else if(c.tipo==='multiplo'){resp[c.id]=Array.from(document.querySelectorAll('input[name="'+c.id+'"]:checked')).map(function(x){return x.value;}).join(', ');}
+      else if(c.tipo==='selecao'){var el=document.getElementById(c.id);resp[c.id]=el?el.value:'';if(c.condicionalLabel){var ci=document.getElementById('cond-input-'+c.id);resp[c.id+'_cond']=ci?ci.value.trim():'';}}
+      else if(c.tipo==='multiplo'){resp[c.id]=Array.from(document.querySelectorAll('input[name="'+c.id+'"]:checked')).map(function(x){return x.value;}).join(', ');if(c.condicionalLabel){var ci=document.getElementById('cond-input-'+c.id);resp[c.id+'_cond']=ci?ci.value.trim():'';}}
     });
 
     var agora=new Date();
