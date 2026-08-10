@@ -2113,7 +2113,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="ppArquivoNomeCancelar()">Cancelar</button>
-      <button class="btn btn-primary" onclick="ppArquivoNomeConfirmar()">Salvar →</button>
+      <button class="btn btn-primary" id="ppan-btn-confirmar" onclick="ppArquivoNomeConfirmar()">Salvar →</button>
     </div>
   </div>
 </div>
@@ -15963,37 +15963,39 @@ function salvarAtendimento(){
   if(p) _renderProntFicha(p);
 }
 // ── ARQUIVOS DO PACIENTE (Documentos e Fotos) ───────────────────────────
-// Guardados juntos num único array (sk3-paciente-arquivos), diferenciados pelo
-// campo "categoria" ('documento'|'foto') — mesma ideia de "linha" que os
-// documentos de Contratos/Termos, mas sem depender de orçamento.
+// A LISTA (nome, categoria, data, etc.) fica salva em sk3-paciente-arquivos,
+// igual antes — mesma "linha" que os documentos de Contratos/Termos, mas
+// sem depender de orçamento.
 //
-// IMPORTANTE: este sistema guarda tudo dentro do próprio navegador (localStorage),
-// que tem um espaço bem limitado (poucos MB no total, para TODOS os dados do
-// sistema somados) — diferente de um serviço de nuvem próprio para arquivos.
-// Por isso: fotos são automaticamente reduzidas de tamanho antes de guardar
-// (sem perda perceptível de qualidade para visualização em tela), e documentos
-// (que não dá pra reduzir, ex: PDF) têm um limite mais conservador. Além disso,
-// antes de salvar de verdade, testamos se vai caber — se não couber, avisamos
-// claramente em vez de deixar parecer que "sumiu" sem explicação.
+// O CONTEÚDO do arquivo em si (os bytes de verdade) NÃO fica mais junto
+// dessa lista: ele vai para um espaço próprio de arquivos no Supabase
+// (bucket "pacientes-arquivos"), que aguenta arquivos bem maiores e não
+// disputa espaço com o resto dos dados do sistema. A lista guarda só o
+// "caminho" (storagePath) de onde encontrar cada arquivo lá.
+//
+// Fotos continuam sendo levemente otimizadas antes de subir (redimensiona +
+// comprime em JPEG) — não é mais por limite de espaço, é só pra abrir mais
+// rápido na tela, sem perda perceptível de qualidade.
 function _ppArquivos(){ return carregarLS('sk3-paciente-arquivos', []); }
 function _salvarPpArquivos(list){ salvarLS('sk3-paciente-arquivos', list); }
 
-const PP_ARQUIVO_TAMANHO_MAX_IMAGEM = 15*1024*1024;   // 15MB no arquivo original da foto (antes de comprimir)
-const PP_ARQUIVO_TAMANHO_MAX_DOC = 3*1024*1024;       // 3MB para documentos (não dá pra comprimir um PDF)
+const PP_STORAGE_BUCKET = 'pacientes-arquivos';
+const PP_ARQUIVO_TAMANHO_MAX = 20*1024*1024;          // 20MB por arquivo (documento ou foto original)
 const PP_IMAGEM_DIMENSAO_MAX = 1600;                   // maior lado da foto, depois de comprimida (px)
 const PP_IMAGEM_QUALIDADE = 0.78;
+const PP_URL_VALIDADE_SEGUNDOS = 3600;                 // 1h de validade pros links de visualização/download
 
 // Fila de arquivos ainda não nomeados (quando mais de um é selecionado/arrastado de
 // uma vez, processamos um por um, sempre pedindo o nome antes de seguir pro próximo).
 let _ppArquivoFilaPendente = [];
 let _ppArquivoCategoriaAtual = null;
-let _ppArquivoPendenteAtual = null; // {arquivo, dados} do arquivo que está sendo nomeado agora
+let _ppArquivoPendenteAtual = null; // {arquivo, blob, previewUrl} do arquivo que está sendo nomeado agora
 
 function _ppArquivoEhImagem(file){ return !!(file.type && file.type.startsWith('image/')); }
+function _ppExtensao(nome){ const m=(nome||'').match(/\.[^.]+$/); return m?m[0]:''; }
 
-// Redesenha a foto num canvas menor e reexporta como JPEG — reduz bastante o
-// tamanho em bytes (o que importa aqui é caber no armazenamento, não a
-// resolução original) sem prejudicar a visualização em tela.
+// Redesenha a foto num canvas menor e reexporta como JPEG (Blob) — deixa a
+// imagem mais leve pra abrir rápido na tela, sem perda perceptível.
 function _ppComprimirImagem(file){
   return new Promise((resolve)=>{
     const url = URL.createObjectURL(file);
@@ -16009,17 +16011,26 @@ function _ppComprimirImagem(file){
       const ctx=canvas.getContext('2d');
       ctx.drawImage(img,0,0,w,h);
       URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL('image/jpeg', PP_IMAGEM_QUALIDADE));
+      canvas.toBlob(blob=>resolve(blob), 'image/jpeg', PP_IMAGEM_QUALIDADE);
     };
     img.onerror = ()=>{
       URL.revokeObjectURL(url);
-      // Se por algum motivo não der pra abrir como imagem, cai pro leitor comum
-      const reader=new FileReader();
-      reader.onload=e=>resolve(e.target.result);
-      reader.readAsDataURL(file);
+      // Se por algum motivo não der pra abrir como imagem, sobe o arquivo original
+      resolve(file);
     };
     img.src = url;
   });
+}
+
+// Gera links temporários (válidos por PP_URL_VALIDADE_SEGUNDOS) para ver/baixar
+// arquivos do espaço privado do Supabase — em lote, pra não fazer 1 pedido por foto.
+async function _ppGerarUrls(paths){
+  const mapa = {};
+  if(!paths.length) return mapa;
+  const { data, error } = await supa.storage.from(PP_STORAGE_BUCKET).createSignedUrls(paths, PP_URL_VALIDADE_SEGUNDOS);
+  if(error){ console.error('Erro ao gerar links de arquivos:', error); return mapa; }
+  (data||[]).forEach(d=>{ if(d.signedUrl) mapa[d.path]=d.signedUrl; });
+  return mapa;
 }
 
 function ppArquivoDrop(e, categoria){
@@ -16033,10 +16044,8 @@ function ppArquivoSelecionado(files, categoria){
   if(!files || !files.length) return;
   const validos = [];
   Array.from(files).forEach(file=>{
-    const ehImagem = _ppArquivoEhImagem(file);
-    const limite = ehImagem ? PP_ARQUIVO_TAMANHO_MAX_IMAGEM : PP_ARQUIVO_TAMANHO_MAX_DOC;
-    if(file.size > limite){
-      alert(`"${file.name}" excede ${Math.round(limite/1024/1024)}MB e não pôde ser enviado.`);
+    if(file.size > PP_ARQUIVO_TAMANHO_MAX){
+      alert(`"${file.name}" excede ${Math.round(PP_ARQUIVO_TAMANHO_MAX/1024/1024)}MB e não pôde ser enviado.`);
       return;
     }
     validos.push(file);
@@ -16054,63 +16063,80 @@ async function ppArquivoProcessarProximo(){
   if(!_ppArquivoFilaPendente.length) return;
   const file = _ppArquivoFilaPendente[0];
   const ehImagem = _ppArquivoEhImagem(file);
-  const dados = ehImagem ? await _ppComprimirImagem(file) : await new Promise(res=>{
-    const reader=new FileReader();
-    reader.onload=e=>res(e.target.result);
-    reader.readAsDataURL(file);
-  });
-  _ppArquivoPendenteAtual = {arquivo:file, dados};
+  const blob = ehImagem ? await _ppComprimirImagem(file) : file;
+  const previewUrl = URL.createObjectURL(blob);
+  _ppArquivoPendenteAtual = {arquivo:file, blob, previewUrl};
   const nomeSemExt = file.name.replace(/\.[^.]+$/,'');
   document.getElementById('ppan-nome').value = nomeSemExt;
   document.getElementById('ppan-arquivo-original').textContent = file.name;
   const preview = document.getElementById('ppan-preview');
   preview.innerHTML = ehImagem
-    ? `<img src="${dados}" style="max-width:100%;max-height:160px;border-radius:var(--r8);object-fit:contain">`
+    ? `<img src="${previewUrl}" style="max-width:100%;max-height:160px;border-radius:var(--r8);object-fit:contain">`
     : `<div style="font-size:34px">📄</div>`;
   document.getElementById('modal-pp-arquivo-nome').classList.add('open');
   setTimeout(()=>{ const el=document.getElementById('ppan-nome'); if(el){ el.focus(); el.select(); } },30);
 }
 
+function _ppLimparPendente(){
+  if(_ppArquivoPendenteAtual && _ppArquivoPendenteAtual.previewUrl){
+    URL.revokeObjectURL(_ppArquivoPendenteAtual.previewUrl);
+  }
+  _ppArquivoPendenteAtual = null;
+}
+
 function ppArquivoNomeCancelar(){
   _ppArquivoFilaPendente.shift();
-  _ppArquivoPendenteAtual = null;
+  _ppLimparPendente();
   fecharModal('modal-pp-arquivo-nome');
   if(_ppArquivoFilaPendente.length) ppArquivoProcessarProximo();
 }
 
-function ppArquivoNomeConfirmar(){
+async function ppArquivoNomeConfirmar(){
   const nome = document.getElementById('ppan-nome').value.trim();
   if(!nome){ alert('Dê um nome para o arquivo.'); return; }
   const pendente = _ppArquivoPendenteAtual;
   if(!pendente) return;
   const pacId = _ppPacienteAtual ? _ppPacienteAtual.id : null;
+  const categoria = _ppArquivoCategoriaAtual;
+  const id = 'pparq_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  const ext = categoria==='foto' ? '.jpg' : _ppExtensao(pendente.arquivo.name);
+  const storagePath = `${pacId}/${categoria}/${id}${ext}`;
+
+  const btn = document.getElementById('ppan-btn-confirmar');
+  const btnTextoOriginal = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = 'Enviando…'; }
+
+  const { error: erroUpload } = await supa.storage.from(PP_STORAGE_BUCKET)
+    .upload(storagePath, pendente.blob, {
+      contentType: categoria==='foto' ? 'image/jpeg' : (pendente.arquivo.type || 'application/octet-stream'),
+      upsert: false,
+    });
+
+  if(erroUpload){
+    console.error('Erro ao enviar arquivo:', erroUpload);
+    alert('Não foi possível enviar o arquivo. Verifique sua internet e tente novamente.\n\nDetalhe técnico: '+(erroUpload.message||''));
+    if(btn){ btn.disabled = false; btn.textContent = btnTextoOriginal; }
+    return; // mantém o modal aberto, com o arquivo ainda na fila, pra pessoa decidir (cancelar ou tentar outro)
+  }
+
   const novoItem = {
-    id:'pparq_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+    id,
     pacienteId: pacId,
-    categoria: _ppArquivoCategoriaAtual,
+    categoria,
     nome,
     arquivoNomeOriginal: pendente.arquivo.name,
     tipo: pendente.arquivo.type,
     tamanho: pendente.arquivo.size,
-    dados: pendente.dados,
+    storagePath,
     criadoEm: iso(hoje),
     criadoPor: nomeUsuarioAtual(),
   };
   const listaCandidata = _ppArquivos().concat([novoItem]);
-
-  // Testa ANTES se vai caber no espaço do navegador — se não testarmos, uma falha
-  // aqui fica completamente silenciosa (o sistema mantém os dados antigos e nada
-  // de errado aparece na tela), o que é exatamente o problema que tínhamos antes.
-  try{
-    localStorage.setItem('sk3-paciente-arquivos', JSON.stringify(listaCandidata));
-  } catch(err){
-    alert('Não foi possível salvar: o arquivo é grande demais para o espaço disponível no sistema. Tente um arquivo menor, ou uma foto com menos resolução.');
-    return; // mantém o modal aberto, com o arquivo ainda na fila, pra pessoa decidir (cancelar ou tentar outro)
-  }
-
   _comSalvarImediato(()=>{ _salvarPpArquivos(listaCandidata); });
+
+  if(btn){ btn.disabled = false; btn.textContent = btnTextoOriginal; }
   _ppArquivoFilaPendente.shift();
-  _ppArquivoPendenteAtual = null;
+  _ppLimparPendente();
   fecharModal('modal-pp-arquivo-nome');
   if(_ppArquivoFilaPendente.length){
     ppArquivoProcessarProximo();
@@ -16120,10 +16146,15 @@ function ppArquivoNomeConfirmar(){
   }
 }
 
-function ppArquivoExcluir(id){
+async function ppArquivoExcluir(id){
   if(!confirm('Excluir este arquivo?')) return;
+  const a = _ppArquivos().find(x=>x.id===id);
+  if(a && a.storagePath){
+    const { error } = await supa.storage.from(PP_STORAGE_BUCKET).remove([a.storagePath]);
+    if(error) console.error('Erro ao excluir arquivo do armazenamento:', error);
+  }
   _comSalvarImediato(()=>{
-    const list = _ppArquivos().filter(a=>a.id!==id);
+    const list = _ppArquivos().filter(x=>x.id!==id);
     _salvarPpArquivos(list);
   });
   if(_ppPacienteAtual){
@@ -16132,28 +16163,34 @@ function ppArquivoExcluir(id){
   }
 }
 
-function ppFotoAbrir(id){
+async function ppFotoAbrir(id){
   const a = _ppArquivos().find(x=>x.id===id);
-  if(!a) return;
-  document.getElementById('ppfv-img').src = a.dados;
+  if(!a || !a.storagePath) return;
   document.getElementById('ppfv-titulo').textContent = a.nome;
+  document.getElementById('ppfv-img').src = '';
   document.getElementById('modal-pp-foto-visualizar').classList.add('open');
+  const mapa = await _ppGerarUrls([a.storagePath]);
+  const url = mapa[a.storagePath];
+  if(url) document.getElementById('ppfv-img').src = url;
+  else alert('Não foi possível abrir esta foto agora. Tente novamente.');
 }
 
-function ppArquivoBaixar(id){
+async function ppArquivoBaixar(id){
   const a = _ppArquivos().find(x=>x.id===id);
-  if(!a) return;
-  const link = document.createElement('a');
-  link.href = a.dados;
-  link.download = a.nome || a.arquivoNomeOriginal || 'arquivo';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  if(!a || !a.storagePath) return;
+  const { data, error } = await supa.storage.from(PP_STORAGE_BUCKET)
+    .createSignedUrl(a.storagePath, PP_URL_VALIDADE_SEGUNDOS, { download: a.nome || a.arquivoNomeOriginal || 'arquivo' });
+  if(error || !data){
+    console.error('Erro ao gerar link de download:', error);
+    alert('Não foi possível abrir este arquivo agora. Tente novamente.');
+    return;
+  }
+  window.open(data.signedUrl, '_blank');
 }
 
 function _ppFmtDataArquivo(d){ if(!d) return '—'; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
 
-function renderPpDocumentos(p){
+async function renderPpDocumentos(p){
   const wrap=document.getElementById('pp-documentos-wrap');
   if(!wrap) return;
   const podeCriar = souAdministradorReal()||temPerm('pacientes_documentos_criar');
@@ -16169,7 +16206,7 @@ function renderPpDocumentos(p){
       ondrop="ppArquivoDrop(event,'documento')" style="margin-bottom:16px">
       <div class="fin-drop-zone-ic"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 11.5l-9.5 9.5a4 4 0 0 1-5.7-5.7l9-9a2.5 2.5 0 0 1 3.6 3.6l-8.9 8.9a1 1 0 0 1-1.5-1.5l8-8"/></svg></div>
       <div class="fin-drop-zone-txt">Clique para procurar ou arraste o arquivo aqui</div>
-      <div class="fin-drop-zone-sub">Até 3MB por arquivo</div>
+      <div class="fin-drop-zone-sub">Até 20MB por arquivo</div>
       <input type="file" id="pp-doc-input-documento" multiple style="display:none" onchange="ppArquivoSelecionado(this.files,'documento')">
     </div>`;
   }
@@ -16190,7 +16227,7 @@ function renderPpDocumentos(p){
   wrap.innerHTML = html;
 }
 
-function renderPpFotos(p){
+async function renderPpFotos(p){
   const wrap=document.getElementById('pp-fotos-wrap');
   if(!wrap) return;
   const podeCriar = souAdministradorReal()||temPerm('pacientes_fotos_criar');
@@ -16206,18 +16243,31 @@ function renderPpFotos(p){
       ondrop="ppArquivoDrop(event,'foto')" style="margin-bottom:16px">
       <div class="fin-drop-zone-ic">📷</div>
       <div class="fin-drop-zone-txt">Clique para procurar ou arraste a foto aqui</div>
-      <div class="fin-drop-zone-sub">A foto é reduzida automaticamente para caber</div>
+      <div class="fin-drop-zone-sub">Até 20MB por foto (otimizada automaticamente ao enviar)</div>
       <input type="file" id="pp-doc-input-foto" accept="image/*" multiple style="display:none" onchange="ppArquivoSelecionado(this.files,'foto')">
     </div>`;
   }
   if(!lista.length){
     html += `<div class="empty"><div class="empty-ic">📷</div>Nenhuma foto enviada ainda.</div>`;
-  } else {
-    html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px">`
-      + lista.map(a=>`
+    wrap.innerHTML = html;
+    return;
+  }
+
+  // Placeholder enquanto os links das fotos são gerados, pra tela não ficar em branco
+  wrap.innerHTML = html + `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px">`
+    + lista.map(()=>`<div style="aspect-ratio:1;border-radius:var(--r8);background:var(--s2)"></div>`).join('')
+    + `</div>`;
+
+  const mapaUrls = await _ppGerarUrls(lista.map(a=>a.storagePath));
+
+  // Se o usuário já saiu dessa tela enquanto os links carregavam, não sobrescreve outra coisa
+  if(!document.getElementById('pp-fotos-wrap') || !_ppPacienteAtual || String(_ppPacienteAtual.id)!==String(p.id)) return;
+
+  html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px">`
+    + lista.map(a=>`
       <div style="border:1px solid var(--border);border-radius:var(--r8);overflow:hidden;background:var(--surface)">
         <div style="width:100%;aspect-ratio:1;overflow:hidden;cursor:pointer;background:var(--s2)" onclick="ppFotoAbrir('${a.id}')" title="Ver ampliada">
-          <img src="${a.dados}" style="width:100%;height:100%;object-fit:cover;display:block">
+          <img src="${mapaUrls[a.storagePath]||''}" style="width:100%;height:100%;object-fit:cover;display:block">
         </div>
         <div style="padding:8px 10px">
           <div style="font-size:12px;font-weight:600;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.nome)}</div>
@@ -16225,8 +16275,7 @@ function renderPpFotos(p){
           ${podeExcluir?`<button onclick="ppArquivoExcluir('${a.id}')" style="margin-top:6px;background:none;border:none;cursor:pointer;color:var(--danger);font-size:11px;padding:0">Excluir</button>`:''}
         </div>
       </div>`).join('')
-      + `</div>`;
-  }
+    + `</div>`;
   wrap.innerHTML = html;
 }
 
