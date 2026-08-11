@@ -15773,8 +15773,10 @@ function _prontAbrirPdfFichas(fichas, pacNome, clinicaNome, fmtData){
 
 function _prontExcluirFicha(id){
   if(!confirm('Excluir este registro de atendimento?')) return;
-  const list=_prontuarios().filter(f=>f.id!==id);
-  _salvarProntuarios(list);
+  _comSalvarImediato(()=>{
+    const list=_prontuarios().filter(f=>f.id!==id);
+    _salvarProntuarios(list);
+  });
   const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
   if(p) _renderProntFicha(p);
 }
