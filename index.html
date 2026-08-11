@@ -8285,7 +8285,14 @@ function goTo(id, btn){
   if(btn && btn.classList.contains('nav-btn')) colapsarMenuLateral();
   if(id==='hoje') renderHoje();
   if(id==='proximos') renderProximos();
-  if(id==='agenda') renderAgenda();
+  // MITIGAÇÃO (mesmo princípio já aplicado dentro da ficha do paciente): ao
+  // entrar em Agenda ou Financeiro, busca a versão mais atual desses dados
+  // direto do banco antes de exibir — em vez de confiar só na cópia que a aba
+  // carregou no login, que pode já estar desatualizada se outra pessoa tiver
+  // salvo algo nesse meio-tempo.
+  if(id==='agenda'){
+    _atualizarChaveFresca('sk3-agendamentos').then(renderAgenda);
+  }
   if(id==='pacientes'){ptSortColId='nome';ptSortDir='asc';filtroAtual='';pacientesPaginaAtual=1;const buscaEl=document.getElementById('pt-busca-nome');if(buscaEl)buscaEl.value='';renderFiltros();renderPacientes('');renderKanban();}
   if(id==='acoes') renderAcoesModulo();
   if(id==='rituais') renderRituais();
@@ -8293,7 +8300,9 @@ function goTo(id, btn){
   if(id==='pendencias') renderPendencias();
   if(id==='lembretes') renderLembretes();
   if(id==='melhorias') renderMelhorias();
-  if(id==='financeiro') renderFinanceiro();
+  if(id==='financeiro'){
+    Promise.all(['sk3-titulos','sk3-fin-titulos-gestao','sk3-recibos','sk3-fin-medicoes-comissao','sk3-orcamentos'].map(_atualizarChaveFresca)).then(renderFinanceiro);
+  }
   if(id==='relatorios') renderRelatorios();
   if(id==='empresa') renderEmpresaModulo();
   if(id==='config'){
