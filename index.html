@@ -9928,6 +9928,37 @@ function switchPpArea(area){
     const btnFlut=document.getElementById('floating-save-btn');
     if(btnFlut) btnFlut.classList.remove('visible','saved');
   }
+
+  // MITIGAÇÃO (dados podem ficar desatualizados na aba se outra pessoa salvar
+  // algo enquanto essa aba já estava aberta): ao entrar em Orçamento, Financeiro
+  // ou Prontuário, busca a versão mais atual desses dados direto do banco antes
+  // de exibir/trabalhar neles — em vez de confiar só na cópia que a aba carregou
+  // no login (que pode já estar horas desatualizada). Isso reduz bastante a
+  // chance de um salvamento aqui apagar sem querer algo que outra pessoa criou
+  // nesse meio-tempo. Correção definitiva (registro por registro, sem depender
+  // de "lista inteira") fica para uma etapa futura.
+  if(area==='orcamento' || area==='financeiro' || area==='prontuario'){
+    const chaves = area==='financeiro' ? ['sk3-orcamentos','sk3-titulos','sk3-recibos'] : ['sk3-orcamentos','sk3-prontuarios'];
+    Promise.all(chaves.map(_atualizarChaveFresca)).then(()=>{
+      const p = pacientes.find(x=>String(x.id)===String(modalPtId));
+      if(!p) return;
+      if(area==='orcamento') renderPpOrcamento(p);
+      else if(area==='financeiro') renderPpFinanceiro(p);
+      else if(area==='prontuario') renderPpProntuario(p);
+    });
+  }
+}
+
+// Busca a versão mais atual de uma chave "só de memória" direto do banco
+// (ignora a cópia que a aba carregou no login, que pode estar desatualizada)
+// e atualiza window._memStore. Usado como mitigação rápida contra o cenário
+// em que duas pessoas usam o sistema ao mesmo tempo e uma delas, com uma
+// cópia antiga em memória, acaba sobrescrevendo o que a outra acabou de salvar.
+async function _atualizarChaveFresca(chave){
+  try{
+    const { data, error } = await supa.from('dados_sistema').select('valor').eq('chave', chave).single();
+    if(!error && data && window._memStore) window._memStore[chave] = JSON.stringify(data.valor);
+  }catch(e){ console.error('Erro ao atualizar '+chave+' antes de exibir/salvar:', e); }
 }
 
 // A partir de um título em Contas a Receber (Financeiro) originado de um paciente,
@@ -16500,21 +16531,11 @@ document.addEventListener('click', e => {
 // ══════════════════════════════════════════════════════════════════════
 
 // ── Dados ──────────────────────────────────────────────────────────────
-// Grupos visuais em que as perguntas são organizadas, tanto no formulário que
-// o paciente preenche pelo link quanto nas telas internas (ficha preenchida,
-// PDF, configuração). 'outros' é o destino de qualquer pergunta customizada
-// que a clínica adicionar sem grupo definido. 'final' não mostra título (é o
-// campo de observações finais, que fecha o formulário sem precisar de rótulo).
-const GRUPOS_ANAMNESE = [
-  {id:'dados',    titulo:'Seus dados'},
-  {id:'consulta', titulo:'Sobre sua consulta'},
-  {id:'saude',    titulo:'Sua saúde'},
-  {id:'odonto',   titulo:'Seu histórico odontológico'},
-  {id:'pessoal',  titulo:'Conte-nos um pouco sobre você'},
-  {id:'origem',   titulo:'Como você nos conheceu'},
-  {id:'outros',   titulo:'Outras perguntas'},
-  {id:'final',    titulo:''},
-];
+// Observação: GRUPOS_ANAMNESE e _anamneseAgruparCampos (grupos visuais das
+// perguntas) ficam definidos mais abaixo no arquivo, no bloco de script que
+// roda sempre (independente de login) — porque o formulário público de
+// anamnese (link enviado ao paciente) precisa deles sem o app completo estar
+// ativado. Aqui neste bloco (app-script-1) eles já chegam prontos, só usamos.
 
 const CAMPOS_ANAMNESE_PADRAO = [
   // Seus dados — preenchem automaticamente o cadastro do paciente
@@ -16613,24 +16634,6 @@ let tokensAnamnese = carregarLS('sk3-tokens-anamnese', {});
   salvarAnamnese();
   salvarLS('sk3-anamnese-grupos-migrada-v1', true);
 })();
-
-// Agrupa uma lista de campos (já na ordem correta) em blocos consecutivos por
-// grupo, cada um com seu título — usado por todas as telas que exibem a
-// anamnese (formulário público, ficha preenchida, PDF, configuração).
-function _anamneseAgruparCampos(campos){
-  const TITULOS = {}; GRUPOS_ANAMNESE.forEach(g=>{ TITULOS[g.id]=g.titulo; });
-  const blocos = [];
-  campos.forEach(c=>{
-    const gid = c.grupo || 'outros';
-    let bloco = blocos[blocos.length-1];
-    if(!bloco || bloco.grupoId !== gid){
-      bloco = {grupoId:gid, titulo:TITULOS[gid]||'', campos:[]};
-      blocos.push(bloco);
-    }
-    bloco.campos.push(c);
-  });
-  return blocos;
-}
 
 function salvarAnamnese(){
   salvarLS('sk3-campos-anamnese', camposAnamnese);
@@ -26897,6 +26900,40 @@ function _renderErroAnamnese(msg){
 function _renderJaPreenchidaAnamnese(nomeCompleto){
   const nome = (nomeCompleto||'').split(' ')[0] || 'paciente';
   return '<div style="font-family:Inter,system-ui,sans-serif;max-width:480px;margin:60px auto;padding:24px;text-align:center"><div style="font-size:40px;margin-bottom:16px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg></div><div style="font-size:16px;font-weight:600;margin-bottom:8px">Anamnese já enviada!</div><div style="font-size:14px;color:#6B7280">Obrigado, '+nome+'. Suas informações já foram recebidas pela clínica.</div></div>';
+}
+
+// Grupos visuais em que as perguntas da anamnese são organizadas (formulário
+// público, ficha preenchida, PDF, configuração). Fica aqui, no bloco que roda
+// sempre — mesmo sem login —, porque o formulário público (link enviado ao
+// paciente) precisa disso sem o app completo estar ativado. 'outros' é o
+// destino de qualquer pergunta customizada sem grupo definido. 'final' não
+// mostra título (campo de observações finais, que fecha o formulário).
+var GRUPOS_ANAMNESE = [
+  {id:'dados',    titulo:'Seus dados'},
+  {id:'consulta', titulo:'Sobre sua consulta'},
+  {id:'saude',    titulo:'Sua saúde'},
+  {id:'odonto',   titulo:'Seu histórico odontológico'},
+  {id:'pessoal',  titulo:'Conte-nos um pouco sobre você'},
+  {id:'origem',   titulo:'Como você nos conheceu'},
+  {id:'outros',   titulo:'Outras perguntas'},
+  {id:'final',    titulo:''},
+];
+
+// Agrupa uma lista de campos (já na ordem correta) em blocos consecutivos por
+// grupo, cada um com seu título.
+function _anamneseAgruparCampos(campos){
+  var TITULOS = {}; GRUPOS_ANAMNESE.forEach(function(g){ TITULOS[g.id]=g.titulo; });
+  var blocos = [];
+  campos.forEach(function(c){
+    var gid = c.grupo || 'outros';
+    var bloco = blocos[blocos.length-1];
+    if(!bloco || bloco.grupoId !== gid){
+      bloco = {grupoId:gid, titulo:TITULOS[gid]||'', campos:[]};
+      blocos.push(bloco);
+    }
+    bloco.campos.push(c);
+  });
+  return blocos;
 }
 
 // Metadados de mascara por campo de cadastro vinculado
