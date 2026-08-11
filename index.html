@@ -836,6 +836,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .ag-legend-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
 .ag-bloqueio-tag{font-size:10px;color:var(--da);text-align:center;padding-top:2px}
 .ag-block-card{border-radius:8px;padding:3px 7px;font-size:10.5px;line-height:1.3;cursor:pointer;overflow:hidden;position:absolute;left:2px;right:2px;z-index:3;background:repeating-linear-gradient(135deg,#F1B4B4 0 8px,#FBDADA 8px 16px);border-left:4px solid #C0392B}
+/* Marca d'água: aviso de que uma profissional está ausente (bloqueio pessoal dela),
+   mostrado por cima da agenda de TODAS as salas, já que qualquer profissional pode
+   atender em qualquer sala. É só informativo — não trava o agendamento nessa sala,
+   por isso pointer-events:none e z-index abaixo dos cards de agendamento/bloqueio. */
+.ag-ausencia-watermark{position:absolute;left:2px;right:2px;z-index:1;pointer-events:none;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;border-radius:6px;background:rgba(148,163,184,.14)}
+.ag-ausencia-watermark span{font-size:10.5px;font-weight:700;color:rgba(71,85,105,.55);text-transform:uppercase;letter-spacing:.03em;padding:2px 6px}
 .ag-block-card .ag-card-tit{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#8A241B;font-size:10.5px}
 .ag-block-card .ag-card-sub{opacity:.95;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#A6321F}
 .chip-toggle{font-size:12px;padding:6px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--tx2);transition:all .1s}
@@ -4955,7 +4961,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
         <div class="fl">
           <label>Profissional *</label>
-          <select id="agm-profissional" onchange="agmAtualizarSalasDisponiveis()"></select>
+          <select id="agm-profissional"></select>
         </div>
         <div class="fl">
           <label>Hora início *</label>
@@ -5028,10 +5034,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="fl fg-full">
           <label>Usuário (equipe) *</label>
           <select id="agp-usuario"></select>
-        </div>
-        <div class="fl fg-full">
-          <label>Salas onde atende *</label>
-          <div id="agp-salas" style="display:flex;gap:8px;flex-wrap:wrap"></div>
         </div>
         <div class="fl">
           <label>Cor na agenda</label>
@@ -5111,7 +5113,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <select id="blq-tipo" onchange="blqAtualizarCampos()">
             <option value="sala">Uma sala (libera a profissional para outras salas)</option>
             <option value="profissional">Uma profissional (libera a sala para outras pessoas)</option>
-            <option value="ambos">Sala e profissional juntas</option>
           </select>
         </div>
         <div class="fl" id="blq-sala-wrap">
@@ -6913,9 +6914,10 @@ let salas = carregarLS('sk3-salas', SALAS_PADRAO);
   salvarLS('sk3-salas-paleta-viva-v4', true);
 })();
 
-// agendaProfissionais: {usuarioId, salasIds:[], cor, granularidadeMin, ativo}
+// agendaProfissionais: {usuarioId, cor, granularidadeMin, ativo}
+// (qualquer profissional pode atender em qualquer sala — não há mais vínculo fixo aqui)
 let agendaProfissionais = carregarLS('sk3-agenda-profissionais', [
-  {usuarioId:'us_leticia', salasIds:['sala4','sala2'], cor:'#1E3A5F', granularidadeMin:30, ativo:true},
+  {usuarioId:'us_leticia', cor:'#1E3A5F', granularidadeMin:30, ativo:true},
 ]);
 
 // disponibilidade: {id, usuarioId, salaId, diaSemana(0=dom..6=sab), horaInicio, horaFim, granularidadeMin}
@@ -21928,13 +21930,12 @@ function renderCfgAgendaProfissionais(){
     return;
   }
   lista.innerHTML=agendaProfissionais.map((ap,i)=>{
-    const nomeSalas = (ap.salasIds||[]).map(sid=>salas.find(s=>s.id===sid)?.nome).filter(Boolean).join(', ')||'—';
     return `
     <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="abrirModalAgendaProfissional(${i})">
       <span style="width:14px;height:14px;border-radius:4px;flex-shrink:0;background:${ap.cor}"></span>
       <div style="flex:1">
         <div style="font-size:13px;font-weight:500">${nomeUsuario(ap.usuarioId)}</div>
-        <div style="font-size:11px;color:var(--tx3)">${nomeSalas} · slots de ${ap.granularidadeMin||30}min</div>
+        <div style="font-size:11px;color:var(--tx3)">slots de ${ap.granularidadeMin||30}min</div>
       </div>
       <span class="pill ${ap.ativo!==false?'p-green':'p-neutral'}">${ap.ativo!==false?'Ativo':'Inativo'}</span>
     </div>`;
@@ -21952,12 +21953,6 @@ function abrirModalAgendaProfissional(i){
   const idsJaUsados = agendaProfissionais.map((x,idx)=>idx!==i?x.usuarioId:null).filter(Boolean);
   selUsuario.innerHTML = usuarios.filter(u=>!idsJaUsados.includes(u.id)).map(u=>`<option value="${u.id}" ${ap&&ap.usuarioId===u.id?'selected':''}>${u.nome}</option>`).join('');
 
-  const salasWrap=document.getElementById('agp-salas');
-  salasWrap.innerHTML = salasAtivas().map(s=>{
-    const on = ap && (ap.salasIds||[]).includes(s.id);
-    return `<button type="button" class="chip-toggle ${on?'on':''}" data-sala="${s.id}" onclick="this.classList.toggle('on')">${s.nome}</button>`;
-  }).join('');
-
   const coresWrap=document.getElementById('agp-cores');
   const corAtual = ap ? ap.cor : CORES_AGENDA[agendaProfissionais.length % CORES_AGENDA.length];
   document.getElementById('agp-cor').value = corAtual;
@@ -21973,12 +21968,10 @@ function salvarAgendaProfissional(){
   const i = document.getElementById('modal-agenda-prof').dataset.editIndex;
   const usuarioId = document.getElementById('agp-usuario').value;
   if(!usuarioId){ alert('Selecione um usuário.'); return; }
-  const salasIds = [...document.querySelectorAll('#agp-salas .chip-toggle.on')].map(b=>b.dataset.sala);
-  if(!salasIds.length){ alert('Selecione ao menos uma sala.'); return; }
   const cor = document.getElementById('agp-cor').value;
   const granularidadeMin = Number(document.getElementById('agp-granularidade').value);
 
-  const item = {usuarioId, salasIds, cor, granularidadeMin, ativo:true};
+  const item = {usuarioId, cor, granularidadeMin, ativo:true};
   if(i!==''){ agendaProfissionais[Number(i)] = {...agendaProfissionais[Number(i)], ...item}; }
   else { agendaProfissionais.push(item); }
   salvarLS('sk3-agenda-profissionais',agendaProfissionais);
@@ -22052,13 +22045,9 @@ function abrirModalDisponibilidade(i){
 function addDisponibilidade(){ abrirModalDisponibilidade(null); }
 
 function dispAtualizarSalas(selecionarSalaId){
-  const usuarioId=document.getElementById('disp-usuario').value;
-  const ap=agendaProfissionais.find(x=>x.usuarioId===usuarioId);
-  const salaIds = ap ? ap.salasIds : salasAtivas().map(s=>s.id);
   const selSala=document.getElementById('disp-sala');
-  selSala.innerHTML = salaIds.map(sid=>{
-    const s=salas.find(x=>x.id===sid);
-    return s ? `<option value="${s.id}" ${selecionarSalaId===s.id?'selected':''}>${s.nome}</option>` : '';
+  selSala.innerHTML = salasAtivas().map(s=>{
+    return `<option value="${s.id}" ${selecionarSalaId===s.id?'selected':''}>${s.nome}</option>`;
   }).join('');
 }
 
@@ -22184,7 +22173,21 @@ function abrirModalBloqueio(i){
   document.getElementById('blq-excluir').style.display = b ? '' : 'none';
   document.getElementById('modal-bloqueio').dataset.editIndex = i!=null ? i : '';
 
-  document.getElementById('blq-tipo').value = b ? b.tipo : 'sala';
+  // "ambos" não é mais oferecido para bloqueios novos, mas se o bloqueio sendo
+  // editado ainda for desse tipo antigo, mantemos a opção disponível só nesse
+  // caso — pra não perder o vínculo com a sala ou a profissional ao reabrir.
+  const tipoSel = document.getElementById('blq-tipo');
+  const legadoAmbosOpt = tipoSel.querySelector('option[value="ambos"]');
+  if(b && b.tipo==='ambos'){
+    if(!legadoAmbosOpt){
+      const opt=document.createElement('option');
+      opt.value='ambos'; opt.textContent='Sala e profissional juntas (tipo antigo)';
+      tipoSel.appendChild(opt);
+    }
+  } else if(legadoAmbosOpt){
+    legadoAmbosOpt.remove();
+  }
+  tipoSel.value = b ? b.tipo : 'sala';
   document.getElementById('blq-sala').innerHTML = salasAtivas().map(s=>`<option value="${s.id}" ${b&&b.salaId===s.id?'selected':''}>${s.nome}</option>`).join('');
   document.getElementById('blq-usuario').innerHTML = usuariosNaAgenda().map(ap=>`<option value="${ap.usuarioId}" ${b&&b.usuarioId===ap.usuarioId?'selected':''}>${ap.nome}</option>`).join('');
   blqAtualizarCampos();
@@ -24026,6 +24029,13 @@ function renderAgendaSemana(d){
     body += `<div style="width:${TIME_W}px;flex-shrink:0;font-size:10px;color:var(--tx3);text-align:right;padding:3px 6px 0 0;border-right:1px solid var(--border);height:${SLOT_H}px">${minParaHora(slotMin)}</div>`;
     dias.forEach((dia, di) => {
       const dIso = iso(dia);
+      // Ausências de profissionais nesse dia (bloqueio pessoal, ex.: férias) — mostradas
+      // como marca d'água em TODAS as salas, já que qualquer profissional pode atender
+      // em qualquer uma. Calculado uma vez por dia, reaproveitado nas colunas de sala.
+      const ausenciasDoDia = agMesclarIntervalosAusencia(
+        bloqueios.filter(b=>(b.tipo==='profissional'||b.tipo==='ambos') && bloqueioCobre(b, dIso, ini, fim)),
+        ini, fim
+      );
       salas.forEach((sala, salaI) => {
         const isLastSala = salaI === nSalas - 1;
         // Verifica bloqueio nesta sala nesta data neste slot
@@ -24033,14 +24043,18 @@ function renderAgendaSemana(d){
           (b.tipo==='sala'||b.tipo==='ambos') && b.salaId===sala.id);
         const erBlq = !blq && eventosRecorrentes.find(ev => ev.salaId===sala.id && erAplica(ev, dIso, slotMin, slotFim));
         const estaBloqueado = !!(blq || erBlq);
+        // Ausência de profissional que cruza este slot (só como aviso — não bloqueia a sala)
+        const ausenciasSlot = estaBloqueado ? [] : ausenciasDoDia.filter(iv=> slotMin < iv.fim && slotFim > iv.ini);
+        const estaAusente = ausenciasSlot.length > 0;
         // agendamentos que começam neste slot nesta sala neste dia
         const agmsAqui = todosAgms.filter(a => {
           if(a.data !== dIso || a.salaId !== sala.id) return false;
           const ai = horaParaMin(a.horaInicio);
           return ai >= slotMin && ai < slotFim;
         });
-        // fundo: bloqueio = listras vermelhas marcantes, normal = tingimento leve da cor da sala
-        const bgBloq = estaBloqueado ? 'repeating-linear-gradient(135deg,#F1B4B4 0 5px,#FBDADA 5px 10px)' : agColTint(sala.cor,0.05);
+        // fundo: bloqueio de sala = listras vermelhas marcantes; ausência de profissional
+        // (informativo) = leve tingimento cinza; normal = tingimento leve da cor da sala
+        const bgBloq = estaBloqueado ? 'repeating-linear-gradient(135deg,#F1B4B4 0 5px,#FBDADA 5px 10px)' : (estaAusente ? 'rgba(148,163,184,.16)' : agColTint(sala.cor,0.05));
         const podeAgenda = temPerm('agenda_gerenciar');
         const onClickCell = (estaBloqueado || !podeAgenda) ? '' : `onclick="agAbrirEscolhaCelula('${dIso}','${minParaHora(slotMin)}','${sala.id}',null)"`;
         const hoverHandlers = (estaBloqueado || !podeAgenda) ? '' : `onmouseenter="this.style.background='var(--ag-acc-soft)'" onmouseleave="this.style.background='${bgBloq}'"`;
@@ -24081,6 +24095,15 @@ function renderAgendaSemana(d){
                 ${AGI('block',9)} <span style="font-size:9px;color:#fff;margin-left:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${motivo}</span>
               </div>`;
             }
+          }
+        }
+        // Rótulo da marca d'água de ausência — só na primeira célula do intervalo (as
+        // demais já ficam com o fundo tingido, calculado acima, indicando a continuação)
+        if(estaAusente){
+          const naPrimeiraCelula = ausenciasSlot.some(iv=> iv.ini>=slotMin && iv.ini<slotFim);
+          if(naPrimeiraCelula){
+            const nomesTxt = [...new Set(ausenciasSlot.flatMap(iv=>iv.nomes))].join(', ');
+            body += `<div class="ag-ausencia-watermark" style="position:absolute;top:1px;left:1px;right:1px;height:${SLOT_H-2}px" title="Ausente: ${esc(nomesTxt)}"><span>Ausente: ${esc(nomesTxt)}</span></div>`;
           }
         }
         agmsAqui.forEach(a => {
@@ -24349,11 +24372,47 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
       </div>`;
     });
 
+    // Marca d'água de ausência de profissional — aparece em TODAS as salas (qualquer
+    // profissional pode atender em qualquer uma), só como aviso visual, sem travar o
+    // agendamento. Mostra em cima da coluna de sala; na visão por profissional não
+    // faz sentido (a coluna já É a profissional, o bloqueio dela já aparece normal).
+    if(modo==='sala'){
+      const ausBlqs = bloqueios.filter(b=>(b.tipo==='profissional'||b.tipo==='ambos') && bloqueioCobre(b,dataIso,iniMin,fimMin));
+      agMesclarIntervalosAusencia(ausBlqs, iniMin, fimMin).forEach(iv=>{
+        const topPx = Math.round((iv.ini - iniMin) / passo * SLOT_H) + 1;
+        const heightPx = Math.max(18, Math.round((iv.fim - iv.ini) / passo * SLOT_H) - 2);
+        const nomesTxt = iv.nomes.join(', ');
+        html += `<div class="ag-ausencia-watermark" style="top:${topPx}px;height:${heightPx}px" title="Ausente nesta janela: ${esc(nomesTxt)}"><span>Ausente: ${esc(nomesTxt)}</span></div>`;
+      });
+    }
+
     html += `</div>`;
   });
   html += `</div>`;
 
   grid.innerHTML = html;
+}
+
+// Junta bloqueios de ausência de profissional que se sobrepõem no tempo, agrupando
+// os nomes num único intervalo — usado pra desenhar a marca d'água na agenda por sala
+// sem empilhar um aviso por profissional quando várias estão ausentes na mesma janela.
+function agMesclarIntervalosAusencia(blqsProfissional, iniMin, fimMin){
+  const pontos = blqsProfissional.map(b=>{
+    const ini = Math.max(iniMin, b.diaTodo ? iniMin : horaParaMin(b.horaInicio||'00:00'));
+    const fim = Math.min(fimMin, b.diaTodo ? fimMin : horaParaMin(b.horaFim||'23:59'));
+    return {ini, fim, nome: nomeUsuario(b.usuarioId)};
+  }).filter(x=>x.fim>x.ini).sort((a,b)=>a.ini-b.ini);
+  const merged=[];
+  pontos.forEach(p=>{
+    const last = merged[merged.length-1];
+    if(last && p.ini <= last.fim){
+      last.fim = Math.max(last.fim, p.fim);
+      if(!last.nomes.includes(p.nome)) last.nomes.push(p.nome);
+    } else {
+      merged.push({ini:p.ini, fim:p.fim, nomes:[p.nome]});
+    }
+  });
+  return merged;
 }
 
 function renderAgendaCell(col, modo, slotIni, slotFim, dataIso, diaSemana, iniMin, fimMin, passo, SLOT_H){
@@ -24822,14 +24881,13 @@ function agmValidarCamposExtras(){
   return true;
 }
 
+// Lista sempre todas as salas ativas da clínica — qualquer profissional pode
+// atender em qualquer sala, então este campo não depende mais da Profissional
+// escolhida (os dois campos são independentes um do outro).
 function agmAtualizarSalasDisponiveis(salaPreSelecionada){
-  const usuarioId=document.getElementById('agm-profissional').value;
-  const ap=agendaProfissionais.find(x=>x.usuarioId===usuarioId);
-  const salaIds = ap ? ap.salasIds : salasAtivas().map(s=>s.id);
   const selSala=document.getElementById('agm-sala');
-  selSala.innerHTML = salaIds.map(sid=>{
-    const s=salas.find(x=>x.id===sid);
-    return s ? `<option value="${s.id}" ${salaPreSelecionada===s.id?'selected':''}>${s.nome}</option>` : '';
+  selSala.innerHTML = salasAtivas().map(s=>{
+    return `<option value="${s.id}" ${salaPreSelecionada===s.id?'selected':''}>${s.nome}</option>`;
   }).join('');
 }
 
