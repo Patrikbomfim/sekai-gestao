@@ -13602,6 +13602,18 @@ function _prontDesfazerItem(orcId,idx){
 }
 
 // ── FICHA CLÍNICA ──────────────────────────────────────────────────────────
+// Monta o texto de vínculo exibido no cabeçalho de cada atendimento (usado na tela e no PDF):
+// - Avulso: "Atendimento avulso"
+// - Vinculado a orçamento: nome do orçamento (+ procedimento específico, se houver)
+// - Atendimento antigo (registrado antes da coluna Título ser removida do formulário,
+//   sem vínculo nem avulso corretamente marcado): mostra o título salvo na época, como exceção
+function _prontVinculoTexto(f){
+  if(f.avulso) return 'Atendimento avulso';
+  if(f.planTratamento) return f.planTratamento+(f.procedimento?' · '+f.procedimento:'');
+  if(f.titulo) return f.titulo; // compatibilidade com atendimentos antigos
+  return '';
+}
+
 function _renderProntFicha(p){
   const wrap=document.getElementById('pp-prontuario-ficha-wrap');
   if(!wrap) return;
@@ -13619,11 +13631,6 @@ function _renderProntFicha(p){
     ?'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#ECFDF5;color:#065F46">Realizado</span>'
     :'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#FEF9EE;color:#7C4A00">A realizar</span>';
 
-  const field=(label,val)=>val?`<div style="margin-bottom:10px">
-    <div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">${label}</div>
-    <div style="font-size:13px;color:var(--tx);white-space:pre-line;line-height:1.55">${val}</div>
-  </div>`:'';
-
   const fieldSempre=(label,val)=>`<div style="margin-bottom:10px">
     <div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">${label}</div>
     <div style="font-size:13px;color:${val?'var(--tx)':'var(--tx3)'};white-space:pre-line;line-height:1.55">${val||'—'}</div>
@@ -13634,12 +13641,12 @@ function _renderProntFicha(p){
     return `
     <div style="border:1px solid var(--border);border-radius:var(--r8);margin-bottom:10px;overflow:hidden">
 
-      <!-- Cabeçalho: data + título -->
+      <!-- Cabeçalho: data + vínculo (orçamento/avulso) + responsável -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--border)">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0">
           <span style="font-size:13px;font-weight:700;color:var(--tx);white-space:nowrap">${fmtData(f.data)}</span>
-          ${f.titulo?`<span style="font-size:12px;color:var(--tx3)">·</span><span style="font-size:13px;font-weight:600;color:var(--ac)">${f.titulo}</span>`:''}
-          ${f.avulso?'<span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:3px;background:var(--pul);color:var(--pu)">Avulso</span>':''}
+          ${_prontVinculoTexto(f)?`<span style="font-size:12px;color:var(--tx3)">·</span><span style="font-size:13px;font-weight:600;color:var(--ac)">${_prontVinculoTexto(f)}</span>`:''}
+          ${f.profissional?`<span style="font-size:12px;color:var(--tx3)">·</span><span style="font-size:13px;color:var(--tx2)">${f.profissional}</span>`:''}
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
           <!-- Botão exportar PDF individual -->
@@ -13658,27 +13665,20 @@ function _renderProntFicha(p){
         </div>
       </div>
 
-      <!-- Corpo: col info + 3 colunas de texto -->
-      <div style="display:grid;grid-template-columns:200px 1fr 1fr 1fr;gap:0;background:var(--surface)">
+      <!-- Corpo: 3 colunas de texto (Descrição ganhou o espaço da coluna removida) -->
+      <div style="display:grid;grid-template-columns:1.3fr 1fr 0.7fr;gap:0;background:var(--surface)">
 
-        <!-- Col 1: dados clínicos -->
-        <div style="padding:14px 14px;border-right:1px solid var(--border);background:var(--s2)">
-          ${field('Plano de tratamento', f.planTratamento)}
-          ${field(f.avulso?'Tipo':'Procedimento', f.avulso?'Atendimento avulso':(f.procedimento||''))}
-          ${field('Responsável', f.profissional)}
-        </div>
-
-        <!-- Col 2: Descrição -->
+        <!-- Col 1: Descrição -->
         <div style="padding:14px 14px;border-right:1px solid var(--border)">
           ${fieldSempre('Descrição do atendimento', f.descricao)}
         </div>
 
-        <!-- Col 3: Orientações -->
+        <!-- Col 2: Orientações -->
         <div style="padding:14px 14px;border-right:1px solid var(--border)">
           ${fieldSempre('Orientações ao paciente', f.orientacoes)}
         </div>
 
-        <!-- Col 4: Próxima consulta -->
+        <!-- Col 3: Próxima consulta -->
         <div style="padding:14px 14px">
           ${fieldSempre('Próxima consulta', f.proximaConsulta)}
         </div>
@@ -15718,7 +15718,7 @@ function _prontExportarFichaCompleta(){
 function _prontAbrirPdfFichas(fichas, pacNome, clinicaNome, fmtData){
   const row=(label,val)=>val?`<tr><td style="padding:6px 10px;font-size:11px;font-weight:700;color:#9a9a9a;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;vertical-align:top;width:160px">${label}</td><td style="padding:6px 10px;font-size:13px;color:#1a1a1a;white-space:pre-line">${val}</td></tr>`:'';
   const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Ficha Clínica — ${pacNome}</title>
-  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1a1a1a;font-size:13px;padding:32px 36px;max-width:820px;margin:auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}@media print{body{padding:0}@page{margin:14mm 12mm;size:A4}}.card{border:1px solid #e5e7eb;border-radius:8px;margin-bottom:16px;overflow:hidden}.card-hdr{background:#f8f9fa;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e5e7eb}.card-hdr-left{font-size:14px;font-weight:700;color:#0f172a}.card-hdr-right{font-size:11px;color:#6b7280}.cols{display:grid;grid-template-columns:160px 1fr 1fr 1fr;border-top:none}.col{padding:12px 14px;border-right:1px solid #e5e7eb}.col:last-child{border-right:none}.col-lbl{font-size:10px;font-weight:700;color:#9a9a9a;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.col-val{font-size:13px;color:#1a1a1a;white-space:pre-line;line-height:1.5}.col-1{background:#f8f9fa}.sep{height:1px;background:#f0f0f0;margin:0}</style></head>
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1a1a1a;font-size:13px;padding:32px 36px;max-width:820px;margin:auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}@media print{body{padding:0}@page{margin:14mm 12mm;size:A4}}.card{border:1px solid #e5e7eb;border-radius:8px;margin-bottom:16px;overflow:hidden}.card-hdr{background:#f8f9fa;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e5e7eb}.card-hdr-left{font-size:14px;font-weight:700;color:#0f172a}.card-hdr-vinc{font-weight:600;color:#B8964F}.card-hdr-prof{font-weight:400;color:#6b7280}.card-hdr-right{font-size:11px;color:#6b7280}.cols{display:grid;grid-template-columns:1.3fr 1fr 0.7fr;border-top:none}.col{padding:12px 14px;border-right:1px solid #e5e7eb}.col:last-child{border-right:none}.col-lbl{font-size:10px;font-weight:700;color:#9a9a9a;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.col-val{font-size:13px;color:#1a1a1a;white-space:pre-line;line-height:1.5}.sep{height:1px;background:#f0f0f0;margin:0}</style></head>
   <body>
   <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px">
     <div><div style="font-size:22px;font-weight:700;color:#1a1a1a">${clinicaNome}</div></div>
@@ -15728,19 +15728,12 @@ function _prontAbrirPdfFichas(fichas, pacNome, clinicaNome, fmtData){
   ${fichas.map(f=>`
   <div class="card">
     <div class="card-hdr">
-      <div class="card-hdr-left">${fmtData(f.data)}${f.titulo?' · '+f.titulo:''}</div>
+      <div class="card-hdr-left">${fmtData(f.data)}${_prontVinculoTexto(f)?` · <span class="card-hdr-vinc">${_prontVinculoTexto(f)}</span>`:''}${f.profissional?` · <span class="card-hdr-prof">${f.profissional}</span>`:''}</div>
       <div style="display:flex;align-items:center;gap:12px">
-        ${f.profissional?`<span class="card-hdr-right">${f.profissional}</span>`:''}
         <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:${(f.status||'realizado')==='realizado'?'#ECFDF5':'#FEF9EE'};color:${(f.status||'realizado')==='realizado'?'#065F46':'#7C4A00'}">${(f.status||'realizado')==='realizado'?'Realizado':'A realizar'}</span>
       </div>
     </div>
     <div class="cols">
-      <div class="col col-1">
-        ${f.planTratamento?`<div class="col-lbl">Plano de tratamento</div><div class="col-val" style="margin-bottom:10px">${f.planTratamento}</div>`:''}
-        ${f.procedimento&&!f.avulso?`<div class="col-lbl">Procedimento</div><div class="col-val" style="margin-bottom:10px">${f.procedimento}</div>`:''}
-        ${f.avulso?`<div class="col-lbl">Tipo</div><div class="col-val" style="margin-bottom:10px">Atendimento avulso</div>`:''}
-        ${f.profissional?`<div class="col-lbl">Responsável</div><div class="col-val">${f.profissional}</div>`:''}
-      </div>
       <div class="col"><div class="col-lbl">Descrição do atendimento</div><div class="col-val">${f.descricao||'—'}</div></div>
       <div class="col"><div class="col-lbl">Orientações ao paciente</div><div class="col-val">${f.orientacoes||'—'}</div></div>
       <div class="col"><div class="col-lbl">Detalhes próxima consulta</div><div class="col-val">${f.proximaConsulta||'—'}</div></div>
@@ -15814,13 +15807,7 @@ function abrirModalAtendimento(fichaExistente){
       </div>
       <div class="modal-body" style="overflow-y:auto;flex:1;padding-top:16px">
 
-        <!-- Linha 1: Título (destaque) -->
-        <div style="margin-bottom:12px">
-          <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Título do atendimento</label>
-          <input type="text" id="atd-titulo" placeholder="Ex: Extração dente 37, Consulta de retorno, Instalação aparelho..." style="width:100%;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);font-family:var(--font)">
-        </div>
-
-        <!-- Linha 2: Data, Profissional, Status -->
+        <!-- Linha 1: Data, Profissional, Status -->
         <div class="fg" style="margin-bottom:4px">
           <div class="fl">
             <label>Data do atendimento</label>
@@ -15904,7 +15891,6 @@ function abrirModalAtendimento(fichaExistente){
   const titulo=document.getElementById('modal-atendimento-title');
   if(fichaExistente){
     titulo.textContent='Editar atendimento';
-    document.getElementById('atd-titulo').value=fichaExistente.titulo||'';
     document.getElementById('atd-data').value=fichaExistente.data||hoje2;
     document.getElementById('atd-profissional').value=fichaExistente.profissional||'';
     document.getElementById('atd-status').value=fichaExistente.status||'realizado';
@@ -15923,7 +15909,6 @@ function abrirModalAtendimento(fichaExistente){
     }
   } else {
     titulo.textContent='Adicionar atendimento';
-    document.getElementById('atd-titulo').value='';
     document.getElementById('atd-data').value=hoje2;
     document.getElementById('atd-profissional').value='';
     document.getElementById('atd-status').value='realizado';
@@ -15963,7 +15948,6 @@ function _atdCarregarProcs(selecionado){
 function salvarAtendimento(){
   const data=document.getElementById('atd-data').value;
   if(!data){ alert('Informe a data do atendimento.'); return; }
-  const tituloAtd=document.getElementById('atd-titulo').value.trim();
   const avulso=document.getElementById('atd-avulso-toggle').classList.contains('on');
   const planId=avulso?'':document.getElementById('atd-plano').value;
   const planNome=planId?(_orcamentos().find(o=>o.id===planId)||{}).nomeOrc||'':'';
@@ -15974,13 +15958,16 @@ function salvarAtendimento(){
   const orientacoes=document.getElementById('atd-orientacoes').value.trim();
   const proximaConsulta=document.getElementById('atd-proxima').value.trim();
 
+  // Obs.: o campo "título" não existe mais no formulário. Em edições de
+  // atendimentos antigos que ainda têm um título salvo, ele é mantido
+  // (não apagamos), mas nunca mais é gravado em atendimentos novos.
   _comSalvarImediato(()=>{
     const list=_prontuarios();
     if(_prontFichaEditId){
       const idx=list.findIndex(f=>f.id===_prontFichaEditId);
-      if(idx>=0) list[idx]={...list[idx],titulo:tituloAtd,data,avulso,planTratamentoId:planId,planTratamento:planNome,procedimento,profissional,status,descricao,orientacoes,proximaConsulta};
+      if(idx>=0) list[idx]={...list[idx],data,avulso,planTratamentoId:planId,planTratamento:planNome,procedimento,profissional,status,descricao,orientacoes,proximaConsulta};
     } else {
-      list.push({id:'ficha_'+Date.now(),pacienteId:_prontPacId,titulo:tituloAtd,data,avulso,planTratamentoId:planId,planTratamento:planNome,procedimento,profissional,status,descricao,orientacoes,proximaConsulta});
+      list.push({id:'ficha_'+Date.now(),pacienteId:_prontPacId,data,avulso,planTratamentoId:planId,planTratamento:planNome,procedimento,profissional,status,descricao,orientacoes,proximaConsulta});
     }
     _salvarProntuarios(list);
   });
