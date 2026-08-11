@@ -15718,7 +15718,7 @@ function _prontExportarFichaCompleta(){
 function _prontAbrirPdfFichas(fichas, pacNome, clinicaNome, fmtData){
   const row=(label,val)=>val?`<tr><td style="padding:6px 10px;font-size:11px;font-weight:700;color:#9a9a9a;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;vertical-align:top;width:160px">${label}</td><td style="padding:6px 10px;font-size:13px;color:#1a1a1a;white-space:pre-line">${val}</td></tr>`:'';
   const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Ficha Clínica — ${pacNome}</title>
-  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1a1a1a;font-size:13px;padding:32px 36px;max-width:820px;margin:auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}@media print{body{padding:0}@page{margin:14mm 12mm;size:A4}}.card{border:1px solid #e5e7eb;border-radius:8px;margin-bottom:16px;overflow:hidden}.card-hdr{background:#f8f9fa;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e5e7eb}.card-hdr-left{font-size:14px;font-weight:700;color:#0f172a}.card-hdr-vinc{font-weight:600;color:#B8964F}.card-hdr-prof{font-weight:400;color:#6b7280}.card-hdr-right{font-size:11px;color:#6b7280}.cols{display:grid;grid-template-columns:1.3fr 1fr 0.7fr;border-top:none}.col{padding:12px 14px;border-right:1px solid #e5e7eb}.col:last-child{border-right:none}.col-lbl{font-size:10px;font-weight:700;color:#9a9a9a;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.col-val{font-size:13px;color:#1a1a1a;white-space:pre-line;line-height:1.5}.sep{height:1px;background:#f0f0f0;margin:0}</style></head>
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1a1a1a;font-size:13px;padding:32px 36px;max-width:820px;margin:auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}@media print{body{padding:0}@page{margin:14mm 12mm;size:A4}}.card{border:1px solid #e5e7eb;border-radius:8px;margin-bottom:16px;overflow:hidden;break-inside:avoid;page-break-inside:avoid}.card-hdr{background:#f8f9fa;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e5e7eb}.card-hdr-left{font-size:14px;font-weight:700;color:#0f172a}.card-hdr-vinc{font-weight:600;color:#B8964F}.card-hdr-prof{font-weight:400;color:#6b7280}.card-hdr-right{font-size:11px;color:#6b7280}.cols{display:grid;grid-template-columns:1.3fr 1fr 0.7fr;border-top:none}.col{padding:12px 14px;border-right:1px solid #e5e7eb}.col:last-child{border-right:none}.col-lbl{font-size:10px;font-weight:700;color:#9a9a9a;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.col-val{font-size:13px;color:#1a1a1a;white-space:pre-line;line-height:1.5}.sep{height:1px;background:#f0f0f0;margin:0}</style></head>
   <body>
   <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px">
     <div><div style="font-size:22px;font-weight:700;color:#1a1a1a">${clinicaNome}</div></div>
@@ -15800,7 +15800,7 @@ function abrirModalAtendimento(fichaExistente){
     m.id='modal-atendimento';
     m.style.zIndex='250';
     m.innerHTML=`
-    <div class="modal" style="width:680px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column">
+    <div class="modal" style="width:1080px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column">
       <div class="modal-header">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div class="modal-title" id="modal-atendimento-title">Adicionar atendimento</div>
@@ -15853,18 +15853,18 @@ function abrirModalAtendimento(fichaExistente){
         </div>
 
         <!-- 3 textareas lado a lado -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:8px">
           <div>
             <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Descrição do atendimento</label>
-            <textarea id="atd-descricao" rows="5" placeholder="O que foi realizado, observações gerais..." style="width:100%;font-family:var(--font);font-size:13px;resize:vertical;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6)"></textarea>
+            <textarea id="atd-descricao" rows="11" placeholder="O que foi realizado, observações gerais..." style="width:100%;font-family:var(--font);font-size:13px;resize:vertical;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6)"></textarea>
           </div>
           <div>
             <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Orientações ao paciente</label>
-            <textarea id="atd-orientacoes" rows="5" placeholder="Cuidados pós-procedimento, medicação, recomendações..." style="width:100%;font-family:var(--font);font-size:13px;resize:vertical;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6)"></textarea>
+            <textarea id="atd-orientacoes" rows="11" placeholder="Cuidados pós-procedimento, medicação, recomendações..." style="width:100%;font-family:var(--font);font-size:13px;resize:vertical;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6)"></textarea>
           </div>
           <div>
             <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Detalhes para próxima consulta</label>
-            <textarea id="atd-proxima" rows="5" placeholder="O que deverá ser feito ou verificado na próxima consulta..." style="width:100%;font-family:var(--font);font-size:13px;resize:vertical;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6)"></textarea>
+            <textarea id="atd-proxima" rows="11" placeholder="O que deverá ser feito ou verificado na próxima consulta..." style="width:100%;font-family:var(--font);font-size:13px;resize:vertical;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6)"></textarea>
           </div>
         </div>
 
