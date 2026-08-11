@@ -5770,6 +5770,7 @@ function aplicarPermissoesNav(){
 // ── STORAGE ──────────────────────────────────────────────────────────────
 let _pendingSaves = {}; // key → value, queued for manual save
 let _bypassQueue = false; // when true, salvarLS writes immediately (modal saves)
+let _pctBotaoSalvarOculto = false; // true quando a área ativa do paciente (Orçamento/Financeiro/Prontuário) não usa o botão flutuante
 
 // AJUSTE (03/08/2026): Orçamento e Prontuário usam a lista de "chaves só de
 // memória" (_CHAVES_SOMENTE_MEMORIA) e a gaveta window._memStore — ambas
@@ -5807,6 +5808,7 @@ function salvarLS(k,v){
   }
 }
 function _mostrarBotaoSalvar(){
+  if(_pctBotaoSalvarOculto) return;
   const btn=document.getElementById('floating-save-btn');
   if(!btn)return;
   btn.textContent='Salvar';
@@ -9849,11 +9851,11 @@ function abrirModalPt(id){
   switchPpArea('dados');
   bindFoneMask('mpt-fone');
 
-  // Aplicar permissões na página
+  // Aplicar permissões na página (a visibilidade dos botões "Excluir"/"Salvar
+  // alterações" do cabeçalho, além da permissão, agora também depende da aba
+  // ativa — só aparecem no Cadastro — e é tratada dentro de switchPpArea)
   const podeEditarPt = temPerm('pacientes_editar');
   const podeExcluirPt = temPerm('pacientes_excluir');
-  document.getElementById('pp-btn-salvar').style.display = podeEditarPt ? '' : 'none';
-  document.getElementById('pp-btn-excluir').style.display = podeExcluirPt ? '' : 'none';
   document.querySelectorAll('#sec-paciente-detalhe input, #sec-paciente-detalhe select, #sec-paciente-detalhe textarea').forEach(el=>{
     el.disabled = !podeEditarPt;
     if(!podeEditarPt) el.style.opacity = '.65';
@@ -9910,6 +9912,22 @@ function switchPpArea(area){
     if(el) el.classList.toggle('on',a===area);
   });
   if(area==='prontuario') switchProntTab('plano');
+
+  // Botões "Excluir" e "Salvar alterações" do cabeçalho só atuam sobre o Cadastro
+  // do paciente — nas demais abas, ficam escondidos por não terem função ali.
+  const btnSalvarHdr=document.getElementById('pp-btn-salvar');
+  const btnExcluirHdr=document.getElementById('pp-btn-excluir');
+  if(btnSalvarHdr) btnSalvarHdr.style.display = (area==='dados' && temPerm('pacientes_editar')) ? '' : 'none';
+  if(btnExcluirHdr) btnExcluirHdr.style.display = (area==='dados' && temPerm('pacientes_excluir')) ? '' : 'none';
+
+  // Botão flutuante "Salvar" (fila de salvamento pendente) não é necessário em
+  // Orçamento/Financeiro/Prontuário — toda ação de escrita nessas 3 áreas já
+  // salva na hora. Fica escondido nelas; volta ao normal no restante do sistema.
+  _pctBotaoSalvarOculto = (area==='orcamento' || area==='financeiro' || area==='prontuario');
+  if(_pctBotaoSalvarOculto){
+    const btnFlut=document.getElementById('floating-save-btn');
+    if(btnFlut) btnFlut.classList.remove('visible','saved');
+  }
 }
 
 // A partir de um título em Contas a Receber (Financeiro) originado de um paciente,
@@ -15912,7 +15930,11 @@ function abrirModalAtendimento(fichaExistente){
   } else {
     titulo.textContent='Adicionar atendimento';
     document.getElementById('atd-data').value=hoje2;
-    document.getElementById('atd-profissional').value='';
+    // Se quem está executando a ação (usuário atual, considerando "Ver como") for
+    // dentista, já vem pré-selecionado no campo Profissional. Caso contrário
+    // (ex: Administrador), continua em branco pra escolher manualmente.
+    const _atdMeuMembro=(equipe||[]).find(e=>typeof e!=='string' && e.usuarioId===usuarioAtualId);
+    document.getElementById('atd-profissional').value=(_atdMeuMembro && membroEhDentista(_atdMeuMembro)) ? (_atdMeuMembro.nome||'') : '';
     document.getElementById('atd-status').value='realizado';
     document.getElementById('atd-descricao').value='';
     document.getElementById('atd-orientacoes').value='';
