@@ -16500,51 +16500,72 @@ document.addEventListener('click', e => {
 // ══════════════════════════════════════════════════════════════════════
 
 // ── Dados ──────────────────────────────────────────────────────────────
-const CAMPOS_ANAMNESE_PADRAO = [
-  // Identificação — preenchem automaticamente o cadastro do paciente
-  {id:'an_custom_1782694710595', label:'Nome completo',        tipo:'texto', obrigatorio:false, locked:false, vinculoCadastro:'nome'},
-  {id:'an_custom_1782694383654', label:'Data de nascimento',   tipo:'data',  obrigatorio:false, locked:false, vinculoCadastro:'nasc'},
-  {id:'an_custom_1782694716492', label:'Telefone / WhatsApp',  tipo:'texto', obrigatorio:false, locked:false, vinculoCadastro:'fone'},
-  {id:'an_custom_1782694720865', label:'CPF',                  tipo:'texto', obrigatorio:false, locked:false, vinculoCadastro:'cpf'},
-  {id:'an_custom_1782695883711', label:'Email',                tipo:'texto', obrigatorio:false, locked:false, vinculoCadastro:'custom_1781482166892'},
+// Grupos visuais em que as perguntas são organizadas, tanto no formulário que
+// o paciente preenche pelo link quanto nas telas internas (ficha preenchida,
+// PDF, configuração). 'outros' é o destino de qualquer pergunta customizada
+// que a clínica adicionar sem grupo definido. 'final' não mostra título (é o
+// campo de observações finais, que fecha o formulário sem precisar de rótulo).
+const GRUPOS_ANAMNESE = [
+  {id:'dados',    titulo:'Seus dados'},
+  {id:'consulta', titulo:'Sobre sua consulta'},
+  {id:'saude',    titulo:'Sua saúde'},
+  {id:'odonto',   titulo:'Seu histórico odontológico'},
+  {id:'pessoal',  titulo:'Conte-nos um pouco sobre você'},
+  {id:'origem',   titulo:'Como você nos conheceu'},
+  {id:'outros',   titulo:'Outras perguntas'},
+  {id:'final',    titulo:''},
+];
 
-  // Motivo da consulta e desejos de tratamento
-  {id:'an_queixa', label:'Qual o motivo da sua consulta hoje?', tipo:'selecao', obrigatorio:true, locked:true,
+const CAMPOS_ANAMNESE_PADRAO = [
+  // Seus dados — preenchem automaticamente o cadastro do paciente
+  {id:'an_custom_1782694710595', label:'Nome completo',            tipo:'texto', obrigatorio:false, locked:false, vinculoCadastro:'nome', grupo:'dados'},
+  {id:'an_como_chamar',          label:'Como prefere ser chamado(a)?', tipo:'texto', obrigatorio:false, locked:false, grupo:'dados'},
+  {id:'an_custom_1782694383654', label:'Data de nascimento',       tipo:'data',  obrigatorio:false, locked:false, vinculoCadastro:'nasc', grupo:'dados'},
+  {id:'an_custom_1782694716492', label:'Telefone / WhatsApp',      tipo:'texto', obrigatorio:false, locked:false, vinculoCadastro:'fone', grupo:'dados'},
+  {id:'an_custom_1782694720865', label:'CPF',                      tipo:'texto', obrigatorio:false, locked:false, vinculoCadastro:'cpf', grupo:'dados'},
+  {id:'an_custom_1782695883711', label:'Email',                    tipo:'texto', obrigatorio:false, locked:false, vinculoCadastro:'custom_1781482166892', grupo:'dados'},
+
+  // Sobre sua consulta — motivo da consulta e desejos de tratamento
+  {id:'an_queixa', label:'Qual o motivo da sua consulta hoje?', tipo:'selecao', obrigatorio:true, locked:true, grupo:'consulta',
     opcoes:['Avaliação geral / check-up','Dor ou desconforto','Estética do sorriso','Ortodontia (aparelho)','Prótese ou implante','Limpeza / prevenção','Outro'],
     condicionalLabel:'Qual?'},
-  {id:'an_tratamento_desejado', label:'Além do motivo de hoje, o que você gostaria de melhorar no seu sorriso?', tipo:'multiplo', obrigatorio:false, locked:false,
+  {id:'an_tratamento_desejado', label:'Além do motivo de hoje, o que você gostaria de melhorar no seu sorriso?', tipo:'multiplo', obrigatorio:false, locked:false, grupo:'consulta',
     opcoes:['Nada em especial, quero uma avaliação','Aparência / cor dos dentes','Dentes tortos ou desalinhados','Falta de dente(s)','Sangramento na gengiva','Outro'],
     condicionalLabel:'Qual?'},
 
-  // Saúde básica (segurança clínica)
-  {id:'an_medicamentos', label:'Você usa algum medicamento de uso contínuo?', tipo:'sim_nao', obrigatorio:true,  locked:false, condicionalLabel:'Quais medicamentos?'},
-  {id:'an_alergia',   label:'Você tem alergia a alguma medicação?',          tipo:'sim_nao', obrigatorio:true,  locked:false, condicionalLabel:'A qual medicação?'},
-  {id:'an_pressao',   label:'Tem pressão alta ou problema cardíaco?',        tipo:'sim_nao', obrigatorio:true,  locked:false, condicionalLabel:'Descreva:'},
-  {id:'an_diabetes',  label:'Tem diabetes?',                                 tipo:'sim_nao', obrigatorio:false, locked:false},
-  {id:'an_gestante',  label:'Está grávida ou amamentando?',                  tipo:'sim_nao', obrigatorio:false, locked:false},
-  {id:'an_fumante',   label:'É fumante?',                                    tipo:'sim_nao', obrigatorio:false, locked:false},
-  {id:'an_hemorragia',label:'Tem ou já teve problema de hemorragia/coagulação?', tipo:'sim_nao', obrigatorio:false, locked:false},
-  {id:'an_cirurgia',  label:'Já fez alguma cirurgia ou internação recente?', tipo:'sim_nao', obrigatorio:false, locked:false, condicionalLabel:'Qual?'},
+  // Sua saúde — segurança clínica
+  {id:'an_medicamentos', label:'Você usa algum medicamento de uso contínuo?', tipo:'sim_nao', obrigatorio:true,  locked:false, grupo:'saude', condicionalLabel:'Quais medicamentos?'},
+  {id:'an_alergia',   label:'Você tem alergia a alguma medicação?',          tipo:'sim_nao', obrigatorio:true,  locked:false, grupo:'saude', condicionalLabel:'A qual medicação?'},
+  {id:'an_pressao',   label:'Tem pressão alta ou problema cardíaco?',        tipo:'sim_nao', obrigatorio:true,  locked:false, grupo:'saude', condicionalLabel:'Descreva:'},
+  {id:'an_diabetes',  label:'Tem diabetes?',                                 tipo:'sim_nao', obrigatorio:false, locked:false, grupo:'saude'},
+  {id:'an_gestante',  label:'Está grávida ou amamentando?',                  tipo:'sim_nao', obrigatorio:false, locked:false, grupo:'saude'},
+  {id:'an_fumante',   label:'É fumante?',                                    tipo:'sim_nao', obrigatorio:false, locked:false, grupo:'saude'},
+  {id:'an_hemorragia',label:'Tem ou já teve problema de hemorragia/coagulação?', tipo:'sim_nao', obrigatorio:false, locked:false, grupo:'saude'},
+  {id:'an_cirurgia',  label:'Já fez alguma cirurgia ou internação recente?', tipo:'sim_nao', obrigatorio:false, locked:false, grupo:'saude', condicionalLabel:'Qual?'},
 
-  // Perfil odontológico
-  {id:'an_ultima_visita', label:'Qual a última vez que foi ao dentista?', tipo:'selecao', obrigatorio:false, locked:false,
+  // Seu histórico odontológico
+  {id:'an_ultima_visita', label:'Qual a última vez que foi ao dentista?', tipo:'selecao', obrigatorio:false, locked:false, grupo:'odonto',
     opcoes:['Nos últimos 6 meses','Entre 6 meses e 1 ano','Entre 1 e 2 anos','Mais de 2 anos','Não lembro / nunca fui']},
-  {id:'an_satisfacao_sorriso', label:'Você está satisfeito(a) com a estética do seu sorriso?', tipo:'selecao', obrigatorio:false, locked:false,
+  {id:'an_satisfacao_sorriso', label:'Você está satisfeito(a) com a estética do seu sorriso?', tipo:'selecao', obrigatorio:false, locked:false, grupo:'odonto',
     opcoes:['Sim, estou satisfeito(a)','Mais ou menos, gostaria de melhorar alguns pontos','Não, quero melhorar bastante']},
-  {id:'an_medo_dentista', label:'Tem medo ou ansiedade de ir ao dentista?', tipo:'selecao', obrigatorio:false, locked:false,
+  {id:'an_sensibilidade', label:'Tem sensibilidade em algum dente?', tipo:'sim_nao', obrigatorio:false, locked:false, grupo:'odonto', condicionalLabel:'Em quais dentes, se souber:'},
+  {id:'an_bruxismo', label:'Tem o hábito de ranger ou apertar os dentes (bruxismo)?', tipo:'sim_nao', obrigatorio:false, locked:false, grupo:'odonto'},
+
+  // Conte-nos um pouco sobre você (quebra-gelo)
+  {id:'an_profissao', label:'Qual sua profissão?', tipo:'texto', obrigatorio:false, locked:false, grupo:'pessoal'},
+  {id:'an_filhos', label:'Você tem filhos(as)?', tipo:'sim_nao', obrigatorio:false, locked:false, grupo:'pessoal'},
+  {id:'an_esporte', label:'Você acompanha algum esporte ou torce para algum time?', tipo:'sim_nao', obrigatorio:false, locked:false, grupo:'pessoal', condicionalLabel:'Qual?'},
+  {id:'an_data_especial', label:'Tem alguma data especial se aproximando (casamento, formatura, evento importante)?', tipo:'sim_nao', obrigatorio:false, locked:false, grupo:'pessoal', condicionalLabel:'Qual e quando?'},
+  {id:'an_medo_dentista', label:'Tem medo ou ansiedade de ir ao dentista?', tipo:'selecao', obrigatorio:false, locked:false, grupo:'pessoal',
     opcoes:['Não, fico tranquilo(a)','Um pouco de ansiedade','Sim, tenho bastante medo']},
-  {id:'an_como_conheceu', label:'Como você conheceu a nossa clínica?', tipo:'selecao', obrigatorio:false, locked:false,
+
+  // Como você nos conheceu
+  {id:'an_como_conheceu', label:'Como você conheceu a nossa clínica?', tipo:'selecao', obrigatorio:false, locked:false, grupo:'origem',
     opcoes:['Indicação de amigo ou familiar','Instagram ou Facebook','Google / Internet','Já sou paciente','Passei em frente','Outro'],
     condicionalLabel:'Qual?'},
-  {id:'an_dor_estalo', label:'Sente dor, incômodo ou estalo ao abrir a boca?', tipo:'sim_nao', obrigatorio:false, locked:false, condicionalLabel:'Descreva:'},
-  {id:'an_sensibilidade', label:'Tem sensibilidade em algum dente?', tipo:'sim_nao', obrigatorio:false, locked:false, condicionalLabel:'Em quais dentes, se souber:'},
-  {id:'an_bruxismo', label:'Tem o hábito de ranger ou apertar os dentes (bruxismo)?', tipo:'sim_nao', obrigatorio:false, locked:false},
 
-  // Perfil pessoal (quebra-gelo)
-  {id:'an_esporte', label:'Você acompanha algum esporte ou torce para algum time?', tipo:'sim_nao', obrigatorio:false, locked:false, condicionalLabel:'Qual?'},
-
-  // Observações finais
-  {id:'an_obs', label:'Alguma informação adicional que queira nos contar?', tipo:'texto', obrigatorio:false, locked:false},
+  // Observações finais (sem título de grupo)
+  {id:'an_obs', label:'Alguma informação adicional que queira nos contar?', tipo:'texto', obrigatorio:false, locked:false, grupo:'final'},
 ];
 
 let camposAnamnese = carregarLS('sk3-campos-anamnese', CAMPOS_ANAMNESE_PADRAO);
@@ -16552,6 +16573,64 @@ let camposAnamnese = carregarLS('sk3-campos-anamnese', CAMPOS_ANAMNESE_PADRAO);
 let respostasAnamnese = carregarLS('sk3-respostas-anamnese', {});
 // tokens locais (cache): { token: pacienteId }
 let tokensAnamnese = carregarLS('sk3-tokens-anamnese', {});
+
+// Migração (uma vez só): clínicas que já tinham a anamnese em uso recebem os
+// grupos, as novas perguntas (como prefere ser chamado, profissão, filhos,
+// data especial) e a remoção da pergunta de dor/estalo — preservando qualquer
+// edição que a clínica já tenha feito nos rótulos/opções dos campos padrão, e
+// preservando por completo qualquer pergunta 100% customizada que a clínica
+// tenha criado (essas caem no grupo "Outras perguntas", ao final).
+(function _migrarAnamneseGrupos_v1(){
+  if(carregarLS('sk3-anamnese-grupos-migrada-v1', false)) return;
+
+  const GRUPO_POR_ID = {};
+  const ORDEM_IDS = [];
+  CAMPOS_ANAMNESE_PADRAO.forEach(c=>{ GRUPO_POR_ID[c.id]=c.grupo; ORDEM_IDS.push(c.id); });
+
+  let lista = camposAnamnese.slice();
+
+  // 1) remove a pergunta "dor/estalo ao abrir a boca" (saiu do roteiro)
+  lista = lista.filter(c => c.id !== 'an_dor_estalo');
+
+  // 2) adiciona os campos novos, só se ainda não existirem
+  ['an_como_chamar','an_profissao','an_filhos','an_data_especial'].forEach(id=>{
+    if(!lista.some(c=>c.id===id)){
+      const def = CAMPOS_ANAMNESE_PADRAO.find(c=>c.id===id);
+      if(def) lista.push({...def});
+    }
+  });
+
+  // 3) atribui grupo a cada campo (não sobrescreve se a clínica já tiver definido um)
+  lista.forEach(c=>{ if(!c.grupo) c.grupo = GRUPO_POR_ID[c.id] || 'outros'; });
+
+  // 4) reordena: primeiro os campos padrão na ordem dos grupos, depois
+  // qualquer pergunta customizada da clínica (mantendo a ordem relativa dela)
+  const idsConhecidos = new Set(ORDEM_IDS);
+  const padroesOrdenados = ORDEM_IDS.map(id=>lista.find(c=>c.id===id)).filter(Boolean);
+  const customizados = lista.filter(c=>!idsConhecidos.has(c.id));
+  camposAnamnese = [...padroesOrdenados, ...customizados];
+
+  salvarAnamnese();
+  salvarLS('sk3-anamnese-grupos-migrada-v1', true);
+})();
+
+// Agrupa uma lista de campos (já na ordem correta) em blocos consecutivos por
+// grupo, cada um com seu título — usado por todas as telas que exibem a
+// anamnese (formulário público, ficha preenchida, PDF, configuração).
+function _anamneseAgruparCampos(campos){
+  const TITULOS = {}; GRUPOS_ANAMNESE.forEach(g=>{ TITULOS[g.id]=g.titulo; });
+  const blocos = [];
+  campos.forEach(c=>{
+    const gid = c.grupo || 'outros';
+    let bloco = blocos[blocos.length-1];
+    if(!bloco || bloco.grupoId !== gid){
+      bloco = {grupoId:gid, titulo:TITULOS[gid]||'', campos:[]};
+      blocos.push(bloco);
+    }
+    bloco.campos.push(c);
+  });
+  return blocos;
+}
 
 function salvarAnamnese(){
   salvarLS('sk3-campos-anamnese', camposAnamnese);
@@ -16692,43 +16771,50 @@ function renderAbaAnamnese(p){
 
   if(preenchido && camposAnamnese.length){
     const svgCheck = '<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg>';
-    const simNaoItens = [];
-    const textoItens = [];
     let temAtencao = false;
-    camposAnamnese.forEach(c=>{
-      if(c.vinculoCadastro) return; // campos vinculados já estão no cadastro, não exibir aqui
+    let totalItens = 0;
+    const camposComResposta = camposAnamnese.filter(c=>{
+      if(c.vinculoCadastro) return false; // campos vinculados já estão no cadastro, não exibir aqui
       const val = resp[c.id];
       const valCond = resp[c.id + '_cond'];
-      if(val === undefined && !valCond) return;
-      const condHtml = valCond ? `<div style="font-size:11.5px;color:var(--tx2);margin-top:2px;font-style:italic">${valCond}</div>` : '';
-      if(c.tipo === 'sim_nao'){
-        const atencao = anamneseExigeAtencao(c, val);
-        if(atencao) temAtencao = true;
-        simNaoItens.push({c, val, atencao, condHtml});
-      } else {
-        const textoResp = val !== undefined ? (val==='outro' ? 'Prefiro não informar' : (val||'—')) : '—';
-        textoItens.push({c, textoResp, condHtml});
-      }
+      return !(val === undefined && !valCond);
     });
+    const blocos = _anamneseAgruparCampos(camposComResposta);
 
-    html += temAtencao ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;font-size:12px;color:var(--da);font-weight:600">
-        <svg viewBox="0 0 24 24" width="1em" height="1em" style="flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        Há pontos que precisam de atenção nesta ficha
-      </div>` : '';
-
-    if(simNaoItens.length){
-      let rows = '';
-      simNaoItens.forEach((it,i)=>{
-        const zebra = i%2===1 ? 'background:var(--s2)' : '';
-        const trBg = it.atencao ? 'background:var(--dal)' : zebra;
-        rows += `<tr style="${trBg};border-bottom:1px solid var(--border)">
-          <td style="padding:8px 8px 8px 4px;font-size:13px;color:var(--tx);vertical-align:top">${it.c.label}${it.atencao ? ' <span style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--da);color:#fff;font-size:10px;font-weight:700;letter-spacing:.03em;vertical-align:middle">ATENÇÃO</span>' : ''}${it.condHtml}</td>
-          <td style="padding:8px;text-align:center;width:44px;font-size:13px;${it.val==='sim' ? 'font-weight:700;color:'+(it.atencao?'var(--da)':'var(--su)') : 'color:var(--border-s)'}">${it.val==='sim' ? svgCheck : '—'}</td>
-          <td style="padding:8px 4px 8px 8px;text-align:center;width:44px;font-size:13px;${it.val==='nao' ? 'font-weight:700;color:var(--tx2)' : 'color:var(--border-s)'}">${it.val==='nao' ? svgCheck : '—'}</td>
-        </tr>`;
+    let corpoGrupos = '';
+    blocos.forEach(bloco=>{
+      const simNaoItens = [];
+      const textoItens = [];
+      bloco.campos.forEach(c=>{
+        const val = resp[c.id];
+        const valCond = resp[c.id + '_cond'];
+        const condHtml = valCond ? `<div style="font-size:11.5px;color:var(--tx2);margin-top:2px;font-style:italic">${valCond}</div>` : '';
+        if(c.tipo === 'sim_nao'){
+          const atencao = anamneseExigeAtencao(c, val);
+          if(atencao) temAtencao = true;
+          simNaoItens.push({c, val, atencao, condHtml});
+        } else {
+          const textoResp = val !== undefined ? (val==='outro' ? 'Prefiro não informar' : (val||'—')) : '—';
+          textoItens.push({c, textoResp, condHtml});
+        }
       });
-      html += `<div style="font-size:10.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Perguntas objetivas</div>
-        <table style="width:100%;max-width:480px;border-collapse:collapse;margin-bottom:${textoItens.length?'22px':'0'}">
+      if(!simNaoItens.length && !textoItens.length) return;
+      totalItens += simNaoItens.length + textoItens.length;
+
+      let blocoHtml = bloco.titulo ? `<div style="font-size:12px;font-weight:700;color:var(--tx);margin-bottom:10px;margin-top:20px">${bloco.titulo}</div>` : '';
+
+      if(simNaoItens.length){
+        let rows = '';
+        simNaoItens.forEach((it,i)=>{
+          const zebra = i%2===1 ? 'background:var(--s2)' : '';
+          const trBg = it.atencao ? 'background:var(--dal)' : zebra;
+          rows += `<tr style="${trBg};border-bottom:1px solid var(--border)">
+            <td style="padding:8px 8px 8px 4px;font-size:13px;color:var(--tx);vertical-align:top">${it.c.label}${it.atencao ? ' <span style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--da);color:#fff;font-size:10px;font-weight:700;letter-spacing:.03em;vertical-align:middle">ATENÇÃO</span>' : ''}${it.condHtml}</td>
+            <td style="padding:8px;text-align:center;width:44px;font-size:13px;${it.val==='sim' ? 'font-weight:700;color:'+(it.atencao?'var(--da)':'var(--su)') : 'color:var(--border-s)'}">${it.val==='sim' ? svgCheck : '—'}</td>
+            <td style="padding:8px 4px 8px 8px;text-align:center;width:44px;font-size:13px;${it.val==='nao' ? 'font-weight:700;color:var(--tx2)' : 'color:var(--border-s)'}">${it.val==='nao' ? svgCheck : '—'}</td>
+          </tr>`;
+        });
+        blocoHtml += `<table style="width:100%;max-width:480px;border-collapse:collapse;margin-bottom:${textoItens.length?'14px':'0'}">
           <thead>
             <tr>
               <th style="text-align:left;padding:0 8px 7px 4px;font-size:10.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1.5px solid var(--border)">Pergunta</th>
@@ -16738,22 +16824,31 @@ function renderAbaAnamnese(p){
           </thead>
           <tbody>${rows}</tbody>
         </table>`;
-    }
+      }
 
-    if(textoItens.length){
-      let rows2 = '';
-      textoItens.forEach((it,i)=>{
-        const zebra = i%2===1 ? 'background:var(--s2)' : '';
-        rows2 += `<tr style="${zebra};border-bottom:1px solid var(--border)">
-          <td style="padding:8px 10px 8px 4px;font-size:13px;color:var(--tx);vertical-align:top;width:38%">${it.c.label}${it.condHtml}</td>
-          <td style="padding:8px 4px;font-size:13px;color:var(--tx)">${it.textoResp}</td>
-        </tr>`;
-      });
-      html += `<div style="font-size:10.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Respostas em texto</div>
-        <table style="width:100%;border-collapse:collapse">
+      if(textoItens.length){
+        let rows2 = '';
+        textoItens.forEach((it,i)=>{
+          const zebra = i%2===1 ? 'background:var(--s2)' : '';
+          rows2 += `<tr style="${zebra};border-bottom:1px solid var(--border)">
+            <td style="padding:8px 10px 8px 4px;font-size:13px;color:var(--tx);vertical-align:top;width:38%">${it.c.label}${it.condHtml}</td>
+            <td style="padding:8px 4px;font-size:13px;color:var(--tx)">${it.textoResp}</td>
+          </tr>`;
+        });
+        blocoHtml += `<table style="width:100%;border-collapse:collapse">
           <tbody>${rows2}</tbody>
         </table>`;
-    }
+      }
+
+      corpoGrupos += blocoHtml;
+    });
+
+    html += temAtencao ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;font-size:12px;color:var(--da);font-weight:600">
+        <svg viewBox="0 0 24 24" width="1em" height="1em" style="flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Há pontos que precisam de atenção nesta ficha
+      </div>` : '';
+
+    html += corpoGrupos;
 
     const obsCustom = resp._obsCustom || [];
     if(obsCustom.length){
@@ -16769,7 +16864,7 @@ function renderAbaAnamnese(p){
           </td>
         </tr>`;
       });
-      html += `<div style="font-size:10.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;margin-top:${(simNaoItens.length||textoItens.length)?'22px':'0'}">Observações — só neste paciente</div>
+      html += `<div style="font-size:10.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;margin-top:${totalItens?'22px':'0'}">Observações — só neste paciente</div>
         <table style="width:100%;border-collapse:collapse">
           <tbody>${rowsObs}</tbody>
         </table>`;
@@ -16949,43 +17044,47 @@ function exportarAnamnesePDF(pacienteId){
     ? camposAnamnese.filter(c => !c.vinculoCadastro) // se preenchida, só exibe não-vinculados
     : camposAnamnese; // em branco, mostra todos para preenchimento físico
 
-  // Modo preenchida: perguntas objetivas (Sim/Não) agrupadas, depois respostas em texto
+  // Modo preenchida: por grupo, perguntas objetivas (Sim/Não) e respostas em texto
   if(preenchido){
     const svgCheckPdf = '<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6L9 17l-5-5"/></svg>';
-    const simNaoItensPdf = [];
-    const textoItensPdf = [];
     let temAtencaoPdf = false;
-    campos.forEach(c=>{
-      const val = resp[c.id];
-      const valCond = resp[c.id + '_cond'];
-      const condHtml = valCond ? `<div style="font-size:11px;color:#6B7280;margin-top:2px;font-style:italic">${valCond}</div>` : '';
-      if(c.tipo === 'sim_nao'){
-        const atencao = anamneseExigeAtencao(c, val);
-        if(atencao) temAtencaoPdf = true;
-        simNaoItensPdf.push({c, val, atencao, condHtml});
-      } else {
-        let resposta = '—';
-        if(val === 'outro') resposta = 'Prefiro não informar';
-        else if(val) resposta = val;
-        textoItensPdf.push({c, resposta, condHtml});
-      }
-    });
+    const blocosPdf = _anamneseAgruparCampos(campos);
 
-    camposHtml = temAtencaoPdf ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;font-size:12px;color:#DC2626;font-weight:700">⚠ Há pontos que precisam de atenção nesta ficha</div>` : '';
-
-    if(simNaoItensPdf.length){
-      let rowsPdf = '';
-      simNaoItensPdf.forEach((it,i)=>{
-        const zebra = i%2===1 ? 'background:#F8FAFC' : '';
-        const trBg = it.atencao ? 'background:#FDEAEA' : zebra;
-        rowsPdf += `<tr style="${trBg}">
-          <td style="padding:7px 8px 7px 4px;font-size:12.5px;color:#111827;border-bottom:1px solid #EEF0F4">${it.c.label}${it.c.obrigatorio?' <span style="color:#DC2626">*</span>':''}${it.atencao ? ' <span style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:20px;background:#DC2626;color:#fff;font-size:9.5px;font-weight:700">ATENÇÃO</span>' : ''}${it.condHtml}</td>
-          <td style="padding:7px 8px;text-align:center;width:42px;font-size:12.5px;border-bottom:1px solid #EEF0F4;${it.val==='sim' ? 'font-weight:700;color:'+(it.atencao?'#DC2626':'#1E8A5F') : 'color:#D1D5DB'}">${it.val==='sim' ? svgCheckPdf : '—'}</td>
-          <td style="padding:7px 4px 7px 8px;text-align:center;width:42px;font-size:12.5px;border-bottom:1px solid #EEF0F4;${it.val==='nao' ? 'font-weight:700;color:#374151' : 'color:#D1D5DB'}">${it.val==='nao' ? svgCheckPdf : '—'}</td>
-        </tr>`;
+    let corpoGruposPdf = '';
+    blocosPdf.forEach(bloco=>{
+      const simNaoItensPdf = [];
+      const textoItensPdf = [];
+      bloco.campos.forEach(c=>{
+        const val = resp[c.id];
+        const valCond = resp[c.id + '_cond'];
+        const condHtml = valCond ? `<div style="font-size:11px;color:#6B7280;margin-top:2px;font-style:italic">${valCond}</div>` : '';
+        if(c.tipo === 'sim_nao'){
+          const atencao = anamneseExigeAtencao(c, val);
+          if(atencao) temAtencaoPdf = true;
+          simNaoItensPdf.push({c, val, atencao, condHtml});
+        } else {
+          let resposta = '—';
+          if(val === 'outro') resposta = 'Prefiro não informar';
+          else if(val) resposta = val;
+          textoItensPdf.push({c, resposta, condHtml});
+        }
       });
-      camposHtml += `<div style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Perguntas objetivas</div>
-        <table style="width:100%;max-width:420px;border-collapse:collapse;margin-bottom:${textoItensPdf.length?'20px':'14px'}">
+      if(!simNaoItensPdf.length && !textoItensPdf.length) return;
+
+      let blocoHtmlPdf = bloco.titulo ? `<div style="font-size:11px;font-weight:700;color:#1E3A5F;margin-bottom:8px;margin-top:16px">${bloco.titulo}</div>` : '';
+
+      if(simNaoItensPdf.length){
+        let rowsPdf = '';
+        simNaoItensPdf.forEach((it,i)=>{
+          const zebra = i%2===1 ? 'background:#F8FAFC' : '';
+          const trBg = it.atencao ? 'background:#FDEAEA' : zebra;
+          rowsPdf += `<tr style="${trBg}">
+            <td style="padding:7px 8px 7px 4px;font-size:12.5px;color:#111827;border-bottom:1px solid #EEF0F4">${it.c.label}${it.c.obrigatorio?' <span style="color:#DC2626">*</span>':''}${it.atencao ? ' <span style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:20px;background:#DC2626;color:#fff;font-size:9.5px;font-weight:700">ATENÇÃO</span>' : ''}${it.condHtml}</td>
+            <td style="padding:7px 8px;text-align:center;width:42px;font-size:12.5px;border-bottom:1px solid #EEF0F4;${it.val==='sim' ? 'font-weight:700;color:'+(it.atencao?'#DC2626':'#1E8A5F') : 'color:#D1D5DB'}">${it.val==='sim' ? svgCheckPdf : '—'}</td>
+            <td style="padding:7px 4px 7px 8px;text-align:center;width:42px;font-size:12.5px;border-bottom:1px solid #EEF0F4;${it.val==='nao' ? 'font-weight:700;color:#374151' : 'color:#D1D5DB'}">${it.val==='nao' ? svgCheckPdf : '—'}</td>
+          </tr>`;
+        });
+        blocoHtmlPdf += `<table style="width:100%;max-width:420px;border-collapse:collapse;margin-bottom:${textoItensPdf.length?'12px':'10px'}">
           <thead>
             <tr>
               <th style="text-align:left;padding:0 8px 6px 4px;font-size:9.5px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;border-bottom:1.5px solid #1E3A5F">Pergunta</th>
@@ -16995,22 +17094,27 @@ function exportarAnamnesePDF(pacienteId){
           </thead>
           <tbody>${rowsPdf}</tbody>
         </table>`;
-    }
+      }
 
-    if(textoItensPdf.length){
-      let rows2Pdf = '';
-      textoItensPdf.forEach((it,i)=>{
-        const zebra = i%2===1 ? 'background:#F8FAFC' : '';
-        rows2Pdf += `<tr style="${zebra}">
-          <td style="padding:7px 10px 7px 4px;font-size:12.5px;color:#111827;border-bottom:1px solid #EEF0F4;width:38%">${it.c.label}${it.c.obrigatorio?' <span style="color:#DC2626">*</span>':''}${it.condHtml}</td>
-          <td style="padding:7px 4px;font-size:12.5px;color:#111827;border-bottom:1px solid #EEF0F4">${it.resposta}</td>
-        </tr>`;
-      });
-      camposHtml += `<div style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Respostas em texto</div>
-        <table style="width:100%;border-collapse:collapse;margin-bottom:14px">
+      if(textoItensPdf.length){
+        let rows2Pdf = '';
+        textoItensPdf.forEach((it,i)=>{
+          const zebra = i%2===1 ? 'background:#F8FAFC' : '';
+          rows2Pdf += `<tr style="${zebra}">
+            <td style="padding:7px 10px 7px 4px;font-size:12.5px;color:#111827;border-bottom:1px solid #EEF0F4;width:38%">${it.c.label}${it.c.obrigatorio?' <span style="color:#DC2626">*</span>':''}${it.condHtml}</td>
+            <td style="padding:7px 4px;font-size:12.5px;color:#111827;border-bottom:1px solid #EEF0F4">${it.resposta}</td>
+          </tr>`;
+        });
+        blocoHtmlPdf += `<table style="width:100%;border-collapse:collapse;margin-bottom:10px">
           <tbody>${rows2Pdf}</tbody>
         </table>`;
-    }
+      }
+
+      corpoGruposPdf += blocoHtmlPdf;
+    });
+
+    camposHtml = temAtencaoPdf ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;font-size:12px;color:#DC2626;font-weight:700">⚠ Há pontos que precisam de atenção nesta ficha</div>` : '';
+    camposHtml += corpoGruposPdf;
 
     const obsCustomPdf = resp._obsCustom || [];
     if(obsCustomPdf.length){
@@ -17021,42 +17125,40 @@ function exportarAnamnesePDF(pacienteId){
           <td style="padding:7px 10px 7px 4px;font-size:12.5px;color:#111827;border-bottom:1px solid #EEF0F4">${o.texto}<div style="font-size:10.5px;color:#9CA3AF;margin-top:2px">${o.data}</div></td>
         </tr>`;
       });
-      camposHtml += `<div style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Observações</div>
+      camposHtml += `<div style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;margin-top:16px">Observações</div>
         <table style="width:100%;border-collapse:collapse;margin-bottom:14px">
           <tbody>${rowsObsPdf}</tbody>
         </table>`;
     }
+  } else {
+    // Modo em branco: agrupado, com área para preenchimento manual
+    _anamneseAgruparCampos(campos).forEach(bloco=>{
+      if(bloco.titulo) camposHtml += `<div style="font-size:11px;font-weight:700;color:#1E3A5F;margin-bottom:8px;margin-top:18px">${bloco.titulo}</div>`;
+      bloco.campos.forEach((c, i) => {
+        let areaResposta = '';
+        if(c.tipo === 'sim_nao'){
+          areaResposta = `<div style="display:flex;gap:16px;margin-top:4px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px"><span style="display:inline-block;width:16px;height:16px;border:1.5px solid #374151;border-radius:50%"></span> Sim</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px"><span style="display:inline-block;width:16px;height:16px;border:1.5px solid #374151;border-radius:50%"></span> Não</label>
+          </div>
+          ${c.condicionalLabel ? `<div style="margin-top:8px;font-size:12px;color:#6B7280">${c.condicionalLabel}: <span style="display:inline-block;width:200px;border-bottom:1px solid #aaa;margin-left:4px">&nbsp;</span></div>` : ''}`;
+        } else if(c.tipo === 'data'){
+          areaResposta = `<div style="border-bottom:1px solid #aaa;min-height:26px;margin-top:6px;font-size:13px;color:#9CA3AF">___ / ___ / ______</div>`;
+        } else if(c.tipo === 'selecao' && c.opcoes && c.opcoes.length){
+          areaResposta = `<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px">${c.opcoes.map(o => `<label style="display:flex;align-items:center;gap:5px;font-size:13px"><span style="display:inline-block;width:14px;height:14px;border:1.5px solid #374151;border-radius:3px"></span> ${o}</label>`).join('')}</div>`;
+        } else if(c.tipo === 'multiplo' && c.opcoes && c.opcoes.length){
+          areaResposta = `<div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">${c.opcoes.map(o => `<label style="display:flex;align-items:center;gap:6px;font-size:13px"><span style="display:inline-block;width:14px;height:14px;border:1.5px solid #374151;border-radius:3px"></span> ${o}</label>`).join('')}</div>`;
+        } else {
+          areaResposta = `<div style="border-bottom:1px solid #aaa;min-height:26px;margin-top:6px"></div>`;
+        }
+        camposHtml += `
+          <div style="margin-bottom:14px;padding:10px 12px;background:${i%2===0?'#F8FAFC':'#fff'};border-radius:6px;border:1px solid #EEF0F4">
+            <div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:6px">${c.label}${c.obrigatorio?' <span style="color:#DC2626">*</span>':''}</div>
+            ${areaResposta}
+          </div>`;
+      });
+    });
   }
-
-  campos.forEach((c, i) => {
-    const val = resp[c.id];
-    const valCond = resp[c.id + '_cond'];
-
-    if(preenchido){
-      // já renderizado acima como tabela
-    } else {
-      // Modo em branco: área para preenchimento manual
-      let areaResposta = '';
-      if(c.tipo === 'sim_nao'){
-        areaResposta = `<div style="display:flex;gap:16px;margin-top:4px">
-          <label style="display:flex;align-items:center;gap:6px;font-size:13px"><span style="display:inline-block;width:16px;height:16px;border:1.5px solid #374151;border-radius:50%"></span> Sim</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:13px"><span style="display:inline-block;width:16px;height:16px;border:1.5px solid #374151;border-radius:50%"></span> Não</label>
-        </div>
-        ${c.condicionalLabel ? `<div style="margin-top:8px;font-size:12px;color:#6B7280">${c.condicionalLabel}: <span style="display:inline-block;width:200px;border-bottom:1px solid #aaa;margin-left:4px">&nbsp;</span></div>` : ''}`;
-      } else if(c.tipo === 'selecao' && c.opcoes && c.opcoes.length){
-        areaResposta = `<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px">${c.opcoes.map(o => `<label style="display:flex;align-items:center;gap:5px;font-size:13px"><span style="display:inline-block;width:14px;height:14px;border:1.5px solid #374151;border-radius:3px"></span> ${o}</label>`).join('')}</div>`;
-      } else if(c.tipo === 'multiplo' && c.opcoes && c.opcoes.length){
-        areaResposta = `<div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">${c.opcoes.map(o => `<label style="display:flex;align-items:center;gap:6px;font-size:13px"><span style="display:inline-block;width:14px;height:14px;border:1.5px solid #374151;border-radius:3px"></span> ${o}</label>`).join('')}</div>`;
-      } else {
-        areaResposta = `<div style="border-bottom:1px solid #aaa;min-height:26px;margin-top:6px"></div>`;
-      }
-      camposHtml += `
-        <div style="margin-bottom:18px;padding:10px 12px;background:${i%2===0?'#F8FAFC':'#fff'};border-radius:6px;border:1px solid #EEF0F4">
-          <div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:6px">${c.label}${c.obrigatorio?' <span style="color:#DC2626">*</span>':''}</div>
-          ${areaResposta}
-        </div>`;
-    }
-  });
 
   const mensagemInicial = preenchido ? '' : `
     <div style="background:#EBF0F7;border-left:3px solid #1E3A5F;border-radius:8px;padding:12px 14px;margin-bottom:20px;font-size:13px;color:#374151;line-height:1.6">
@@ -17528,7 +17630,17 @@ function renderCfgAnamnese(){
     lista.innerHTML = '<div class="empty"><div class="empty-ic">🩺</div>Nenhum campo configurado.</div>';
     return;
   }
-  lista.innerHTML = camposAnamnese.map((c,i)=>`
+  let ultimoGrupo = null;
+  const TITULOS_GRUPO = {}; GRUPOS_ANAMNESE.forEach(g=>{ TITULOS_GRUPO[g.id]=g.titulo; });
+  lista.innerHTML = camposAnamnese.map((c,i)=>{
+    const gid = c.grupo || 'outros';
+    const titulo = TITULOS_GRUPO[gid] || '';
+    let cabecalhoGrupo = '';
+    if(gid !== ultimoGrupo && titulo){
+      cabecalhoGrupo = `<div style="font-size:10.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin:${i===0?'0':'16px'} 0 6px">${titulo}</div>`;
+    }
+    ultimoGrupo = gid;
+    return `${cabecalhoGrupo}
     <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:500">${c.label}${c.obrigatorio?' <span style="color:var(--da);font-size:11px">*</span>':''}</div>
@@ -17540,8 +17652,8 @@ function renderCfgAnamnese(){
         <button class="btn btn-ghost btn-sm" onclick="editarCampoAnamnese(${i})">Editar</button>
         ${!c.locked?`<button class="btn btn-danger btn-sm" onclick="removerCampoAnamnese(${i})">Remover</button>`:'<span style="font-size:11px;color:var(--tx3);padding:0 4px">padrão</span>'}
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 function tipoAnamneseLabel(tipo){
@@ -26800,7 +26912,7 @@ function _renderCampoPublico(c){
     return '<div class="radio-group-row"><label class="radio-opt"><input type="radio" name="'+c.id+'" value="sim" onchange="toggleCondP(this.name,true)"> Sim</label><label class="radio-opt"><input type="radio" name="'+c.id+'" value="nao" onchange="toggleCondP(this.name,false)"> Não</label></div>'+cond;
   }
   if(c.tipo==='data'){
-    return '<input type="date" id="'+c.id+'" style="width:100%;padding:10px 12px;border:1.5px solid #DDE0E7;border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:#111827">';
+    return '<input type="text" inputmode="numeric" id="'+c.id+'" placeholder="DD/MM/AAAA" maxlength="10" data-mask="nascimento" oninput="_applyMaskP(this)" style="width:100%;padding:10px 12px;border:1.5px solid #DDE0E7;border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:#111827">';
   }
   if(c.tipo==='texto'){
     var meta = c.vinculoCadastro ? (_MASK_META[c.vinculoCadastro] || null) : null;
@@ -26854,6 +26966,8 @@ function _montarAnamneseNaPagina(nomeCompleto, token, pacienteId, campos){
     '.an-check-group{display:flex;flex-direction:column;gap:8px}',
     'input[type=radio],input[type=checkbox]{accent-color:#1E3A5F;width:20px;height:20px;cursor:pointer;flex-shrink:0}',
     '.an-cond-field{margin-top:10px;display:none}.an-cond-field.show{display:block}',
+    '.an-grupo-titulo{font-size:13px;font-weight:700;color:#1E3A5F;text-transform:uppercase;letter-spacing:.05em;margin:28px 0 14px;padding-bottom:8px;border-bottom:1.5px solid #EEF0F4}',
+    '.an-grupo-titulo:first-child{margin-top:0}',
     '.an-btn-submit{width:100%;padding:16px;background:#1E3A5F;color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:600;cursor:pointer;margin-top:24px;font-family:inherit;-webkit-tap-highlight-color:transparent}',
     '.an-btn-submit:disabled{opacity:.5;cursor:not-allowed}',
     '.an-btn-submit:active:not(:disabled){opacity:.85}',
@@ -26869,8 +26983,11 @@ function _montarAnamneseNaPagina(nomeCompleto, token, pacienteId, campos){
 
   // HTML do formulário
   var camposHtml = '';
-  campos.forEach(function(c){
-    camposHtml += '<div class="an-campo-wrap"><label class="an-label">' + c.label + (c.obrigatorio ? ' <span style="color:#DC2626">*</span>' : '') + '</label>' + _renderCampoPublico(c) + '</div>';
+  _anamneseAgruparCampos(campos).forEach(function(bloco){
+    if(bloco.titulo) camposHtml += '<div class="an-grupo-titulo">' + bloco.titulo + '</div>';
+    bloco.campos.forEach(function(c){
+      camposHtml += '<div class="an-campo-wrap"><label class="an-label">' + c.label + (c.obrigatorio ? ' <span style="color:#DC2626">*</span>' : '') + '</label>' + _renderCampoPublico(c) + '</div>';
+    });
   });
 
   document.body.innerHTML =
@@ -26909,18 +27026,40 @@ function _montarAnamneseNaPagina(nomeCompleto, token, pacienteId, campos){
     if(m==='fone'){v=v.slice(0,11);el.value=v.length>7?v.slice(0,2)+' '+v.slice(2,7)+' '+v.slice(7):v.length>2?v.slice(0,2)+' '+v.slice(2):v;}
     else if(m==='cpf'){v=v.slice(0,11);el.value=v.length>9?v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6,9)+'-'+v.slice(9):v.length>6?v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6):v.length>3?v.slice(0,3)+'.'+v.slice(3):v;}
     else if(m==='cep'){v=v.slice(0,8);el.value=v.length>5?v.slice(0,5)+'-'+v.slice(5):v;}
+    else if(m==='nascimento'){v=v.slice(0,8);el.value=v.length>4?v.slice(0,2)+'/'+v.slice(2,4)+'/'+v.slice(4):v.length>2?v.slice(0,2)+'/'+v.slice(2):v;}
   };
 
   // Mapa vinculoCadastro -> propriedade do paciente
   var PROP_MAP = { nasc:'nascimento', fone:'fone', cpf:'cpf', nome:'nome' };
 
+  // Converte "DD/MM/AAAA" digitado à mão em "AAAA-MM-DD" (formato usado no
+  // resto do sistema). Retorna null se a data não for válida/plausível.
+  function _dataBRparaISOp(str){
+    var m = String(str||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if(!m) return null;
+    var d=parseInt(m[1],10), mo=parseInt(m[2],10), y=parseInt(m[3],10);
+    if(mo<1||mo>12||d<1||d>31) return null;
+    if(y<1900||y>new Date().getFullYear()) return null;
+    var dt=new Date(y,mo-1,d);
+    if(dt.getFullYear()!==y||dt.getMonth()!==mo-1||dt.getDate()!==d) return null;
+    return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+  }
+
   document.getElementById('an-btn-enviar').addEventListener('click', async function(){
     var btn = this;
     // Validação
     for(var i=0;i<campos.length;i++){
-      var c=campos[i]; if(!c.obrigatorio) continue;
+      var c=campos[i];
+      if(c.tipo==='data'){
+        var elData=document.getElementById(c.id);
+        var valData=elData?elData.value.trim():'';
+        if(!valData){ if(c.obrigatorio){ alert('Por favor, preencha: '+c.label); return; } continue; }
+        if(!_dataBRparaISOp(valData)){ alert('Data inválida em "'+c.label+'". Use o formato DD/MM/AAAA.'); return; }
+        continue;
+      }
+      if(!c.obrigatorio) continue;
       if(c.tipo==='sim_nao'&&!document.querySelector('input[name="'+c.id+'"]:checked')){alert('Por favor, responda: '+c.label);return;}
-      if((c.tipo==='texto'||c.tipo==='data')){var el=document.getElementById(c.id);if(!el||!el.value.trim()){alert('Por favor, preencha: '+c.label);return;}}
+      if(c.tipo==='texto'){var el=document.getElementById(c.id);if(!el||!el.value.trim()){alert('Por favor, preencha: '+c.label);return;}}
       if(c.tipo==='selecao'){var el=document.getElementById(c.id);if(!el||!el.value){alert('Por favor, selecione: '+c.label);return;}}
     }
     btn.disabled=true; btn.textContent='Enviando...';
@@ -26929,7 +27068,8 @@ function _montarAnamneseNaPagina(nomeCompleto, token, pacienteId, campos){
     var resp={};
     campos.forEach(function(c){
       if(c.tipo==='sim_nao'){var ch=document.querySelector('input[name="'+c.id+'"]:checked');resp[c.id]=ch?ch.value:'';if(c.condicionalLabel){var ci=document.getElementById('cond-input-'+c.id);resp[c.id+'_cond']=ci?ci.value.trim():'';}}
-      else if(c.tipo==='texto'||c.tipo==='data'){var el=document.getElementById(c.id);resp[c.id]=el?el.value.trim():'';}
+      else if(c.tipo==='texto'){var el=document.getElementById(c.id);resp[c.id]=el?el.value.trim():'';}
+      else if(c.tipo==='data'){var el=document.getElementById(c.id);var vRaw=el?el.value.trim():'';resp[c.id]=vRaw?(_dataBRparaISOp(vRaw)||''):'';}
       else if(c.tipo==='selecao'){var el=document.getElementById(c.id);resp[c.id]=el?el.value:'';if(c.condicionalLabel){var ci=document.getElementById('cond-input-'+c.id);resp[c.id+'_cond']=ci?ci.value.trim():'';}}
       else if(c.tipo==='multiplo'){resp[c.id]=Array.from(document.querySelectorAll('input[name="'+c.id+'"]:checked')).map(function(x){return x.value;}).join(', ');if(c.condicionalLabel){var ci=document.getElementById('cond-input-'+c.id);resp[c.id+'_cond']=ci?ci.value.trim():'';}}
     });
