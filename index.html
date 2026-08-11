@@ -836,12 +836,13 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .ag-legend-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
 .ag-bloqueio-tag{font-size:10px;color:var(--da);text-align:center;padding-top:2px}
 .ag-block-card{border-radius:8px;padding:3px 7px;font-size:10.5px;line-height:1.3;cursor:pointer;overflow:hidden;position:absolute;left:2px;right:2px;z-index:3;background:repeating-linear-gradient(135deg,#F1B4B4 0 8px,#FBDADA 8px 16px);border-left:4px solid #C0392B}
-/* Marca d'água: aviso de que uma profissional está ausente (bloqueio pessoal dela),
-   mostrado por cima da agenda de TODAS as salas, já que qualquer profissional pode
-   atender em qualquer sala. É só informativo — não trava o agendamento nessa sala,
-   por isso pointer-events:none e z-index abaixo dos cards de agendamento/bloqueio. */
-.ag-ausencia-watermark{position:absolute;left:2px;right:2px;z-index:1;pointer-events:none;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;border-radius:6px;background:rgba(148,163,184,.14)}
-.ag-ausencia-watermark span{font-size:10.5px;font-weight:700;color:rgba(71,85,105,.55);text-transform:uppercase;letter-spacing:.03em;padding:2px 6px}
+/* Card de "profissional ausente": mesma estrutura do card de bloqueio (moldura,
+   clicável, abre o popover de editar/excluir), só que em tom neutro — pra
+   diferenciar visualmente de um bloqueio da própria sala — e aparece em todas
+   as salas onde aquela profissional poderia atender. */
+.ag-ausencia-card{background:repeating-linear-gradient(135deg,#E2E8F0 0 8px,#F1F5F9 8px 16px) !important;border:1.5px solid #94A3B8 !important;border-left:4px solid #64748B !important;color:#334155}
+.ag-ausencia-card .ag-card-tit{color:#334155 !important}
+.ag-ausencia-card .ag-card-sub{color:#475569 !important}
 .ag-block-card .ag-card-tit{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#8A241B;font-size:10.5px}
 .ag-block-card .ag-card-sub{opacity:.95;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#A6321F}
 .chip-toggle{font-size:12px;padding:6px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--tx2);transition:all .1s}
@@ -1163,7 +1164,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <!-- Ações -->
     <div class="ag-sidebar-section" data-perm="agenda_gerenciar">
       <div class="ag-sidebar-label">Ações</div>
-      <button class="ag-sidebar-btn primary" onclick="abrirModalAgendamento(null,null,null,null)" data-perm="agenda_gerenciar">＋ Agendamento</button>
+      <button class="ag-sidebar-btn primary" onclick="agAbrirEscolhaCelula(null,null,null,null)" data-perm="agenda_gerenciar">＋ Agendamento</button>
       <button class="ag-sidebar-btn" onclick="addLinkAgenda()" data-perm="agenda_gerenciar"><svg viewBox="0 0 24 24" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><path d="M9 17H7a5 5 0 0 1 0-10h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><path d="M8 12h8"/></svg> Gerar link</button>
       <button class="ag-sidebar-btn" onclick="abrirModalEventosRecorrentes()" data-perm="agenda_gerenciar"><svg viewBox="0 0 24 24" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Bloqueios recorrentes</button>
     </div>
@@ -22158,9 +22159,12 @@ function abrirModalBloqueioPreenchido(ctx){
     document.getElementById('blq-usuario').value = ctx.usuarioId;
   }
   blqAtualizarCampos();
-  // Desliga "dia todo" pra já vir com o horário clicado preenchido, em vez do padrão do dia inteiro
+  // Desliga "dia todo" pra já vir com o horário clicado preenchido, em vez do padrão do dia
+  // inteiro — só quando há de fato um horário de célula (clique na agenda). Se não houver
+  // (ex: veio do botão "+Agendamento" do menu lateral, sem célula específica), mantém o
+  // padrão de "dia todo" ligado.
   const sw = document.getElementById('blq-dia-todo-sw');
-  if(sw && sw.classList.contains('on')) toggleBlqDiaTodo();
+  if(ctx.hora && sw && sw.classList.contains('on')) toggleBlqDiaTodo();
   if(ctx.hora){
     document.getElementById('blq-hora-ini').value = ctx.hora;
     document.getElementById('blq-hora-fim').value = somarMinutosHora(ctx.hora, 30);
@@ -24030,12 +24034,9 @@ function renderAgendaSemana(d){
     dias.forEach((dia, di) => {
       const dIso = iso(dia);
       // Ausências de profissionais nesse dia (bloqueio pessoal, ex.: férias) — mostradas
-      // como marca d'água em TODAS as salas, já que qualquer profissional pode atender
-      // em qualquer uma. Calculado uma vez por dia, reaproveitado nas colunas de sala.
-      const ausenciasDoDia = agMesclarIntervalosAusencia(
-        bloqueios.filter(b=>(b.tipo==='profissional'||b.tipo==='ambos') && bloqueioCobre(b, dIso, ini, fim)),
-        ini, fim
-      );
+      // em TODAS as salas, já que qualquer profissional pode atender em qualquer uma.
+      // Calculado uma vez por dia, reaproveitado nas colunas de sala.
+      const ausBlqsDoDia = bloqueios.filter(b=>(b.tipo==='profissional'||b.tipo==='ambos') && bloqueioCobre(b, dIso, ini, fim));
       salas.forEach((sala, salaI) => {
         const isLastSala = salaI === nSalas - 1;
         // Verifica bloqueio nesta sala nesta data neste slot
@@ -24043,9 +24044,9 @@ function renderAgendaSemana(d){
           (b.tipo==='sala'||b.tipo==='ambos') && b.salaId===sala.id);
         const erBlq = !blq && eventosRecorrentes.find(ev => ev.salaId===sala.id && erAplica(ev, dIso, slotMin, slotFim));
         const estaBloqueado = !!(blq || erBlq);
-        // Ausência de profissional que cruza este slot (só como aviso — não bloqueia a sala)
-        const ausenciasSlot = estaBloqueado ? [] : ausenciasDoDia.filter(iv=> slotMin < iv.fim && slotFim > iv.ini);
-        const estaAusente = ausenciasSlot.length > 0;
+        // Ausência(s) de profissional que cruzam este slot (só como aviso — não bloqueia a sala)
+        const ausBlqsSlot = estaBloqueado ? [] : ausBlqsDoDia.filter(b=> bloqueioCobre(b, dIso, slotMin, slotFim));
+        const estaAusente = ausBlqsSlot.length > 0;
         // agendamentos que começam neste slot nesta sala neste dia
         const agmsAqui = todosAgms.filter(a => {
           if(a.data !== dIso || a.salaId !== sala.id) return false;
@@ -24068,6 +24069,12 @@ function renderAgendaSemana(d){
           const bIniZ = blq ? (blq.diaTodo ? ini : horaParaMin(blq.horaInicio||'00:00'))
                              : horaParaMin(erBlq.horaIni||'00:00');
           if(slotMin <= bIniZ && slotFim > bIniZ) zCelula = 'z-index:6;';
+        } else if(estaAusente){
+          const iniciaAusenciaAqui = ausBlqsSlot.some(b=>{
+            const bIniZ = b.diaTodo ? ini : horaParaMin(b.horaInicio||'00:00');
+            return slotMin <= bIniZ && slotFim > bIniZ;
+          });
+          if(iniciaAusenciaAqui) zCelula = 'z-index:6;';
         }
         const almocoShadow = (slotMin>=720 && slotMin<780) ? 'box-shadow:inset 0 2px 0 var(--border-s), inset 0 -2px 0 var(--border-s), inset 0 0 0 999px rgba(15,23,42,.045);' : '';
         body += `<div style="flex:1;min-width:${SALA_MIN_W}px;height:${SLOT_H}px;position:relative;${zCelula}${almocoShadow}border-right:${isLastSala?'3px solid var(--border-s)':'1px solid var(--border)'};background:${bgBloq};${(estaBloqueado||!podeAgenda)?'cursor:default':'cursor:pointer'}" ${hoverHandlers} ${onClickCell}>`;
@@ -24097,14 +24104,25 @@ function renderAgendaSemana(d){
             }
           }
         }
-        // Rótulo da marca d'água de ausência — só na primeira célula do intervalo (as
-        // demais já ficam com o fundo tingido, calculado acima, indicando a continuação)
+        // Card(s) de "profissional ausente" — mesmo formato do card de bloqueio (moldura,
+        // clicável, abre editar/excluir), só mostrado na primeira célula de cada bloqueio,
+        // igual ao card de bloqueio de sala acima.
         if(estaAusente){
-          const naPrimeiraCelula = ausenciasSlot.some(iv=> iv.ini>=slotMin && iv.ini<slotFim);
-          if(naPrimeiraCelula){
-            const nomesTxt = [...new Set(ausenciasSlot.flatMap(iv=>iv.nomes))].join(', ');
-            body += `<div class="ag-ausencia-watermark" style="position:absolute;top:1px;left:1px;right:1px;height:${SLOT_H-2}px" title="Ausente: ${esc(nomesTxt)}"><span>Ausente: ${esc(nomesTxt)}</span></div>`;
-          }
+          ausBlqsSlot.forEach(b=>{
+            const bIni = b.diaTodo ? ini : horaParaMin(b.horaInicio||'00:00');
+            if(slotMin <= bIni && slotFim > bIni){
+              const bFim = b.diaTodo ? fim : horaParaMin(b.horaFim||'23:59');
+              const dur = Math.max(passo, bFim - bIni);
+              const hPx = Math.round(dur / passo * SLOT_H) - 2;
+              const blqIdx = bloqueios.indexOf(b);
+              const nomeProf = nomeUsuario(b.usuarioId) || '';
+              const horarioTxt = b.diaTodo ? 'Dia todo' : `${b.horaInicio||''}–${b.horaFim||''}`;
+              body += `<div class="ag-block-card ag-ausencia-card" style="position:absolute;top:1px;left:1px;right:1px;height:${hPx}px" onmouseenter="blqAbrirPopoverSeNaoArrastando(${blqIdx},event.currentTarget)" onmouseleave="blqPopoverScheduleClose()" onclick="event.stopPropagation();blqAbrirPopoverSeNaoArrastando(${blqIdx},event.currentTarget)" title="Ausente: ${esc(nomeProf)} · ${horarioTxt}">
+                <div class="ag-card-tit" style="display:flex;align-items:center;gap:4px">${AGI('block',9)} Ausente: ${esc(nomeProf)}</div>
+                ${hPx>=28 ? `<div class="ag-card-sub">${horarioTxt}</div>` : ''}
+              </div>`;
+            }
+          });
         }
         agmsAqui.forEach(a => {
           const prof = agendaProfissionais.find(ap => ap.usuarioId === a.usuarioId);
@@ -24372,17 +24390,28 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
       </div>`;
     });
 
-    // Marca d'água de ausência de profissional — aparece em TODAS as salas (qualquer
-    // profissional pode atender em qualquer uma), só como aviso visual, sem travar o
-    // agendamento. Mostra em cima da coluna de sala; na visão por profissional não
-    // faz sentido (a coluna já É a profissional, o bloqueio dela já aparece normal).
+    // Card de "profissional ausente" — aparece em TODAS as salas (qualquer
+    // profissional pode atender em qualquer uma), no mesmo formato do card de
+    // bloqueio (moldura, clicável, abre editar/excluir). Na visão por
+    // profissional não é necessário: o bloqueio dela já aparece normalmente
+    // acima, na coluna da própria profissional.
     if(modo==='sala'){
       const ausBlqs = bloqueios.filter(b=>(b.tipo==='profissional'||b.tipo==='ambos') && bloqueioCobre(b,dataIso,iniMin,fimMin));
-      agMesclarIntervalosAusencia(ausBlqs, iniMin, fimMin).forEach(iv=>{
-        const topPx = Math.round((iv.ini - iniMin) / passo * SLOT_H) + 1;
-        const heightPx = Math.max(18, Math.round((iv.fim - iv.ini) / passo * SLOT_H) - 2);
-        const nomesTxt = iv.nomes.join(', ');
-        html += `<div class="ag-ausencia-watermark" style="top:${topPx}px;height:${heightPx}px" title="Ausente nesta janela: ${esc(nomesTxt)}"><span>Ausente: ${esc(nomesTxt)}</span></div>`;
+      ausBlqs.forEach(b=>{
+        const blqIdx = bloqueios.indexOf(b);
+        const blqIniReal = b.diaTodo ? iniMin : horaParaMin(b.horaInicio||'00:00');
+        const blqFimReal = b.diaTodo ? fimMin : horaParaMin(b.horaFim||'23:59');
+        const blqIni = Math.max(blqIniReal, iniMin);
+        const blqFim = Math.min(blqFimReal, fimMin);
+        if(blqFim <= blqIni) return; // fora da janela visível do dia
+        const topPx = Math.round((blqIni - iniMin) / passo * SLOT_H) + 1;
+        const heightPx = Math.max(18, Math.round((blqFim - blqIni) / passo * SLOT_H) - 2);
+        const nomeProf = nomeUsuario(b.usuarioId) || '';
+        const horarioTxt = b.diaTodo ? 'Dia todo' : `${b.horaInicio||''}–${b.horaFim||''}`;
+        html += `<div class="ag-block-card ag-ausencia-card" data-blq-idx="${blqIdx}" style="top:${topPx}px;height:${heightPx}px;pointer-events:all" onmouseenter="blqAbrirPopoverSeNaoArrastando(${blqIdx},event.currentTarget)" onmouseleave="blqPopoverScheduleClose()" onclick="event.stopPropagation();blqAbrirPopoverSeNaoArrastando(${blqIdx},event.currentTarget)" title="Ausente: ${esc(nomeProf)} · ${horarioTxt}">
+          <div class="ag-card-tit" style="display:flex;align-items:center;gap:4px">${AGI('block',11)} Ausente: ${esc(nomeProf)}</div>
+          ${heightPx>=30 ? `<div class="ag-card-sub">${horarioTxt}</div>` : ''}
+        </div>`;
       });
     }
 
@@ -24391,28 +24420,6 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
   html += `</div>`;
 
   grid.innerHTML = html;
-}
-
-// Junta bloqueios de ausência de profissional que se sobrepõem no tempo, agrupando
-// os nomes num único intervalo — usado pra desenhar a marca d'água na agenda por sala
-// sem empilhar um aviso por profissional quando várias estão ausentes na mesma janela.
-function agMesclarIntervalosAusencia(blqsProfissional, iniMin, fimMin){
-  const pontos = blqsProfissional.map(b=>{
-    const ini = Math.max(iniMin, b.diaTodo ? iniMin : horaParaMin(b.horaInicio||'00:00'));
-    const fim = Math.min(fimMin, b.diaTodo ? fimMin : horaParaMin(b.horaFim||'23:59'));
-    return {ini, fim, nome: nomeUsuario(b.usuarioId)};
-  }).filter(x=>x.fim>x.ini).sort((a,b)=>a.ini-b.ini);
-  const merged=[];
-  pontos.forEach(p=>{
-    const last = merged[merged.length-1];
-    if(last && p.ini <= last.fim){
-      last.fim = Math.max(last.fim, p.fim);
-      if(!last.nomes.includes(p.nome)) last.nomes.push(p.nome);
-    } else {
-      merged.push({ini:p.ini, fim:p.fim, nomes:[p.nome]});
-    }
-  });
-  return merged;
 }
 
 function renderAgendaCell(col, modo, slotIni, slotFim, dataIso, diaSemana, iniMin, fimMin, passo, SLOT_H){
