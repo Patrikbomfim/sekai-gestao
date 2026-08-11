@@ -24117,7 +24117,7 @@ function renderAgendaSemana(d){
               const blqIdx = bloqueios.indexOf(b);
               const nomeProf = nomeUsuario(b.usuarioId) || '';
               const horarioTxt = b.diaTodo ? 'Dia todo' : `${b.horaInicio||''}–${b.horaFim||''}`;
-              body += `<div class="ag-block-card ag-ausencia-card" style="position:absolute;top:1px;left:1px;right:1px;height:${hPx}px" onmouseenter="blqAbrirPopoverSeNaoArrastando(${blqIdx},event.currentTarget)" onmouseleave="blqPopoverScheduleClose()" onclick="event.stopPropagation();blqAbrirPopoverSeNaoArrastando(${blqIdx},event.currentTarget)" title="Ausente: ${esc(nomeProf)} · ${horarioTxt}">
+              body += `<div class="ag-block-card ag-ausencia-card" style="position:absolute;top:1px;left:1px;right:auto;width:calc(50% - 2px);height:${hPx}px" onmouseenter="blqAbrirPopoverSeNaoArrastando(${blqIdx},event.currentTarget)" onmouseleave="blqPopoverScheduleClose()" onclick="event.stopPropagation();blqAbrirPopoverSeNaoArrastando(${blqIdx},event.currentTarget)" title="Ausente: ${esc(nomeProf)} · ${horarioTxt}">
                 <div class="ag-card-tit" style="display:flex;align-items:center;gap:4px">${AGI('block',9)} Ausente: ${esc(nomeProf)}</div>
                 ${hPx>=28 ? `<div class="ag-card-sub">${horarioTxt}</div>` : ''}
               </div>`;
@@ -24157,7 +24157,11 @@ function renderAgendaSemana(d){
           } else {
             cardContent = `<div class="ag-card-tit" style="font-size:8px;line-height:1.1;display:flex;align-items:center">${statusIc}<span>${a.horaInicio}</span></div>`;
           }
-          body += `<div class="ag-card st-${a.status}" style="position:absolute;top:1px;left:1px;right:1px;height:${hPx}px;background:${cor};border-radius:3px;z-index:3;cursor:pointer;overflow:hidden;padding:1px 4px" onmouseenter="abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" onmouseleave="agPopoverScheduleClose()" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${pacNomeComCod} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}</div>`;
+          // Quando há uma profissional ausente nesse mesmo horário (card mostrado do lado
+          // esquerdo da célula), o agendamento passa pro lado direito, lado a lado.
+          const ladoDireitoSemana = agAusenteNesteHorario(dIso, horaParaMin(a.horaInicio), horaParaMin(a.horaFim));
+          const posCardSemana = ladoDireitoSemana ? 'left:52%;right:1px' : 'left:1px;right:1px';
+          body += `<div class="ag-card st-${a.status}" style="position:absolute;top:1px;${posCardSemana};height:${hPx}px;background:${cor};border-radius:3px;z-index:3;cursor:pointer;overflow:hidden;padding:1px 4px" onmouseenter="abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" onmouseleave="agPopoverScheduleClose()" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,event.currentTarget)" title="${pacNomeComCod} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}</div>`;
         });
         body += `</div>`;
       });
@@ -24361,7 +24365,12 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
       }
       const pxPerMin = SLOT_H / passo;
       const resizeHandles = `<div class="ag-resize-handle ag-resize-top" onmousedown="agIniciarResize(event,'${a.id}','top',${topPx},${heightPx},${pxPerMin},${iniMin})" title="Arraste para mudar o início"></div><div class="ag-resize-handle ag-resize-bottom" onmousedown="agIniciarResize(event,'${a.id}','bottom',${topPx},${heightPx},${pxPerMin},${iniMin})" title="Arraste para mudar o fim"></div>`;
-      html += `<div class="ag-card st-${a.status}${extraClass}" data-ag-id="${a.id}" style="background:${cor};top:${topPx}px;height:${heightPx}px;pointer-events:all;padding:1px 4px" onmouseenter="agAbrirPopoverSeNaoArrastando('${a.id}',event.currentTarget)" onmouseleave="agPopoverScheduleClose()" onmousedown="agIniciarMoverCard(event,'${a.id}')" onclick="event.stopPropagation();agAbrirPopoverSeNaoArrastando('${a.id}',event.currentTarget)" title="${pacNomeComCod} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}${resizeHandles}</div>`;
+      // Quando há uma profissional ausente nesse mesmo horário (mostrada do lado esquerdo
+      // da célula, ver abaixo), o agendamento passa pro lado direito, pra ficarem lado a
+      // lado em vez de um cobrir o outro.
+      const ladoDireito = modo==='sala' && agAusenteNesteHorario(dataIso, agIni, agFim);
+      const posCard = ladoDireito ? 'left:52%;right:3px' : 'left:3px;right:3px';
+      html += `<div class="ag-card st-${a.status}${extraClass}" data-ag-id="${a.id}" style="background:${cor};top:${topPx}px;height:${heightPx}px;pointer-events:all;padding:1px 4px;${posCard}" onmouseenter="agAbrirPopoverSeNaoArrastando('${a.id}',event.currentTarget)" onmouseleave="agPopoverScheduleClose()" onmousedown="agIniciarMoverCard(event,'${a.id}')" onclick="event.stopPropagation();agAbrirPopoverSeNaoArrastando('${a.id}',event.currentTarget)" title="${pacNomeComCod} · ${a.horaInicio}–${a.horaFim}${subLabel?' · '+subLabel:''}">${cardContent}${resizeHandles}</div>`;
     });
 
     // Cards de bloqueio/compromisso — mesma lógica de posicionamento dos agendamentos:
@@ -24408,7 +24417,7 @@ function renderAgendaGrid(cols, iniMin, fimMin, passo, dataIso, diaSemana, modo)
         const heightPx = Math.max(18, Math.round((blqFim - blqIni) / passo * SLOT_H) - 2);
         const nomeProf = nomeUsuario(b.usuarioId) || '';
         const horarioTxt = b.diaTodo ? 'Dia todo' : `${b.horaInicio||''}–${b.horaFim||''}`;
-        html += `<div class="ag-block-card ag-ausencia-card" data-blq-idx="${blqIdx}" style="top:${topPx}px;height:${heightPx}px;pointer-events:all" onmouseenter="blqAbrirPopoverSeNaoArrastando(${blqIdx},event.currentTarget)" onmouseleave="blqPopoverScheduleClose()" onclick="event.stopPropagation();blqAbrirPopoverSeNaoArrastando(${blqIdx},event.currentTarget)" title="Ausente: ${esc(nomeProf)} · ${horarioTxt}">
+        html += `<div class="ag-block-card ag-ausencia-card" data-blq-idx="${blqIdx}" style="top:${topPx}px;height:${heightPx}px;pointer-events:all;left:2px;right:auto;width:calc(50% - 4px)" onmouseenter="blqAbrirPopoverSeNaoArrastando(${blqIdx},event.currentTarget)" onmouseleave="blqPopoverScheduleClose()" onclick="event.stopPropagation();blqAbrirPopoverSeNaoArrastando(${blqIdx},event.currentTarget)" title="Ausente: ${esc(nomeProf)} · ${horarioTxt}">
           <div class="ag-card-tit" style="display:flex;align-items:center;gap:4px">${AGI('block',11)} Ausente: ${esc(nomeProf)}</div>
           ${heightPx>=30 ? `<div class="ag-card-sub">${horarioTxt}</div>` : ''}
         </div>`;
@@ -24505,6 +24514,13 @@ function bloqueioCobre(b,dataIso,slotIni,slotFim){
   if(b.diaTodo) return true;
   const bIni=horaParaMin(b.horaInicio), bFim=horaParaMin(b.horaFim);
   return slotIni<bFim && slotFim>bIni;
+}
+
+// Existe alguma profissional ausente (bloqueio pessoal) cobrindo esse horário nessa data?
+// Usado pra decidir se um agendamento precisa recuar pro lado direito da célula, deixando
+// o aviso de ausência visível do lado esquerdo, em vez de um cobrir o outro.
+function agAusenteNesteHorario(dataIso, iniMin, fimMin){
+  return bloqueios.some(b=>(b.tipo==='profissional'||b.tipo==='ambos') && bloqueioCobre(b,dataIso,iniMin,fimMin));
 }
 
 // ── MODAL AGENDAMENTO ─────────────────────────────────────────────────
