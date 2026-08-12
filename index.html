@@ -22981,22 +22981,42 @@ function _agColetarSnapshotAtual(){
 }
 
 // Abre o modal com o link estático — gerado na hora, não fica salvo em lugar nenhum.
-function agAbrirEncaminharLink(){
+// Gera um código curto e razoavelmente único pro link (não precisa ser à prova de
+// colisão perfeita — é só um identificador, como os slugs usados nos outros links
+// do sistema, só que mais curto porque aqui vai direto na URL que a pessoa vê).
+function _agGerarTokenCurto(){
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+async function agAbrirEncaminharLink(){
   if(agendaView==='profissional' && agendaPeriodo==='semana' && !agendaProfSemanaId){
     alert('Escolha uma profissional no filtro acima antes de encaminhar o link.');
     return;
   }
   const payload = _agColetarSnapshotAtual();
-  const b64 = _b64EncodeUnicode(JSON.stringify(payload));
-  const url = `${location.origin}${location.pathname}?verAgenda=${encodeURIComponent(b64)}`;
+  const token = _agGerarTokenCurto();
   const urlEl = document.getElementById('mea-url');
-  urlEl.textContent = url;
-  urlEl.dataset.url = url;
+  urlEl.textContent = 'Gerando link…';
+  urlEl.dataset.url = '';
   document.getElementById('mea-copiado').style.display = 'none';
   abrirModal('modal-encaminhar-agenda');
+  // A foto da agenda fica guardada no banco (tabela agenda_snapshots), e o link leva
+  // só o código curto — é o que deixa o link pequeno, em vez de carregar tudo dentro
+  // da própria URL. Continua sendo uma foto estática: quem abrir não vê atualizações.
+  try{
+    const { error } = await supa.from('agenda_snapshots').insert({ id: token, dados: payload });
+    if(error) throw error;
+    const url = `${location.origin}${location.pathname}?verAgenda=${token}`;
+    urlEl.textContent = url;
+    urlEl.dataset.url = url;
+  }catch(e){
+    console.error('Erro ao gerar link da agenda:', e);
+    urlEl.textContent = 'Não foi possível gerar o link. Confirme se a tabela "agenda_snapshots" já foi criada no banco (Supabase) e tente de novo.';
+  }
 }
 function copiarLinkAgendaEncaminhar(){
   const url = document.getElementById('mea-url').dataset.url || '';
+  if(!url) return;
   const marcarCopiado = ()=>{ document.getElementById('mea-copiado').style.display=''; };
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(url).then(marcarCopiado).catch(()=>_copiarViaTextarea(url, marcarCopiado));
@@ -23013,6 +23033,7 @@ function _copiarViaTextarea(texto, cb){
 }
 function abrirLinkAgendaPreview(){
   const url = document.getElementById('mea-url').dataset.url || '';
+  if(!url) return;
   window.open(url, '_blank');
 }
 
@@ -23064,7 +23085,7 @@ function agExportarPDF(){
       const bFim = b.dt ? janFim : horaParaMinPdf(b.hf);
       const top = Math.max(0,(bIni-janIni)/PASSO*SLOT_H);
       const h = Math.max(16, (bFim-bIni)/PASSO*SLOT_H);
-      colBody += `<div style="position:absolute;top:${top}px;left:1px;right:1px;height:${h}px;background:repeating-linear-gradient(135deg,#F1B4B4 0 4px,#FBDADA 4px 8px);border-radius:3px;padding:2px 4px;overflow:hidden;font-size:8px;font-weight:700;color:#7A1F1F">⚠ ${esc(b.mo||'Bloqueado')}</div>`;
+      colBody += `<div style="position:absolute;top:${top}px;left:1px;right:1px;height:${h}px;background:repeating-linear-gradient(135deg,#F1B4B4 0 4px,#FBDADA 4px 8px);border:1px solid #E8A0A0;border-radius:3px;padding:2px 4px;overflow:hidden;font-size:8px;font-weight:700;color:#7A1F1F">⚠ ${esc(b.mo||'Bloqueado')}</div>`;
     });
     dados.ag.filter(a=>a.d===diso).sort((x,y)=>x.hi.localeCompare(y.hi)).forEach(a=>{
       const aIni = horaParaMinPdf(a.hi), aFim = horaParaMinPdf(a.hf);
@@ -23072,7 +23093,7 @@ function agExportarPDF(){
       const h = Math.max(18, (aFim-aIni)/PASSO*SLOT_H);
       const cor = a.co || statusCorPadrao[a.st] || '#64748B';
       const subLinha = [a.sn,a.un,a.pr].filter(Boolean).map(esc).join(' · ');
-      colBody += `<div style="position:absolute;top:${top}px;left:1px;right:1px;height:${h}px;background:${cor};border-radius:3px;padding:2px 4px;overflow:hidden;color:#fff">
+      colBody += `<div style="position:absolute;top:${top}px;left:1px;right:1px;height:${h}px;background:${cor};border:1px solid rgba(0,0,0,.25);border-radius:3px;padding:2px 4px;overflow:hidden;color:#fff">
         <div style="font-size:8px;font-weight:700;line-height:1.15;opacity:.9">${esc(a.hi)}–${esc(a.hf)}</div>
         <div style="font-size:9px;font-weight:700;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.pn||'(sem nome)')}</div>
         ${h>=34 && subLinha?`<div style="font-size:7.5px;opacity:.9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${subLinha}</div>`:''}
@@ -27387,12 +27408,17 @@ function _pubEsc(s){
 }
 
 // ── Renderização pública do retrato da agenda (sem login) ──────────────
-function _renderAgendaPublica(token){
+async function _renderAgendaPublica(token){
   let dados;
   try{
-    dados = JSON.parse(_b64DecodeUnicode(decodeURIComponent(token)));
+    const { data, error } = await supa.from('agenda_snapshots').select('dados').eq('id', token).single();
+    if(error || !data){
+      document.body.innerHTML = _renderErroAgendaPublica('Link inválido ou expirado. Peça um novo link à secretária.');
+      return;
+    }
+    dados = data.dados;
   }catch(e){
-    document.body.innerHTML = _renderErroAgendaPublica('Link inválido. Peça um novo link à secretária.');
+    document.body.innerHTML = _renderErroAgendaPublica('Não foi possível carregar a agenda. Verifique sua conexão e tente de novo.');
     return;
   }
   if(!dados || dados.v!==1){
@@ -27451,7 +27477,7 @@ function _renderAgendaPublica(token){
       const bFim = b.dt ? janFim : horaParaMinPub(b.hf);
       const top = Math.max(0,(bIni-janIni)/PASSO*SLOT_H);
       const h = Math.max(20, (bFim-bIni)/PASSO*SLOT_H);
-      colBody += `<div style="position:absolute;top:${top}px;left:2px;right:2px;height:${h}px;background:repeating-linear-gradient(135deg,#F1B4B4 0 5px,#FBDADA 5px 10px);border-radius:5px;padding:3px 6px;overflow:hidden">
+      colBody += `<div style="position:absolute;top:${top}px;left:2px;right:2px;height:${h}px;background:repeating-linear-gradient(135deg,#F1B4B4 0 5px,#FBDADA 5px 10px);border:1px solid #E8A0A0;border-radius:5px;padding:3px 6px;overflow:hidden">
         <div style="font-size:9px;font-weight:700;color:#7A1F1F">⚠ ${_pubEsc(b.mo||'Bloqueado')}</div>
         ${h>=32 && b.un?`<div style="font-size:8.5px;color:#7A1F1F;opacity:.85">${_pubEsc(b.un)}</div>`:''}
       </div>`;
@@ -27462,7 +27488,7 @@ function _renderAgendaPublica(token){
       const h = Math.max(22, (aFim-aIni)/PASSO*SLOT_H);
       const cor = a.co || statusCorPadrao[a.st] || '#64748B';
       const subLinha = [a.sn,a.un,a.pr].filter(Boolean).map(_pubEsc).join(' · ');
-      colBody += `<div style="position:absolute;top:${top}px;left:2px;right:2px;height:${h}px;background:${_pubEsc(cor)};border-radius:5px;padding:3px 6px;overflow:hidden;color:#fff" title="${_pubEsc(a.pn)} · ${_pubEsc(a.hi)}–${_pubEsc(a.hf)}">
+      colBody += `<div style="position:absolute;top:${top}px;left:2px;right:2px;height:${h}px;background:${_pubEsc(cor)};border:1px solid rgba(0,0,0,.18);box-shadow:0 1px 3px rgba(0,0,0,.15);border-radius:5px;padding:3px 6px;overflow:hidden;color:#fff" title="${_pubEsc(a.pn)} · ${_pubEsc(a.hi)}–${_pubEsc(a.hf)}">
         <div style="font-size:9px;font-weight:700;opacity:.9;line-height:1.2">${_pubEsc(a.hi)}–${_pubEsc(a.hf)}</div>
         <div style="font-size:10.5px;font-weight:700;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_pubEsc(a.pn||'(sem nome)')}</div>
         ${h>=42 && subLinha?`<div style="font-size:8.5px;opacity:.9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${subLinha}</div>`:''}
@@ -31896,8 +31922,7 @@ function finDesfazerMedicao(medicaoId){
     } else if(params.has('cadastro')){
       await _carregarCadastroPublico(params.get('cadastro'));
     } else if(params.has('verAgenda')){
-      // Não depende do banco — os dados já vêm dentro do próprio link.
-      _renderAgendaPublica(params.get('verAgenda'));
+      await _renderAgendaPublica(params.get('verAgenda'));
     }
     return;
   }
