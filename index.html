@@ -24008,10 +24008,15 @@ function renderAgendaSemana(d){
   const dias = semanaConfigDias(d);
   const isoHoje = iso(hoje);
   const { ini, fim } = janelaGlobalDoDia(1);
-  const passo = 60;
+  // Granularidade de 30min (igual à visão por Dia) — com 60min, um bloqueio/ausência que
+  // não começa/termina em hora cheia (ex.: 13:30–14:30) "vazava" pra fora do horário real,
+  // porque a célula inteira da hora era pintada mesmo com apenas parte dela ocupada.
+  // A altura do slot foi reduzida na mesma proporção (metade), pra manter o mesmo tamanho
+  // de grade por minuto — a semana não fica mais alta nem precisa de mais rolagem.
+  const passo = 30;
   const slots = [];
   for(let m = ini; m < fim; m += passo) slots.push(m);
-  const SLOT_H = 104;       // altura de cada slot de 1h — aumentada para caber as 4 linhas de informação do card
+  const SLOT_H = 52;        // metade de 104 (era o slot de 1h) — mesma altura por minuto
   const TIME_W = 44;        // largura da coluna de horário
   const SALA_MIN_W = 130;   // largura mínima de cada sub-coluna de sala (aumentada p/ caber o conteúdo completo do card, igual à visão por Dia)
   const salas = salasParaGrade();
