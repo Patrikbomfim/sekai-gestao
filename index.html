@@ -897,10 +897,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 /* Visualização em 2 linhas: cabeçalho (Sala / Profissional) + Dia/Semana embaixo,
    com destaque dourado (--ag-cta) no que estiver selecionado — pedido do usuário
    pra ficar mais fácil de bater o olho e ver o que está ativo. */
-.ag-vg2-header{display:block;width:100%;padding:7px 10px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border:1px solid var(--border);border-radius:8px 8px 0 0;background:var(--s2);color:var(--tx2);cursor:pointer;font-family:var(--font);text-align:left;transition:all .12s}
+.ag-vg2{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface)}
+.ag-vg2-header{display:block;width:100%;padding:7px 10px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border:none;border-bottom:1px solid var(--border);background:var(--s2);color:var(--tx2);cursor:pointer;font-family:var(--font);text-align:left;transition:all .12s}
 .ag-vg2-header:hover{background:var(--ag-acc-soft);color:var(--tx)}
-.ag-vg2-header.on{background:var(--ag-acc);color:#fff;border-color:var(--ag-acc)}
-.ag-vg2-sub{display:flex;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;overflow:hidden;background:var(--surface)}
+.ag-vg2-header.on{background:var(--ag-acc);color:#fff;border-bottom-color:var(--ag-acc-d)}
+.ag-vg2-sub{display:flex;background:var(--surface)}
 .ag-vg2-pill{flex:1;padding:6px 8px;font-size:11px;font-weight:600;border:none;background:none;cursor:pointer;color:var(--tx2);font-family:var(--font);transition:all .12s}
 .ag-vg2-pill:first-child{border-right:1px solid var(--border)}
 .ag-vg2-pill:hover{background:var(--s2);color:var(--tx)}
@@ -1159,9 +1160,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <button class="ag-vg2-pill" id="ag-pill-prof-dia" onclick="agendaSetModoPeriodo('profissional','dia')">Dia</button>
           <button class="ag-vg2-pill" id="ag-pill-prof-semana" onclick="agendaSetModoPeriodo('profissional','semana')">Semana</button>
         </div>
-        <div id="ag-prof-semana-sel-wrap" style="display:none;margin-top:6px">
-          <select id="ag-prof-semana-sel" onchange="agendaSetProfSemana(this.value)" style="width:100%;font-size:12px;padding:6px 7px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);font-family:var(--font)"></select>
-        </div>
       </div>
     </div>
 
@@ -1218,6 +1216,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           style="font-size:12px;padding:4px 28px 4px 7px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);height:28px;width:160px">
         <button id="ag-busca-paciente-limpar" onclick="agendaLimparBuscaPaciente()" title="Limpar busca"
           style="display:none;position:absolute;right:5px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;color:var(--tx3);font-size:13px;line-height:1;padding:0">✕</button>
+      </div>
+      <div id="ag-prof-semana-sel-wrap" style="display:none;align-items:center;gap:6px;flex-shrink:0">
+        <span style="font-size:12px;color:var(--tx2);white-space:nowrap">Profissional:</span>
+        <select id="ag-prof-semana-sel" onchange="agendaSetProfSemana(this.value)" style="font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);font-family:var(--font);height:28px;min-width:160px">
+          <option value="">— Selecione —</option>
+        </select>
       </div>
       <div style="margin-left:auto;display:flex;gap:8px;flex-shrink:0">
         <button class="ag-today-btn" onclick="agAbrirEncaminharLink()"><svg viewBox="0 0 24 24" width="13" height="13" style="display:inline-block;vertical-align:-0.15em;margin-right:4px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M9 17H7a5 5 0 0 1 0-10h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><path d="M8 12h8"/></svg>Encaminhar link</button>
@@ -4426,7 +4430,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--r8);padding:12px 14px;font-size:12px;font-family:monospace;word-break:break-all;margin-bottom:12px;max-height:120px;overflow-y:auto" id="mea-url"></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-primary btn-sm" onclick="copiarLinkAgendaEncaminhar()"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg> Copiar link</button>
-        <button class="btn btn-ghost btn-sm" onclick="abrirLinkAgendaWhatsapp()"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> Enviar por WhatsApp</button>
         <button class="btn btn-ghost btn-sm" onclick="abrirLinkAgendaPreview()">↗ Abrir prévia</button>
       </div>
       <div id="mea-copiado" style="font-size:12px;color:var(--su);margin-top:8px;display:none">✓ Link copiado!</div>
@@ -22979,6 +22982,10 @@ function _agColetarSnapshotAtual(){
 
 // Abre o modal com o link estático — gerado na hora, não fica salvo em lugar nenhum.
 function agAbrirEncaminharLink(){
+  if(agendaView==='profissional' && agendaPeriodo==='semana' && !agendaProfSemanaId){
+    alert('Escolha uma profissional no filtro acima antes de encaminhar o link.');
+    return;
+  }
   const payload = _agColetarSnapshotAtual();
   const b64 = _b64EncodeUnicode(JSON.stringify(payload));
   const url = `${location.origin}${location.pathname}?verAgenda=${encodeURIComponent(b64)}`;
@@ -23004,11 +23011,6 @@ function _copiarViaTextarea(texto, cb){
   ta.remove();
   if(cb) cb();
 }
-function abrirLinkAgendaWhatsapp(){
-  const url = document.getElementById('mea-url').dataset.url || '';
-  const texto = encodeURIComponent(`Segue o link da agenda:\n${url}`);
-  window.open(`https://wa.me/?text=${texto}`, '_blank');
-}
 function abrirLinkAgendaPreview(){
   const url = document.getElementById('mea-url').dataset.url || '';
   window.open(url, '_blank');
@@ -23017,35 +23019,66 @@ function abrirLinkAgendaPreview(){
 // Abre a tela de impressão do navegador com o mesmo retrato do link — mesmo padrão já
 // usado pra imprimir recibos e orçamentos no sistema (a pessoa escolhe "Salvar como PDF").
 function agExportarPDF(){
+  if(agendaView==='profissional' && agendaPeriodo==='semana' && !agendaProfSemanaId){
+    alert('Escolha uma profissional no filtro acima antes de exportar o PDF.');
+    return;
+  }
   const dados = _agColetarSnapshotAtual();
   const DOW = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
-  function fmtDiaLongo(diso){
-    const [y,m,dd] = diso.split('-').map(Number);
-    const dt = new Date(y,m-1,dd);
-    return `${DOW[dt.getDay()]}, ${String(dd).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`;
-  }
+  const DOW_CURTO = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  function partesData(diso){ const [y,m,dd] = diso.split('-').map(Number); return {d:new Date(y,m-1,dd), dd, m, y}; }
+  function fmtDiaLongo(diso){ const {d,dd,m,y} = partesData(diso); return `${DOW[d.getDay()]}, ${String(dd).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`; }
+  function minParaHoraPdf(min){ const h=Math.floor(min/60), mi=min%60; return String(h).padStart(2,'0')+':'+String(mi).padStart(2,'0'); }
+  function horaParaMinPdf(hhmm){ const [h,mi]=(hhmm||'0:0').split(':').map(Number); return (h||0)*60+(mi||0); }
+
   const tituloModo = dados.m==='profissional' ? esc(dados.pn||'Profissional') : 'Agenda';
   const subtitulo = dados.p==='semana' ? `Semana de ${fmtDiaLongo(dados.dias[0])} a ${fmtDiaLongo(dados.dias[dados.dias.length-1])}` : fmtDiaLongo(dados.dias[0]);
+  const statusCorPadrao = {agendado:'#64748B',confirmado:'#1E8A5F',realizado:'#0F5C61',faltou:'#DC2626',cancelado:'#94A3B8'};
 
-  let corpo = '';
+  // Mesma lógica de janela de horário usada no link, pra ficar igual
+  let janIni=8*60, janFim=18*60;
+  const todosIni=[], todosFim=[];
+  dados.ag.forEach(a=>{ todosIni.push(horaParaMinPdf(a.hi)); todosFim.push(horaParaMinPdf(a.hf)); });
+  dados.bl.forEach(b=>{ if(!b.dt){ todosIni.push(horaParaMinPdf(b.hi)); todosFim.push(horaParaMinPdf(b.hf)); } });
+  if(todosIni.length){
+    janIni = Math.min(janIni, Math.floor(Math.min(...todosIni)/60)*60);
+    janFim = Math.max(janFim, Math.ceil(Math.max(...todosFim)/60)*60);
+  }
+  const PASSO=30, SLOT_H=32, TIME_W=38, COL_W=140;
+  const slots=[]; for(let m=janIni;m<janFim;m+=PASSO) slots.push(m);
+
+  let headerCols = `<div style="width:${TIME_W}px;flex-shrink:0"></div>`;
   dados.dias.forEach(diso=>{
-    const itensDia = dados.ag.filter(a=>a.d===diso).sort((a,b)=>a.hi.localeCompare(b.hi));
-    const avisosDia = dados.bl.filter(b=>b.d===diso);
-    corpo += `<div class="pd-dia"><div class="pd-dia-tit">${esc(fmtDiaLongo(diso))}</div>`;
-    if(!itensDia.length && !avisosDia.length){
-      corpo += `<div class="pd-vazio">Nenhum agendamento.</div>`;
-    } else {
-      avisosDia.forEach(b=>{
-        const horarioTxt = b.dt ? 'Dia todo' : `${b.hi||''}–${b.hf||''}`;
-        corpo += `<div class="pd-aviso">⚠ ${esc(b.mo||'Bloqueado')} ${b.un?'· '+esc(b.un):''} · ${esc(horarioTxt)}</div>`;
-      });
-      corpo += `<table class="pd-tabela"><thead><tr><th>Horário</th><th>Paciente</th><th>${dados.m==='sala'?'Profissional':'Sala'}</th><th>Procedimento</th><th>Status</th></tr></thead><tbody>`;
-      itensDia.forEach(a=>{
-        corpo += `<tr><td>${esc(a.hi)}–${esc(a.hf)}</td><td>${esc(a.pn)}</td><td>${esc(dados.m==='sala'?a.un:a.sn)}</td><td>${esc(a.pr)}</td><td>${esc(a.stl)}</td></tr>`;
-      });
-      corpo += `</tbody></table>`;
-    }
-    corpo += `</div>`;
+    const {d,dd} = partesData(diso);
+    headerCols += `<div style="flex:1;min-width:${COL_W}px;text-align:center;padding:5px 3px;border-left:1px solid #ccc;font-size:10.5px;font-weight:700">${DOW_CURTO[d.getDay()]} ${String(dd).padStart(2,'0')}</div>`;
+  });
+
+  let corpoCols = `<div style="width:${TIME_W}px;flex-shrink:0">` +
+    slots.map(m=>`<div style="height:${SLOT_H}px;font-size:8.5px;color:#888;text-align:right;padding:1px 4px 0 0;border-top:1px solid #eee">${minParaHoraPdf(m)}</div>`).join('') +
+    `</div>`;
+
+  dados.dias.forEach(diso=>{
+    let colBody = slots.map(()=>`<div style="height:${SLOT_H}px;border-top:1px solid #eee"></div>`).join('');
+    dados.bl.filter(b=>b.d===diso).forEach(b=>{
+      const bIni = b.dt ? janIni : horaParaMinPdf(b.hi);
+      const bFim = b.dt ? janFim : horaParaMinPdf(b.hf);
+      const top = Math.max(0,(bIni-janIni)/PASSO*SLOT_H);
+      const h = Math.max(16, (bFim-bIni)/PASSO*SLOT_H);
+      colBody += `<div style="position:absolute;top:${top}px;left:1px;right:1px;height:${h}px;background:repeating-linear-gradient(135deg,#F1B4B4 0 4px,#FBDADA 4px 8px);border-radius:3px;padding:2px 4px;overflow:hidden;font-size:8px;font-weight:700;color:#7A1F1F">⚠ ${esc(b.mo||'Bloqueado')}</div>`;
+    });
+    dados.ag.filter(a=>a.d===diso).sort((x,y)=>x.hi.localeCompare(y.hi)).forEach(a=>{
+      const aIni = horaParaMinPdf(a.hi), aFim = horaParaMinPdf(a.hf);
+      const top = Math.max(0,(aIni-janIni)/PASSO*SLOT_H);
+      const h = Math.max(18, (aFim-aIni)/PASSO*SLOT_H);
+      const cor = a.co || statusCorPadrao[a.st] || '#64748B';
+      const subLinha = [a.sn,a.un,a.pr].filter(Boolean).map(esc).join(' · ');
+      colBody += `<div style="position:absolute;top:${top}px;left:1px;right:1px;height:${h}px;background:${cor};border-radius:3px;padding:2px 4px;overflow:hidden;color:#fff">
+        <div style="font-size:8px;font-weight:700;line-height:1.15;opacity:.9">${esc(a.hi)}–${esc(a.hf)}</div>
+        <div style="font-size:9px;font-weight:700;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.pn||'(sem nome)')}</div>
+        ${h>=34 && subLinha?`<div style="font-size:7.5px;opacity:.9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${subLinha}</div>`:''}
+      </div>`;
+    });
+    corpoCols += `<div style="flex:1;min-width:${COL_W}px;position:relative;border-left:1px solid #ccc">${colBody}</div>`;
   });
 
   const win = window.open('','_blank');
@@ -23053,19 +23086,12 @@ function agExportarPDF(){
 <html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(tituloModo)}</title>
 <style>
 *{box-sizing:border-box}
-body{font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#1a1a1a;max-width:960px;margin:0 auto;padding:20px 24px}
-.pd-header{border-bottom:2px solid #1a1a1a;padding-bottom:12px;margin-bottom:18px}
+body{font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#1a1a1a;margin:0;padding:16px 18px}
+.pd-header{border-bottom:2px solid #1a1a1a;padding-bottom:10px;margin-bottom:12px}
 .pd-clinica{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6a6a6a}
-.pd-titulo{font-size:19px;font-weight:700;margin-top:2px}
-.pd-sub{font-size:12px;color:#6a6a6a;margin-top:2px}
-.pd-dia{margin-bottom:18px;break-inside:avoid;page-break-inside:avoid}
-.pd-dia-tit{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid #ccc;padding-bottom:4px;margin-bottom:8px}
-.pd-vazio{font-size:12px;color:#9a9a9a;padding:6px 0}
-.pd-aviso{font-size:11.5px;color:#92400E;background:#FFFBEB;border:1px solid #FDE68A;border-radius:4px;padding:5px 8px;margin-bottom:6px}
-.pd-tabela{width:100%;border-collapse:collapse}
-.pd-tabela th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#6a6a6a;border-bottom:1px solid #ccc;padding:5px 8px}
-.pd-tabela td{padding:6px 8px;border-bottom:1px solid #eee;font-size:12px}
-@media print{ @page{ margin:14mm 12mm; size:A4 ${dados.p==='semana'?'landscape':'portrait'}; } }
+.pd-titulo{font-size:18px;font-weight:700;margin-top:2px}
+.pd-sub{font-size:11.5px;color:#6a6a6a;margin-top:2px}
+@media print{ @page{ margin:12mm 10mm; size:A4 ${dados.p==='semana'?'landscape':'portrait'}; } }
 </style></head>
 <body>
 <div class="pd-header">
@@ -23073,7 +23099,8 @@ body{font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color
   <div class="pd-titulo">${esc(tituloModo)}</div>
   <div class="pd-sub">${esc(subtitulo)}</div>
 </div>
-${corpo}
+<div style="display:flex;border-bottom:2px solid #ccc">${headerCols}</div>
+<div style="display:flex">${corpoCols}</div>
 <script>window.onload=()=>window.print();<\/script>
 </body></html>`);
   win.document.close();
@@ -24177,17 +24204,18 @@ function renderAgenda(){
 
   // Seletor de profissional só aparece na combinação Profissional + Semana (não dá pra
   // mostrar a semana inteira de todas as profissionais ao mesmo tempo, por isso escolhe uma).
+  // Fica em branco até a pessoa escolher — não pré-seleciona ninguém.
   const profSemanaWrap = document.getElementById('ag-prof-semana-sel-wrap');
   const ehProfSemana = agendaView==='profissional' && agendaPeriodo==='semana';
-  if(profSemanaWrap) profSemanaWrap.style.display = ehProfSemana ? '' : 'none';
+  if(profSemanaWrap) profSemanaWrap.style.display = ehProfSemana ? 'flex' : 'none';
   if(ehProfSemana){
     const profsAtivas = usuariosNaAgenda();
-    if(!agendaProfSemanaId || !profsAtivas.some(ap=>ap.usuarioId===agendaProfSemanaId)){
-      agendaProfSemanaId = profsAtivas[0] ? profsAtivas[0].usuarioId : null;
+    if(agendaProfSemanaId && !profsAtivas.some(ap=>ap.usuarioId===agendaProfSemanaId)){
+      agendaProfSemanaId = null;
     }
     const sel = document.getElementById('ag-prof-semana-sel');
     if(sel){
-      sel.innerHTML = profsAtivas.map(ap=>`<option value="${ap.usuarioId}" ${ap.usuarioId===agendaProfSemanaId?'selected':''}>${esc(ap.nome)}</option>`).join('');
+      sel.innerHTML = '<option value="">— Selecione —</option>' + profsAtivas.map(ap=>`<option value="${ap.usuarioId}" ${ap.usuarioId===agendaProfSemanaId?'selected':''}>${esc(ap.nome)}</option>`).join('');
     }
   }
 
@@ -24430,9 +24458,13 @@ function renderAgendaSemana(d){
 // por vez — mostrando todas ao mesmo tempo a grade ficaria larga e ilegível.
 function renderAgendaSemanaPorProfissional(d, usuarioId){
   const grid = document.getElementById('agenda-semana-grid');
+  if(!usuariosNaAgenda().length){
+    grid.innerHTML = `<div class="empty"><div class="empty-ic">${AGI('calendar',22)}</div>Nenhuma profissional configurada na agenda. Vá em Configurações → Config. de agenda.</div>`;
+    return;
+  }
   const ap = agendaProfissionais.find(x=>x.usuarioId===usuarioId);
   if(!usuarioId || !ap){
-    grid.innerHTML = `<div class="empty"><div class="empty-ic">${AGI('calendar',22)}</div>Nenhuma profissional configurada na agenda. Vá em Configurações → Config. de agenda.</div>`;
+    grid.innerHTML = `<div class="empty"><div class="empty-ic">${AGI('calendar',22)}</div>Escolha uma profissional no filtro acima pra ver a semana dela.</div>`;
     return;
   }
   const todosAgms = agendamentos;
@@ -27368,82 +27400,101 @@ function _renderAgendaPublica(token){
     return;
   }
 
-  const DOW = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
-  function fmtDiaLongo(diso){
+  const DOW = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const DOW_LONGO = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  function partesData(diso){
     const [y,m,dd] = diso.split('-').map(Number);
-    const d = new Date(y,m-1,dd);
-    return `${DOW[d.getDay()]}, ${dd}/${String(m).padStart(2,'0')}`;
+    return {d:new Date(y,m-1,dd), dd, m};
   }
+  function fmtDiaLongo(diso){
+    const {d,dd,m} = partesData(diso);
+    return `${DOW_LONGO[d.getDay()]}, ${String(dd).padStart(2,'0')}/${String(m).padStart(2,'0')}`;
+  }
+  function minParaHoraPub(min){ const h=Math.floor(min/60), mi=min%60; return String(h).padStart(2,'0')+':'+String(mi).padStart(2,'0'); }
+  function horaParaMinPub(hhmm){ const [h,mi]=(hhmm||'0:0').split(':').map(Number); return (h||0)*60+(mi||0); }
 
   let tituloModo = dados.m==='profissional' ? _pubEsc(dados.pn||'Profissional') : 'Agenda';
   let subtitulo = dados.p==='semana' ? `Semana de ${fmtDiaLongo(dados.dias[0])} a ${fmtDiaLongo(dados.dias[dados.dias.length-1])}` : fmtDiaLongo(dados.dias[0]);
 
   const statusCorPadrao = {agendado:'#64748B',confirmado:'#1E8A5F',realizado:'#0F5C61',faltou:'#DC2626',cancelado:'#94A3B8'};
 
-  let corpo = '';
+  // Janela de horário: cobre do início ao fim de tudo que existe no retrato, arredondado
+  // pra hora cheia, com um mínimo de 8h–18h pra não ficar uma grade estranhamente curta.
+  let janIni = 8*60, janFim = 18*60;
+  const todosIni = [], todosFim = [];
+  (dados.ag||[]).forEach(a=>{ todosIni.push(horaParaMinPub(a.hi)); todosFim.push(horaParaMinPub(a.hf)); });
+  (dados.bl||[]).forEach(b=>{ if(!b.dt){ todosIni.push(horaParaMinPub(b.hi)); todosFim.push(horaParaMinPub(b.hf)); } });
+  if(todosIni.length){
+    janIni = Math.min(janIni, Math.floor(Math.min(...todosIni)/60)*60);
+    janFim = Math.max(janFim, Math.ceil(Math.max(...todosFim)/60)*60);
+  }
+  const PASSO=30, SLOT_H=36, TIME_W=40, COL_W=148;
+  const slots=[]; for(let m=janIni;m<janFim;m+=PASSO) slots.push(m);
+
+  let headerCols = `<div style="width:${TIME_W}px;flex-shrink:0"></div>`;
   dados.dias.forEach(diso=>{
-    const itensDia = (dados.ag||[]).filter(a=>a.d===diso).sort((a,b)=>a.hi.localeCompare(b.hi));
-    const avisosDia = (dados.bl||[]).filter(b=>b.d===diso);
-    if(!itensDia.length && !avisosDia.length && dados.p!=='semana') {
-      // dia único sem nada — ainda mostra o cabeçalho do dia, com aviso de vazio
-    }
-    if(dados.p==='semana' && !itensDia.length && !avisosDia.length) return; // pula dias vazios só na visão de semana, pra não poluir
-    corpo += `<div class="pa-dia">
-      <div class="pa-dia-tit">${_pubEsc(fmtDiaLongo(diso))}</div>`;
-    if(!itensDia.length && !avisosDia.length){
-      corpo += `<div class="pa-vazio">Nenhum agendamento.</div>`;
-    }
-    avisosDia.forEach(b=>{
-      const horarioTxt = b.dt ? 'Dia todo' : `${b.hi||''}–${b.hf||''}`;
-      corpo += `<div class="pa-aviso">⚠ ${_pubEsc(b.mo||'Bloqueado')} ${b.un?'· '+_pubEsc(b.un):''} · ${_pubEsc(horarioTxt)}</div>`;
-    });
-    itensDia.forEach(a=>{
-      const cor = a.co || statusCorPadrao[a.st] || '#64748B';
-      corpo += `<div class="pa-card">
-        <div class="pa-card-faixa" style="background:${_pubEsc(cor)}"></div>
-        <div class="pa-card-corpo">
-          <div class="pa-card-topo">
-            <span class="pa-card-hora">${_pubEsc(a.hi)}–${_pubEsc(a.hf)}</span>
-            <span class="pa-card-status" style="color:${_pubEsc(cor)};border-color:${_pubEsc(cor)}66">${_pubEsc(a.stl||'')}</span>
-          </div>
-          <div class="pa-card-pac">${_pubEsc(a.pn||'(sem nome)')}</div>
-          <div class="pa-card-sub">${[a.sn,a.un,a.pr].filter(Boolean).map(_pubEsc).join(' · ')}</div>
-        </div>
+    const {d,dd} = partesData(diso);
+    headerCols += `<div style="flex:1;min-width:${COL_W}px;text-align:center;padding:8px 4px;border-left:1px solid #e5e7eb">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#0F5C61aa">${DOW[d.getDay()]}</div>
+      <div style="font-size:14px;font-weight:800;color:#0F5C61">${String(dd).padStart(2,'0')}</div>
+    </div>`;
+  });
+
+  let corpoCols = `<div style="width:${TIME_W}px;flex-shrink:0">` +
+    slots.map(m=>`<div style="height:${SLOT_H}px;font-size:9px;color:#9a9a9a;text-align:right;padding:2px 5px 0 0;border-top:1px solid #f0f0f0">${minParaHoraPub(m)}</div>`).join('') +
+    `</div>`;
+
+  dados.dias.forEach(diso=>{
+    let colBody = slots.map(()=>`<div style="height:${SLOT_H}px;border-top:1px solid #f0f0f0"></div>`).join('');
+    (dados.bl||[]).filter(b=>b.d===diso).forEach(b=>{
+      const bIni = b.dt ? janIni : horaParaMinPub(b.hi);
+      const bFim = b.dt ? janFim : horaParaMinPub(b.hf);
+      const top = Math.max(0,(bIni-janIni)/PASSO*SLOT_H);
+      const h = Math.max(20, (bFim-bIni)/PASSO*SLOT_H);
+      colBody += `<div style="position:absolute;top:${top}px;left:2px;right:2px;height:${h}px;background:repeating-linear-gradient(135deg,#F1B4B4 0 5px,#FBDADA 5px 10px);border-radius:5px;padding:3px 6px;overflow:hidden">
+        <div style="font-size:9px;font-weight:700;color:#7A1F1F">⚠ ${_pubEsc(b.mo||'Bloqueado')}</div>
+        ${h>=32 && b.un?`<div style="font-size:8.5px;color:#7A1F1F;opacity:.85">${_pubEsc(b.un)}</div>`:''}
       </div>`;
     });
-    corpo += `</div>`;
+    (dados.ag||[]).filter(a=>a.d===diso).sort((x,y)=>x.hi.localeCompare(y.hi)).forEach(a=>{
+      const aIni = horaParaMinPub(a.hi), aFim = horaParaMinPub(a.hf);
+      const top = Math.max(0,(aIni-janIni)/PASSO*SLOT_H);
+      const h = Math.max(22, (aFim-aIni)/PASSO*SLOT_H);
+      const cor = a.co || statusCorPadrao[a.st] || '#64748B';
+      const subLinha = [a.sn,a.un,a.pr].filter(Boolean).map(_pubEsc).join(' · ');
+      colBody += `<div style="position:absolute;top:${top}px;left:2px;right:2px;height:${h}px;background:${_pubEsc(cor)};border-radius:5px;padding:3px 6px;overflow:hidden;color:#fff" title="${_pubEsc(a.pn)} · ${_pubEsc(a.hi)}–${_pubEsc(a.hf)}">
+        <div style="font-size:9px;font-weight:700;opacity:.9;line-height:1.2">${_pubEsc(a.hi)}–${_pubEsc(a.hf)}</div>
+        <div style="font-size:10.5px;font-weight:700;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_pubEsc(a.pn||'(sem nome)')}</div>
+        ${h>=42 && subLinha?`<div style="font-size:8.5px;opacity:.9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${subLinha}</div>`:''}
+      </div>`;
+    });
+    corpoCols += `<div style="flex:1;min-width:${COL_W}px;position:relative;border-left:1px solid #e5e7eb">${colBody}</div>`;
   });
+
+  const gradeHtml = `<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+    <div style="min-width:${TIME_W + dados.dias.length*COL_W}px">
+      <div style="display:flex;position:sticky;top:0;background:#fff;border-bottom:2px solid #e5e7eb;z-index:2">${headerCols}</div>
+      <div style="display:flex">${corpoCols}</div>
+    </div>
+  </div>`;
 
   document.body.innerHTML = `
     <style>
       *{box-sizing:border-box;margin:0;padding:0}
-      body{font-family:'Plus Jakarta Sans','Inter',system-ui,-apple-system,sans-serif;background:#F7F6F3;color:#1a1a1a;min-height:100vh;padding-bottom:32px}
-      .pa-header{background:#0F5C61;color:#fff;padding:20px 20px 24px}
+      body{font-family:'Plus Jakarta Sans','Inter',system-ui,-apple-system,sans-serif;background:#F7F6F3;color:#1a1a1a;min-height:100vh}
+      .pa-header{background:#0F5C61;color:#fff;padding:16px 16px 14px}
       .pa-clinica{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.8;margin-bottom:6px}
-      .pa-titulo{font-size:20px;font-weight:800}
-      .pa-sub{font-size:13px;opacity:.85;margin-top:2px}
-      .pa-wrap{max-width:560px;margin:-14px auto 0;padding:0 12px}
-      .pa-dia{background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(15,23,42,.06);margin-bottom:14px;overflow:hidden}
-      .pa-dia-tit{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#0F5C61;padding:12px 14px;border-bottom:1px solid #eee}
-      .pa-vazio{padding:16px 14px;font-size:13px;color:#94A3B8}
-      .pa-aviso{padding:10px 14px;font-size:12.5px;color:#92400E;background:#FFFBEB;border-bottom:1px solid #eee}
-      .pa-card{display:flex;border-bottom:1px solid #f0f0f0}
-      .pa-card:last-child{border-bottom:none}
-      .pa-card-faixa{width:5px;flex-shrink:0}
-      .pa-card-corpo{padding:10px 14px;flex:1;min-width:0}
-      .pa-card-topo{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px}
-      .pa-card-hora{font-size:13px;font-weight:700;color:#1a1a1a}
-      .pa-card-status{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;border:1px solid;border-radius:20px;padding:2px 8px}
-      .pa-card-pac{font-size:14px;font-weight:600;color:#1a1a1a;margin-bottom:2px}
-      .pa-card-sub{font-size:12px;color:#6b7280}
-      .pa-footer{max-width:560px;margin:8px auto 0;padding:8px 20px;font-size:11px;color:#9a9a9a;text-align:center}
+      .pa-titulo{font-size:19px;font-weight:800}
+      .pa-sub{font-size:12.5px;opacity:.85;margin-top:2px}
+      .pa-grade-wrap{background:#fff;margin:0 0 10px}
+      .pa-footer{padding:10px 16px 24px;font-size:11px;color:#9a9a9a;text-align:center}
     </style>
     <div class="pa-header">
       <div class="pa-clinica">Clínica Sekai</div>
       <div class="pa-titulo">${tituloModo}</div>
       <div class="pa-sub">${_pubEsc(subtitulo)}</div>
     </div>
-    <div class="pa-wrap">${corpo || '<div class="pa-dia"><div class="pa-vazio" style="padding:16px 14px">Nenhum agendamento neste período.</div></div>'}</div>
+    <div class="pa-grade-wrap">${gradeHtml}</div>
     <div class="pa-footer">Retrato da agenda gerado em ${_pubEsc(dados.gEm||'')} — não atualiza sozinho.</div>
   `;
 }
