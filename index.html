@@ -23011,7 +23011,8 @@ async function agAbrirEncaminharLink(){
     urlEl.dataset.url = url;
   }catch(e){
     console.error('Erro ao gerar link da agenda:', e);
-    urlEl.textContent = 'Não foi possível gerar o link. Confirme se a tabela "agenda_snapshots" já foi criada no banco (Supabase) e tente de novo.';
+    const motivo = (e && e.message) ? e.message : 'motivo desconhecido';
+    urlEl.textContent = `Não foi possível gerar o link (${motivo}). Se a tabela "agenda_snapshots" já foi criada no Supabase, tente de novo — se persistir, encaminhe essa mensagem de erro.`;
   }
 }
 function copiarLinkAgendaEncaminhar(){
@@ -27413,12 +27414,14 @@ async function _renderAgendaPublica(token){
   try{
     const { data, error } = await supa.from('agenda_snapshots').select('dados').eq('id', token).single();
     if(error || !data){
-      document.body.innerHTML = _renderErroAgendaPublica('Link inválido ou expirado. Peça um novo link à secretária.');
+      const motivo = error && error.message ? ` (${error.message})` : '';
+      document.body.innerHTML = _renderErroAgendaPublica(`Link inválido ou expirado${motivo}. Peça um novo link à secretária.`);
       return;
     }
     dados = data.dados;
   }catch(e){
-    document.body.innerHTML = _renderErroAgendaPublica('Não foi possível carregar a agenda. Verifique sua conexão e tente de novo.');
+    const motivo = (e && e.message) ? ` (${e.message})` : '';
+    document.body.innerHTML = _renderErroAgendaPublica(`Não foi possível carregar a agenda${motivo}. Verifique sua conexão e tente de novo.`);
     return;
   }
   if(!dados || dados.v!==1){
