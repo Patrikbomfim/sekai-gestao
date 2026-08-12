@@ -5374,9 +5374,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div class="agpop-row" id="agpop-prof-row">
       <span class="agpop-ic"><svg viewBox="0 0 24 24" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="2.5"/><path d="M8 17c0-2 1.8-3 4-3s4 1 4 3"/></svg></span>
-      <span class="agpop-val">
+      <span class="agpop-val" style="flex:1">
         <span style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:1px">Profissional</span>
-        <span id="agpop-prof"></span>
+        <select id="agpop-prof" onchange="agPopMarcarSujo()" style="width:100%;font-size:12.5px;font-weight:600;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6);font-family:var(--font);background:var(--surface);color:var(--tx)"></select>
       </span>
     </div>
     <!-- TAGS -->
@@ -23326,12 +23326,22 @@ function abrirAgPopover(a, targetEl){
   if(a.procedimento){ document.getElementById('agpop-proc').textContent = a.procedimento; procRow.style.display=''; }
   else { procRow.style.display='none'; }
 
-  // Profissional
+  // Profissional — lista suspensa com os profissionais ativos na agenda (mesma lista do
+  // modal completo), pra poder trocar sem precisar abrir o modal completo.
   const profRow = document.getElementById('agpop-prof-row');
-  const ap = agendaProfissionais.find(x=>x.usuarioId===a.usuarioId);
-  const profNome = ap ? ap.nome : (nomeUsuario(a.usuarioId)||'');
-  if(profNome){ document.getElementById('agpop-prof').textContent = profNome; profRow.style.display=''; }
-  else { profRow.style.display='none'; }
+  const profSel = document.getElementById('agpop-prof');
+  const profsAtivos = usuariosNaAgenda();
+  // Garante que o profissional atual apareça na lista mesmo que tenha sido desativado
+  // ou removido da agenda depois deste agendamento ter sido criado (ex.: "usuário removido").
+  const profAtualJaNaLista = profsAtivos.some(ap=>ap.usuarioId===a.usuarioId);
+  const opcoesProf = profAtualJaNaLista ? profsAtivos : [...profsAtivos, {usuarioId:a.usuarioId, nome:(nomeUsuario(a.usuarioId)||'(usuário removido)')}];
+  if(opcoesProf.length){
+    profSel.innerHTML = opcoesProf.map(ap=>`<option value="${ap.usuarioId}">${esc(ap.nome)}</option>`).join('');
+    profSel.value = a.usuarioId;
+    profRow.style.display='';
+  } else {
+    profRow.style.display='none';
+  }
 
   // Obs
   document.getElementById('agpop-obs').value = a.obs || '';
@@ -23341,32 +23351,28 @@ function abrirAgPopover(a, targetEl){
 
   // Posicionar o popover
   const pop = document.getElementById('ag-popover');
+  // Mostra invisível primeiro: assim dá pra medir o tamanho REAL do balão (que muda de
+  // agendamento pra agendamento, dependendo de quantas informações ele tem) antes de
+  // decidir onde colocar na tela — sem isso, um chute de altura podia deixar o balão
+  // vazando pra baixo da tela em agendamentos com mais conteúdo.
+  pop.style.visibility = 'hidden';
   pop.classList.add('open');
 
   // Posicionamento inteligente perto do card clicado
   if(targetEl){
     const rect = targetEl.getBoundingClientRect();
-    const pw = 300, phEstimado = 480;
+    const pw = pop.offsetWidth || 300;
+    const ph = pop.offsetHeight;
     let left = rect.right + 8;
-    let top = rect.top;
     if(left + pw > window.innerWidth - 8) left = rect.left - pw - 8;
     if(left < 8) left = 8;
-    if(top + phEstimado > window.innerHeight - 8) top = window.innerHeight - phEstimado - 8;
+    let top = rect.top;
+    if(top + ph > window.innerHeight - 8) top = window.innerHeight - ph - 8;
     if(top < 8) top = 8;
     pop.style.left = left + 'px';
     pop.style.top = top + 'px';
     pop.style.right = 'auto';
-
-    // O cálculo acima usa uma altura estimada — reposiciona com a altura REAL do popover
-    // já renderizado, para que os botões do rodapé (editar/salvar) nunca fiquem fora da
-    // tela quando o agendamento está nos últimos horários do dia (perto do fim da grade).
-    requestAnimationFrame(()=>{
-      const ph = pop.offsetHeight || phEstimado;
-      let top2 = rect.top;
-      if(top2 + ph > window.innerHeight - 8) top2 = window.innerHeight - ph - 8;
-      if(top2 < 8) top2 = 8;
-      pop.style.top = top2 + 'px';
-    });
+    pop.style.transform = 'none';
   } else {
     // Centralizado
     pop.style.left = '50%';
@@ -23374,6 +23380,7 @@ function abrirAgPopover(a, targetEl){
     pop.style.right = 'auto';
     pop.style.transform = 'translate(-50%, -50%)';
   }
+  pop.style.visibility = 'visible';
 
   // Fechar ao clicar fora
   setTimeout(()=>{
@@ -23474,26 +23481,31 @@ function blqAbrirPopoverSeNaoArrastando(idx, targetEl){
   document.getElementById('blqpop-onde').textContent = ondeTxt;
 
   const pop = document.getElementById('blq-popover');
+  // Mesmo cuidado do balão de agendamento: mede a altura real antes de posicionar,
+  // pra garantir que o balão nunca vaze pra baixo (nem pra cima) da tela.
+  pop.style.visibility = 'hidden';
   pop.classList.add('open');
   if(targetEl){
     const rect = targetEl.getBoundingClientRect();
-    const pw = 300, phEstimado = 220;
+    const pw = pop.offsetWidth || 300;
+    const ph = pop.offsetHeight;
     let left = rect.right + 8;
-    let top = rect.top;
     if(left + pw > window.innerWidth - 8) left = rect.left - pw - 8;
     if(left < 8) left = 8;
-    if(top + phEstimado > window.innerHeight - 8) top = window.innerHeight - phEstimado - 8;
+    let top = rect.top;
+    if(top + ph > window.innerHeight - 8) top = window.innerHeight - ph - 8;
     if(top < 8) top = 8;
     pop.style.left = left + 'px';
     pop.style.top = top + 'px';
     pop.style.right = 'auto';
-    pop.style.transform = '';
+    pop.style.transform = 'none';
   } else {
     pop.style.left = '50%';
     pop.style.top = '50%';
     pop.style.right = 'auto';
     pop.style.transform = 'translate(-50%, -50%)';
   }
+  pop.style.visibility = 'visible';
   setTimeout(()=>{ document.addEventListener('mousedown', _blqPopoverOutsideClick); }, 10);
 }
 
@@ -23668,6 +23680,20 @@ function agPopCommitDraft(){
   const novoStatus = _agPopStatusPendente;
   const pacienteId = agendamentos[idx].pacienteId;
 
+  // Profissional — se foi trocado pelo dropdown, checa antes de salvar se o novo
+  // profissional está bloqueado/indisponível nesse dia e horário, igual ao modal completo.
+  const profSelEl = document.getElementById('agpop-prof');
+  const novoUsuarioId = profSelEl ? profSelEl.value : agendamentos[idx].usuarioId;
+  if(novoUsuarioId && novoUsuarioId !== agendamentos[idx].usuarioId){
+    const iniMin = horaParaMin(agendamentos[idx].horaInicio);
+    const fimMin = horaParaMin(agendamentos[idx].horaFim);
+    const bloqueioProf = bloqueios.find(b=>(b.tipo==='profissional'||b.tipo==='ambos') && b.usuarioId===novoUsuarioId && bloqueioCobre(b, agendamentos[idx].data, iniMin, fimMin));
+    if(bloqueioProf){
+      alert(`A profissional selecionada está indisponível nesse dia/horário${bloqueioProf.motivo?` (${bloqueioProf.motivo})`:''}. Escolha outro profissional ou altere pelo modal completo.`);
+      return false;
+    }
+  }
+
   let situacaoPaciente = null;
   if(novoStatus==='realizado' && pacienteId){
     const cfg = (typeof cfgCamposAgmSistema!=='undefined' && cfgCamposAgmSistema['agm_situacao_paciente']) || {};
@@ -23683,6 +23709,7 @@ function agPopCommitDraft(){
   agendamentos[idx].obs = document.getElementById('agpop-obs').value;
   agendamentos[idx].status = novoStatus;
   agendamentos[idx].tags = _agPopDraftTags.slice();
+  if(novoUsuarioId) agendamentos[idx].usuarioId = novoUsuarioId;
   if(situacaoPaciente) agendamentos[idx].situacaoRegistrada = situacaoPaciente;
   salvarLS('sk3-agendamentos', agendamentos);
 
@@ -23719,6 +23746,8 @@ function agPopSalvar(){
   if(novoStatus!==statusAntigo && novoStatus==='cancelado'){
     agendamentos[idx].obs = document.getElementById('agpop-obs').value;
     agendamentos[idx].tags = _agPopDraftTags.slice();
+    const profSelEl = document.getElementById('agpop-prof');
+    if(profSelEl && profSelEl.value) agendamentos[idx].usuarioId = profSelEl.value;
     salvarLS('sk3-agendamentos', agendamentos);
     const id=_agPopoverId;
     _agPopDirty = false;
@@ -24100,14 +24129,12 @@ function renderAgendaSemana(d){
             }
           }
         }
-        // Rótulo da marca d'água de ausência — só na primeira célula do intervalo (as
-        // demais já ficam com o fundo tingido, calculado acima, indicando a continuação)
+        // Rótulo da marca d'água de ausência — repete em TODAS as células do intervalo
+        // (não só na primeira), pra facilitar a visualização quando a ausência dura mais
+        // de uma hora e o card fica alto na tela.
         if(estaAusente){
-          const naPrimeiraCelula = ausenciasSlot.some(iv=> iv.ini>=slotMin && iv.ini<slotFim);
-          if(naPrimeiraCelula){
-            const nomesTxt = [...new Set(ausenciasSlot.flatMap(iv=>iv.nomes))].join(', ');
-            body += `<div class="ag-ausencia-watermark" style="position:absolute;top:1px;left:1px;right:1px;height:${SLOT_H-2}px" title="Ausente: ${esc(nomesTxt)}"><span>Ausente: ${esc(nomesTxt)}</span></div>`;
-          }
+          const nomesTxt = [...new Set(ausenciasSlot.flatMap(iv=>iv.nomes))].join(', ');
+          body += `<div class="ag-ausencia-watermark" style="position:absolute;top:1px;left:1px;right:1px;height:${SLOT_H-2}px" title="Ausente: ${esc(nomesTxt)}"><span>Ausente: ${esc(nomesTxt)}</span></div>`;
         }
         agmsAqui.forEach(a => {
           const prof = agendaProfissionais.find(ap => ap.usuarioId === a.usuarioId);
