@@ -10090,7 +10090,7 @@ async function _excluirPacienteDb(id){
 // salvou algo nesse meio-tempo em outro computador/aba.
 async function _atualizarPacientesFresco(){
   try{
-    const { data, error } = await supa.from('pacientes').select('dados');
+    const { data, error } = await _buscarTudoPaginado('pacientes');
     if(!error && Array.isArray(data)){
       pacientes = data.map(r=>r.dados);
       try{ localStorage.setItem('sk3-pacientes', JSON.stringify(pacientes)); }catch(e){}
@@ -10134,7 +10134,7 @@ async function _excluirAgendamentoDb(id){
 // que agora é sempre por registro, não na leitura.
 async function _atualizarAgendamentosFresco(){
   try{
-    const { data, error } = await supa.from('agendamentos').select('dados');
+    const { data, error } = await _buscarTudoPaginado('agendamentos');
     if(!error && Array.isArray(data)){
       agendamentos = data.map(r=>r.dados);
     }
@@ -28253,6 +28253,30 @@ async function fazerLogin(ev){
 
 // Busca tudo do banco (dados do sistema, perfis e cargos), grava localmente
 // no formato que o sistema já espera, e então liga o app.
+// CORREÇÃO CRÍTICA (13/08/2026): o banco só devolve até 1000 linhas por
+// consulta, por padrão — sem avisar com erro nenhum, só corta o resto em
+// silêncio. Enquanto Agenda e Pacientes eram "pacotes únicos" isso nunca foi
+// problema (era sempre 1 linha só). Agora que viraram tabelas de verdade, com
+// mais de 1000 registros cada, uma busca simples de "tudo" perdia parte dos
+// dados na hora de exibir (não no banco — os dados continuavam salvos, só não
+// apareciam na tela). Esta função busca em "páginas" de 1000 em 1000 até
+// trazer tudo, e é usada em todo lugar que busca a lista inteira de Agenda ou
+// Pacientes.
+async function _buscarTudoPaginado(tabela){
+  const TAM_PAGINA = 1000;
+  let tudo = [];
+  let pagina = 0;
+  while(true){
+    const de = pagina*TAM_PAGINA, ate = de+TAM_PAGINA-1;
+    const { data, error } = await supa.from(tabela).select('dados').range(de, ate);
+    if(error) return { data: null, error };
+    tudo = tudo.concat(data||[]);
+    if(!data || data.length < TAM_PAGINA) break;
+    pagina++;
+  }
+  return { data: tudo, error: null };
+}
+
 async function _carregarDadosEAtivar(){
   document.getElementById('tela-login').style.display = 'none';
   document.getElementById('tela-carregando').style.display = 'flex';
@@ -28261,8 +28285,8 @@ async function _carregarDadosEAtivar(){
     supa.from('dados_sistema').select('chave,valor'),
     supa.from('profiles').select('id,nome,cpf,nascimento,cargo_ids,ativo,email'),
     supa.from('cargos').select('id,nome,permissoes'),
-    supa.from('agendamentos').select('dados'),
-    supa.from('pacientes').select('dados'),
+    _buscarTudoPaginado('agendamentos'),
+    _buscarTudoPaginado('pacientes'),
   ]);
 
   if(e1 || e2 || e3){
