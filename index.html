@@ -28352,8 +28352,17 @@ async function _carregarDadosEAtivar(){
   document.getElementById('tela-login').style.display = 'none';
   document.getElementById('tela-carregando').style.display = 'flex';
 
+  // OTIMIZAÇÃO DE CARREGAMENTO (13/08/2026): Agenda, Pacientes e Orçamento já
+  // foram migrados para tabelas próprias (mais abaixo, via _buscarTudoPaginado).
+  // Os pacotes antigos deles dentro de "dados_sistema" (sk3-agendamentos,
+  // sk3-pacientes, sk3-orcamentos) continuam existindo só como backup de
+  // segurança, mas não são mais lidos pelo sistema — eram baixados por
+  // completo a cada login (quase 3 MB) só pra serem jogados fora e
+  // sobrescritos pela versão nova logo em seguida. Excluímos essas 3 chaves
+  // da busca abaixo para não gastar tempo/dados baixando algo que não vai
+  // ser usado. Os pacotes continuam intactos no banco, intocados.
   const [{ data: dados, error: e1 }, { data: perfis, error: e2 }, { data: cargosDb, error: e3 }, { data: agsDb, error: e4 }, { data: pacsDb, error: e5 }, { data: orcsDb, error: e6 }] = await Promise.all([
-    supa.from('dados_sistema').select('chave,valor'),
+    supa.from('dados_sistema').select('chave,valor').not('chave', 'in', '(sk3-agendamentos,sk3-pacientes,sk3-orcamentos)'),
     supa.from('profiles').select('id,nome,cpf,nascimento,cargo_ids,ativo,email'),
     supa.from('cargos').select('id,nome,permissoes'),
     _buscarTudoPaginado('agendamentos'),
