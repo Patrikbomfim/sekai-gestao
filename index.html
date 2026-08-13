@@ -10053,8 +10053,17 @@ function switchPpArea(area){
 // e atualiza window._memStore. Usado como mitigação rápida contra o cenário
 // em que duas pessoas usam o sistema ao mesmo tempo e uma delas, com uma
 // cópia antiga em memória, acaba sobrescrevendo o que a outra acabou de salvar.
+// Chaves que já migraram de "pacote único" pra tabela própria (um registro
+// por item) — mapeadas pro nome da tabela nova correspondente. Conforme cada
+// módulo (Prontuário, Títulos, etc.) for migrado, entra aqui também.
+const _TABELAS_MIGRADAS = { 'sk3-orcamentos': 'orcamentos' };
 async function _atualizarChaveFresca(chave){
   try{
+    if(_TABELAS_MIGRADAS[chave]){
+      const { data, error } = await _buscarTudoPaginado(_TABELAS_MIGRADAS[chave]);
+      if(!error && data && window._memStore) window._memStore[chave] = JSON.stringify(data.map(r=>r.dados));
+      return;
+    }
     const { data, error } = await supa.from('dados_sistema').select('valor').eq('chave', chave).single();
     if(!error && data && window._memStore) window._memStore[chave] = JSON.stringify(data.valor);
   }catch(e){ console.error('Erro ao atualizar '+chave+' antes de exibir/salvar:', e); }
@@ -10727,7 +10736,42 @@ function salvarTbProc(){
 // Storage key: sk3-orcamentos → [ {id, pacienteId, clinica, criadoPor, data, obs, itens:[{id,proc,dentista,dentes,valor}], status:'rascunho'|'aprovado'|'recusado'} ]
 
 function _orcamentos(){ return carregarLS('sk3-orcamentos',[]); }
-function _salvarOrcamentos(list){ salvarLS('sk3-orcamentos',list); }
+// ── ORÇAMENTO — salvamento por registro (13/08/2026) ────────────────────────
+// Mesmo princípio já aplicado em Agenda e Pacientes. Como todo o sistema já
+// chama _salvarOrcamentos(list) passando a lista inteira (do jeito antigo),
+// em vez de caçar cada um dos ~14 lugares que chamam essa função, a correção
+// foi feita aqui dentro: comparamos a lista de antes com a de agora e só
+// mandamos pro banco os orçamentos que realmente mudaram (ou foram
+// excluídos). Assim, TODO o sistema já sai protegido de uma vez, sem risco
+// de esquecer um lugar.
+async function _salvarOrcamentoDb(o){
+  if(!o || !o.id) return;
+  try{
+    const { error } = await supa.from('orcamentos').upsert({
+      id: o.id, paciente_id: o.pacienteId || null, status: o.status || null,
+      data: o.data || null, dados: o
+    }, { onConflict: 'id' });
+    if(error) console.error('Erro ao salvar orçamento', o.id, error);
+  }catch(e){ console.error('Erro ao salvar orçamento', o.id, e); }
+}
+async function _excluirOrcamentoDb(id){
+  if(!id) return;
+  try{
+    const { error } = await supa.from('orcamentos').delete().eq('id', id);
+    if(error) console.error('Erro ao excluir orçamento', id, error);
+  }catch(e){ console.error('Erro ao excluir orçamento', id, e); }
+}
+function _salvarOrcamentos(list){
+  const anterior = carregarLS('sk3-orcamentos', []);
+  salvarLS('sk3-orcamentos', list);
+  const antesPorId = new Map(anterior.map(o=>[o.id, o]));
+  const depoisIds = new Set(list.map(o=>o.id));
+  list.forEach(o=>{
+    const ant = antesPorId.get(o.id);
+    if(!ant || JSON.stringify(ant)!==JSON.stringify(o)) _salvarOrcamentoDb(o);
+  });
+  anterior.forEach(o=>{ if(!depoisIds.has(o.id)) _excluirOrcamentoDb(o.id); });
+}
 
 
 // ── MÁSCARA MOEDA ──────────────────────────────────────────────────────────
@@ -28281,12 +28325,13 @@ async function _carregarDadosEAtivar(){
   document.getElementById('tela-login').style.display = 'none';
   document.getElementById('tela-carregando').style.display = 'flex';
 
-  const [{ data: dados, error: e1 }, { data: perfis, error: e2 }, { data: cargosDb, error: e3 }, { data: agsDb, error: e4 }, { data: pacsDb, error: e5 }] = await Promise.all([
+  const [{ data: dados, error: e1 }, { data: perfis, error: e2 }, { data: cargosDb, error: e3 }, { data: agsDb, error: e4 }, { data: pacsDb, error: e5 }, { data: orcsDb, error: e6 }] = await Promise.all([
     supa.from('dados_sistema').select('chave,valor'),
     supa.from('profiles').select('id,nome,cpf,nascimento,cargo_ids,ativo,email'),
     supa.from('cargos').select('id,nome,permissoes'),
     _buscarTudoPaginado('agendamentos'),
     _buscarTudoPaginado('pacientes'),
+    _buscarTudoPaginado('orcamentos'),
   ]);
 
   if(e1 || e2 || e3){
@@ -28312,6 +28357,12 @@ async function _carregarDadosEAtivar(){
     try{ localStorage.setItem('sk3-pacientes', JSON.stringify(pacsDb.map(r=>r.dados))); }catch(e){}
   } else if(e5){
     console.error('Erro ao carregar pacientes da tabela nova:', e5);
+  }
+  // ORÇAMENTO (13/08/2026): mesma troca, agora pra lista de orçamentos.
+  if(!e6 && Array.isArray(orcsDb)){
+    window._memStore['sk3-orcamentos'] = JSON.stringify(orcsDb.map(r=>r.dados));
+  } else if(e6){
+    console.error('Erro ao carregar orçamentos da tabela nova:', e6);
   }
 
   const { data: sessao } = await supa.auth.getSession();
