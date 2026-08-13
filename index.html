@@ -6749,11 +6749,21 @@ function _planInicializar(){
   if(typeof _planAtualizarPainelLeticia==='function') _planAtualizarPainelLeticia();
 }
 
-// Avisar (sem salvar sozinho) se houver alterações pendentes ao fechar/recarregar a página
+// Avisar se houver alterações pendentes ao fechar/recarregar a página
 window.addEventListener('beforeunload', (e)=>{
   if(Object.keys(_pendingSaves).length > 0){
     e.preventDefault();
     e.returnValue = '';
+  }
+});
+// REDE DE SEGURANÇA GERAL (13/08/2026): em celular/tablet, esconder o app ou
+// trocar de aba nem sempre dispara o aviso de "sair sem salvar" acima — por
+// isso, sempre que a aba fica escondida (usuário minimizou, trocou de app,
+// bloqueou a tela), qualquer alteração pendente é salva de vez, sem esperar
+// o botão flutuante.
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='hidden' && Object.keys(_pendingSaves).length > 0){
+    commitPendingSaves();
   }
 });
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
@@ -8294,6 +8304,11 @@ function concluirAcao(a){ const k=acaoKey(a); if(!concluidasIds.includes(k)) con
 
 // ── NAV ────────────────────────────────────────────────────────────────
 function goTo(id, btn){
+  // REDE DE SEGURANÇA GERAL (13/08/2026): antes de trocar de tela, salva de
+  // vez qualquer alteração que ainda estivesse "pendente" (esperando o botão
+  // flutuante "Salvar"). Cobre todas as telas do sistema — não só Paciente e
+  // Agenda — para que trocar de tela sem clicar no botão não apague nada.
+  if(Object.keys(_pendingSaves).length > 0) commitPendingSaves();
   // Verificar permissão antes de navegar
   if(id!=='hoje' && id!=='proximos'){
     let semAcesso;
@@ -8342,7 +8357,16 @@ function goTo(id, btn){
   if(id==='agenda'){
     _atualizarChaveFresca('sk3-agendamentos').then(renderAgenda);
   }
-  if(id==='pacientes'){ptSortColId='nome';ptSortDir='asc';filtroAtual='';pacientesPaginaAtual=1;const buscaEl=document.getElementById('pt-busca-nome');if(buscaEl)buscaEl.value='';renderFiltros();renderPacientes('');renderKanban();}
+  if(id==='pacientes'){
+    ptSortColId='nome';ptSortDir='asc';filtroAtual='';pacientesPaginaAtual=1;
+    const buscaEl=document.getElementById('pt-busca-nome');if(buscaEl)buscaEl.value='';
+    renderFiltros();renderPacientes('');renderKanban();
+    // MITIGAÇÃO (mesmo princípio já aplicado em Agenda e Financeiro): busca a
+    // lista de pacientes mais atual do banco antes de exibir, para reduzir o
+    // risco de mostrar/editar uma cópia desatualizada quando outra pessoa
+    // salvou algo nesse meio-tempo em outro computador/aba.
+    _atualizarPacientesFresco().then(()=>{ renderPacientes(filtroAtual); renderKanban(); });
+  }
   if(id==='acoes') renderAcoesModulo();
   if(id==='rituais') renderRituais();
   if(id==='reuniao') renderReunioes();
@@ -9845,7 +9869,12 @@ function _preencherCamposCadastroPt(p){
   customWrap.innerHTML=camposExtras.length?camposExtras.map(c=>campoPersonalizadoInputHtml(c,'mpt-custom-'+c.id,(p.customFields&&p.customFields[c.id])||'')).join(''):'';
 }
 
-function abrirModalPt(id){
+async function abrirModalPt(id){
+  // MITIGAÇÃO (mesmo princípio já aplicado em Agenda/Financeiro/Orçamento/
+  // Prontuário): busca a versão mais atual dos pacientes direto do banco antes
+  // de abrir a ficha, para reduzir o risco de editar em cima de uma cópia
+  // desatualizada quando outra pessoa salvou algo nesse meio-tempo.
+  await _atualizarPacientesFresco();
   const p=pacientes.find(x=>x.id===id || String(x.id)===String(id));
   if(!p)return;
   id=p.id; // normaliza para o tipo real do paciente encontrado
@@ -10017,6 +10046,23 @@ async function _atualizarChaveFresca(chave){
     const { data, error } = await supa.from('dados_sistema').select('valor').eq('chave', chave).single();
     if(!error && data && window._memStore) window._memStore[chave] = JSON.stringify(data.valor);
   }catch(e){ console.error('Erro ao atualizar '+chave+' antes de exibir/salvar:', e); }
+}
+
+// Mesmo princípio de _atualizarChaveFresca acima, mas para a lista de pacientes —
+// que (diferente de orçamento/financeiro/prontuário/agenda) fica salva no
+// localStorage do aparelho, não só na memória. MITIGAÇÃO contra o cenário de
+// várias pessoas com o sistema aberto ao mesmo tempo: busca a lista mais atual
+// direto do banco antes de exibir a listagem de pacientes ou a ficha de um
+// paciente, em vez de confiar só na cópia carregada no login (que pode já
+// estar desatualizada se outra pessoa cadastrou/editou algo nesse meio-tempo).
+async function _atualizarPacientesFresco(){
+  try{
+    const { data, error } = await supa.from('dados_sistema').select('valor').eq('chave', 'sk3-pacientes').single();
+    if(!error && data && Array.isArray(data.valor)){
+      pacientes = data.valor;
+      try{ localStorage.setItem('sk3-pacientes', JSON.stringify(pacientes)); }catch(e){}
+    }
+  }catch(e){ console.error('Erro ao atualizar pacientes antes de exibir:', e); }
 }
 
 // A partir de um título em Contas a Receber (Financeiro) originado de um paciente,
@@ -16765,7 +16811,7 @@ async function sincronizarRespostaAnamnese(pacienteId){
       if(camposPreenchidos.length){
         p.historico.push({data: iso(hoje), situacao: p.situacao, nota: `<svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2h6v3H9zM8 11h8M8 15h5"/></svg> Cadastro atualizado a partir da anamnese: ${camposPreenchidos.join(', ')}`});
       }
-      salvarLS('sk3-pacientes', pacientes);
+      _comSalvarImediato(()=>salvarLS('sk3-pacientes', pacientes));
     }
     return true; // houve atualização
   } catch(e){ console.error('Erro ao sincronizar anamnese:', e); return false; }
@@ -17598,7 +17644,7 @@ async function sincronizarCadastroPublico(pacienteId){
 
     if(houveMudanca){
       p.historico.push({data: iso(hoje), situacao: p.situacao, nota: '📝 Cadastro preenchido pelo paciente via link'});
-      salvarLS('sk3-pacientes', pacientes);
+      _comSalvarImediato(()=>salvarLS('sk3-pacientes', pacientes));
       console.log('[cadastro] campos aplicados ao paciente '+p.nome);
     }
 
@@ -25767,6 +25813,14 @@ function excluirAgendamento(){
     'erSalvar','erExcluir',
     'togglePendenciaCentral','excluirPendenciaCentral','removerPendenciaAvulsa',
     'salvarRecontato','addRegraRecontato','deleteRegraRecontato',
+    // Adicionadas na revisão de salvamento (13/08/2026): estas ações também
+    // alteram dados na hora (arrastar paciente no quadro, popover rápido da
+    // agenda, completar cadastro do paciente, e as duas sincronizações
+    // automáticas que aplicam ao cadastro do paciente o que ele preencheu
+    // sozinho pelo link de anamnese/cadastro) mas ainda dependiam do botão
+    // flutuante "Salvar" — se a pessoa mudasse de tela antes de clicar nele,
+    // a alteração se perdia sem nenhum aviso.
+    'kbDrop','_completarCadastroSalvar','agPopCommitDraft','agPopSalvar','agPopExcluirTagGlobal',
     // Structural actions that immediately change data (add/remove items)
     'addSituacao','removeSituacao','addRitualLinha','removeRitualLinha',
     'addFlowAction','deleteFlowAction',
