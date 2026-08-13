@@ -8045,7 +8045,7 @@ let colunasPaciente = carregarLS('sk3-colunaspaciente', COLUNAS_PACIENTE_PADRAO)
       alterou=true;
     }
   });
-  if(alterou) salvarLS('sk3-titulos', list);
+  if(alterou) _salvarTitulos(list);
 })();
 
 
@@ -10071,7 +10071,7 @@ function switchPpArea(area){
 // Chaves que já migraram de "pacote único" pra tabela própria (um registro
 // por item) — mapeadas pro nome da tabela nova correspondente. Conforme cada
 // módulo (Prontuário, Títulos, etc.) for migrado, entra aqui também.
-const _TABELAS_MIGRADAS = { 'sk3-orcamentos': 'orcamentos', 'sk3-prontuarios': 'prontuarios' };
+const _TABELAS_MIGRADAS = { 'sk3-orcamentos': 'orcamentos', 'sk3-prontuarios': 'prontuarios', 'sk3-titulos': 'titulos', 'sk3-fin-titulos-gestao': 'fin_titulos_gestao', 'sk3-recibos': 'recibos', 'sk3-fin-medicoes-comissao': 'fin_medicoes_comissao' };
 async function _atualizarChaveFresca(chave){
   try{
     if(_TABELAS_MIGRADAS[chave]){
@@ -12366,7 +12366,45 @@ function confirmarProcOrc(){
 // ══════════════════════════════════════════════════════════════════════
 
 function _titulos(){ return carregarLS('sk3-titulos',[]); }
-function _salvarTitulos(list){ salvarLS('sk3-titulos',list); }
+// ── TÍTULOS FINANCEIROS — salvamento por registro (13/08/2026) ──────────────
+// Mesmo princípio já aplicado em Agenda, Pacientes, Orçamento e Prontuário.
+// Existem dois lugares no sistema que chamam salvamento da lista inteira de
+// títulos (a função abaixo, e uma limpeza automática de anexo órfão que roda
+// uma vez ao carregar o sistema) — os dois passam a usar _salvarTitulos, que
+// compara a lista de antes com a de agora e só manda pro banco o que
+// realmente mudou ou foi excluído.
+async function _salvarTituloDb(t){
+  if(!t || !t.id) return;
+  _gravacoesDiretasPendentes++;
+  try{
+    const { error } = await supa.from('titulos').upsert({
+      id: t.id, paciente_id: t.pacienteId || null, orcamento_id: t.orcamentoId || null,
+      status: t.status || null, vencimento: t.vencimento || null, dados: t
+    }, { onConflict: 'id' });
+    if(error) console.error('Erro ao salvar título', t.id, error);
+  }catch(e){ console.error('Erro ao salvar título', t.id, e); }
+  finally{ _gravacoesDiretasPendentes--; }
+}
+async function _excluirTituloDb(id){
+  if(!id) return;
+  _gravacoesDiretasPendentes++;
+  try{
+    const { error } = await supa.from('titulos').delete().eq('id', id);
+    if(error) console.error('Erro ao excluir título', id, error);
+  }catch(e){ console.error('Erro ao excluir título', id, e); }
+  finally{ _gravacoesDiretasPendentes--; }
+}
+function _salvarTitulos(list){
+  const anterior = carregarLS('sk3-titulos', []);
+  salvarLS('sk3-titulos', list);
+  const antesPorId = new Map(anterior.map(t=>[t.id, t]));
+  const depoisIds = new Set(list.map(t=>t.id));
+  list.forEach(t=>{
+    const ant = antesPorId.get(t.id);
+    if(!ant || JSON.stringify(ant)!==JSON.stringify(t)) _salvarTituloDb(t);
+  });
+  anterior.forEach(t=>{ if(!depoisIds.has(t.id)) _excluirTituloDb(t.id); });
+}
 
 // Lembra quais blocos de orçamento estão expandidos na aba Financeiro do paciente, para que
 // ações como anexar um arquivo de emissão fiscal (que re-renderizam a tela) não recolham o
@@ -28390,24 +28428,27 @@ async function _carregarDadosEAtivar(){
   document.getElementById('tela-login').style.display = 'none';
   document.getElementById('tela-carregando').style.display = 'flex';
 
-  // OTIMIZAÇÃO DE CARREGAMENTO (13/08/2026): Agenda, Pacientes, Orçamento e
-  // Prontuário já foram migrados para tabelas próprias (mais abaixo, via
+  // OTIMIZAÇÃO DE CARREGAMENTO (13/08/2026): Agenda, Pacientes, Orçamento,
+  // Prontuário, Títulos, Gestão de Títulos, Recibos e Medições de Comissão
+  // já foram migrados para tabelas próprias (mais abaixo, via
   // _buscarTudoPaginado). Os pacotes antigos deles dentro de "dados_sistema"
-  // (sk3-agendamentos, sk3-pacientes, sk3-orcamentos, sk3-prontuarios)
   // continuam existindo só como backup de segurança, mas não são mais lidos
-  // pelo sistema — eram baixados por completo a cada login (quase 5 MB no
-  // total, com o Prontuário incluso) só pra serem jogados fora e
-  // sobrescritos pela versão nova logo em seguida. Excluímos essas 4 chaves
-  // da busca abaixo para não gastar tempo/dados baixando algo que não vai
-  // ser usado. Os pacotes continuam intactos no banco, intocados.
-  const [{ data: dados, error: e1 }, { data: perfis, error: e2 }, { data: cargosDb, error: e3 }, { data: agsDb, error: e4 }, { data: pacsDb, error: e5 }, { data: orcsDb, error: e6 }, { data: prontsDb, error: e7 }] = await Promise.all([
-    supa.from('dados_sistema').select('chave,valor').not('chave', 'in', '(sk3-agendamentos,sk3-pacientes,sk3-orcamentos,sk3-prontuarios)'),
+  // pelo sistema — eram baixados por completo a cada login só pra serem
+  // jogados fora e sobrescritos pela versão nova logo em seguida. Excluímos
+  // essas chaves da busca abaixo para não gastar tempo/dados baixando algo
+  // que não vai ser usado. Os pacotes continuam intactos no banco, intocados.
+  const [{ data: dados, error: e1 }, { data: perfis, error: e2 }, { data: cargosDb, error: e3 }, { data: agsDb, error: e4 }, { data: pacsDb, error: e5 }, { data: orcsDb, error: e6 }, { data: prontsDb, error: e7 }, { data: titsDb, error: e8 }, { data: fintgDb, error: e9 }, { data: rcbsDb, error: e10 }, { data: medsDb, error: e11 }] = await Promise.all([
+    supa.from('dados_sistema').select('chave,valor').not('chave', 'in', '(sk3-agendamentos,sk3-pacientes,sk3-orcamentos,sk3-prontuarios,sk3-titulos,sk3-fin-titulos-gestao,sk3-recibos,sk3-fin-medicoes-comissao)'),
     supa.from('profiles').select('id,nome,cpf,nascimento,cargo_ids,ativo,email'),
     supa.from('cargos').select('id,nome,permissoes'),
     _buscarTudoPaginado('agendamentos'),
     _buscarTudoPaginado('pacientes'),
     _buscarTudoPaginado('orcamentos'),
     _buscarTudoPaginado('prontuarios'),
+    _buscarTudoPaginado('titulos'),
+    _buscarTudoPaginado('fin_titulos_gestao'),
+    _buscarTudoPaginado('recibos'),
+    _buscarTudoPaginado('fin_medicoes_comissao'),
   ]);
 
   if(e1 || e2 || e3){
@@ -28445,6 +28486,30 @@ async function _carregarDadosEAtivar(){
     window._memStore['sk3-prontuarios'] = JSON.stringify(prontsDb.map(r=>r.dados));
   } else if(e7){
     console.error('Erro ao carregar prontuários da tabela nova:', e7);
+  }
+  // TÍTULOS FINANCEIROS (13/08/2026): mesma troca, agora pra lista de títulos.
+  if(!e8 && Array.isArray(titsDb)){
+    window._memStore['sk3-titulos'] = JSON.stringify(titsDb.map(r=>r.dados));
+  } else if(e8){
+    console.error('Erro ao carregar títulos da tabela nova:', e8);
+  }
+  // GESTÃO DE TÍTULOS (13/08/2026): mesma troca, agora pra lista de contas manuais.
+  if(!e9 && Array.isArray(fintgDb)){
+    window._memStore['sk3-fin-titulos-gestao'] = JSON.stringify(fintgDb.map(r=>r.dados));
+  } else if(e9){
+    console.error('Erro ao carregar gestão de títulos da tabela nova:', e9);
+  }
+  // RECIBOS (13/08/2026): mesma troca, agora pra lista de recibos.
+  if(!e10 && Array.isArray(rcbsDb)){
+    window._memStore['sk3-recibos'] = JSON.stringify(rcbsDb.map(r=>r.dados));
+  } else if(e10){
+    console.error('Erro ao carregar recibos da tabela nova:', e10);
+  }
+  // MEDIÇÕES DE COMISSÃO (13/08/2026): mesma troca, agora pra lista de medições.
+  if(!e11 && Array.isArray(medsDb)){
+    window._memStore['sk3-fin-medicoes-comissao'] = JSON.stringify(medsDb.map(r=>r.dados));
+  } else if(e11){
+    console.error('Erro ao carregar medições de comissão da tabela nova:', e11);
   }
 
   const { data: sessao } = await supa.auth.getSession();
@@ -28499,7 +28564,42 @@ async function _carregarDadosEAtivar(){
 
 // ── Storage helpers ──────────────────────────────────────────────────
 function _finTitulosGestao(){ return carregarLS('sk3-fin-titulos-gestao',[]); }
-function _finSalvarTitulosGestao(list){ _comSalvarImediato(()=>salvarLS('sk3-fin-titulos-gestao',list)); }
+// ── GESTÃO DE TÍTULOS — salvamento por registro (13/08/2026) ────────────────
+// Mesmo princípio já aplicado nos módulos anteriores.
+async function _salvarFinTituloGestaoDb(t){
+  if(!t || !t.id) return;
+  _gravacoesDiretasPendentes++;
+  try{
+    const { error } = await supa.from('fin_titulos_gestao').upsert({
+      id: t.id, tipo: t.tipo || null, status: t.status || null,
+      vencimento: t.vencimento || null, dados: t
+    }, { onConflict: 'id' });
+    if(error) console.error('Erro ao salvar título de gestão', t.id, error);
+  }catch(e){ console.error('Erro ao salvar título de gestão', t.id, e); }
+  finally{ _gravacoesDiretasPendentes--; }
+}
+async function _excluirFinTituloGestaoDb(id){
+  if(!id) return;
+  _gravacoesDiretasPendentes++;
+  try{
+    const { error } = await supa.from('fin_titulos_gestao').delete().eq('id', id);
+    if(error) console.error('Erro ao excluir título de gestão', id, error);
+  }catch(e){ console.error('Erro ao excluir título de gestão', id, e); }
+  finally{ _gravacoesDiretasPendentes--; }
+}
+function _finSalvarTitulosGestao(list){
+  _comSalvarImediato(()=>{
+    const anterior = carregarLS('sk3-fin-titulos-gestao', []);
+    salvarLS('sk3-fin-titulos-gestao', list);
+    const antesPorId = new Map(anterior.map(t=>[t.id, t]));
+    const depoisIds = new Set(list.map(t=>t.id));
+    list.forEach(t=>{
+      const ant = antesPorId.get(t.id);
+      if(!ant || JSON.stringify(ant)!==JSON.stringify(t)) _salvarFinTituloGestaoDb(t);
+    });
+    anterior.forEach(t=>{ if(!depoisIds.has(t.id)) _excluirFinTituloGestaoDb(t.id); });
+  });
+}
 
 // ── Estado ───────────────────────────────────────────────────────────
 let _finSubAtual = 'fluxo';
@@ -30583,7 +30683,40 @@ function finRenderAnexos(){
 // para ela emitir recibo aos pacientes.
 // ──────────────────────────────────────────────────────────────────────────
 function _recibos(){ return carregarLS('sk3-recibos', []); }
-function _salvarRecibos(list){ salvarLS('sk3-recibos', list); }
+// ── RECIBOS — salvamento por registro (13/08/2026) ───────────────────────────
+// Mesmo princípio já aplicado nos módulos anteriores.
+async function _salvarReciboDb(r){
+  if(!r || !r.id) return;
+  _gravacoesDiretasPendentes++;
+  try{
+    const { error } = await supa.from('recibos').upsert({
+      id: r.id, data: r.data || null, tipo: r.tipo || null,
+      liquidado: (r.liquidado===true), dados: r
+    }, { onConflict: 'id' });
+    if(error) console.error('Erro ao salvar recibo', r.id, error);
+  }catch(e){ console.error('Erro ao salvar recibo', r.id, e); }
+  finally{ _gravacoesDiretasPendentes--; }
+}
+async function _excluirReciboDb(id){
+  if(!id) return;
+  _gravacoesDiretasPendentes++;
+  try{
+    const { error } = await supa.from('recibos').delete().eq('id', id);
+    if(error) console.error('Erro ao excluir recibo', id, error);
+  }catch(e){ console.error('Erro ao excluir recibo', id, e); }
+  finally{ _gravacoesDiretasPendentes--; }
+}
+function _salvarRecibos(list){
+  const anterior = carregarLS('sk3-recibos', []);
+  salvarLS('sk3-recibos', list);
+  const antesPorId = new Map(anterior.map(r=>[r.id, r]));
+  const depoisIds = new Set(list.map(r=>r.id));
+  list.forEach(r=>{
+    const ant = antesPorId.get(r.id);
+    if(!ant || JSON.stringify(ant)!==JSON.stringify(r)) _salvarReciboDb(r);
+  });
+  anterior.forEach(r=>{ if(!depoisIds.has(r.id)) _excluirReciboDb(r.id); });
+}
 
 var _rcbEditId = null;
 var _rcbAnexoPendente = null; // {nome, tipo, b64} — arquivo escolhido/arrastado ainda não salvo
@@ -32060,7 +32193,41 @@ function finSalvarComissaoEditada(){
 
 // Storage de medições — cada registro agrupa os itens medidos de uma vez só (linha mãe do histórico)
 function _finMedicoesGestao(){ return carregarLS('sk3-fin-medicoes-comissao',[]); }
-function _finSalvarMedicoesGestao(list){ _comSalvarImediato(()=>salvarLS('sk3-fin-medicoes-comissao',list)); }
+// ── MEDIÇÕES DE COMISSÃO — salvamento por registro (13/08/2026) ─────────────
+// Mesmo princípio já aplicado nos módulos anteriores.
+async function _salvarFinMedicaoDb(m){
+  if(!m || !m.id) return;
+  _gravacoesDiretasPendentes++;
+  try{
+    const { error } = await supa.from('fin_medicoes_comissao').upsert({
+      id: m.id, prof: m.prof || null, data_medicao: m.dataMedicao || null, dados: m
+    }, { onConflict: 'id' });
+    if(error) console.error('Erro ao salvar medição de comissão', m.id, error);
+  }catch(e){ console.error('Erro ao salvar medição de comissão', m.id, e); }
+  finally{ _gravacoesDiretasPendentes--; }
+}
+async function _excluirFinMedicaoDb(id){
+  if(!id) return;
+  _gravacoesDiretasPendentes++;
+  try{
+    const { error } = await supa.from('fin_medicoes_comissao').delete().eq('id', id);
+    if(error) console.error('Erro ao excluir medição de comissão', id, error);
+  }catch(e){ console.error('Erro ao excluir medição de comissão', id, e); }
+  finally{ _gravacoesDiretasPendentes--; }
+}
+function _finSalvarMedicoesGestao(list){
+  _comSalvarImediato(()=>{
+    const anterior = carregarLS('sk3-fin-medicoes-comissao', []);
+    salvarLS('sk3-fin-medicoes-comissao', list);
+    const antesPorId = new Map(anterior.map(m=>[m.id, m]));
+    const depoisIds = new Set(list.map(m=>m.id));
+    list.forEach(m=>{
+      const ant = antesPorId.get(m.id);
+      if(!ant || JSON.stringify(ant)!==JSON.stringify(m)) _salvarFinMedicaoDb(m);
+    });
+    anterior.forEach(m=>{ if(!depoisIds.has(m.id)) _excluirFinMedicaoDb(m.id); });
+  });
+}
 
 // Estado transitório: qual medição está aguardando a escolha do submódulo / preenchimento do modal de lançamento
 let _finMedPendente=null;
