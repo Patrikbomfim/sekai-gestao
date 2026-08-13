@@ -5817,6 +5817,21 @@ function aplicarPermissoesNav(){
 
 // ── STORAGE ──────────────────────────────────────────────────────────────
 let _pendingSaves = {}; // key → value, queued for manual save
+// GRAVAÇÕES DIRETAS EM ANDAMENTO (13/08/2026): Agenda, Pacientes e Orçamento
+// agora gravam direto no banco, registro por registro, sem passar pela fila
+// acima — ótimo pra performance, mas tinha um problema: se a pessoa
+// recarregasse a página rápido demais (bem no instante entre clicar em
+// salvar e a gravação realmente chegar no banco), o navegador podia cancelar
+// esse envio no meio do caminho, sem erro nenhum aparecer — parecia salvo,
+// mas nunca chegou no banco de fato. Este contador rastreia quantas dessas
+// gravações diretas ainda estão "no ar", pra avisar (mesmo aviso de sempre
+// do navegador) se a pessoa tentar sair/recarregar antes delas terminarem.
+let _gravacoesDiretasPendentes = 0;
+async function _gravarDireto(promessa){
+  _gravacoesDiretasPendentes++;
+  try{ return await promessa; }
+  finally{ _gravacoesDiretasPendentes--; }
+}
 let _bypassQueue = false; // when true, salvarLS writes immediately (modal saves)
 let _pctBotaoSalvarOculto = false; // true quando a área ativa do paciente (Orçamento/Financeiro/Prontuário) não usa o botão flutuante
 
@@ -6759,7 +6774,7 @@ function _planInicializar(){
 
 // Avisar se houver alterações pendentes ao fechar/recarregar a página
 window.addEventListener('beforeunload', (e)=>{
-  if(Object.keys(_pendingSaves).length > 0){
+  if(Object.keys(_pendingSaves).length > 0 || _gravacoesDiretasPendentes > 0){
     e.preventDefault();
     e.returnValue = '';
   }
@@ -10075,6 +10090,7 @@ async function _atualizarChaveFresca(chave){
 // nunca na lista inteira (que já passou de 1.300 cadastros).
 async function _salvarPacienteDb(p){
   if(!p || p.id===undefined || p.id===null) return;
+  _gravacoesDiretasPendentes++;
   try{
     const { error } = await supa.from('pacientes').upsert({
       id: p.id,
@@ -10085,13 +10101,16 @@ async function _salvarPacienteDb(p){
     }, { onConflict: 'id' });
     if(error) console.error('Erro ao salvar paciente', p.id, error);
   }catch(e){ console.error('Erro ao salvar paciente', p.id, e); }
+  finally{ _gravacoesDiretasPendentes--; }
 }
 async function _excluirPacienteDb(id){
   if(id===undefined || id===null) return;
+  _gravacoesDiretasPendentes++;
   try{
     const { error } = await supa.from('pacientes').delete().eq('id', id);
     if(error) console.error('Erro ao excluir paciente', id, error);
   }catch(e){ console.error('Erro ao excluir paciente', id, e); }
+  finally{ _gravacoesDiretasPendentes--; }
 }
 // Busca a lista de pacientes mais atual do banco (tabela nova) — usado ao
 // entrar na lista de Pacientes ou abrir a ficha de um paciente, para reduzir
@@ -10117,6 +10136,7 @@ async function _atualizarPacientesFresco(){
 // salvar, além de deixar cada salvamento bem mais rápido e leve.
 async function _salvarAgendamentoDb(ag){
   if(!ag || !ag.id) return;
+  _gravacoesDiretasPendentes++;
   try{
     const { error } = await supa.from('agendamentos').upsert({
       id: ag.id,
@@ -10129,13 +10149,16 @@ async function _salvarAgendamentoDb(ag){
     }, { onConflict: 'id' });
     if(error) console.error('Erro ao salvar agendamento', ag.id, error);
   }catch(e){ console.error('Erro ao salvar agendamento', ag.id, e); }
+  finally{ _gravacoesDiretasPendentes--; }
 }
 async function _excluirAgendamentoDb(id){
   if(!id) return;
+  _gravacoesDiretasPendentes++;
   try{
     const { error } = await supa.from('agendamentos').delete().eq('id', id);
     if(error) console.error('Erro ao excluir agendamento', id, error);
   }catch(e){ console.error('Erro ao excluir agendamento', id, e); }
+  finally{ _gravacoesDiretasPendentes--; }
 }
 // Busca a lista inteira de agendamentos mais atual do banco (usado ao entrar
 // na Agenda, e para preencher a lista quando o sistema liga). Continua sendo
@@ -10746,6 +10769,7 @@ function _orcamentos(){ return carregarLS('sk3-orcamentos',[]); }
 // de esquecer um lugar.
 async function _salvarOrcamentoDb(o){
   if(!o || !o.id) return;
+  _gravacoesDiretasPendentes++;
   try{
     const { error } = await supa.from('orcamentos').upsert({
       id: o.id, paciente_id: o.pacienteId || null, status: o.status || null,
@@ -10753,13 +10777,16 @@ async function _salvarOrcamentoDb(o){
     }, { onConflict: 'id' });
     if(error) console.error('Erro ao salvar orçamento', o.id, error);
   }catch(e){ console.error('Erro ao salvar orçamento', o.id, e); }
+  finally{ _gravacoesDiretasPendentes--; }
 }
 async function _excluirOrcamentoDb(id){
   if(!id) return;
+  _gravacoesDiretasPendentes++;
   try{
     const { error } = await supa.from('orcamentos').delete().eq('id', id);
     if(error) console.error('Erro ao excluir orçamento', id, error);
   }catch(e){ console.error('Erro ao excluir orçamento', id, e); }
+  finally{ _gravacoesDiretasPendentes--; }
 }
 function _salvarOrcamentos(list){
   const anterior = carregarLS('sk3-orcamentos', []);
