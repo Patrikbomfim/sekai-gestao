@@ -10071,7 +10071,7 @@ function switchPpArea(area){
 // Chaves que já migraram de "pacote único" pra tabela própria (um registro
 // por item) — mapeadas pro nome da tabela nova correspondente. Conforme cada
 // módulo (Prontuário, Títulos, etc.) for migrado, entra aqui também.
-const _TABELAS_MIGRADAS = { 'sk3-orcamentos': 'orcamentos' };
+const _TABELAS_MIGRADAS = { 'sk3-orcamentos': 'orcamentos', 'sk3-prontuarios': 'prontuarios' };
 async function _atualizarChaveFresca(chave){
   try{
     if(_TABELAS_MIGRADAS[chave]){
@@ -13624,7 +13624,45 @@ function confirmarAprovacaoOrcamento(){
 }
 // ── PRONTUÁRIO ─────────────────────────────────────────────────────────────
 function _prontuarios(){ return carregarLS('sk3-prontuarios',[]); }
-function _salvarProntuarios(list){ salvarLS('sk3-prontuarios',list); }
+// ── PRONTUÁRIO — salvamento por registro (13/08/2026) ───────────────────────
+// Mesmo princípio já aplicado em Agenda, Pacientes e Orçamento. Como todo o
+// sistema já chama _salvarProntuarios(list) passando a lista inteira (do
+// jeito antigo), em vez de caçar cada um dos lugares que chamam essa função,
+// a correção foi feita aqui dentro: comparamos a lista de antes com a de
+// agora e só mandamos pro banco os atendimentos que realmente mudaram (ou
+// foram excluídos). Assim todo o sistema já sai protegido de uma vez.
+async function _salvarProntuarioDb(f){
+  if(!f || !f.id) return;
+  _gravacoesDiretasPendentes++;
+  try{
+    const { error } = await supa.from('prontuarios').upsert({
+      id: f.id, paciente_id: f.pacienteId || null, status: f.status || null,
+      data: f.data || null, dados: f
+    }, { onConflict: 'id' });
+    if(error) console.error('Erro ao salvar prontuário', f.id, error);
+  }catch(e){ console.error('Erro ao salvar prontuário', f.id, e); }
+  finally{ _gravacoesDiretasPendentes--; }
+}
+async function _excluirProntuarioDb(id){
+  if(!id) return;
+  _gravacoesDiretasPendentes++;
+  try{
+    const { error } = await supa.from('prontuarios').delete().eq('id', id);
+    if(error) console.error('Erro ao excluir prontuário', id, error);
+  }catch(e){ console.error('Erro ao excluir prontuário', id, e); }
+  finally{ _gravacoesDiretasPendentes--; }
+}
+function _salvarProntuarios(list){
+  const anterior = carregarLS('sk3-prontuarios', []);
+  salvarLS('sk3-prontuarios', list);
+  const antesPorId = new Map(anterior.map(f=>[f.id, f]));
+  const depoisIds = new Set(list.map(f=>f.id));
+  list.forEach(f=>{
+    const ant = antesPorId.get(f.id);
+    if(!ant || JSON.stringify(ant)!==JSON.stringify(f)) _salvarProntuarioDb(f);
+  });
+  anterior.forEach(f=>{ if(!depoisIds.has(f.id)) _excluirProntuarioDb(f.id); });
+}
 
 let _prontPacId=null; // paciente atual no módulo prontuário
 
@@ -28352,22 +28390,24 @@ async function _carregarDadosEAtivar(){
   document.getElementById('tela-login').style.display = 'none';
   document.getElementById('tela-carregando').style.display = 'flex';
 
-  // OTIMIZAÇÃO DE CARREGAMENTO (13/08/2026): Agenda, Pacientes e Orçamento já
-  // foram migrados para tabelas próprias (mais abaixo, via _buscarTudoPaginado).
-  // Os pacotes antigos deles dentro de "dados_sistema" (sk3-agendamentos,
-  // sk3-pacientes, sk3-orcamentos) continuam existindo só como backup de
-  // segurança, mas não são mais lidos pelo sistema — eram baixados por
-  // completo a cada login (quase 3 MB) só pra serem jogados fora e
-  // sobrescritos pela versão nova logo em seguida. Excluímos essas 3 chaves
+  // OTIMIZAÇÃO DE CARREGAMENTO (13/08/2026): Agenda, Pacientes, Orçamento e
+  // Prontuário já foram migrados para tabelas próprias (mais abaixo, via
+  // _buscarTudoPaginado). Os pacotes antigos deles dentro de "dados_sistema"
+  // (sk3-agendamentos, sk3-pacientes, sk3-orcamentos, sk3-prontuarios)
+  // continuam existindo só como backup de segurança, mas não são mais lidos
+  // pelo sistema — eram baixados por completo a cada login (quase 5 MB no
+  // total, com o Prontuário incluso) só pra serem jogados fora e
+  // sobrescritos pela versão nova logo em seguida. Excluímos essas 4 chaves
   // da busca abaixo para não gastar tempo/dados baixando algo que não vai
   // ser usado. Os pacotes continuam intactos no banco, intocados.
-  const [{ data: dados, error: e1 }, { data: perfis, error: e2 }, { data: cargosDb, error: e3 }, { data: agsDb, error: e4 }, { data: pacsDb, error: e5 }, { data: orcsDb, error: e6 }] = await Promise.all([
-    supa.from('dados_sistema').select('chave,valor').not('chave', 'in', '(sk3-agendamentos,sk3-pacientes,sk3-orcamentos)'),
+  const [{ data: dados, error: e1 }, { data: perfis, error: e2 }, { data: cargosDb, error: e3 }, { data: agsDb, error: e4 }, { data: pacsDb, error: e5 }, { data: orcsDb, error: e6 }, { data: prontsDb, error: e7 }] = await Promise.all([
+    supa.from('dados_sistema').select('chave,valor').not('chave', 'in', '(sk3-agendamentos,sk3-pacientes,sk3-orcamentos,sk3-prontuarios)'),
     supa.from('profiles').select('id,nome,cpf,nascimento,cargo_ids,ativo,email'),
     supa.from('cargos').select('id,nome,permissoes'),
     _buscarTudoPaginado('agendamentos'),
     _buscarTudoPaginado('pacientes'),
     _buscarTudoPaginado('orcamentos'),
+    _buscarTudoPaginado('prontuarios'),
   ]);
 
   if(e1 || e2 || e3){
@@ -28399,6 +28439,12 @@ async function _carregarDadosEAtivar(){
     window._memStore['sk3-orcamentos'] = JSON.stringify(orcsDb.map(r=>r.dados));
   } else if(e6){
     console.error('Erro ao carregar orçamentos da tabela nova:', e6);
+  }
+  // PRONTUÁRIO (13/08/2026): mesma troca, agora pra lista de atendimentos do prontuário.
+  if(!e7 && Array.isArray(prontsDb)){
+    window._memStore['sk3-prontuarios'] = JSON.stringify(prontsDb.map(r=>r.dados));
+  } else if(e7){
+    console.error('Erro ao carregar prontuários da tabela nova:', e7);
   }
 
   const { data: sessao } = await supa.auth.getSession();
