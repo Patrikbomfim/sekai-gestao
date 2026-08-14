@@ -28434,27 +28434,26 @@ async function _carregarDadosEAtivar(){
   document.getElementById('tela-login').style.display = 'none';
   document.getElementById('tela-carregando').style.display = 'flex';
 
-  // OTIMIZAÇÃO DE CARREGAMENTO (13/08/2026): Agenda, Pacientes, Orçamento,
-  // Prontuário, Títulos, Gestão de Títulos, Recibos e Medições de Comissão
-  // já foram migrados para tabelas próprias (mais abaixo, via
-  // _buscarTudoPaginado). Os pacotes antigos deles dentro de "dados_sistema"
-  // continuam existindo só como backup de segurança, mas não são mais lidos
-  // pelo sistema — eram baixados por completo a cada login só pra serem
-  // jogados fora e sobrescritos pela versão nova logo em seguida. Excluímos
-  // essas chaves da busca abaixo para não gastar tempo/dados baixando algo
-  // que não vai ser usado. Os pacotes continuam intactos no banco, intocados.
-  const [{ data: dados, error: e1 }, { data: perfis, error: e2 }, { data: cargosDb, error: e3 }, { data: agsDb, error: e4 }, { data: pacsDb, error: e5 }, { data: orcsDb, error: e6 }, { data: prontsDb, error: e7 }, { data: titsDb, error: e8 }, { data: fintgDb, error: e9 }, { data: rcbsDb, error: e10 }, { data: medsDb, error: e11 }] = await Promise.all([
+  // CARREGAMENTO EM ETAPAS (13/08/2026): antes, o login só liberava o
+  // sistema depois de baixar TUDO de uma vez — inclusive anos de histórico de
+  // agendamentos, orçamentos, prontuários e títulos, que hoje já somam mais
+  // de 20 mil registros. Conforme a clínica cresceu, essa espera foi ficando
+  // cada vez mais longa. Agora o login busca primeiro só o essencial pra
+  // tela abrir (configurações da clínica, perfis e cargos — sempre pequeno,
+  // poucas dezenas de linhas) e libera o sistema na hora. O histórico pesado
+  // (Agenda, Pacientes, Orçamento, Prontuário, Títulos, Gestão de Títulos,
+  // Recibos e Medições de Comissão) continua sendo baixado logo em seguida,
+  // por trás, sem travar a tela — ver _carregarDadosPesadosEmSegundoPlano.
+  // Isso é seguro porque Agenda, Pacientes, Financeiro, Orçamento e
+  // Prontuário já buscam sozinhas a versão mais atual do banco toda vez que
+  // são abertas (ver _atualizarChaveFresca, _atualizarPacientesFresco,
+  // _atualizarAgendamentosFresco) — então ninguém corre o risco de ver ou
+  // editar um dado desatualizado nessas telas, mesmo que o carregamento de
+  // fundo ainda não tenha terminado.
+  const [{ data: dados, error: e1 }, { data: perfis, error: e2 }, { data: cargosDb, error: e3 }] = await Promise.all([
     supa.from('dados_sistema').select('chave,valor').not('chave', 'in', '(sk3-agendamentos,sk3-pacientes,sk3-orcamentos,sk3-prontuarios,sk3-titulos,sk3-fin-titulos-gestao,sk3-recibos,sk3-fin-medicoes-comissao)'),
     supa.from('profiles').select('id,nome,cpf,nascimento,cargo_ids,ativo,email'),
     supa.from('cargos').select('id,nome,permissoes'),
-    _buscarTudoPaginado('agendamentos'),
-    _buscarTudoPaginado('pacientes'),
-    _buscarTudoPaginado('orcamentos'),
-    _buscarTudoPaginado('prontuarios'),
-    _buscarTudoPaginado('titulos'),
-    _buscarTudoPaginado('fin_titulos_gestao'),
-    _buscarTudoPaginado('recibos'),
-    _buscarTudoPaginado('fin_medicoes_comissao'),
   ]);
 
   if(e1 || e2 || e3){
@@ -28467,56 +28466,6 @@ async function _carregarDadosEAtivar(){
     if(_CHAVES_SOMENTE_MEMORIA.has(row.chave)){ window._memStore[row.chave] = JSON.stringify(row.valor); return; }
     try{ localStorage.setItem(row.chave, JSON.stringify(row.valor)); }catch(e){}
   });
-  // AGENDA (13/08/2026): substitui o pacote único antigo (lido acima, dentro
-  // do "dados_sistema") pela versão vinda da tabela nova, com um registro por
-  // agendamento — essa é a fonte de verdade agora.
-  if(!e4 && Array.isArray(agsDb)){
-    window._memStore['sk3-agendamentos'] = JSON.stringify(agsDb.map(r=>r.dados));
-  } else if(e4){
-    console.error('Erro ao carregar agendamentos da tabela nova:', e4);
-  }
-  // PACIENTES (13/08/2026): mesma troca, agora pra lista de pacientes.
-  if(!e5 && Array.isArray(pacsDb)){
-    try{ localStorage.setItem('sk3-pacientes', JSON.stringify(pacsDb.map(r=>r.dados))); }catch(e){}
-  } else if(e5){
-    console.error('Erro ao carregar pacientes da tabela nova:', e5);
-  }
-  // ORÇAMENTO (13/08/2026): mesma troca, agora pra lista de orçamentos.
-  if(!e6 && Array.isArray(orcsDb)){
-    window._memStore['sk3-orcamentos'] = JSON.stringify(orcsDb.map(r=>r.dados));
-  } else if(e6){
-    console.error('Erro ao carregar orçamentos da tabela nova:', e6);
-  }
-  // PRONTUÁRIO (13/08/2026): mesma troca, agora pra lista de atendimentos do prontuário.
-  if(!e7 && Array.isArray(prontsDb)){
-    window._memStore['sk3-prontuarios'] = JSON.stringify(prontsDb.map(r=>r.dados));
-  } else if(e7){
-    console.error('Erro ao carregar prontuários da tabela nova:', e7);
-  }
-  // TÍTULOS FINANCEIROS (13/08/2026): mesma troca, agora pra lista de títulos.
-  if(!e8 && Array.isArray(titsDb)){
-    window._memStore['sk3-titulos'] = JSON.stringify(titsDb.map(r=>r.dados));
-  } else if(e8){
-    console.error('Erro ao carregar títulos da tabela nova:', e8);
-  }
-  // GESTÃO DE TÍTULOS (13/08/2026): mesma troca, agora pra lista de contas manuais.
-  if(!e9 && Array.isArray(fintgDb)){
-    window._memStore['sk3-fin-titulos-gestao'] = JSON.stringify(fintgDb.map(r=>r.dados));
-  } else if(e9){
-    console.error('Erro ao carregar gestão de títulos da tabela nova:', e9);
-  }
-  // RECIBOS (13/08/2026): mesma troca, agora pra lista de recibos.
-  if(!e10 && Array.isArray(rcbsDb)){
-    window._memStore['sk3-recibos'] = JSON.stringify(rcbsDb.map(r=>r.dados));
-  } else if(e10){
-    console.error('Erro ao carregar recibos da tabela nova:', e10);
-  }
-  // MEDIÇÕES DE COMISSÃO (13/08/2026): mesma troca, agora pra lista de medições.
-  if(!e11 && Array.isArray(medsDb)){
-    window._memStore['sk3-fin-medicoes-comissao'] = JSON.stringify(medsDb.map(r=>r.dados));
-  } else if(e11){
-    console.error('Erro ao carregar medições de comissão da tabela nova:', e11);
-  }
 
   const { data: sessao } = await supa.auth.getSession();
   const meuId = sessao?.session?.user?.id;
@@ -28562,6 +28511,103 @@ async function _carregarDadosEAtivar(){
   await ativarAppOriginal();
   _planInicializar();
   _mostrarApp();
+
+  // Libera a tela e, só então, dispara o carregamento do histórico pesado
+  // por trás — ver comentário acima e a função logo abaixo.
+  _carregarDadosPesadosEmSegundoPlano();
+}
+
+// CARREGAMENTO EM ETAPAS (13/08/2026), parte 2: busca o histórico pesado
+// depois que a tela já liberou o sistema (ver _carregarDadosEAtivar acima).
+// Feito em duas ondas:
+//  1) Agendamentos e Pacientes primeiro — são os dados que a tela "Hoje" e a
+//     busca de paciente no cabeçalho usam com mais frequência logo que a
+//     pessoa entra no sistema.
+//  2) Orçamentos, Prontuários, Títulos, Gestão de Títulos, Recibos e
+//     Medições de Comissão em seguida — usados sobretudo dentro de
+//     Financeiro, Orçamento e Prontuário, telas que já buscam sozinhas a
+//     versão mais atual quando são abertas. Carregar aqui só adianta esse
+//     trabalho pra quando a pessoa abrir uma dessas telas; não é essencial.
+// Cada onda, ao terminar, atualiza a tela que estiver aberta no momento
+// (função _atualizarTelaAtual, logo abaixo).
+async function _carregarDadosPesadosEmSegundoPlano(){
+  const [{ data: agsDb, error: e4 }, { data: pacsDb, error: e5 }] = await Promise.all([
+    _buscarTudoPaginado('agendamentos'),
+    _buscarTudoPaginado('pacientes'),
+  ]);
+  if(!e4 && Array.isArray(agsDb)){
+    agendamentos = agsDb.map(r=>r.dados);
+  } else if(e4){
+    console.error('Erro ao carregar agendamentos da tabela nova:', e4);
+  }
+  if(!e5 && Array.isArray(pacsDb)){
+    pacientes = pacsDb.map(r=>r.dados);
+    try{ localStorage.setItem('sk3-pacientes', JSON.stringify(pacientes)); }catch(e){}
+  } else if(e5){
+    console.error('Erro ao carregar pacientes da tabela nova:', e5);
+  }
+  _atualizarTelaAtual();
+
+  const [{ data: orcsDb, error: e6 }, { data: prontsDb, error: e7 }, { data: titsDb, error: e8 }, { data: fintgDb, error: e9 }, { data: rcbsDb, error: e10 }, { data: medsDb, error: e11 }] = await Promise.all([
+    _buscarTudoPaginado('orcamentos'),
+    _buscarTudoPaginado('prontuarios'),
+    _buscarTudoPaginado('titulos'),
+    _buscarTudoPaginado('fin_titulos_gestao'),
+    _buscarTudoPaginado('recibos'),
+    _buscarTudoPaginado('fin_medicoes_comissao'),
+  ]);
+  if(!e6 && Array.isArray(orcsDb)){
+    window._memStore['sk3-orcamentos'] = JSON.stringify(orcsDb.map(r=>r.dados));
+  } else if(e6){
+    console.error('Erro ao carregar orçamentos da tabela nova:', e6);
+  }
+  if(!e7 && Array.isArray(prontsDb)){
+    window._memStore['sk3-prontuarios'] = JSON.stringify(prontsDb.map(r=>r.dados));
+  } else if(e7){
+    console.error('Erro ao carregar prontuários da tabela nova:', e7);
+  }
+  if(!e8 && Array.isArray(titsDb)){
+    window._memStore['sk3-titulos'] = JSON.stringify(titsDb.map(r=>r.dados));
+  } else if(e8){
+    console.error('Erro ao carregar títulos da tabela nova:', e8);
+  }
+  if(!e9 && Array.isArray(fintgDb)){
+    window._memStore['sk3-fin-titulos-gestao'] = JSON.stringify(fintgDb.map(r=>r.dados));
+  } else if(e9){
+    console.error('Erro ao carregar gestão de títulos da tabela nova:', e9);
+  }
+  if(!e10 && Array.isArray(rcbsDb)){
+    window._memStore['sk3-recibos'] = JSON.stringify(rcbsDb.map(r=>r.dados));
+  } else if(e10){
+    console.error('Erro ao carregar recibos da tabela nova:', e10);
+  }
+  if(!e11 && Array.isArray(medsDb)){
+    window._memStore['sk3-fin-medicoes-comissao'] = JSON.stringify(medsDb.map(r=>r.dados));
+  } else if(e11){
+    console.error('Erro ao carregar medições de comissão da tabela nova:', e11);
+  }
+  _atualizarTelaAtual();
+}
+
+// Redesenha a tela que estiver aberta no momento, para refletir o histórico
+// que acabou de chegar em segundo plano (ver função acima). Se a pessoa
+// ainda não tiver saído da tela "Hoje" (a primeira que abre após o login),
+// por exemplo, isso faz a agenda do dia aparecer assim que os agendamentos
+// chegarem, sem precisar recarregar a página.
+function _atualizarTelaAtual(){
+  const secAtual = document.querySelector('.sec.on');
+  if(!secAtual) return;
+  const id = secAtual.id.replace('sec-','');
+  if(id==='hoje'){ if(typeof renderHoje==='function') renderHoje(); }
+  else if(id==='proximos'){ if(typeof renderProximos==='function') renderProximos(); }
+  else if(id==='agenda'){ if(typeof renderAgenda==='function') renderAgenda(); }
+  else if(id==='pacientes'){
+    if(typeof renderPacientes==='function') renderPacientes(typeof filtroAtual!=='undefined'?filtroAtual:'');
+    if(typeof renderKanban==='function') renderKanban();
+  }
+  else if(id==='financeiro'){ if(typeof renderFinanceiro==='function') renderFinanceiro(); }
+  else if(id==='relatorios'){ if(typeof renderRelatorios==='function') renderRelatorios(); }
+  if(typeof atualizarBadgeLembretes==='function') atualizarBadgeLembretes();
 }
 
 // ══════════════════════════════════════════════════════════════════════
