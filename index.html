@@ -3140,6 +3140,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         Nenhum título encontrado.
         <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="abrirModalFinLancamento('pagar')" data-perm="fin_pagar_criar">+ Novo lançamento</button>
       </div>
+      <div id="fin-pg-pager"></div>
     </div>
   </div>
 
@@ -3225,6 +3226,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         Nenhum título encontrado.
         <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="abrirModalFinNovoTotal()" data-perm="fin_folha_criar">+ Novo lançamento</button>
       </div>
+      <div id="fin-fl-pager"></div>
     </div>
   </div>
 
@@ -3329,6 +3331,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         Nenhum título encontrado.
         <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="abrirModalFinLancamento('receber')" data-perm="fin_receber_criar">+ Novo lançamento</button>
       </div>
+      <div id="fin-rc-pager"></div>
     </div>
   </div>
 
@@ -9630,6 +9633,41 @@ function proximaAcaoPaciente(p){
 const PACIENTES_POR_PAGINA = 30;
 let pacientesPaginaAtual = 1;
 
+// ── PAGINAÇÃO DE LISTAS GRANDES (13/08/2026) ─────────────────────────────
+// Financeiro (A pagar/Folha/A receber) e Orçamentos passaram a ter milhares
+// de linhas com o crescimento do histórico da clínica, e desenhar a lista
+// inteira de uma vez, toda vez que a tela abre ou um filtro muda, ficou
+// pesado para o navegador processar e exibir. Agora essas listas mostram só
+// um "pedaço" de cada vez (50 por página), com botões Anterior/Próxima —
+// mesmo padrão que a lista de Pacientes já usava. O restante continua
+// acessível, navegando entre páginas; nada foi escondido ou apagado. A
+// exportação em PDF do Financeiro continua exportando a lista inteira
+// filtrada, não só a página visível na tela.
+const ITENS_POR_PAGINA_LISTA_GRANDE = 50;
+let _finPaginaAtual = { pagar:1, folha:1, receber:1 };
+function finIrParaPagina(tipo, delta){
+  _finPaginaAtual[tipo] = (_finPaginaAtual[tipo]||1) + delta;
+  renderFinLista(tipo);
+}
+let ogPaginaAtual = 1;
+function ogIrParaPagina(delta){
+  ogPaginaAtual += delta;
+  renderOrcamentosGeral();
+}
+// Gera o HTML dos controles de paginação ("Mostrando X–Y de Z" + botões
+// Anterior/Próxima), reaproveitado pelo Financeiro e por Orçamentos.
+function _renderPagerHTML(paginaAtual, totalPaginas, inicio, fimReal, totalItens, rotulo, onAnteriorJs, onProximaJs){
+  if(totalPaginas<=1) return `<div style="font-size:12px;color:var(--tx3);padding:10px 12px">${totalItens} ${rotulo}${totalItens===1?'':'s'}</div>`;
+  return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px">
+    <div style="font-size:12px;color:var(--tx3)">Mostrando ${inicio+1}–${fimReal} de ${totalItens} ${rotulo}${totalItens===1?'':'s'}</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="${onAnteriorJs}" ${paginaAtual<=1?'disabled style="opacity:.4;cursor:not-allowed"':''}>‹ Anterior</button>
+      <span style="font-size:12px;color:var(--tx2)">Página ${paginaAtual} de ${totalPaginas}</span>
+      <button class="btn btn-ghost btn-sm" onclick="${onProximaJs}" ${paginaAtual>=totalPaginas?'disabled style="opacity:.4;cursor:not-allowed"':''}>Próxima ›</button>
+    </div>
+  </div>`;
+}
+
 function larguraColunaPaciente(c){
   if(c.id==='nome') return '2fr';
   if(c.fonte==='idade') return '0.6fr';
@@ -11187,11 +11225,24 @@ function renderOrcamentosGeral(){
   // Render tbody
   const tbody = document.getElementById('og-tbody');
   const emptyEl = document.getElementById('og-empty');
+  const ogPagerEl = document.getElementById('og-pager');
   if(!lista.length){
     tbody.innerHTML=''; if(emptyEl) emptyEl.style.display='block';
+    if(ogPagerEl) ogPagerEl.innerHTML='';
     return;
   }
   if(emptyEl) emptyEl.style.display='none';
+
+  // Paginação (13/08/2026): mostra só 50 orçamentos por vez em vez da lista
+  // inteira de uma só desenhada na tela — ver comentário completo perto de
+  // PACIENTES_POR_PAGINA. Os cards/insights acima continuam somando o
+  // período inteiro filtrado, independente da página exibida na tabela.
+  const ogTotalPaginas = Math.max(1, Math.ceil(lista.length/ITENS_POR_PAGINA_LISTA_GRANDE));
+  if(ogPaginaAtual>ogTotalPaginas) ogPaginaAtual=ogTotalPaginas;
+  if(ogPaginaAtual<1) ogPaginaAtual=1;
+  const ogInicio = (ogPaginaAtual-1)*ITENS_POR_PAGINA_LISTA_GRANDE;
+  const listaPagina = lista.slice(ogInicio, ogInicio+ITENS_POR_PAGINA_LISTA_GRANDE);
+  if(ogPagerEl) ogPagerEl.innerHTML = _renderPagerHTML(ogPaginaAtual, ogTotalPaginas, ogInicio, Math.min(ogInicio+ITENS_POR_PAGINA_LISTA_GRANDE,lista.length), lista.length, 'orçamento', `ogIrParaPagina(-1)`, `ogIrParaPagina(1)`);
 
   const statusCfg = {
     aprovado:  {lbl:'Aprovado',  cor:'#065F46', bg:'#ECFDF5'},
@@ -11200,7 +11251,7 @@ function renderOrcamentosGeral(){
   };
   const fmtDataBR = d => { if(!d) return '—'; const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
 
-  tbody.innerHTML = lista.map(o=>{
+  tbody.innerHTML = listaPagina.map(o=>{
     const cfg = statusCfg[o.status] || statusCfg.aberto;
     const foneDigits = o.telefone ? onlyDigits(o.telefone) : '';
     const waLink = foneDigits ? `<a href="https://wa.me/55${foneDigits}" target="_blank" title="WhatsApp" style="color:#25D366;text-decoration:none;margin-left:5px">●</a>` : '';
@@ -27211,6 +27262,7 @@ function _relOrcamentosConteudoHTML(){
       <tbody id="og-tbody"></tbody>
     </table>
     <div id="og-empty" class="fin-empty" style="display:none">Nenhum orçamento encontrado com esse filtro.</div>
+    <div id="og-pager"></div>
   </div>`;
 }
 
@@ -29510,9 +29562,11 @@ function renderFinLista(tipo){
   const emptyEl = document.getElementById('fin-'+prefix+'-empty');
   if(!tbody) return;
 
+  const pagerEl = document.getElementById('fin-'+prefix+'-pager');
   if(!lista.length){
     tbody.innerHTML='';
     if(emptyEl) emptyEl.style.display='block';
+    if(pagerEl) pagerEl.innerHTML='';
     return;
   }
   if(emptyEl) emptyEl.style.display='none';
@@ -29572,6 +29626,9 @@ function renderFinLista(tipo){
 
   const grupoCampo = _finAgruparColuna[tipo];
   if(grupoCampo){
+    // Agrupado: mostra a lista inteira (o agrupamento já organiza os
+    // registros em blocos menores) — a paginação fica reservada para a
+    // visão normal, sem agrupamento, que é a mais usada no dia a dia.
     const grupos = _finAgruparLista(lista, tipo);
     const colspanBase = tipo==='receber' ? 13 : (tipo==='folha' ? 10 : 9);
     tbody.innerHTML = grupos.map(g=>{
@@ -29579,8 +29636,16 @@ function renderFinLista(tipo){
       return `<tr class="fin-grupo-row"><td colspan="${colspanBase}">${esc(String(g.label))} <span style="font-weight:400;color:var(--tx3)">· ${g.itens.length} título${g.itens.length!==1?'s':''} · ${_finFmt(subtotal)}</span></td></tr>`
         + g.itens.map(renderLinhaTitulo).join('');
     }).join('');
+    if(pagerEl) pagerEl.innerHTML = '';
   } else {
-    tbody.innerHTML = lista.map(renderLinhaTitulo).join('');
+    const totalPaginas = Math.max(1, Math.ceil(lista.length/ITENS_POR_PAGINA_LISTA_GRANDE));
+    if(_finPaginaAtual[tipo]>totalPaginas) _finPaginaAtual[tipo]=totalPaginas;
+    if(_finPaginaAtual[tipo]<1) _finPaginaAtual[tipo]=1;
+    const paginaAtual = _finPaginaAtual[tipo];
+    const inicio = (paginaAtual-1)*ITENS_POR_PAGINA_LISTA_GRANDE;
+    const paginaLista = lista.slice(inicio, inicio+ITENS_POR_PAGINA_LISTA_GRANDE);
+    tbody.innerHTML = paginaLista.map(renderLinhaTitulo).join('');
+    if(pagerEl) pagerEl.innerHTML = _renderPagerHTML(paginaAtual, totalPaginas, inicio, Math.min(inicio+ITENS_POR_PAGINA_LISTA_GRANDE,lista.length), lista.length, 'título', `finIrParaPagina('${tipo}',-1)`, `finIrParaPagina('${tipo}',1)`);
   }
 }
 
