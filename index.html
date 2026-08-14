@@ -27846,13 +27846,14 @@ function _renderErroAgendaPublica(msg){
 }
 
 // ── Funções públicas de anamnese (rodam sem login, usadas pelo paciente) ──
+// SEGURANÇA (13/08/2026): antes, essa tela lia a tabela "anamneses" direto,
+// e a trava do código do link existia só aqui no aplicativo — o banco, por
+// trás, deixava qualquer um ler qualquer ficha. Agora a leitura passa pela
+// função anamnese_ler_por_token(), que só devolve algo se o código do link
+// realmente bater com o registro no banco — a trava passou a valer de verdade.
 async function _carregarAnamnesePublica(token){
   try {
-    const { data, error } = await supa
-      .from('anamneses')
-      .select('*')
-      .eq('token', token)
-      .single();
+    const { data, error } = await supa.rpc('anamnese_ler_por_token', { p_token: token });
     if(error || !data){
       document.body.innerHTML = _renderErroAnamnese('Link inválido ou expirado. Solicite um novo link à clínica.');
       return;
@@ -28097,9 +28098,12 @@ function _montarAnamneseNaPagina(nomeCompleto, token, pacienteId, campos){
     });
 
     try {
-      // 1. Salva respostas
-      var r=await supa.from('anamneses').update({respostas:resp,preenchido_em:pem}).eq('token',token);
+      // 1. Salva respostas — agora pela função travada por token (13/08/2026):
+      // também recusa se a ficha já tiver sido respondida antes (evita reenvio
+      // sobrescrever uma resposta anterior pelo mesmo link).
+      var r=await supa.rpc('anamnese_responder_por_token', { p_token: token, p_respostas: resp, p_preenchido_em: pem });
       if(r.error) throw r.error;
+      if(r.data !== true) throw new Error('Link inválido, expirado ou esta ficha já foi respondida antes.');
 
       // 2. Atualiza cadastro do paciente com campos vinculados
       if(pacienteId && Object.keys(patchPaciente).length>0){
@@ -28139,11 +28143,9 @@ function _renderJaPreenchidaCadastro(nomeCompleto){
 
 async function _carregarCadastroPublico(token){
   try {
-    const { data, error } = await supa
-      .from('anamneses')
-      .select('*')
-      .eq('token', token)
-      .single();
+    // SEGURANÇA (13/08/2026): mesma correção da anamnese — lê pela função
+    // travada por token, não mais direto da tabela.
+    const { data, error } = await supa.rpc('anamnese_ler_por_token', { p_token: token });
     if(error || !data){
       console.error('Erro ao carregar cadastro público (token '+token+'):', error);
       document.body.innerHTML = _renderErroAnamnese('Link inválido ou expirado. Solicite um novo link à clínica.');
@@ -28288,11 +28290,15 @@ function _montarCadastroNaPagina(nomeCompleto, token, pacienteId, campos){
       // tem permissão de escrita nela. Os dados ficam guardados aqui e são
       // aplicados ao cadastro automaticamente quando a clínica abre a ficha
       // do paciente no sistema.)
-      var rTok=await supa.from('anamneses').update({
-        respostas: { campos: patchCampos, customFields: patchCustom },
-        preenchido_em: pem
-      }).eq('token', token);
+      // SEGURANÇA (13/08/2026): mesma correção da anamnese — grava pela
+      // função travada por token, não mais direto na tabela.
+      var rTok=await supa.rpc('anamnese_responder_por_token', {
+        p_token: token,
+        p_respostas: { campos: patchCampos, customFields: patchCustom },
+        p_preenchido_em: pem
+      });
       if(rTok.error) throw rTok.error;
+      if(rTok.data !== true) throw new Error('Link inválido, expirado ou este cadastro já foi enviado antes.');
 
       document.getElementById('an-form-area').style.display='none';
       document.getElementById('an-sucesso-area').style.display='block';
