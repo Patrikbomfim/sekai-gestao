@@ -11085,7 +11085,8 @@ function renderOrcamentosGeral(){
   const linhaOrcChart = (label, count, valor, max, on, onclick) => `<div class="og-rank-row og-rank-row-clickable${on?' on':''}" onclick="${onclick}">
       <div class="og-rank-nome" style="flex:0 0 92px">${esc(label)}</div>
       <div class="og-rank-bar-wrap"><div class="og-rank-bar-fill" style="width:${(valor/max*100).toFixed(0)}%;background:${on?'var(--gold)':'var(--ac)'}"></div></div>
-      <div class="og-rank-pct" style="min-width:150px;text-align:right">${count} <span style="font-weight:400;color:var(--tx3)">· R$ ${fmtMoeda(valor)}</span></div>
+      <div style="flex:0 0 34px;text-align:right;font-size:12.5px;font-weight:700">${count}</div>
+      <div style="flex:0 0 112px;text-align:right;font-size:12.5px;color:var(--tx3)">R$ ${fmtMoeda(valor)}</div>
     </div>`;
 
   // ── Gráfico 01: orçamentos em aberto por tempo de espera (Total + faixas) ──
@@ -11249,7 +11250,6 @@ function renderOrcamentosGeral(){
       <td><a href="javascript:void(0)" onclick="ogAbrirOrcamento('${o.pacienteId}','${o.id}')" style="color:var(--ac);text-decoration:none">${esc(o.paciente)}</a></td>
       <td>${esc(o.telefone)||'—'}${waLink}</td>
       <td style="text-align:right;font-weight:600">R$ ${fmtMoeda(o.valor)}</td>
-      <td>${esc(o.obs)||''}</td>
       <td>${esc(o.comoConheceu)}</td>
     </tr>`;
   }).join('');
@@ -27117,7 +27117,10 @@ function _relOrcamentosConteudoHTML(){
   return `
   <div class="rel-charts-row" id="og-charts-row" style="margin-bottom:16px"></div>
 
-  <div class="fin-table-wrap">
+  <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+    <button class="btn btn-ghost btn-sm" onclick="_relOrcamentosExportarTabelaPDF()"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar em PDF</button>
+  </div>
+  <div id="rel-og-tabela-wrap" class="fin-table-wrap">
     <table class="fin-table">
       <thead>
         <tr>
@@ -27130,7 +27133,6 @@ function _relOrcamentosConteudoHTML(){
           <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="ogOrdenar('paciente')">Paciente <span class="fin-th-sort-ic" id="og-sort-ic-paciente"></span></span></div></th>
           <th>Telefone</th>
           <th><div class="fin-th-wrap"><span class="fin-th-sort" onclick="ogOrdenar('valor')">Valor <span class="fin-th-sort-ic" id="og-sort-ic-valor"></span></span></div></th>
-          <th>Observações</th>
           <th>Como conheceu?</th>
         </tr>
       </thead>
@@ -27338,6 +27340,37 @@ function _relAgendamentosExportarTabelaPDF(){
   </head><body>
     <div class="rel-export-hdr">
       <h1>Agendamentos — Sekai</h1>
+      <div class="sub">Gerado em ${_finFmtData(_finIso(new Date()))} · Período: ${esc(periodoLabel)}</div>
+    </div>
+    ${tabela.innerHTML}
+    <script>window.onload=()=>window.print();<\/script>
+  </body></html>`;
+  win.document.write(html);
+  win.document.close();
+}
+
+// Exporta em PDF só a tabela de orçamentos (não inclui os 4 gráficos acima) — mesmo
+// mecanismo usado no botão equivalente da aba Agendamentos.
+function _relOrcamentosExportarTabelaPDF(){
+  const tabela=document.getElementById('rel-og-tabela-wrap');
+  if(!tabela || !tabela.innerHTML.trim()){ alert('Não há tabela para exportar nesse filtro.'); return; }
+  const periodoSel=document.getElementById('rel-periodo-sel');
+  const periodoLabel=periodoSel&&periodoSel.selectedOptions&&periodoSel.selectedOptions[0]?periodoSel.selectedOptions[0].textContent:'';
+  const estilos=Array.from(document.querySelectorAll('style')).map(s=>s.outerHTML).join('\n');
+  const win=window.open('','_blank');
+  if(!win){ alert('Não foi possível abrir a janela de exportação. Verifique se o bloqueador de pop-ups está desativado.'); return; }
+  const html=`<html><head><meta charset="utf-8"><title>Orçamentos — Sekai</title>
+  ${estilos}
+  <style>
+    body{background:#fff;padding:24px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .rel-export-hdr{margin-bottom:18px}
+    .rel-export-hdr h1{font-size:18px;margin:0 0 4px}
+    .rel-export-hdr .sub{color:#666;font-size:12px}
+    a{pointer-events:none;color:inherit;text-decoration:none}
+  </style>
+  </head><body>
+    <div class="rel-export-hdr">
+      <h1>Orçamentos — Sekai</h1>
       <div class="sub">Gerado em ${_finFmtData(_finIso(new Date()))} · Período: ${esc(periodoLabel)}</div>
     </div>
     ${tabela.innerHTML}
