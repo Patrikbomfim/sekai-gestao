@@ -1542,7 +1542,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 <!-- MODAL ORÇAMENTO -->
 <div class="modal-ov" id="modal-orcamento">
-  <div class="modal" style="width:900px;max-width:96vw;height:92vh;max-height:92vh">
+  <div class="modal" style="width:1080px;max-width:96vw;height:92vh;max-height:92vh">
     <div class="modal-header">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div class="modal-title">Orçamento</div>
@@ -11445,34 +11445,36 @@ function abrirModalOrcamento(pacId, orcId){
   // normaliza legado
   const statusNorm=statusAtual==='rascunho'?'aberto':statusAtual==='recusado'?'reprovado':statusAtual;
   modalEl.querySelector('.modal-body').innerHTML=`
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-      <div class="fl" style="grid-column:1/-1">
+    <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:12px">
+      <div class="fl">
         <label>Nome do orçamento <span style="color:var(--da)">*</span></label>
         <input type="text" id="orc-input-nome" placeholder="Ex: Tratamento completo — Reabilitação oral" value="${(orcEdit&&orcEdit.nomeOrc)||''}" style="font-size:13px">
       </div>
-      <div class="fl">
-        <label>Data de criação</label>
-        <input type="date" id="orc-input-data" value="${(orcEdit&&orcEdit.dataCriacao)||(orcEdit&&orcEdit.data)||hojeStr}">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+        <div class="fl">
+          <label>Data de criação</label>
+          <input type="date" id="orc-input-data" value="${(orcEdit&&orcEdit.dataCriacao)||(orcEdit&&orcEdit.data)||hojeStr}">
+        </div>
+        <div class="fl">
+          <label>Paciente</label>
+          <div id="orc-modal-paciente" style="padding:7px 9px;border:1px solid var(--border);border-radius:var(--r6);font-size:12px;background:var(--s2);color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${pacNome||'—'}">${pacNome||'—'}</div>
+        </div>
+        <div class="fl">
+          <label>Clínica</label>
+          <div id="orc-modal-clinica" style="padding:7px 9px;border:1px solid var(--border);border-radius:var(--r6);font-size:12px;background:var(--s2);color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${clinicaNome}">${clinicaNome}</div>
+        </div>
+        <div class="fl">
+          <label>Criado por</label>
+          <select id="orc-sel-criador">${usuariosOpts}</select>
+        </div>
       </div>
-      <div class="fl" id="orc-data-decisao-wrap" style="${(statusNorm==='aprovado'||statusNorm==='reprovado')?'':'display:none'}">
+      <div class="fl" id="orc-data-decisao-wrap" style="max-width:260px;${(statusNorm==='aprovado'||statusNorm==='reprovado')?'':'display:none'}">
         <label id="orc-data-decisao-label">${statusNorm==='reprovado'?'Data de reprovação':'Data de aprovação'}</label>
         <input type="date" id="orc-input-data-decisao" value="${(orcEdit&&orcEdit.dataDecisao)||hojeStr}" disabled style="background:var(--s2);color:var(--tx2)">
       </div>
       <div class="fl">
-        <label>Paciente</label>
-        <div id="orc-modal-paciente" style="padding:7px 9px;border:1px solid var(--border);border-radius:var(--r6);font-size:12px;background:var(--s2);color:var(--tx2)">${pacNome||'—'}</div>
-      </div>
-      <div class="fl">
-        <label>Clínica</label>
-        <div id="orc-modal-clinica" style="padding:7px 9px;border:1px solid var(--border);border-radius:var(--r6);font-size:12px;background:var(--s2);color:var(--tx2)">${clinicaNome}</div>
-      </div>
-      <div class="fl">
-        <label>Criado por</label>
-        <select id="orc-sel-criador">${usuariosOpts}</select>
-      </div>
-      <div class="fl" style="grid-column:1/-1">
         <label>Observações</label>
-        <textarea id="orc-input-obs" rows="2" placeholder="Observações gerais do orçamento…">${(orcEdit&&orcEdit.obs)||''}</textarea>
+        <textarea id="orc-input-obs" rows="6" placeholder="Observações gerais do orçamento…" style="resize:vertical">${(orcEdit&&orcEdit.obs)||''}</textarea>
       </div>
     </div>
     <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
@@ -11787,7 +11789,7 @@ body{background:#FFFFFF;font-family:'Poppins',sans-serif;color:#211E1A;width:210
 .meta-val{font-size:14px;font-weight:600;color:#0A0A0B}
 .plano{background:#FCFBF8;border:1px solid #ECE7DC;border-radius:3px;padding:6mm 8mm;margin-bottom:9mm}
 .plano-tit{font-family:'Lora',serif;font-size:16px;font-weight:600;color:#0A0A0B;margin-bottom:2mm}
-.plano-obs{font-size:12px;color:#726A5A;font-style:italic}
+.plano-obs{font-size:12px;color:#726A5A;font-style:italic;white-space:pre-line}
 .sec-lbl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#B3A57C;font-weight:700;margin-bottom:4mm;border-bottom:1px solid #ECE7DC;padding-bottom:2mm}
 table{width:100%;border-collapse:collapse;margin-bottom:3mm}
 .t-nome{font-size:13px;color:#211E1A;padding:3.2mm 3mm 3.2mm 0;border-bottom:1px solid #ECE7DC;font-weight:500}
@@ -11826,7 +11828,7 @@ table{width:100%;border-collapse:collapse;margin-bottom:3mm}
     </div>
     <div class="plano">
       <div class="plano-tit">${nomeOrc}</div>
-      ${obs?`<div class="plano-obs">${obs}</div>`:''}
+      ${obs?`<div class="plano-obs">${esc(obs)}</div>`:''}
     </div>
     <div class="sec-lbl">Procedimentos incluídos</div>
     <table>${linhasProc}</table>
