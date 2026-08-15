@@ -11085,7 +11085,6 @@ function renderOrcamentosGeral(){
   // ── Gráfico 01: orçamentos em aberto por tempo de espera (Total + faixas) ──
   const abertos = baseFiltrada.filter(o=>o.status==='aberto');
   const faixasDef = [
-    {key:null,  label:'Total'},
     {key:'0-3', label:'Até 3 dias'},
     {key:'4-7', label:'4 a 7 dias'},
     {key:'8-15',label:'8 a 15 dias'},
@@ -11177,7 +11176,7 @@ function renderOrcamentosGeral(){
   </div>`;
 
   const chartsRowEl = document.getElementById('og-charts-row');
-  if(chartsRowEl) chartsRowEl.innerHTML = chartFaixaHtml + chartStatusHtml + chartProfHtml + chartConversaoHtml;
+  if(chartsRowEl) chartsRowEl.innerHTML = chartStatusHtml + chartFaixaHtml + chartProfHtml + chartConversaoHtml;
 
   // ── Lista da tabela: aplica status + faixa de idade ──────────────────────
   let lista = baseFiltrada.filter(o=>!_ogFiltroStatus || o.status===_ogFiltroStatus);
@@ -16814,39 +16813,14 @@ async function ppFotoAbrir(id){
   else alert('Não foi possível abrir esta foto agora. Tente novamente.');
 }
 
-// Abre o arquivo numa nova aba do navegador, sem forçar download — o navegador
-// decide como exibir (PDF abre no visualizador embutido, imagem é exibida, etc.).
-async function ppArquivoAbrir(id){
-  const a = _ppArquivos().find(x=>x.id===id);
-  if(!a || !a.storagePath) return;
-  const mapa = await _ppGerarUrls([a.storagePath]);
-  const url = mapa[a.storagePath];
-  if(!url){
-    alert('Não foi possível abrir este arquivo agora. Tente novamente.');
-    return;
-  }
-  window.open(url, '_blank');
-}
-
-// Monta o nome final do arquivo baixado garantindo que ele tenha a extensão certa
-// (.pdf, .jpg etc.) — sem isso o computador não sabe qual programa usar pra abrir.
-function _ppNomeComExtensao(a){
-  const nomeBase = a.nome || a.arquivoNomeOriginal || 'arquivo';
-  const extDoNomeBase = _ppExtensao(nomeBase);
-  if(extDoNomeBase) return nomeBase; // já tem extensão, não mexe
-  const extDoOriginal = _ppExtensao(a.arquivoNomeOriginal||'') || _ppExtensao(a.storagePath||'');
-  return extDoOriginal ? (nomeBase+extDoOriginal) : nomeBase;
-}
-
-// Baixa o arquivo de fato (força o download, com o nome certo e a extensão certa).
 async function ppArquivoBaixar(id){
   const a = _ppArquivos().find(x=>x.id===id);
   if(!a || !a.storagePath) return;
   const { data, error } = await supa.storage.from(PP_STORAGE_BUCKET)
-    .createSignedUrl(a.storagePath, PP_URL_VALIDADE_SEGUNDOS, { download: _ppNomeComExtensao(a) });
+    .createSignedUrl(a.storagePath, PP_URL_VALIDADE_SEGUNDOS, { download: a.nome || a.arquivoNomeOriginal || 'arquivo' });
   if(error || !data){
     console.error('Erro ao gerar link de download:', error);
-    alert('Não foi possível baixar este arquivo agora. Tente novamente.');
+    alert('Não foi possível abrir este arquivo agora. Tente novamente.');
     return;
   }
   window.open(data.signedUrl, '_blank');
@@ -16884,8 +16858,7 @@ async function renderPpDocumentos(p){
           <div style="font-size:13px;font-weight:600;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.nome)}</div>
           <div style="font-size:11px;color:var(--tx3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_ppFmtDataArquivo(a.criadoEm)} · ${esc(a.arquivoNomeOriginal||'')}</div>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="ppArquivoAbrir('${a.id}')" style="flex-shrink:0">Abrir</button>
-        <button class="btn btn-ghost btn-sm" onclick="ppArquivoBaixar('${a.id}')" style="flex-shrink:0">Baixar</button>
+        <button class="btn btn-ghost btn-sm" onclick="ppArquivoBaixar('${a.id}')" style="flex-shrink:0">Abrir</button>
         ${podeExcluir?`<button onclick="ppArquivoExcluir('${a.id}')" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:18px;padding:0 4px;flex-shrink:0" title="Excluir">×</button>`:''}
       </div>`).join('');
   }
