@@ -1384,11 +1384,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px">
           <button id="pront-tab-btn-plano" onclick="switchProntTab('plano')"
             style="font-size:13px;font-weight:600;padding:8px 18px;border:none;background:none;cursor:pointer;color:var(--ac);border-bottom:2px solid var(--ac);margin-bottom:-2px;font-family:var(--font)">
-            Plano de tratamento
-          </button>
-          <button id="pront-tab-btn-ficha" onclick="switchProntTab('ficha')"
-            style="font-size:13px;font-weight:600;padding:8px 18px;border:none;background:none;cursor:pointer;color:var(--tx3);border-bottom:2px solid transparent;margin-bottom:-2px;font-family:var(--font)">
-            Ficha clínica
+            Plano e ficha clínica
           </button>
           <button id="pront-tab-btn-docs" onclick="switchProntTab('docs')"
             style="font-size:13px;font-weight:600;padding:8px 18px;border:none;background:none;cursor:pointer;color:var(--tx3);border-bottom:2px solid transparent;margin-bottom:-2px;font-family:var(--font)">
@@ -1396,7 +1392,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           </button>
         </div>
 
-        <!-- TAB: PLANO DE TRATAMENTO -->
+        <!-- TAB: PLANO E FICHA CLÍNICA -->
         <div id="pront-tab-plano">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
             <div>
@@ -1405,14 +1401,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             </div>
           </div>
           <div id="pp-prontuario-plano-wrap"></div>
-        </div>
 
-        <!-- TAB: FICHA CLÍNICA -->
-        <div id="pront-tab-ficha" style="display:none">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin:28px 0 14px">
             <div>
               <div class="pp-area-title" style="margin-bottom:2px">Ficha clínica</div>
-              <div class="pp-area-desc" style="margin-bottom:0">Registro de cada atendimento, orientações e observações clínicas.</div>
+              <div class="pp-area-desc" style="margin-bottom:0">Histórico de atendimentos, orientações e observações clínicas. Linhas geradas pela execução de um procedimento no plano acima aparecem aqui automaticamente.</div>
             </div>
             <div style="display:flex;align-items:center;gap:8px">
               <button class="btn btn-ghost btn-sm" onclick="_prontExportarFichaCompleta()" style="display:flex;align-items:center;gap:5px">
@@ -13739,14 +13732,14 @@ function _salvarProntuarios(list){
 let _prontPacId=null; // paciente atual no módulo prontuário
 
 function switchProntTab(tab){
+  // 'ficha' foi unificada dentro da aba 'plano' (Plano e ficha clínica) — mantém
+  // compatibilidade com qualquer chamada antiga que ainda passe 'ficha'.
+  if(tab==='ficha') tab='plano';
   document.getElementById('pront-tab-plano').style.display=tab==='plano'?'':'none';
-  document.getElementById('pront-tab-ficha').style.display=tab==='ficha'?'':'none';
   document.getElementById('pront-tab-docs').style.display=tab==='docs'?'':'none';
   const btnP=document.getElementById('pront-tab-btn-plano');
-  const btnF=document.getElementById('pront-tab-btn-ficha');
   const btnD=document.getElementById('pront-tab-btn-docs');
   if(btnP){ btnP.style.color=tab==='plano'?'var(--ac)':'var(--tx3)'; btnP.style.borderBottomColor=tab==='plano'?'var(--ac)':'transparent'; }
-  if(btnF){ btnF.style.color=tab==='ficha'?'var(--ac)':'var(--tx3)'; btnF.style.borderBottomColor=tab==='ficha'?'var(--ac)':'transparent'; }
   if(btnD){ btnD.style.color=tab==='docs'?'var(--ac)':'var(--tx3)'; btnD.style.borderBottomColor=tab==='docs'?'var(--ac)':'transparent'; }
 }
 
@@ -13962,7 +13955,13 @@ function _calcComissaoItem(it, descontoPorc){
   return 0;
 }
 
+// Id previsível pra linha da ficha clínica gerada automaticamente pela execução
+// de um item específico do plano de tratamento — permite localizar e remover
+// essa linha depois (ex.: ao desfazer a execução), sem risco de duplicar.
+function _prontFichaAutoId(orcId,idx){ return 'ficha_auto_'+orcId+'_'+idx; }
+
 function _prontAprovarItem(orcId,idx){
+  let orcPacienteId=null, procNome='', dataExec='', profExec='';
   _comSalvarImediato(()=>{
     const list=_orcamentos();
     const orc=list.find(o=>o.id===orcId);
@@ -13981,9 +13980,27 @@ function _prontAprovarItem(orcId,idx){
     it.valorComissao=_calcComissaoItem(it, orc.descontoPorc);
     it.comissaoMedida=it.comissaoMedida||false;
     _salvarOrcamentos(list);
+    orcPacienteId=orc.pacienteId;
+    procNome=it.proc||'';
+    dataExec=it.execData;
+    profExec=it.execProfissional;
   });
+  // Cria automaticamente a linha correspondente na ficha clínica (histórico do
+  // paciente), sem texto nenhum — só registra que o procedimento foi executado
+  // nessa data. Fica marcada com origemAuto pra ser identificada e removida caso
+  // a execução seja desfeita depois.
+  if(orcPacienteId){
+    _comSalvarImediato(()=>{
+      const fl=_prontuarios();
+      const autoId=_prontFichaAutoId(orcId,idx);
+      if(!fl.some(f=>f.id===autoId)){
+        fl.push({id:autoId,pacienteId:orcPacienteId,data:dataExec,profissional:profExec,procedimento:procNome,planTratamentoId:orcId,descricao:'',orientacoes:'',proximaConsulta:'',origemAuto:true});
+        _salvarProntuarios(fl);
+      }
+    });
+  }
   const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
-  if(p) _renderProntPlano(p);
+  if(p){ _renderProntPlano(p); _renderProntFicha(p); }
 }
 
 function _prontDesfazerItem(orcId,idx){
@@ -14012,21 +14029,39 @@ function _prontDesfazerItem(orcId,idx){
     alert('Este procedimento já teve a comissão medida e paga no financeiro. Não é possível desfazer a execução.\n\nSe necessário, ajuste diretamente no módulo Financeiro › Comissão Dentistas.');
     return;
   }
+  // Remove a linha da ficha clínica que tinha sido gerada automaticamente pela
+  // execução deste procedimento (se existir).
+  _comSalvarImediato(()=>{
+    const fl=_prontuarios().filter(f=>f.id!==_prontFichaAutoId(orcId,idx));
+    _salvarProntuarios(fl);
+  });
   const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
-  if(p) _renderProntPlano(p);
+  if(p){ _renderProntPlano(p); _renderProntFicha(p); }
 }
 
 // ── FICHA CLÍNICA ──────────────────────────────────────────────────────────
 // Monta o texto de vínculo exibido no cabeçalho de cada atendimento (usado na tela e no PDF):
-// - Avulso: "Atendimento avulso"
-// - Vinculado a orçamento: nome do orçamento (+ procedimento específico, se houver)
+// - Gerado automaticamente pela execução de um procedimento: nome do procedimento
+// - Vinculado a orçamento (registros antigos, de quando era possível vincular manualmente):
+//   nome do orçamento (+ procedimento específico, se houver)
+// - Avulso (registros antigos): "Atendimento avulso"
 // - Atendimento antigo (registrado antes da coluna Título ser removida do formulário,
 //   sem vínculo nem avulso corretamente marcado): mostra o título salvo na época, como exceção
 function _prontVinculoTexto(f){
+  if(f.origemAuto) return f.procedimento||'Procedimento executado';
   if(f.avulso) return 'Atendimento avulso';
   if(f.planTratamento) return f.planTratamento+(f.procedimento?' · '+f.procedimento:'');
   if(f.titulo) return f.titulo; // compatibilidade com atendimentos antigos
   return '';
+}
+
+// Etiqueta mostrada nas linhas da ficha que foram criadas sozinhas pelo sistema
+// quando um procedimento é marcado como "Realizado" no plano de tratamento
+// (pra diferenciar de um atendimento registrado manualmente).
+function _prontEtiquetaAuto(f){
+  return f.origemAuto
+    ?'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#EFF6FF;color:#1D4ED8">Gerado pela execução do procedimento</span>'
+    :'';
 }
 
 function _renderProntFicha(p){
@@ -14042,9 +14077,6 @@ function _renderProntFicha(p){
     return;
   }
   const fmtData=d=>{ if(!d) return '—'; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
-  const statusPill=s=>s==='realizado'
-    ?'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#ECFDF5;color:#065F46">Realizado</span>'
-    :'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#FEF9EE;color:#7C4A00">A realizar</span>';
 
   const fieldSempre=(label,val)=>`<div style="margin-bottom:10px">
     <div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">${label}</div>
@@ -14073,8 +14105,7 @@ function _renderProntFicha(p){
             <svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 11.5l-9.5 9.5a4 4 0 0 1-5.7-5.7l9-9a2.5 2.5 0 0 1 3.6 3.6l-8.9 8.9a1 1 0 0 1-1.5-1.5l8-8"/></svg> ${temAnexo?f.anexoNome.slice(0,18)+(f.anexoNome.length>18?'…':''):'Anexar'}
             <input type="file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="_prontAnexarArquivo('${f.id}',this)">
           </label>
-          <div style="width:1px;height:18px;background:var(--border)"></div>
-          ${statusPill(f.status||'realizado')}
+          ${_prontEtiquetaAuto(f)?`<div style="width:1px;height:18px;background:var(--border)"></div>${_prontEtiquetaAuto(f)}`:''}
           ${podeEditarPront?`<button onclick="_prontEditarFicha('${f.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--tx2)">Editar</button>`:''}
           ${podeExcluirPront?`<button onclick="_prontExcluirFicha('${f.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);cursor:pointer;color:var(--da)">Excluir</button>`:''}
         </div>
@@ -16144,9 +16175,9 @@ function _prontAbrirPdfFichas(fichas, pacNome, clinicaNome, fmtData){
   <div class="card">
     <div class="card-hdr">
       <div class="card-hdr-left">${fmtData(f.data)}${_prontVinculoTexto(f)?` · <span class="card-hdr-vinc">${_prontVinculoTexto(f)}</span>`:''}${f.profissional?` · <span class="card-hdr-prof">${f.profissional}</span>`:''}</div>
-      <div style="display:flex;align-items:center;gap:12px">
-        <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:${(f.status||'realizado')==='realizado'?'#ECFDF5':'#FEF9EE'};color:${(f.status||'realizado')==='realizado'?'#065F46':'#7C4A00'}">${(f.status||'realizado')==='realizado'?'Realizado':'A realizar'}</span>
-      </div>
+      ${f.origemAuto?`<div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#EFF6FF;color:#1D4ED8">Gerado pela execução do procedimento</span>
+      </div>`:''}
     </div>
     <div class="cols">
       <div class="col"><div class="col-lbl">Descrição do atendimento</div><div class="col-val">${f.descricao||'—'}</div></div>
@@ -16224,7 +16255,7 @@ function abrirModalAtendimento(fichaExistente){
       </div>
       <div class="modal-body" style="overflow-y:auto;flex:1;padding-top:16px">
 
-        <!-- Linha 1: Data, Profissional, Status -->
+        <!-- Linha 1: Data, Profissional -->
         <div class="fg" style="margin-bottom:4px">
           <div class="fl">
             <label>Data do atendimento</label>
@@ -16236,50 +16267,21 @@ function abrirModalAtendimento(fichaExistente){
               <option value="">— Selecione —</option>
             </select>
           </div>
-          <div class="fl">
-            <label>Status</label>
-            <select id="atd-status" style="font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface)">
-              <option value="realizado">Realizado</option>
-              <option value="a_realizar">A realizar</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Atendimento avulso toggle -->
-        <div style="display:flex;align-items:center;gap:10px;margin:12px 0">
-          <span class="toggle-sw" id="atd-avulso-toggle" onclick="_atdToggleAvulso()"></span>
-          <span style="font-size:13px;color:var(--tx2)">Atendimento avulso <span style="font-size:11px;color:var(--tx3)">(sem vínculo com plano de tratamento)</span></span>
-        </div>
-
-        <!-- Plano + Procedimento (ocultados se avulso) -->
-        <div id="atd-plano-wrap" class="fg" style="margin-bottom:4px">
-          <div class="fl fg-full">
-            <label>Plano de tratamento</label>
-            <select id="atd-plano" onchange="_atdCarregarProcs()" style="font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface)">
-              <option value="">— Selecione um plano aprovado —</option>
-            </select>
-          </div>
-          <div class="fl fg-full">
-            <label>Procedimento</label>
-            <select id="atd-procedimento" style="font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface)">
-              <option value="">— Selecione o procedimento —</option>
-            </select>
-          </div>
         </div>
 
         <!-- 3 textareas lado a lado -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:16px">
           <div>
             <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Descrição do atendimento</label>
-            <textarea id="atd-descricao" rows="11" placeholder="O que foi realizado, observações gerais..." style="width:100%;font-family:var(--font);font-size:13px;resize:vertical;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6)"></textarea>
+            <textarea id="atd-descricao" rows="16" placeholder="O que foi realizado, observações gerais..." style="width:100%;font-family:var(--font);font-size:13px;resize:vertical;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6)"></textarea>
           </div>
           <div>
             <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Orientações ao paciente</label>
-            <textarea id="atd-orientacoes" rows="11" placeholder="Cuidados pós-procedimento, medicação, recomendações..." style="width:100%;font-family:var(--font);font-size:13px;resize:vertical;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6)"></textarea>
+            <textarea id="atd-orientacoes" rows="16" placeholder="Cuidados pós-procedimento, medicação, recomendações..." style="width:100%;font-family:var(--font);font-size:13px;resize:vertical;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6)"></textarea>
           </div>
           <div>
             <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Detalhes para próxima consulta</label>
-            <textarea id="atd-proxima" rows="11" placeholder="O que deverá ser feito ou verificado na próxima consulta..." style="width:100%;font-family:var(--font);font-size:13px;resize:vertical;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6)"></textarea>
+            <textarea id="atd-proxima" rows="16" placeholder="O que deverá ser feito ou verificado na próxima consulta..." style="width:100%;font-family:var(--font);font-size:13px;resize:vertical;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r6)"></textarea>
           </div>
         </div>
 
@@ -16297,12 +16299,6 @@ function abrirModalAtendimento(fichaExistente){
   const equipeLista=(equipe||[]).map(e=>typeof e==='string'?e:(e.nome||'')).filter(Boolean);
   selProf.innerHTML='<option value="">— Selecione —</option>'+equipeLista.map(e=>`<option value="${e}">${e}</option>`).join('');
 
-  // Preenche planos aprovados do paciente
-  const selPlano=document.getElementById('atd-plano');
-  const orcsAprov=_orcamentos().filter(o=>String(o.pacienteId)===String(_prontPacId)&&o.status==='aprovado');
-  selPlano.innerHTML='<option value="">— Selecione um plano aprovado —</option>'+orcsAprov.map(o=>`<option value="${o.id}">${o.nomeOrc||('Plano #'+(o.num||o.id.slice(-4)))}</option>`).join('');
-  document.getElementById('atd-procedimento').innerHTML='<option value="">— Selecione o procedimento —</option>';
-
   // Defaults / edição
   const hoje2=new Date().toISOString().slice(0,10);
   const titulo=document.getElementById('modal-atendimento-title');
@@ -16310,20 +16306,9 @@ function abrirModalAtendimento(fichaExistente){
     titulo.textContent='Editar atendimento';
     document.getElementById('atd-data').value=fichaExistente.data||hoje2;
     document.getElementById('atd-profissional').value=fichaExistente.profissional||'';
-    document.getElementById('atd-status').value=fichaExistente.status||'realizado';
     document.getElementById('atd-descricao').value=fichaExistente.descricao||'';
     document.getElementById('atd-orientacoes').value=fichaExistente.orientacoes||'';
     document.getElementById('atd-proxima').value=fichaExistente.proximaConsulta||'';
-    // avulso
-    const tog=document.getElementById('atd-avulso-toggle');
-    const isAvulso=!!fichaExistente.avulso;
-    tog.classList.toggle('on',isAvulso);
-    document.getElementById('atd-plano-wrap').style.display=isAvulso?'none':'';
-    // plano / procedimento
-    if(!isAvulso&&fichaExistente.planTratamentoId){
-      selPlano.value=fichaExistente.planTratamentoId||'';
-      _atdCarregarProcs(fichaExistente.procedimento);
-    }
   } else {
     titulo.textContent='Adicionar atendimento';
     document.getElementById('atd-data').value=hoje2;
@@ -16332,13 +16317,9 @@ function abrirModalAtendimento(fichaExistente){
     // (ex: Administrador), continua em branco pra escolher manualmente.
     const _atdMeuMembro=(equipe||[]).find(e=>typeof e!=='string' && e.usuarioId===usuarioAtualId);
     document.getElementById('atd-profissional').value=(_atdMeuMembro && membroEhDentista(_atdMeuMembro)) ? (_atdMeuMembro.nome||'') : '';
-    document.getElementById('atd-status').value='realizado';
     document.getElementById('atd-descricao').value='';
     document.getElementById('atd-orientacoes').value='';
     document.getElementById('atd-proxima').value='';
-    const tog=document.getElementById('atd-avulso-toggle');
-    tog.classList.remove('on');
-    document.getElementById('atd-plano-wrap').style.display='';
   }
 
   document.getElementById('modal-atendimento').classList.add('open');
@@ -16349,46 +16330,25 @@ function fecharModalAtendimento(){
   if(m) m.classList.remove('open');
 }
 
-function _atdToggleAvulso(){
-  const tog=document.getElementById('atd-avulso-toggle');
-  tog.classList.toggle('on');
-  const isOn=tog.classList.contains('on');
-  document.getElementById('atd-plano-wrap').style.display=isOn?'none':'';
-}
-
-function _atdCarregarProcs(selecionado){
-  const orcId=document.getElementById('atd-plano').value;
-  const sel=document.getElementById('atd-procedimento');
-  if(!orcId){ sel.innerHTML='<option value="">— Selecione o procedimento —</option>'; return; }
-  const orc=_orcamentos().find(o=>o.id===orcId);
-  const itens=(orc&&orc.itens)||[];
-  sel.innerHTML='<option value="">— Selecione o procedimento —</option>'+itens.map(it=>`<option value="${it.proc||''}">${it.proc||'—'}${it.dentes&&it.dentes.length?' ('+_dentesTxt(it.dentes)+')':''}</option>`).join('');
-  if(selecionado) sel.value=selecionado;
-}
-
 function salvarAtendimento(){
   const data=document.getElementById('atd-data').value;
   if(!data){ alert('Informe a data do atendimento.'); return; }
-  const avulso=document.getElementById('atd-avulso-toggle').classList.contains('on');
-  const planId=avulso?'':document.getElementById('atd-plano').value;
-  const planNome=planId?(_orcamentos().find(o=>o.id===planId)||{}).nomeOrc||'':'';
-  const procedimento=avulso?'':document.getElementById('atd-procedimento').value;
   const profissional=document.getElementById('atd-profissional').value;
-  const status=document.getElementById('atd-status').value;
   const descricao=document.getElementById('atd-descricao').value.trim();
   const orientacoes=document.getElementById('atd-orientacoes').value.trim();
   const proximaConsulta=document.getElementById('atd-proxima').value.trim();
 
-  // Obs.: o campo "título" não existe mais no formulário. Em edições de
-  // atendimentos antigos que ainda têm um título salvo, ele é mantido
-  // (não apagamos), mas nunca mais é gravado em atendimentos novos.
+  // Obs.: os campos "status", "avulso" e o vínculo manual com plano/procedimento
+  // não existem mais no formulário — todo atendimento criado por aqui é um registro
+  // livre. Atendimentos antigos que ainda tenham esses dados salvos são preservados
+  // (não apagamos), só não são mais editáveis por este modal.
   _comSalvarImediato(()=>{
     const list=_prontuarios();
     if(_prontFichaEditId){
       const idx=list.findIndex(f=>f.id===_prontFichaEditId);
-      if(idx>=0) list[idx]={...list[idx],data,avulso,planTratamentoId:planId,planTratamento:planNome,procedimento,profissional,status,descricao,orientacoes,proximaConsulta};
+      if(idx>=0) list[idx]={...list[idx],data,profissional,descricao,orientacoes,proximaConsulta};
     } else {
-      list.push({id:'ficha_'+Date.now(),pacienteId:_prontPacId,data,avulso,planTratamentoId:planId,planTratamento:planNome,procedimento,profissional,status,descricao,orientacoes,proximaConsulta});
+      list.push({id:'ficha_'+Date.now(),pacienteId:_prontPacId,data,profissional,descricao,orientacoes,proximaConsulta});
     }
     _salvarProntuarios(list);
   });
