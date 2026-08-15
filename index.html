@@ -27316,6 +27316,26 @@ function _relMiniChartCard(titulo, ranking, activeVal, clickFnName){
   </div>`;
 }
 
+// Gráfico "Agendamentos por status" — igual ao _relMiniChartCard, mas com uma
+// primeira linha fixa "Todos" (não faz parte do ranking, sempre a maior barra,
+// e clicar nela limpa o filtro de status).
+function _relStatusChartCard(total, statusesOrdenados, contagemStatus, statusCard){
+  const max=total||1;
+  const linha=(label, count, on, clickArg)=>{
+    const clickCall = clickArg===null ? '_relAgClicarStatus(null)' : `_relAgClicarStatus('${clickArg}')`;
+    return `<div class="og-rank-row og-rank-row-clickable${on?' on':''}" onclick="${clickCall}">
+      <div class="og-rank-nome" style="flex:0 0 96px">${esc(label)}</div>
+      <div class="og-rank-bar-wrap"><div class="og-rank-bar-fill" style="width:${(count/max*100).toFixed(0)}%;background:${on?'var(--gold)':'var(--ac)'}"></div></div>
+      <div class="og-rank-pct">${count}</div>
+    </div>`;
+  };
+  return `<div class="card">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.05em;margin-bottom:10px">Agendamentos por status</div>
+    ${linha('Todos', total, !statusCard, null)}
+    ${statusesOrdenados.map(st=>linha(REL_AG_STATUS_LBL[st]||st, contagemStatus[st], statusCard===st, st)).join('')}
+  </div>`;
+}
+
 function _relRenderAgendamentos(wrap, de, ate){
   const pacFiltro=_relFiltros.agendamentos.paciente;
   const listaTodas=(typeof agendamentos!=='undefined'?agendamentos:[]).filter(a=>{
@@ -27326,7 +27346,9 @@ function _relRenderAgendamentos(wrap, de, ate){
 
   if(!listaTodas.length) return _relTabelaVazia(wrap, 'Nenhum agendamento nesse período/filtro.');
 
-  // ── Cards por status — "Todos" + um card por status com pelo menos 1 ocorrência ──
+  // ── 4 gráficos lado a lado: status, procedimento, profissional e origem (1ª consulta) ──
+  // Todos calculados sobre listaTodas (não somem/mudam quando outro filtro é aplicado
+  // — só a tabela abaixo reflete os filtros ativos).
   const contagemStatus={};
   listaTodas.forEach(a=>{ const st=a.status||'—'; contagemStatus[st]=(contagemStatus[st]||0)+1; });
   const statusesOrdenados=[...REL_AG_STATUS_ORDEM.filter(s=>contagemStatus[s]), ...Object.keys(contagemStatus).filter(s=>!REL_AG_STATUS_ORDEM.includes(s))];
@@ -27335,23 +27357,7 @@ function _relRenderAgendamentos(wrap, de, ate){
   const origemCard=_relFiltros.agendamentos.origemCard;
   const profCard=_relFiltros.agendamentos.profCard;
   const procCard=_relFiltros.agendamentos.procCard;
-  const onStyle='box-shadow:0 0 0 2px var(--gold) inset;background:var(--gold-soft)';
-  const cardsHtml=`<div class="fin-cards-row" style="margin-bottom:14px;flex-wrap:wrap">
-    <div class="fin-card fin-card-blue fin-card-clickable" style="${!statusCard?onStyle:''}" onclick="_relAgClicarStatus(null)">
-      <div class="fin-card-label">Todos</div>
-      <div class="fin-card-value">${listaTodas.length}</div>
-      <div class="fin-card-sub">agendamento(s) no período</div>
-    </div>
-    ${statusesOrdenados.map(st=>`<div class="fin-card fin-card-clickable" style="${statusCard===st?onStyle:''}" onclick="_relAgClicarStatus('${st}')">
-      <div class="fin-card-label">${esc(REL_AG_STATUS_LBL[st]||st)}</div>
-      <div class="fin-card-value">${contagemStatus[st]}</div>
-      <div class="fin-card-sub">agendamento(s) · clique para filtrar</div>
-    </div>`).join('')}
-  </div>`;
 
-  // ── 3 gráficos lado a lado: procedimento, profissional e origem (1ª consulta) ──
-  // Todos calculados sobre listaTodas (não somem/mudam quando outro filtro é aplicado
-  // — só a tabela abaixo reflete os filtros ativos), mesmo padrão já usado nos cards.
   const contagemProc={};
   listaTodas.forEach(a=>{
     const proc=(a.procedimento||'').trim() || 'Não informado';
@@ -27378,12 +27384,13 @@ function _relRenderAgendamentos(wrap, de, ate){
   const rankingOrigem=Object.entries(contagemOrigem).sort((a,b)=>b[1]-a[1]);
 
   const chartsHtml=`<div class="rel-charts-row">
+    ${_relStatusChartCard(listaTodas.length, statusesOrdenados, contagemStatus, statusCard)}
     ${_relMiniChartCard('Procedimentos mais buscados', rankingProc, procCard, '_relAgClicarProc')}
     ${_relMiniChartCard('Agendamentos por profissional', rankingProf, profCard, '_relAgClicarProf')}
     ${_relMiniChartCard('Origem das primeiras consultas', rankingOrigem, origemCard, '_relAgClicarOrigem')}
   </div>`;
 
-  // ── Tabela: aplica todos os filtros ativos (cards + gráficos) ao mesmo tempo ──
+  // ── Tabela: aplica todos os filtros ativos (gráficos) ao mesmo tempo ──
   const lista = listaTodas.filter(a=>{
     if(statusCard && a.status!==statusCard) return false;
     if(origemCard && a.origemPaciente!==origemCard) return false;
@@ -27400,7 +27407,7 @@ function _relRenderAgendamentos(wrap, de, ate){
   });
 
   if(!lista.length){
-    wrap.innerHTML=cardsHtml+chartsHtml+`<div class="card" style="padding:0"><div class="fin-empty">Nenhum agendamento com esse filtro nesse período.</div></div>`;
+    wrap.innerHTML=chartsHtml+`<div class="card" style="padding:0"><div class="fin-empty">Nenhum agendamento com esse filtro nesse período.</div></div>`;
     return;
   }
 
@@ -27418,11 +27425,45 @@ function _relRenderAgendamentos(wrap, de, ate){
     </tr>`;
   }).join('');
 
-  wrap.innerHTML=cardsHtml+chartsHtml+`
-    <div class="fin-table-wrap"><table class="fin-table">
+  wrap.innerHTML=chartsHtml+`
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+      <button class="btn btn-ghost btn-sm" onclick="_relAgendamentosExportarTabelaPDF()"><svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Exportar em PDF</button>
+    </div>
+    <div id="rel-ag-tabela-wrap" class="fin-table-wrap"><table class="fin-table">
       <thead><tr><th>Data</th><th>Horário</th><th>Paciente</th><th>Profissional</th><th>Sala</th><th>Procedimento</th><th>Status</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`;
+}
+
+// Exporta em PDF só a tabela de agendamentos (não inclui os gráficos acima) — mesmo
+// mecanismo de impressão usado no botão geral de Relatórios, mas restrito à tabela.
+function _relAgendamentosExportarTabelaPDF(){
+  const tabela=document.getElementById('rel-ag-tabela-wrap');
+  if(!tabela || !tabela.innerHTML.trim()){ alert('Não há tabela para exportar nesse filtro.'); return; }
+  const periodoSel=document.getElementById('rel-periodo-sel');
+  const periodoLabel=periodoSel&&periodoSel.selectedOptions&&periodoSel.selectedOptions[0]?periodoSel.selectedOptions[0].textContent:'';
+  const estilos=Array.from(document.querySelectorAll('style')).map(s=>s.outerHTML).join('\n');
+  const win=window.open('','_blank');
+  if(!win){ alert('Não foi possível abrir a janela de exportação. Verifique se o bloqueador de pop-ups está desativado.'); return; }
+  const html=`<html><head><meta charset="utf-8"><title>Agendamentos — Sekai</title>
+  ${estilos}
+  <style>
+    body{background:#fff;padding:24px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .rel-export-hdr{margin-bottom:18px}
+    .rel-export-hdr h1{font-size:18px;margin:0 0 4px}
+    .rel-export-hdr .sub{color:#666;font-size:12px}
+    a{pointer-events:none;color:inherit;text-decoration:none}
+  </style>
+  </head><body>
+    <div class="rel-export-hdr">
+      <h1>Agendamentos — Sekai</h1>
+      <div class="sub">Gerado em ${_finFmtData(_finIso(new Date()))} · Período: ${esc(periodoLabel)}</div>
+    </div>
+    ${tabela.innerHTML}
+    <script>window.onload=()=>window.print();<\/script>
+  </body></html>`;
+  win.document.write(html);
+  win.document.close();
 }
 
 // Procedimentos realizados: itens do plano de tratamento com executado:true,
