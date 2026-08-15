@@ -127,6 +127,12 @@
 .og-rank-bar-wrap{flex:1;height:7px;background:var(--s2);border-radius:6px;overflow:hidden;min-width:60px}
 .og-rank-bar-fill{height:100%;border-radius:6px}
 .og-rank-pct{font-size:12.5px;font-weight:700;min-width:42px;text-align:right}
+.og-rank-row-clickable{cursor:pointer;border-radius:6px;padding-left:6px;padding-right:6px;margin:0 -6px;transition:background .1s}
+.og-rank-row-clickable:hover{background:var(--s2)}
+.og-rank-row-clickable.on{background:var(--acl)}
+.og-rank-row-clickable.on .og-rank-nome{color:var(--ac);font-weight:700}
+.rel-charts-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.rel-charts-row>.card{flex:1 1 260px;min-width:260px;margin-bottom:0}
 .og-rank-motivo-nome{flex:1;font-size:12.5px;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .og-rank-motivo-count{font-size:11px;font-weight:700;color:var(--da);background:var(--dal);padding:2px 9px;border-radius:20px}
 
@@ -3044,14 +3050,13 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
       <button class="btn btn-ghost btn-sm" onclick="finPeriodoGlobalLimpar()">Limpar filtro</button>
     </div>
+    <div style="font-size:11.5px;color:var(--tx3);margin-top:8px" id="fin-periodo-global-label"></div>
   </div>
 
   <!-- FLUXO DE CAIXA -->
   <div id="fin-area-fluxo" class="fin-area on">
     <div class="pg-title">Fluxo de Caixa</div>
     <div class="pg-desc">Visão geral financeira — entradas, saídas e posição do caixa (a pagar operacional + folha + a receber)</div>
-
-    <div style="font-size:11.5px;color:var(--tx3);margin-top:12px" id="flx-periodo-label"></div>
 
     <!-- Cards realizados no período selecionado (unificam a pagar operacional + folha + a receber) -->
     <div class="fin-cards-row" style="margin-top:12px">
@@ -4255,6 +4260,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
       <button class="btn btn-ghost btn-sm" onclick="relLimparFiltro()">Limpar filtro</button>
     </div>
+    <div style="font-size:11.5px;color:var(--tx3);margin-top:8px" id="rel-periodo-global-label"></div>
   </div>
 
   <!-- Menu lateral de abas + conteúdo, mesmo padrão visual do menu do paciente -->
@@ -26504,7 +26510,7 @@ function salvarEntradaModal(){
 let _relAbaAtual = 'proc_realizados';
 let _relPeriodoTipo = 'mes_atual';
 let _relFiltros = {
-  agendamentos: { paciente: null, origemCard: null },
+  agendamentos: { paciente: null, origemCard: null, statusCard: null, profCard: null, procCard: null },
   proc_realizados: { cardSelecionado: 'total' },
   proc_a_realizar: { profCard: null },
   primeiras_consultas: { paciente: null, origemCard: null },
@@ -26613,7 +26619,7 @@ function _relPeriodoDatas(){
 
 function relFiltroVazio(aba){
   const map={
-    agendamentos:{paciente:null, origemCard:null},
+    agendamentos:{paciente:null, origemCard:null, statusCard:null, profCard:null, procCard:null},
     proc_realizados:{cardSelecionado:'total'},
     proc_a_realizar:{profCard:null},
     primeiras_consultas:{paciente:null, origemCard:null},
@@ -26929,6 +26935,10 @@ function relRenderConteudo(){
   const wrap=document.getElementById('rel-conteudo');
   if(!wrap) return;
   const {de,ate}=_relPeriodoDatas();
+  const lblPeriodo=document.getElementById('rel-periodo-global-label');
+  if(lblPeriodo) lblPeriodo.textContent = (_relPeriodoTipo==='todos')
+    ? 'Mostrando todos os períodos'
+    : `Período selecionado: ${_finFmtData(de)} a ${_finFmtData(ate)}`;
   const aba=_relAbaAtual;
   if(aba==='agendamentos')        return _relRenderAgendamentos(wrap,de,ate);
   if(aba==='proc_realizados')     return _relRenderProcRealizados(wrap,de,ate);
@@ -27272,10 +27282,54 @@ function _relTabelaVazia(wrap, mensagem){
 
 // Agendamentos: TODOS os agendamentos da agenda dentro do período do filtro superior
 // (não filtra por status nem por "primeira consulta" — mostra tudo, uma linha por agendamento).
+// Rótulos/cores de status, reutilizados pelos cards, pelo filtro e pela tabela.
+const REL_AG_STATUS_LBL={agendado:'Agendado',confirmado:'Confirmado',realizado:'Realizado',faltou:'Faltou',cancelado:'Cancelado'};
+const REL_AG_STATUS_PILL={agendado:'p-neutral',confirmado:'p-green',realizado:'p-info',faltou:'p-danger',cancelado:'p-neutral'};
+const REL_AG_STATUS_ORDEM=['agendado','confirmado','realizado','faltou','cancelado'];
+
 function _relAgClicarOrigem(origem){
   const atual=_relFiltros.agendamentos.origemCard;
   _relFiltros.agendamentos.origemCard = (atual===origem) ? null : origem;
   relRenderConteudo();
+}
+function _relAgClicarStatus(status){
+  const atual=_relFiltros.agendamentos.statusCard;
+  _relFiltros.agendamentos.statusCard = (atual===status) ? null : status;
+  relRenderConteudo();
+}
+function _relAgClicarProf(nome){
+  const atual=_relFiltros.agendamentos.profCard;
+  _relFiltros.agendamentos.profCard = (atual===nome) ? null : nome;
+  relRenderConteudo();
+}
+function _relAgClicarProc(proc){
+  const atual=_relFiltros.agendamentos.procCard;
+  _relFiltros.agendamentos.procCard = (atual===proc) ? null : proc;
+  relRenderConteudo();
+}
+
+// Monta um card de gráfico de barras horizontais compacto, com linhas clicáveis
+// que alternam o filtro correspondente (usado pelos 3 gráficos desta aba).
+function _relMiniChartCard(titulo, ranking, activeVal, clickFnName){
+  if(!ranking.length){
+    return `<div class="card">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.05em;margin-bottom:10px">${esc(titulo)}</div>
+      <div style="font-size:12px;color:var(--tx3)">Sem dados nesse período.</div>
+    </div>`;
+  }
+  const max=ranking[0][1];
+  return `<div class="card">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.05em;margin-bottom:10px">${esc(titulo)}</div>
+    ${ranking.map(([label,count])=>{
+      const on = activeVal===label;
+      const valEsc=String(label).replace(/'/g,"\\'");
+      return `<div class="og-rank-row og-rank-row-clickable${on?' on':''}" onclick="${clickFnName}('${valEsc}')">
+        <div class="og-rank-nome" style="flex:0 0 96px">${esc(label)}</div>
+        <div class="og-rank-bar-wrap"><div class="og-rank-bar-fill" style="width:${(count/max*100).toFixed(0)}%;background:var(--ac)"></div></div>
+        <div class="og-rank-pct">${count}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
 }
 
 function _relRenderAgendamentos(wrap, de, ate){
@@ -27288,58 +27342,84 @@ function _relRenderAgendamentos(wrap, de, ate){
 
   if(!listaTodas.length) return _relTabelaVazia(wrap, 'Nenhum agendamento nesse período/filtro.');
 
-  // Cards por origem — só a origem preenchida no agendamento (aparece quando
-  // "Primeira consulta = Sim"); só entram origens com pelo menos 1 ocorrência.
-  const contagemOrigem={};
-  listaTodas.forEach(a=>{
-    const o=a.origemPaciente||'';
-    if(!o) return;
-    contagemOrigem[o]=(contagemOrigem[o]||0)+1;
-  });
+  // ── Cards por status — "Todos" + um card por status com pelo menos 1 ocorrência ──
+  const contagemStatus={};
+  listaTodas.forEach(a=>{ const st=a.status||'—'; contagemStatus[st]=(contagemStatus[st]||0)+1; });
+  const statusesOrdenados=[...REL_AG_STATUS_ORDEM.filter(s=>contagemStatus[s]), ...Object.keys(contagemStatus).filter(s=>!REL_AG_STATUS_ORDEM.includes(s))];
 
+  const statusCard=_relFiltros.agendamentos.statusCard;
   const origemCard=_relFiltros.agendamentos.origemCard;
+  const profCard=_relFiltros.agendamentos.profCard;
+  const procCard=_relFiltros.agendamentos.procCard;
   const onStyle='box-shadow:0 0 0 2px var(--ac) inset';
   const cardsHtml=`<div class="fin-cards-row" style="margin-bottom:14px;flex-wrap:wrap">
-    <div class="fin-card fin-card-blue fin-card-clickable" style="${!origemCard?onStyle:''}" onclick="_relAgClicarOrigem(null)">
+    <div class="fin-card fin-card-blue fin-card-clickable" style="${!statusCard?onStyle:''}" onclick="_relAgClicarStatus(null)">
       <div class="fin-card-label">Todos</div>
       <div class="fin-card-value">${listaTodas.length}</div>
       <div class="fin-card-sub">agendamento(s) no período</div>
     </div>
-    ${REL_ORIGENS_CONSULTA.filter(o=>contagemOrigem[o]).map(o=>`<div class="fin-card fin-card-clickable" style="${origemCard===o?onStyle:''}" onclick="_relAgClicarOrigem('${o}')">
-      <div class="fin-card-label">${esc(o)}</div>
-      <div class="fin-card-value">${contagemOrigem[o]}</div>
+    ${statusesOrdenados.map(st=>`<div class="fin-card fin-card-clickable" style="${statusCard===st?onStyle:''}" onclick="_relAgClicarStatus('${st}')">
+      <div class="fin-card-label">${esc(REL_AG_STATUS_LBL[st]||st)}</div>
+      <div class="fin-card-value">${contagemStatus[st]}</div>
       <div class="fin-card-sub">agendamento(s) · clique para filtrar</div>
     </div>`).join('')}
   </div>`;
 
-  const lista = origemCard ? listaTodas.filter(a=>a.origemPaciente===origemCard) : listaTodas;
-
-  // Gráfico de barras horizontais: campo "Procedimento" do próprio modal de
-  // agendamento (texto livre, geralmente uma categoria ampla) — mostra quais
-  // procedimentos mais são buscados na clínica.
+  // ── 3 gráficos lado a lado: procedimento, profissional e origem (1ª consulta) ──
+  // Todos calculados sobre listaTodas (não somem/mudam quando outro filtro é aplicado
+  // — só a tabela abaixo reflete os filtros ativos), mesmo padrão já usado nos cards.
   const contagemProc={};
   listaTodas.forEach(a=>{
     const proc=(a.procedimento||'').trim() || 'Não informado';
     contagemProc[proc]=(contagemProc[proc]||0)+1;
   });
   const rankingProc=Object.entries(contagemProc).sort((a,b)=>b[1]-a[1]);
-  const maxProc=rankingProc.length?rankingProc[0][1]:1;
-  const chartHtml = rankingProc.length ? `<div class="card" style="margin-bottom:14px">
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.05em;margin-bottom:10px">Procedimentos mais buscados</div>
-    ${rankingProc.map(([proc,count])=>`<div class="og-rank-row">
-      <div class="og-rank-nome" style="flex:0 0 240px">${esc(proc)}</div>
-      <div class="og-rank-bar-wrap"><div class="og-rank-bar-fill" style="width:${(count/maxProc*100).toFixed(0)}%;background:var(--ac)"></div></div>
-      <div class="og-rank-pct">${count}</div>
-    </div>`).join('')}
-  </div>` : '';
+
+  const contagemProf={};
+  listaTodas.forEach(a=>{
+    const prof=(typeof usuarios!=='undefined'?usuarios:[]).find(u=>u.id===a.usuarioId);
+    const nome=prof?prof.nome:'Sem profissional';
+    contagemProf[nome]=(contagemProf[nome]||0)+1;
+  });
+  const rankingProf=Object.entries(contagemProf).sort((a,b)=>b[1]-a[1]);
+
+  // Origem só existe quando o agendamento é de 1ª consulta — por isso o gráfico
+  // considera só quem tem o campo preenchido (não soma ao total dos outros gráficos).
+  const contagemOrigem={};
+  listaTodas.forEach(a=>{
+    const o=a.origemPaciente||'';
+    if(!o) return;
+    contagemOrigem[o]=(contagemOrigem[o]||0)+1;
+  });
+  const rankingOrigem=Object.entries(contagemOrigem).sort((a,b)=>b[1]-a[1]);
+
+  const chartsHtml=`<div class="rel-charts-row">
+    ${_relMiniChartCard('Procedimentos mais buscados', rankingProc, procCard, '_relAgClicarProc')}
+    ${_relMiniChartCard('Agendamentos por profissional', rankingProf, profCard, '_relAgClicarProf')}
+    ${_relMiniChartCard('Origem das primeiras consultas', rankingOrigem, origemCard, '_relAgClicarOrigem')}
+  </div>`;
+
+  // ── Tabela: aplica todos os filtros ativos (cards + gráficos) ao mesmo tempo ──
+  const lista = listaTodas.filter(a=>{
+    if(statusCard && a.status!==statusCard) return false;
+    if(origemCard && a.origemPaciente!==origemCard) return false;
+    if(procCard){
+      const proc=(a.procedimento||'').trim() || 'Não informado';
+      if(proc!==procCard) return false;
+    }
+    if(profCard){
+      const prof=(typeof usuarios!=='undefined'?usuarios:[]).find(u=>u.id===a.usuarioId);
+      const nome=prof?prof.nome:'Sem profissional';
+      if(nome!==profCard) return false;
+    }
+    return true;
+  });
 
   if(!lista.length){
-    wrap.innerHTML=cardsHtml+chartHtml+`<div class="card" style="padding:0"><div class="fin-empty">Nenhum agendamento com essa origem nesse período.</div></div>`;
+    wrap.innerHTML=cardsHtml+chartsHtml+`<div class="card" style="padding:0"><div class="fin-empty">Nenhum agendamento com esse filtro nesse período.</div></div>`;
     return;
   }
 
-  const lblMap={agendado:'Agendado',confirmado:'Confirmado',realizado:'Realizado',faltou:'Faltou',cancelado:'Cancelado'};
-  const pillMap={agendado:'p-neutral',confirmado:'p-green',realizado:'p-info',faltou:'p-danger',cancelado:'p-neutral'};
   const rows=lista.map(a=>{
     const prof=(typeof usuarios!=='undefined'?usuarios:[]).find(u=>u.id===a.usuarioId);
     const sala=(typeof salas!=='undefined'?salas:[]).find(s=>s.id===a.salaId);
@@ -27350,11 +27430,11 @@ function _relRenderAgendamentos(wrap, de, ate){
       <td>${esc(prof?prof.nome:'—')}</td>
       <td>${esc(sala?sala.nome:'—')}</td>
       <td>${esc(a.procedimento)||'—'}</td>
-      <td><span class="pill ${pillMap[a.status]||'p-neutral'}">${lblMap[a.status]||a.status}</span></td>
+      <td><span class="pill ${REL_AG_STATUS_PILL[a.status]||'p-neutral'}">${REL_AG_STATUS_LBL[a.status]||a.status}</span></td>
     </tr>`;
   }).join('');
 
-  wrap.innerHTML=cardsHtml+chartHtml+`
+  wrap.innerHTML=cardsHtml+chartsHtml+`
     <div class="fin-table-wrap"><table class="fin-table">
       <thead><tr><th>Data</th><th>Horário</th><th>Paciente</th><th>Profissional</th><th>Sala</th><th>Procedimento</th><th>Status</th></tr></thead>
       <tbody>${rows}</tbody>
@@ -29354,7 +29434,9 @@ function finPeriodoGlobalRenderUI(){
   const ate=document.getElementById('fin-periodo-ate'); if(ate) ate.value=_finGlobalPeriodoAte;
   const {de:pDe, ate:pAte} = finPeriodoGlobalDatas();
   const lbl=document.getElementById('fin-periodo-global-label');
-  if(lbl) lbl.textContent = `Período selecionado: ${_finFmtData(pDe)} a ${_finFmtData(pAte)}`;
+  if(lbl) lbl.textContent = (_finGlobalPeriodoTipo==='todos')
+    ? 'Mostrando todos os períodos'
+    : `Período selecionado: ${_finFmtData(pDe)} a ${_finFmtData(pAte)}`;
 }
 
 // Aplica o período global como filtro de vencimento nas 3 listas (pagar/folha/receber).
@@ -29424,8 +29506,6 @@ function renderFinFluxo(){
   const totalRecebido = aReceberNoPeriodo.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
 
   const setEl=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
-  const periodoLbl=document.getElementById('flx-periodo-label');
-  if(periodoLbl) periodoLbl.textContent=`Período selecionado: ${_finFmtData(pDe)} a ${_finFmtData(pAte)}`;
 
   setEl('flx-val-recebido', _finFmt(totalRecebido));
   setEl('flx-sub-recebido', aReceberNoPeriodo.length+' título'+(aReceberNoPeriodo.length!==1?'s':'')+' em aberto');
