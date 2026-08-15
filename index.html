@@ -11010,8 +11010,15 @@ function _ogTodos(){
 function ogSetStatus(v){
   _ogFiltroStatus = v || '';
   if(_ogFiltroStatus!=='aberto') _ogFaixaIdade = null; // faixas só fazem sentido dentro de "Em aberto"
-  const sel = document.getElementById('og-filtro-status');
-  if(sel) sel.value = _ogFiltroStatus;
+  renderOrcamentosGeral();
+}
+
+// Clique numa linha do gráfico "Orçamentos por profissional": filtra por esse
+// profissional (clicar de novo remove o filtro). Substitui o antigo select.
+function _relOrcClicarProfissional(nome){
+  if(!_relFiltros.orcamentos) _relFiltros.orcamentos={profissional:''};
+  const atual=_relFiltros.orcamentos.profissional||'';
+  _relFiltros.orcamentos.profissional = (atual===nome) ? '' : nome;
   renderOrcamentosGeral();
 }
 
@@ -11030,8 +11037,6 @@ function ogLimparFiltrosAba(){
 // Clicar de novo na mesma faixa remove o filtro de faixa (mantém o status aberto).
 function ogSetFaixaIdade(faixa){
   _ogFiltroStatus = 'aberto';
-  const sel = document.getElementById('og-filtro-status');
-  if(sel) sel.value = 'aberto';
   _ogFaixaIdade = (_ogFaixaIdade===faixa) ? null : faixa;
   renderOrcamentosGeral();
 }
@@ -11046,8 +11051,6 @@ function _relOrcClicarFaixaTotal(){
     _ogFiltroStatus='aberto';
     _ogFaixaIdade=null;
   }
-  const sel = document.getElementById('og-filtro-status');
-  if(sel) sel.value = _ogFiltroStatus;
   renderOrcamentosGeral();
 }
 
@@ -11057,26 +11060,16 @@ function ogOrdenar(campo){
   renderOrcamentosGeral();
 }
 
-function _ogPopularFiltros(todos){
-  const selProf = document.getElementById('og-filtro-profissional');
-  if(selProf && !selProf.dataset.pop){
-    const nomes = [...new Set(todos.map(o=>o.profissional).filter(Boolean))].sort();
-    selProf.innerHTML = '<option value="">Todos</option>' + nomes.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
-    selProf.dataset.pop='1';
-  }
-}
-
 function renderOrcamentosGeral(){
   // Período agora vem do filtro superior fixo do módulo Relatórios (vale pra
   // todas as abas, inclusive esta) — não tem mais campos De/Até próprios.
   const {de,ate} = (typeof _relPeriodoDatas==='function') ? _relPeriodoDatas() : {de:'',ate:''};
-  const profFiltro = document.getElementById('og-filtro-profissional')?.value || '';
+  const profFiltro = (_relFiltros.orcamentos && _relFiltros.orcamentos.profissional) || '';
 
   const todos = _ogTodos();
-  _ogPopularFiltros(todos);
 
-  // Filtra por período/profissional (SEM status) — usado pelos cards e pelos insights,
-  // que sempre mostram a composição completa do período selecionado.
+  // Filtra por período/profissional (SEM status) — usado pelos gráficos, que sempre
+  // mostram a composição completa do período selecionado.
   const baseFiltrada = todos.filter(o=>{
     if(de && (o.data||'') < de) return false;
     if(ate && (o.data||'') > ate) return false;
@@ -11086,13 +11079,13 @@ function renderOrcamentosGeral(){
 
   const fmtMoeda = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
 
-  // Monta uma linha de gráfico com dois números (valor em R$ como principal, quantidade
-  // de orçamentos como complemento) — mesmo padrão visual dos gráficos de Agendamentos,
-  // adaptado pra mostrar valor + quantidade em vez de só quantidade.
+  // Monta uma linha de gráfico com dois números (quantidade de orçamentos como
+  // principal, valor em R$ como complemento) — mesmo padrão visual dos gráficos
+  // de Agendamentos, adaptado pra mostrar quantidade + valor.
   const linhaOrcChart = (label, count, valor, max, on, onclick) => `<div class="og-rank-row og-rank-row-clickable${on?' on':''}" onclick="${onclick}">
       <div class="og-rank-nome" style="flex:0 0 92px">${esc(label)}</div>
       <div class="og-rank-bar-wrap"><div class="og-rank-bar-fill" style="width:${(valor/max*100).toFixed(0)}%;background:${on?'var(--gold)':'var(--ac)'}"></div></div>
-      <div class="og-rank-pct" style="min-width:150px;text-align:right">R$ ${fmtMoeda(valor)} <span style="font-weight:400;color:var(--tx3)">· ${count}</span></div>
+      <div class="og-rank-pct" style="min-width:150px;text-align:right">${count} <span style="font-weight:400;color:var(--tx3)">· R$ ${fmtMoeda(valor)}</span></div>
     </div>`;
 
   // ── Gráfico 01: orçamentos em aberto por tempo de espera (Total + faixas) ──
@@ -11139,56 +11132,58 @@ function renderOrcamentosGeral(){
     }).join('')}
   </div>`;
 
+  // ── Gráfico 03: orçamentos por profissional (substitui o antigo select de filtro) ──
+  const porProfContagem = {};
+  baseFiltrada.forEach(o=>{
+    const nome = o.profissional || 'Sem profissional';
+    if(!porProfContagem[nome]) porProfContagem[nome] = {count:0, valor:0};
+    porProfContagem[nome].count++;
+    porProfContagem[nome].valor += o.valor;
+  });
+  const linhasProf = Object.entries(porProfContagem)
+    .map(([nome,d])=>({label:nome, count:d.count, valor:d.valor}))
+    .sort((a,b)=>b.valor-a.valor);
+  const maxProf = Math.max(1, ...linhasProf.map(l=>l.valor), 1);
+  const chartProfHtml = `<div class="card">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.05em;margin-bottom:10px">Orçamentos por profissional</div>
+    ${linhasProf.length ? linhasProf.map(l=>{
+      const on = profFiltro===l.label;
+      const onclick = `_relOrcClicarProfissional('${String(l.label).replace(/'/g,"\\'")}')`;
+      return linhaOrcChart(l.label, l.count, l.valor, maxProf, on, onclick);
+    }).join('') : '<div class="og-panel-empty">Nenhum orçamento neste período.</div>'}
+  </div>`;
+
+  // ── Gráfico 04: conversão por profissional (valor orçado x valor fechado) ──
+  // "Orçado" = soma de todos os orçamentos do profissional no período (qualquer status);
+  // "Fechado" = soma só dos aprovados; a % é fechado/orçado (conversão em valor, não em
+  // quantidade de orçamentos).
+  const porProfConversao = {};
+  baseFiltrada.forEach(o=>{
+    const nome = o.profissional || 'Sem profissional';
+    if(!porProfConversao[nome]) porProfConversao[nome] = {orcado:0, fechado:0};
+    porProfConversao[nome].orcado += o.valor;
+    if(o.status==='aprovado') porProfConversao[nome].fechado += o.valor;
+  });
+  const linhasConversao = Object.entries(porProfConversao)
+    .map(([nome,d])=>({nome, orcado:d.orcado, fechado:d.fechado, pct: d.orcado ? (d.fechado/d.orcado*100) : 0}))
+    .sort((a,b)=>b.orcado-a.orcado);
+  const chartConversaoHtml = `<div class="card">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.05em;margin-bottom:10px">Conversão por profissional</div>
+    ${linhasConversao.length ? linhasConversao.map(l=>{
+      const cor = l.pct>=60?'var(--su)':(l.pct>=40?'var(--wa)':'var(--da)');
+      return `<div class="og-rank-row" style="flex-direction:column;align-items:stretch;gap:4px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+          <div class="og-rank-nome" style="flex:1">${esc(l.nome)}</div>
+          <div class="og-rank-pct" style="color:${cor};min-width:auto">${l.pct.toFixed(0)}%</div>
+        </div>
+        <div class="og-rank-bar-wrap"><div class="og-rank-bar-fill" style="width:${l.pct.toFixed(0)}%;background:${cor}"></div></div>
+        <div style="font-size:11px;color:var(--tx3)">R$ ${fmtMoeda(l.orcado)} orçado → R$ ${fmtMoeda(l.fechado)} fechado</div>
+      </div>`;
+    }).join('') : '<div class="og-panel-empty">Nenhum orçamento neste período.</div>'}
+  </div>`;
+
   const chartsRowEl = document.getElementById('og-charts-row');
-  if(chartsRowEl) chartsRowEl.innerHTML = chartFaixaHtml + chartStatusHtml;
-
-  // ── Ranking por profissional: taxa de conversão + valor aprovado ─────────
-  {
-    const porProf = {};
-    baseFiltrada.forEach(o=>{
-      if(o.status!=='aprovado' && o.status!=='reprovado') return;
-      if(!o.profissional) return;
-      if(!porProf[o.profissional]) porProf[o.profissional] = {aprovado:0, decidido:0, valorAprovado:0};
-      porProf[o.profissional].decidido++;
-      if(o.status==='aprovado'){ porProf[o.profissional].aprovado++; porProf[o.profissional].valorAprovado += o.valor; }
-    });
-    const linhas = Object.entries(porProf)
-      .map(([nome,d])=>({nome, taxa: d.decidido ? (d.aprovado/d.decidido*100) : 0, valorAprovado:d.valorAprovado, decidido:d.decidido}))
-      .sort((a,b)=>b.valorAprovado-a.valorAprovado);
-    const wrap = document.getElementById('og-ranking-prof');
-    if(!linhas.length){
-      wrap.innerHTML = '<div class="og-panel-empty">Nenhum orçamento decidido (aprovado/reprovado) neste período.</div>';
-    } else {
-      wrap.innerHTML = linhas.map(l=>{
-        const cor = l.taxa>=60?'var(--su)':(l.taxa>=40?'var(--wa)':'var(--da)');
-        return `<div class="og-rank-row">
-          <div class="og-rank-nome">${esc(l.nome)}</div>
-          <div class="og-rank-bar-wrap"><div class="og-rank-bar-fill" style="width:${l.taxa.toFixed(0)}%;background:${cor}"></div></div>
-          <div class="og-rank-pct" style="color:${cor}">${l.taxa.toFixed(0)}%</div>
-        </div>`;
-      }).join('');
-    }
-  }
-
-  // ── Principais motivos de reprovação ──────────────────────────────────────
-  {
-    const reprovados = baseFiltrada.filter(o=>o.status==='reprovado');
-    const contagem = {};
-    reprovados.forEach(o=>{
-      const m = (o.motivo||'').trim() || 'Sem motivo registrado';
-      contagem[m] = (contagem[m]||0)+1;
-    });
-    const linhas = Object.entries(contagem).sort((a,b)=>b[1]-a[1]).slice(0,5);
-    const wrap = document.getElementById('og-ranking-motivos');
-    if(!linhas.length){
-      wrap.innerHTML = '<div class="og-panel-empty">Nenhum orçamento reprovado neste período.</div>';
-    } else {
-      wrap.innerHTML = linhas.map(([motivo,count])=>`<div class="og-rank-row">
-        <div class="og-rank-motivo-nome">${esc(motivo)}</div>
-        <div class="og-rank-motivo-count">${count}</div>
-      </div>`).join('');
-    }
-  }
+  if(chartsRowEl) chartsRowEl.innerHTML = chartFaixaHtml + chartStatusHtml + chartProfHtml + chartConversaoHtml;
 
   // ── Lista da tabela: aplica status + faixa de idade ──────────────────────
   let lista = baseFiltrada.filter(o=>!_ogFiltroStatus || o.status===_ogFiltroStatus);
@@ -26703,36 +26698,12 @@ function relRenderFiltrosAba(){
 
   if(aba==='orcamentos'){
     if(!_relFiltros.orcamentos) _relFiltros.orcamentos={profissional:''};
-    const profFiltro=_relFiltros.orcamentos.profissional||'';
-    const nomes=[...new Set(_ogTodos().map(o=>o.profissional).filter(Boolean))].sort();
     wrap.innerHTML=`
-      <div class="fl" style="width:200px">
-        <label>Profissional</label>
-        <select id="og-filtro-profissional" onchange="_relFiltros.orcamentos.profissional=this.value; renderOrcamentosGeral()">
-          <option value="">Todos</option>
-          ${nomes.map(n=>`<option value="${esc(n)}" ${n===profFiltro?'selected':''}>${esc(n)}</option>`).join('')}
-        </select>
-      </div>
-      <div class="fl" style="width:150px">
-        <label>Status</label>
-        <select id="og-filtro-status" onchange="ogSetStatus(this.value)">
-          <option value="">Todos</option>
-          <option value="aprovado">Aprovado</option>
-          <option value="aberto">Em aberto</option>
-          <option value="reprovado">Reprovado</option>
-        </select>
-      </div>
       <div class="fl" style="width:auto">
         <label>&nbsp;</label>
         <button type="button" class="btn btn-ghost btn-sm" style="height:34px" onclick="ogLimparFiltrosAba()">Limpar filtros</button>
       </div>
     `;
-    // Marca o select de profissional como já populado (dataset.pop) pra
-    // _ogPopularFiltros não reconstruir as opções e perder a seleção acima.
-    const selProf=document.getElementById('og-filtro-profissional');
-    if(selProf) selProf.dataset.pop='1';
-    const selStatus=document.getElementById('og-filtro-status');
-    if(selStatus) selStatus.value=_ogFiltroStatus;
     return;
   }
 
@@ -27145,17 +27116,6 @@ function _relRenderEmissaoFiscal(wrap, de, ate){
 function _relOrcamentosConteudoHTML(){
   return `
   <div class="rel-charts-row" id="og-charts-row" style="margin-bottom:16px"></div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-    <div class="og-panel">
-      <div class="og-panel-title">Conversão por profissional</div>
-      <div id="og-ranking-prof"></div>
-    </div>
-    <div class="og-panel">
-      <div class="og-panel-title">Principais motivos de reprovação</div>
-      <div id="og-ranking-motivos"></div>
-    </div>
-  </div>
 
   <div class="fin-table-wrap">
     <table class="fin-table">
