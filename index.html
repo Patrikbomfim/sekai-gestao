@@ -13828,11 +13828,12 @@ function _renderProntPlano(p){
           <tbody>
           ${itens.map((it,idx)=>{
             const exec=it.executado;
-            const vlr=(parseFloat(it.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+            const descPorc=parseFloat(orc.descontoPorc)||0;
+            const vlr=((parseFloat(it.valor)||0)*(1-descPorc/100)).toLocaleString('pt-BR',{minimumFractionDigits:2});
             return `<tr style="border-bottom:1px solid var(--border);background:${exec?'#F0FDF6':'var(--surface)'}">
               <td style="padding:10px 14px;font-size:13px;font-weight:500">${it.proc||'—'}</td>
               <td style="padding:10px 10px;font-size:12px;color:var(--tx2)">${it.dentes&&it.dentes.length?_dentesTxt(it.dentes):'Geral'}</td>
-              <td style="padding:10px 10px;font-size:13px;font-weight:600;color:var(--tx);text-align:right;white-space:nowrap">R$ ${vlr}</td>
+              <td style="padding:10px 10px;font-size:13px;font-weight:600;color:var(--tx);text-align:right;white-space:nowrap" ${descPorc>0?`title="Valor de tabela: R$ ${(parseFloat(it.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})} · desconto de ${descPorc}% aplicado no orçamento"`:''}>R$ ${vlr}</td>
               <td style="padding:10px 10px">
                 ${exec?`<span style="font-size:12px;color:var(--tx2)">${it.execProfissional||'—'}</span>`
                   :`<select onchange="_prontSetExecProfissional('${orc.id}',${idx},this)" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--r4);background:var(--surface);max-width:130px">
@@ -13925,7 +13926,10 @@ function _prontSetExecProfissional(orcId, idx, selectEl){
 // Calcula o valor de comissão de um item do plano de tratamento.
 // Prioriza os campos comissaoFixo/comissaoPct já congelados no item (gravados na criação do orçamento).
 // Fallback para itens antigos: busca o procedimento na tabela de precificação via procId/tabelaId.
-function _calcComissaoItem(it){
+// descontoPorc = desconto (%) do orçamento aprovado (orc.descontoPorc) — a comissão percentual
+// incide sobre o valor JÁ COM DESCONTO (o que realmente foi cobrado do paciente), nunca sobre o
+// valor de tabela; comissão fixa não é afetada pelo desconto (é um valor fixo por procedimento).
+function _calcComissaoItem(it, descontoPorc){
   let comFixo=parseFloat(it.comissaoFixo)||0;
   let comPct=parseFloat(it.comissaoPct)||0;
   if(!comFixo&&!comPct){
@@ -13951,7 +13955,8 @@ function _calcComissaoItem(it){
     }
     if(achou){ comFixo=parseFloat(achou.comissaoFixo)||0; comPct=parseFloat(achou.comissaoPct)||0; }
   }
-  const valor=parseFloat(it.valor)||0;
+  const valorBase=parseFloat(it.valor)||0;
+  const valor = valorBase * (1-(parseFloat(descontoPorc)||0)/100);
   if(comFixo>0) return comFixo;
   if(comPct>0) return +(valor*comPct/100).toFixed(2);
   return 0;
@@ -13973,7 +13978,7 @@ function _prontAprovarItem(orcId,idx){
     it.realizadoPor=uNome;
     it.realizadoEm=`${dataHoje} às ${horaStr}`;
     // Congela o valor de comissão no momento da execução, com base na tabela de precificação usada no orçamento
-    it.valorComissao=_calcComissaoItem(it);
+    it.valorComissao=_calcComissaoItem(it, orc.descontoPorc);
     it.comissaoMedida=it.comissaoMedida||false;
     _salvarOrcamentos(list);
   });
@@ -16815,7 +16820,8 @@ function hdrBuscarPaciente(valor) {
     const resultados = (pacientes || []).filter(p =>
       (p.nome || '').toLowerCase().includes(q) ||
       (p.fone || '').toLowerCase().includes(q) ||
-      (p.cpf || '').toLowerCase().includes(q)
+      (p.cpf || '').toLowerCase().includes(q) ||
+      String(p.codigo || '').toLowerCase().includes(q)
     ).slice(0, 8);
     if (!resultados.length) {
       drop.innerHTML = '<div class="hdr-search-empty">Nenhum paciente encontrado</div>';
@@ -16825,7 +16831,7 @@ function hdrBuscarPaciente(valor) {
     drop.innerHTML = resultados.map((p, i) => {
       const cod = p.codigo ? ` (${p.codigo})` : '';
       return `<div class="hdr-search-item" data-idx="${i}" data-pid="${p.id}"
-        onclick="hdrSelecionarPaciente(${p.id})"
+        onmousedown="event.preventDefault(); hdrSelecionarPaciente('${p.id}')"
         onmouseenter="hdrFocarItem(${i})">
         <div class="hdr-search-item-nome">${p.nome || '—'}${cod}</div>
       </div>`;
@@ -31970,11 +31976,18 @@ function finDesfazerPagamento(id, tipo){
 
 // Retorna todos os itens executados de todos os orçamentos aprovados,
 // já enriquecidos com dados do paciente e do orçamento de origem.
+// IMPORTANTE: o campo "valor" retornado aqui já vem com o desconto do orçamento
+// aplicado (orc.descontoPorc) — é o valor realmente cobrado do paciente por aquele
+// procedimento, não o valor de tabela. "valorBruto" carrega o valor de tabela original,
+// caso algum consumidor precise dele pra referência. Isso alimenta comissão, o relatório
+// "Procedimentos realizados" e o cálculo de "Lucro da clínica" no Planejamento — todos
+// devem refletir o valor líquido, senão superestimam receita/comissão quando há desconto.
 function _finItensExecutados(){
   const orcs=_orcamentos().filter(o=>o.status==='aprovado');
   const out=[];
   let precisaSalvar=false;
   orcs.forEach(orc=>{
+    const descontoPorc=parseFloat(orc.descontoPorc)||0;
     (orc.itens||[]).forEach((it,idx)=>{
       if(!it.executado) return;
       // Auto-correção: itens executados e ainda não medidos que ficaram com comissão
@@ -31982,12 +31995,16 @@ function _finItensExecutados(){
       // são recalculados aqui. Itens já medidos/pagos nunca são recalculados —
       // o valor pago já está lançado no financeiro e não pode mudar retroativamente.
       if(!it.comissaoMedida && !(parseFloat(it.valorComissao)>0)){
-        const recalc=_calcComissaoItem(it);
+        const recalc=_calcComissaoItem(it, descontoPorc);
         if(recalc>0){ it.valorComissao=recalc; precisaSalvar=true; }
       }
       const pac=pacientes.find(x=>String(x.id)===String(orc.pacienteId));
+      const valorBruto=parseFloat(it.valor)||0;
+      const valorLiquido=+(valorBruto*(1-descontoPorc/100)).toFixed(2);
       out.push({
         ...it,
+        valor:valorLiquido,
+        valorBruto,
         orcId:orc.id,
         itemIdx:idx,
         chave:orc.id+'::'+idx,
