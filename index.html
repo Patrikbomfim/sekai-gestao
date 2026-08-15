@@ -1867,7 +1867,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 <!-- MODAL ADICIONAR PROCEDIMENTO -->
 <div class="modal-ov" id="modal-proc-orc" style="z-index:220">
-  <div class="modal" style="width:580px;max-width:96vw">
+  <div class="modal" style="width:1080px;max-width:96vw;height:92vh;max-height:92vh">
     <div class="modal-header">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div class="modal-title">Adicionar procedimento</div>
@@ -12178,11 +12178,13 @@ function confirmarFormaPagamento(){
 let _orcDentesSel=[];
 let _orcDentesValores={};
 let _orcDentesFaces={};
+let _orcDenticaoAtual='permanente';
 
 function abrirModalProcOrc(){
   _orcDentesSel=[];
   _orcDentesValores={};
   _orcDentesFaces={};
+  _orcDenticaoAtual='permanente';
   _orcProcSelecionado=null;
 
   // Monta opções de tabelas
@@ -12193,6 +12195,7 @@ function abrirModalProcOrc(){
 
   const modal=document.getElementById('modal-proc-orc');
   modal.querySelector('.modal-body').innerHTML=`
+    <div style="max-width:860px;margin:0 auto">
     <div style="margin-bottom:14px">
       <div class="fl" style="margin-bottom:10px">
         <label>Tabela de preços</label>
@@ -12223,6 +12226,13 @@ function abrirModalProcOrc(){
       </div>
     </div>
     <div>
+      <div class="fl" style="max-width:220px;margin-bottom:14px">
+        <label>Dentição</label>
+        <select id="proc-orc-denticao" onchange="_orcTrocarDenticao(this.value)" style="font-size:12px">
+          <option value="permanente" selected>Permanente</option>
+          <option value="deciduo">Decídua</option>
+        </select>
+      </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em">Dentes / Região</label>
         <div style="display:flex;gap:5px">
@@ -12232,8 +12242,9 @@ function abrirModalProcOrc(){
         </div>
       </div>
       <div id="orc-dentes-selecionados" style="font-size:11px;color:var(--tx3);margin-bottom:8px;min-height:20px">Nenhum dente selecionado (procedimento geral)</div>
-      ${_buildOdontograma()}
-      <div id="orc-dentes-cards" style="margin-top:10px;display:flex;flex-direction:column;gap:8px"></div>
+      <div id="orc-odontograma-wrap">${_buildOdontograma(_orcDenticaoAtual)}</div>
+      <div id="orc-dentes-cards" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
+    </div>
     </div>
   `;
   modal.classList.add('open');
@@ -12305,43 +12316,61 @@ function _orcSelecionarProc(procId){
   if(valEl&&p.valor) valEl.value=_fmtMoeda(parseFloat(p.valor)||0);
 }
 
-function _buildOdontograma(){
-  const supE=[18,17,16,15,14,13,12,11];
-  const supD=[21,22,23,24,25,26,27,28];
-  const infE=[48,47,46,45,44,43,42,41];
-  const infD=[31,32,33,34,35,36,37,38];
+// Retorna os 4 quadrantes (superior esquerdo/direito, inferior esquerdo/direito)
+// de acordo com a dentição ativa no modal.
+function _orcConjuntoDentes(denticao){
+  if(denticao==='deciduo'){
+    return {supE:[55,54,53,52,51], supD:[61,62,63,64,65], infE:[85,84,83,82,81], infD:[71,72,73,74,75]};
+  }
+  return {supE:[18,17,16,15,14,13,12,11], supD:[21,22,23,24,25,26,27,28], infE:[48,47,46,45,44,43,42,41], infD:[31,32,33,34,35,36,37,38]};
+}
 
+function _buildOdontograma(denticao){
+  const {supE,supD,infE,infD}=_orcConjuntoDentes(denticao||'permanente');
+
+  // Dente anterior (posição 1-3: incisivos e canino) tem raiz única e coroa
+  // mais estreita; dente posterior (posição 4+: pré-molar/molar) tem duas
+  // raízes e coroa mais larga — só pra ficar mais parecido com um dente de verdade.
   function toothHTML(n){
+    const anterior=_orcFaceOclusalOuIncisal(n)==='I';
+    const svg=anterior
+      ? `<svg viewBox="0 0 24 34" width="22" height="31" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 4.5C6 1.8 8.7 0.5 12 0.5C15.3 0.5 18 1.8 18 4.5L17.2 15C17 18 15 19 12 19C9 19 7 18 6.8 15Z" fill="currentColor"/>
+          <path d="M9.3 18L9.3 29C9.3 31.8 10.4 33 12 33C13.6 33 14.7 31.8 14.7 29L14.7 18Z" fill="currentColor" opacity=".72"/>
+          <ellipse cx="9.8" cy="6" rx="2.3" ry="3.3" fill="#fff" opacity=".3"/>
+        </svg>`
+      : `<svg viewBox="0 0 24 34" width="22" height="31" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 6.5C3 2 7 0.5 12 0.5C17 0.5 21 2 21 6.5L20.2 15C19.9 19 17 20 12 20C7 20 4.1 19 3.8 15Z" fill="currentColor"/>
+          <path d="M6 19L6 28C6 31 7.1 32.5 9 32.5C10.7 32.5 11.4 31 11.4 28.5L11.4 19.5Z" fill="currentColor" opacity=".72"/>
+          <path d="M12.6 19.5L12.6 28.5C12.6 31 13.3 32.5 15 32.5C16.9 32.5 18 31 18 28L18 19Z" fill="currentColor" opacity=".72"/>
+          <ellipse cx="8.8" cy="6.3" rx="2.8" ry="3.5" fill="#fff" opacity=".28"/>
+        </svg>`;
     return `<div class="orc-tooth" data-dente="${n}" onclick="_orcToggleDente(${n})" title="Dente ${n}">
-      <svg viewBox="0 0 22 30" width="22" height="30" xmlns="http://www.w3.org/2000/svg">
-        <rect x="3" y="1" width="16" height="20" rx="5" fill="currentColor"/>
-        <rect x="5" y="19" width="4" height="9" rx="2" fill="currentColor" opacity=".75"/>
-        <rect x="13" y="19" width="4" height="9" rx="2" fill="currentColor" opacity=".75"/>
-      </svg>
+      ${svg}
       <div class="orc-tooth-num">${n}</div>
     </div>`;
   }
 
-  return `<div style="background:var(--s2);border-radius:var(--r10);padding:10px 8px;overflow-x:auto">
-    <div style="text-align:center;font-size:9px;color:var(--tx3);margin-bottom:5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Superior</div>
-    <div style="display:flex;justify-content:center;align-items:flex-end;gap:1px">
-      <div style="display:flex;gap:1px">${supE.map(n=>toothHTML(n)).join('')}</div>
-      <div style="width:10px;border-left:1.5px dashed var(--border-s);height:30px;margin:0 3px"></div>
-      <div style="display:flex;gap:1px">${supD.map(n=>toothHTML(n)).join('')}</div>
+  return `<div style="background:var(--s2);border-radius:var(--r10);padding:14px 10px;overflow-x:auto">
+    <div style="text-align:center;font-size:9px;color:var(--tx3);margin-bottom:6px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Superior</div>
+    <div style="display:flex;justify-content:center;align-items:flex-end;gap:2px">
+      <div style="display:flex;gap:2px">${supE.map(n=>toothHTML(n)).join('')}</div>
+      <div style="width:12px;border-left:1.5px dashed var(--border-s);height:31px;margin:0 3px"></div>
+      <div style="display:flex;gap:2px">${supD.map(n=>toothHTML(n)).join('')}</div>
     </div>
-    <div style="border-top:1.5px dashed var(--border-s);margin:7px 16px"></div>
-    <div style="display:flex;justify-content:center;align-items:flex-start;gap:1px">
-      <div style="display:flex;gap:1px">${infE.map(n=>toothHTML(n)).join('')}</div>
-      <div style="width:10px;border-left:1.5px dashed var(--border-s);height:30px;margin:0 3px"></div>
-      <div style="display:flex;gap:1px">${infD.map(n=>toothHTML(n)).join('')}</div>
+    <div style="border-top:1.5px dashed var(--border-s);margin:9px 16px"></div>
+    <div style="display:flex;justify-content:center;align-items:flex-start;gap:2px">
+      <div style="display:flex;gap:2px">${infE.map(n=>toothHTML(n)).join('')}</div>
+      <div style="width:12px;border-left:1.5px dashed var(--border-s);height:31px;margin:0 3px"></div>
+      <div style="display:flex;gap:2px">${infD.map(n=>toothHTML(n)).join('')}</div>
     </div>
-    <div style="text-align:center;font-size:9px;color:var(--tx3);margin-top:5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Inferior</div>
+    <div style="text-align:center;font-size:9px;color:var(--tx3);margin-top:6px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Inferior</div>
   </div>
   <style>
-    .orc-tooth{display:flex;flex-direction:column;align-items:center;cursor:pointer;color:#d4b896;transition:color .1s,transform .08s;user-select:none}
-    .orc-tooth:hover{color:#b5935a;transform:scale(1.08)}
-    .orc-tooth.sel{color:var(--ac)}
-    .orc-tooth-num{font-size:9px;color:var(--tx3);margin-top:1px;font-weight:600;line-height:1}
+    .orc-tooth{display:flex;flex-direction:column;align-items:center;cursor:pointer;color:#e0c49a;transition:color .12s,transform .08s;user-select:none;padding:2px 1px;border-radius:6px}
+    .orc-tooth:hover{color:#c9a468;transform:scale(1.1)}
+    .orc-tooth.sel{color:var(--ac);background:var(--acl)}
+    .orc-tooth-num{font-size:9.5px;color:var(--tx3);margin-top:2px;font-weight:600;line-height:1}
     .orc-tooth.sel .orc-tooth-num{color:var(--ac);font-weight:700}
   </style>`;
 }
@@ -12352,6 +12381,19 @@ function _buildOdontograma(){
 function _orcFaceOclusalOuIncisal(n){
   const pos = n % 10;
   return (pos>=1 && pos<=3) ? 'I' : 'O';
+}
+
+// Troca a dentição (Permanente/Decídua): redesenha o odontograma com os
+// dentes corretos e limpa a seleção atual, já que os números mudam.
+function _orcTrocarDenticao(val){
+  _orcDenticaoAtual=val;
+  _orcDentesSel=[];
+  _orcDentesValores={};
+  _orcDentesFaces={};
+  const wrap=document.getElementById('orc-odontograma-wrap');
+  if(wrap) wrap.innerHTML=_buildOdontograma(_orcDenticaoAtual);
+  _atualizarDentesSelecionados();
+  _orcRenderDentesCards();
 }
 
 function _orcToggleDente(n){
@@ -12375,7 +12417,8 @@ function _orcToggleDente(n){
 }
 
 function _orcSelTodos(lado){
-  const dentes=lado==='sup'?[18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28]:[48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+  const {supE,supD,infE,infD}=_orcConjuntoDentes(_orcDenticaoAtual);
+  const dentes=lado==='sup'?[...supE,...supD]:[...infE,...infD];
   const valorBase=_parseMoeda((document.getElementById('proc-orc-valor')||{}).value);
   dentes.forEach(n=>{
     if(!_orcDentesSel.includes(n)){
@@ -12413,14 +12456,14 @@ function _orcRenderDentesCards(){
     const faces=['V','D','M','P',faceExtra];
     const selecionadas=_orcDentesFaces[n]||[];
     const valor=_orcDentesValores[n]||0;
-    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r6);flex-wrap:wrap">
-      <div style="font-size:13px;font-weight:700;color:var(--ac);min-width:22px">${n}</div>
-      <div style="display:flex;gap:4px;flex-wrap:wrap">
-        ${faces.map(f=>`<button type="button" onclick="_orcToggleFace(${n},'${f}')" style="width:26px;height:26px;font-size:11px;font-weight:700;border-radius:var(--r6);cursor:pointer;border:1px solid ${selecionadas.includes(f)?'var(--ac)':'var(--border)'};background:${selecionadas.includes(f)?'var(--ac)':'var(--surface)'};color:${selecionadas.includes(f)?'#fff':'var(--tx2)'}">${f}</button>`).join('')}
+    return `<div style="display:flex;align-items:center;gap:14px;padding:10px 14px;border:1px solid var(--border);border-radius:var(--r8);flex-wrap:wrap;background:var(--surface)">
+      <div style="font-size:14px;font-weight:700;color:var(--ac);min-width:24px">${n}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${faces.map(f=>`<button type="button" onclick="_orcToggleFace(${n},'${f}')" style="min-width:30px;height:28px;padding:0 8px;font-size:11px;font-weight:700;border-radius:16px;cursor:pointer;transition:all .1s;border:1.5px solid ${selecionadas.includes(f)?'var(--ac)':'var(--border)'};background:${selecionadas.includes(f)?'var(--acl)':'var(--surface)'};color:${selecionadas.includes(f)?'var(--ac)':'var(--tx2)'}">${f}</button>`).join('')}
       </div>
       <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
         <span style="font-size:11px;color:var(--tx3)">Valor</span>
-        <input type="text" inputmode="decimal" value="${_fmtMoeda(valor)}" oninput="_orcAtualizarValorDente(${n},this)" style="width:100px;text-align:right;padding:4px 7px;font-size:12px">
+        <input type="text" inputmode="decimal" value="${_fmtMoeda(valor)}" oninput="_orcAtualizarValorDente(${n},this)" style="width:100px;text-align:right;padding:5px 8px;font-size:12px">
       </div>
     </div>`;
   }).join('');
