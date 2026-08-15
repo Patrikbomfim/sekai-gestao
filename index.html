@@ -88,35 +88,6 @@
 .fin-card-blue .fin-card-value{color:var(--ac)}
 .fin-card-amber .fin-card-value{color:var(--wa)}
 
-/* ORÇAMENTOS — VISÃO GERAL: hero cards (Potencial de Vendas / Taxa de Conversão) */
-.og-hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--r10);padding:18px 20px;box-shadow:var(--shadow)}
-.og-hero-blue{background:linear-gradient(135deg,var(--ac) 0%,#1d4ed8 100%);border-color:transparent}
-.og-hero-blue .og-hero-label,.og-hero-blue .og-hero-value,.og-hero-blue .og-hero-sub{color:#fff}
-.og-hero-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);margin-bottom:8px}
-.og-hero-value{font-size:30px;font-weight:800;letter-spacing:-.8px;line-height:1.1}
-.og-hero-sub{font-size:12px;color:var(--tx3);margin-top:6px}
-.og-hero-blue .og-hero-sub{opacity:.9}
-#og-btn-indicados{cursor:pointer;transition:filter .12s,box-shadow .12s}
-#og-btn-indicados:hover{filter:brightness(1.08)}
-#og-btn-indicados.on{box-shadow:0 0 0 3px rgba(255,255,255,.6), var(--shadow)}
-
-/* Faixas de idade (orçamentos em aberto por tempo de espera) */
-.og-faixa{flex:1;min-width:150px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r10);padding:12px 14px;cursor:pointer;transition:box-shadow .14s,transform .1s,border-color .12s}
-.og-faixa:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
-.og-faixa.on{border-width:2px}
-.og-faixa-lbl{font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
-.og-faixa-val{font-size:17px;font-weight:700;color:var(--tx)}
-.og-faixa-count{font-size:11px;color:var(--tx3);margin-top:2px}
-.og-faixa-ok{border-left:4px solid var(--su)}
-.og-faixa-ok.on{border-color:var(--su);background:var(--sul)}
-.og-faixa-morno{border-left:4px solid var(--ac)}
-.og-faixa-morno.on{border-color:var(--ac);background:var(--acl)}
-.og-faixa-frio{border-left:4px solid var(--wa)}
-.og-faixa-frio.on{border-color:var(--wa);background:var(--wal)}
-.og-faixa-gelado{border-left:4px solid var(--da)}
-.og-faixa-gelado.on{border-color:var(--da);background:var(--dal)}
-.og-faixa-gelado .og-faixa-val{color:var(--da)}
-
 /* Painéis de insight (ranking profissional / motivos de reprovação) */
 .og-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r10);padding:14px 16px;box-shadow:var(--shadow)}
 .og-panel-title{font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
@@ -10982,7 +10953,6 @@ function orcamentoMudarStatus(orcId,novoStatus,pacId){
 // ORÇAMENTOS — VISÃO GERAL (agrupa todos os orçamentos de todos os pacientes)
 // ══════════════════════════════════════════════════════════════════════
 let _ogFiltroStatus = '';
-let _ogFiltroIndicados = false;
 let _ogFaixaIdade = null; // null | '0-3' | '4-7' | '8-15' | '15+' — só se aplica quando status==='aberto'
 let _ogOrdem = { campo:'data', dir:'desc' };
 
@@ -11045,23 +11015,13 @@ function ogSetStatus(v){
   renderOrcamentosGeral();
 }
 
-// Card "Indicados": alterna filtro extra na tabela, mostrando só orçamentos
-// aprovados que tiveram indicação preenchida — ocupa o lugar do antigo botão
-// "Quem indicou" (que abria um modal); agora é só um card de filtro, no
-// mesmo lugar de sempre.
-function ogToggleIndicados(){
-  _ogFiltroIndicados = !_ogFiltroIndicados;
-  renderOrcamentosGeral();
-}
-
-// Botão "Limpar filtros" da aba Orçamentos — reseta profissional, status, faixa de
-// idade e o filtro de indicados (não mexe no período, que tem seu próprio "Limpar
-// filtro" no topo do módulo Relatórios, compartilhado entre todas as abas).
+// Botão "Limpar filtros" da aba Orçamentos — reseta profissional, status e faixa de
+// idade (não mexe no período, que tem seu próprio "Limpar filtro" no topo do módulo
+// Relatórios, compartilhado entre todas as abas).
 function ogLimparFiltrosAba(){
   if(_relFiltros.orcamentos) _relFiltros.orcamentos.profissional = '';
   _ogFiltroStatus = '';
   _ogFaixaIdade = null;
-  _ogFiltroIndicados = false;
   relRenderFiltrosAba();
   renderOrcamentosGeral();
 }
@@ -11073,6 +11033,21 @@ function ogSetFaixaIdade(faixa){
   const sel = document.getElementById('og-filtro-status');
   if(sel) sel.value = 'aberto';
   _ogFaixaIdade = (_ogFaixaIdade===faixa) ? null : faixa;
+  renderOrcamentosGeral();
+}
+
+// Clique na linha "Total" do gráfico de tempo de espera: mostra todos os orçamentos em
+// aberto (sem faixa). Clicar de novo (já estando em "aberto" sem faixa) volta a mostrar
+// todos os status, igual ao "Total" do gráfico de status.
+function _relOrcClicarFaixaTotal(){
+  if(_ogFiltroStatus==='aberto' && !_ogFaixaIdade){
+    _ogFiltroStatus='';
+  } else {
+    _ogFiltroStatus='aberto';
+    _ogFaixaIdade=null;
+  }
+  const sel = document.getElementById('og-filtro-status');
+  if(sel) sel.value = _ogFiltroStatus;
   renderOrcamentosGeral();
 }
 
@@ -11111,51 +11086,61 @@ function renderOrcamentosGeral(){
 
   const fmtMoeda = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
 
-  // ── HERO: Potencial de Vendas (soma do que está em aberto) ──────────────
+  // Monta uma linha de gráfico com dois números (valor em R$ como principal, quantidade
+  // de orçamentos como complemento) — mesmo padrão visual dos gráficos de Agendamentos,
+  // adaptado pra mostrar valor + quantidade em vez de só quantidade.
+  const linhaOrcChart = (label, count, valor, max, on, onclick) => `<div class="og-rank-row og-rank-row-clickable${on?' on':''}" onclick="${onclick}">
+      <div class="og-rank-nome" style="flex:0 0 92px">${esc(label)}</div>
+      <div class="og-rank-bar-wrap"><div class="og-rank-bar-fill" style="width:${(valor/max*100).toFixed(0)}%;background:${on?'var(--gold)':'var(--ac)'}"></div></div>
+      <div class="og-rank-pct" style="min-width:150px;text-align:right">R$ ${fmtMoeda(valor)} <span style="font-weight:400;color:var(--tx3)">· ${count}</span></div>
+    </div>`;
+
+  // ── Gráfico 01: orçamentos em aberto por tempo de espera (Total + faixas) ──
   const abertos = baseFiltrada.filter(o=>o.status==='aberto');
-  const somaPotencial = abertos.reduce((s,o)=>s+o.valor,0);
-  const idadeMedia = abertos.length ? (abertos.reduce((s,o)=>s+(o.idadeDias||0),0)/abertos.length) : 0;
-  document.getElementById('og-hero-potencial').textContent = 'R$ ' + fmtMoeda(somaPotencial);
-  document.getElementById('og-hero-potencial-sub').textContent = `${abertos.length} orçamento(s) · idade média de ${idadeMedia.toFixed(1).replace('.0','')} dia(s)`;
-
-  // ── Faixas de idade (só entre os orçamentos em aberto) ───────────────────
-  ['0-3','4-7','8-15','15+'].forEach(faixa=>{
-    const doFaixa = abertos.filter(o=>o.faixa===faixa);
-    const soma = doFaixa.reduce((s,o)=>s+o.valor,0);
-    document.getElementById('og-faixa-val-'+faixa).textContent = 'R$ ' + fmtMoeda(soma);
-    document.getElementById('og-faixa-count-'+faixa).textContent = `${doFaixa.length} orçamento(s)`;
+  const faixasDef = [
+    {key:null,  label:'Total'},
+    {key:'0-3', label:'Até 3 dias'},
+    {key:'4-7', label:'4 a 7 dias'},
+    {key:'8-15',label:'8 a 15 dias'},
+    {key:'15+', label:'Mais de 15 dias'},
+  ];
+  const linhasFaixa = faixasDef.map(f=>{
+    const lista = f.key===null ? abertos : abertos.filter(o=>o.faixa===f.key);
+    return { label:f.label, count:lista.length, valor:lista.reduce((s,o)=>s+o.valor,0), key:f.key };
   });
-  document.querySelectorAll('#og-faixas-row .og-faixa').forEach(el=>{
-    el.classList.toggle('on', _ogFiltroStatus==='aberto' && (el.dataset.faixa||'')===_ogFaixaIdade);
+  const maxFaixa = Math.max(1, ...linhasFaixa.map(l=>l.valor));
+  const chartFaixaHtml = `<div class="card">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.05em;margin-bottom:10px">Orçamentos em aberto por tempo de espera</div>
+    ${linhasFaixa.map(l=>{
+      const on = l.key===null ? (_ogFiltroStatus==='aberto' && !_ogFaixaIdade) : (_ogFiltroStatus==='aberto' && _ogFaixaIdade===l.key);
+      const onclick = l.key===null ? '_relOrcClicarFaixaTotal()' : `ogSetFaixaIdade('${l.key}')`;
+      return linhaOrcChart(l.label, l.count, l.valor, maxFaixa, on, onclick);
+    }).join('')}
+  </div>`;
+
+  // ── Gráfico 02: orçamentos por status (Total + Aprovado/Em aberto/Reprovado) ──
+  const statusDef = [
+    {key:null,       label:'Total'},
+    {key:'aprovado', label:'Aprovado'},
+    {key:'aberto',   label:'Em aberto'},
+    {key:'reprovado',label:'Reprovado'},
+  ];
+  const linhasStatus = statusDef.map(s=>{
+    const lista = s.key===null ? baseFiltrada : baseFiltrada.filter(o=>o.status===s.key);
+    return { label:s.label, count:lista.length, valor:lista.reduce((s2,o)=>s2+o.valor,0), key:s.key };
   });
+  const maxStatus = Math.max(1, ...linhasStatus.map(l=>l.valor));
+  const chartStatusHtml = `<div class="card">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.05em;margin-bottom:10px">Orçamentos por status</div>
+    ${linhasStatus.map(l=>{
+      const on = (l.key||'')===_ogFiltroStatus;
+      const onclick = `ogSetStatus('${l.key||''}')`;
+      return linhaOrcChart(l.label, l.count, l.valor, maxStatus, on, onclick);
+    }).join('')}
+  </div>`;
 
-  // ── Cards de status ──────────────────────────────────────────────────────
-  const porStatus = st => baseFiltrada.filter(o=>o.status===st);
-  const setCard = (st, elVal, elSub) => {
-    const lista = st===null ? baseFiltrada : porStatus(st);
-    const soma = lista.reduce((s,o)=>s+o.valor,0);
-    const ticket = lista.length ? soma/lista.length : 0;
-    document.getElementById(elVal).textContent = 'R$ ' + fmtMoeda(soma);
-    document.getElementById(elSub).textContent = `${lista.length} orçamento(s) · Ticket médio R$ ${fmtMoeda(ticket)}`;
-  };
-  setCard('aprovado','og-val-aprovado','og-sub-aprovado');
-  setCard('aberto','og-val-aberto','og-sub-aberto');
-  setCard('reprovado','og-val-reprovado','og-sub-reprovado');
-  setCard(null,'og-val-total','og-sub-total');
-
-  document.querySelectorAll('#og-cards-row .fin-card-clickable').forEach(c=>{
-    c.classList.toggle('on', (c.dataset.status||'')===_ogFiltroStatus);
-  });
-
-  // Card "Indicados" — conta orçamentos aprovados com indicação preenchida,
-  // dentro do mesmo período/profissional já filtrado acima.
-  {
-    const indicados = baseFiltrada.filter(o=>o.indicacao && o.indicacao.nome);
-    const card=document.getElementById('og-btn-indicados');
-    const val=document.getElementById('og-btn-indicados-val');
-    if(val) val.textContent = indicados.length;
-    if(card) card.classList.toggle('on', _ogFiltroIndicados);
-  }
+  const chartsRowEl = document.getElementById('og-charts-row');
+  if(chartsRowEl) chartsRowEl.innerHTML = chartFaixaHtml + chartStatusHtml;
 
   // ── Ranking por profissional: taxa de conversão + valor aprovado ─────────
   {
@@ -11209,9 +11194,6 @@ function renderOrcamentosGeral(){
   let lista = baseFiltrada.filter(o=>!_ogFiltroStatus || o.status===_ogFiltroStatus);
   if(_ogFiltroStatus==='aberto' && _ogFaixaIdade){
     lista = lista.filter(o=>o.faixa===_ogFaixaIdade);
-  }
-  if(_ogFiltroIndicados){
-    lista = lista.filter(o=>o.indicacao && o.indicacao.nome);
   }
 
   // Ordenação (clique no cabeçalho)
@@ -26672,7 +26654,7 @@ function relLimparFiltro(){
   const de=document.getElementById('rel-periodo-de'); if(de) de.value='';
   const ate=document.getElementById('rel-periodo-ate'); if(ate) ate.value='';
   _relFiltros[_relAbaAtual] = relFiltroVazio(_relAbaAtual);
-  if(_relAbaAtual==='orcamentos'){ _ogFiltroStatus=''; _ogFaixaIdade=null; _ogFiltroIndicados=false; }
+  if(_relAbaAtual==='orcamentos'){ _ogFiltroStatus=''; _ogFaixaIdade=null; }
   renderRelatorios();
 }
 
@@ -27162,68 +27144,7 @@ function _relRenderEmissaoFiscal(wrap, de, ate){
 // módulo; profissional/status ficam nos filtros da aba (rel-filtros-aba).
 function _relOrcamentosConteudoHTML(){
   return `
-  <div style="margin-bottom:14px;display:flex;gap:14px;align-items:stretch">
-    <div class="og-hero og-hero-blue" style="flex:1">
-      <div class="og-hero-label">💰 Potencial de Vendas <span style="font-weight:400;opacity:.85">— em aberto, aguardando decisão</span></div>
-      <div class="og-hero-value" id="og-hero-potencial">R$ 0,00</div>
-      <div class="og-hero-sub" id="og-hero-potencial-sub">0 orçamento(s) · idade média de 0 dias</div>
-    </div>
-    <div id="og-btn-indicados" onclick="ogToggleIndicados()" role="button" tabindex="0" onkeydown="if(event.key==='Enter')ogToggleIndicados()"
-      class="og-hero og-hero-blue" style="width:190px;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center">
-      <div class="og-hero-label">🤝 Indicados</div>
-      <div class="og-hero-value" id="og-btn-indicados-val">0</div>
-      <div class="og-hero-sub">clique para filtrar</div>
-    </div>
-  </div>
-
-  <div style="margin-bottom:16px">
-    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Orçamentos em aberto por tempo de espera</div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap" id="og-faixas-row">
-      <div class="og-faixa og-faixa-ok" data-faixa="0-3" onclick="ogSetFaixaIdade('0-3')">
-        <div class="og-faixa-lbl">Até 3 dias</div>
-        <div class="og-faixa-val" id="og-faixa-val-0-3">R$ 0,00</div>
-        <div class="og-faixa-count" id="og-faixa-count-0-3">0 orçamento(s)</div>
-      </div>
-      <div class="og-faixa og-faixa-morno" data-faixa="4-7" onclick="ogSetFaixaIdade('4-7')">
-        <div class="og-faixa-lbl">4 a 7 dias</div>
-        <div class="og-faixa-val" id="og-faixa-val-4-7">R$ 0,00</div>
-        <div class="og-faixa-count" id="og-faixa-count-4-7">0 orçamento(s)</div>
-      </div>
-      <div class="og-faixa og-faixa-frio" data-faixa="8-15" onclick="ogSetFaixaIdade('8-15')">
-        <div class="og-faixa-lbl">8 a 15 dias</div>
-        <div class="og-faixa-val" id="og-faixa-val-8-15">R$ 0,00</div>
-        <div class="og-faixa-count" id="og-faixa-count-8-15">0 orçamento(s)</div>
-      </div>
-      <div class="og-faixa og-faixa-gelado" data-faixa="15+" onclick="ogSetFaixaIdade('15+')">
-        <div class="og-faixa-lbl">⚠️ Mais de 15 dias</div>
-        <div class="og-faixa-val" id="og-faixa-val-15+">R$ 0,00</div>
-        <div class="og-faixa-count" id="og-faixa-count-15+">0 orçamento(s)</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="fin-cards-row" id="og-cards-row" style="margin-bottom:16px">
-    <div class="fin-card fin-card-green fin-card-clickable" data-status="aprovado" onclick="ogSetStatus('aprovado')">
-      <div class="fin-card-label">Aprovado</div>
-      <div class="fin-card-value" id="og-val-aprovado">R$ 0,00</div>
-      <div class="fin-card-sub" id="og-sub-aprovado">0 orçamento(s) · Ticket médio R$ 0,00</div>
-    </div>
-    <div class="fin-card fin-card-blue fin-card-clickable" data-status="aberto" onclick="ogSetStatus('aberto')">
-      <div class="fin-card-label">Em Aberto</div>
-      <div class="fin-card-value" id="og-val-aberto">R$ 0,00</div>
-      <div class="fin-card-sub" id="og-sub-aberto">0 orçamento(s) · Ticket médio R$ 0,00</div>
-    </div>
-    <div class="fin-card fin-card-red fin-card-clickable" data-status="reprovado" onclick="ogSetStatus('reprovado')">
-      <div class="fin-card-label">Reprovado</div>
-      <div class="fin-card-value" id="og-val-reprovado">R$ 0,00</div>
-      <div class="fin-card-sub" id="og-sub-reprovado">0 orçamento(s) · Ticket médio R$ 0,00</div>
-    </div>
-    <div class="fin-card fin-card-clickable" data-status="" onclick="ogSetStatus('')">
-      <div class="fin-card-label">Total</div>
-      <div class="fin-card-value" id="og-val-total">R$ 0,00</div>
-      <div class="fin-card-sub" id="og-sub-total">0 orçamento(s) · Ticket médio R$ 0,00</div>
-    </div>
-  </div>
+  <div class="rel-charts-row" id="og-charts-row" style="margin-bottom:16px"></div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
     <div class="og-panel">
