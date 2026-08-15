@@ -129,8 +129,9 @@
 .og-rank-pct{font-size:12.5px;font-weight:700;min-width:42px;text-align:right}
 .og-rank-row-clickable{cursor:pointer;border-radius:6px;padding-left:6px;padding-right:6px;margin:0 -6px;transition:background .1s}
 .og-rank-row-clickable:hover{background:var(--s2)}
-.og-rank-row-clickable.on{background:var(--acl)}
-.og-rank-row-clickable.on .og-rank-nome{color:var(--ac);font-weight:700}
+.og-rank-row-clickable.on{background:var(--gold-soft);box-shadow:0 0 0 1px var(--gold) inset}
+.og-rank-row-clickable.on .og-rank-nome{color:var(--gold-d);font-weight:700}
+.og-rank-row-clickable.on .og-rank-pct{color:var(--gold-d)}
 .rel-charts-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
 .rel-charts-row>.card{flex:1 1 260px;min-width:260px;margin-bottom:0}
 .og-rank-motivo-nome{flex:1;font-size:12.5px;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -4269,7 +4270,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="pp-menu-btn" id="rel-tab-agendamentos" onclick="relSelecionarAba('agendamentos')">Agendamentos</button>
       <button class="pp-menu-btn" id="rel-tab-proc_realizados" onclick="relSelecionarAba('proc_realizados')">Procedimentos realizados</button>
       <button class="pp-menu-btn" id="rel-tab-proc_a_realizar" onclick="relSelecionarAba('proc_a_realizar')">Procedimentos a realizar</button>
-      <button class="pp-menu-btn" id="rel-tab-primeiras_consultas" onclick="relSelecionarAba('primeiras_consultas')">Primeiras consultas</button>
       <button class="pp-menu-btn" id="rel-tab-pacientes_alta" onclick="relSelecionarAba('pacientes_alta')">Pacientes de alta</button>
       <button class="pp-menu-btn" id="rel-tab-agendamentos_sem_baixa" onclick="relSelecionarAba('agendamentos_sem_baixa')">Agendamentos sem baixa</button>
       <button class="pp-menu-btn" id="rel-tab-orcamentos" onclick="relSelecionarAba('orcamentos')">Orçamentos</button>
@@ -26513,7 +26513,6 @@ let _relFiltros = {
   agendamentos: { paciente: null, origemCard: null, statusCard: null, profCard: null, procCard: null },
   proc_realizados: { cardSelecionado: 'total' },
   proc_a_realizar: { profCard: null },
-  primeiras_consultas: { paciente: null, origemCard: null },
   pacientes_alta: { paciente: null },
   agendamentos_sem_baixa: { paciente: null },
   orcamentos: { profissional: '' },
@@ -26525,7 +26524,6 @@ const REL_ABAS = [
   { id:'agendamentos',        label:'Agendamentos' },
   { id:'proc_realizados',     label:'Procedimentos realizados' },
   { id:'proc_a_realizar',     label:'Procedimentos a realizar' },
-  { id:'primeiras_consultas', label:'Primeiras consultas' },
   { id:'pacientes_alta',      label:'Pacientes de alta' },
   { id:'agendamentos_sem_baixa', label:'Agendamentos sem baixa' },
   { id:'orcamentos',          label:'Orçamentos' },
@@ -26622,7 +26620,6 @@ function relFiltroVazio(aba){
     agendamentos:{paciente:null, origemCard:null, statusCard:null, profCard:null, procCard:null},
     proc_realizados:{cardSelecionado:'total'},
     proc_a_realizar:{profCard:null},
-    primeiras_consultas:{paciente:null, origemCard:null},
     pacientes_alta:{paciente:null},
     agendamentos_sem_baixa:{paciente:null},
     orcamentos:{profissional:''},
@@ -26692,7 +26689,7 @@ function relRenderFiltrosAba(){
 
   if(aba==='agendamentos'){
     const v=_relFiltros.agendamentos.paciente;
-    wrap.innerHTML=_relPacInputHTML('agendamentosPaciente','Paciente',v)+`<button class="btn btn-ghost btn-sm" style="height:34px" onclick="_relAgendamentosLimparFiltro()">Limpar filtro</button>`;
+    wrap.innerHTML=_relPacInputHTML('agendamentosPaciente','Paciente',v)+`<button class="btn btn-ghost btn-sm" style="height:34px" onclick="_relAgendamentosLimparFiltro()">Limpar filtros</button>`;
     return;
   }
 
@@ -26707,12 +26704,6 @@ function relRenderFiltrosAba(){
   // pelos próprios cards clicáveis "Procedimentos sem agenda" no conteúdo da aba.
   if(aba==='proc_a_realizar'){
     wrap.innerHTML='';
-    return;
-  }
-
-  if(aba==='primeiras_consultas'){
-    const v=_relFiltros.primeiras_consultas.paciente;
-    wrap.innerHTML=_relPacInputHTML('primeirasPaciente','Paciente',v)+`<button class="btn btn-ghost btn-sm" style="height:34px" onclick="_relPrimeirasConsultasLimparFiltro()">Limpar filtro</button>`;
     return;
   }
 
@@ -26784,8 +26775,7 @@ function _relPacInputHTML(campoKey, label, valorAtual){
 }
 
 function _relSetFiltroPaciente(campoKey, valor){
-  if(campoKey==='primeirasPaciente') _relFiltros.primeiras_consultas.paciente=valor;
-  else if(campoKey==='altaPaciente') _relFiltros.pacientes_alta.paciente=valor;
+  if(campoKey==='altaPaciente') _relFiltros.pacientes_alta.paciente=valor;
   else if(campoKey==='agendamentosPaciente') _relFiltros.agendamentos.paciente=valor;
   else if(campoKey==='emissaoFiscalPagador') _relFiltros.emissao_fiscal.pagador=valor;
   else if(campoKey==='semBaixaPaciente') _relFiltros.agendamentos_sem_baixa.paciente=valor;
@@ -26907,16 +26897,11 @@ function _relRenderAgendamentosSemBaixa(wrap, de, ate){
     </table></div>`;
 }
 
-// Limpa a busca por paciente da aba Agendamentos (não mexe no card de origem selecionado).
+// Limpa TODOS os filtros da aba Agendamentos: busca por paciente + os cards de status
+// + as 3 linhas de gráfico clicáveis (procedimento/profissional/origem). Não mexe no
+// período, que tem seu próprio botão "Limpar filtro" no topo do módulo.
 function _relAgendamentosLimparFiltro(){
-  _relFiltros.agendamentos.paciente=null;
-  relRenderFiltrosAba();
-  relRenderConteudo();
-}
-
-// Limpa a busca por paciente da aba Primeiras consultas (não mexe no card de origem selecionado).
-function _relPrimeirasConsultasLimparFiltro(){
-  _relFiltros.primeiras_consultas.paciente=null;
+  _relFiltros.agendamentos = relFiltroVazio('agendamentos');
   relRenderFiltrosAba();
   relRenderConteudo();
 }
@@ -26943,7 +26928,6 @@ function relRenderConteudo(){
   if(aba==='agendamentos')        return _relRenderAgendamentos(wrap,de,ate);
   if(aba==='proc_realizados')     return _relRenderProcRealizados(wrap,de,ate);
   if(aba==='proc_a_realizar')     return _relRenderProcARealizar(wrap,de,ate);
-  if(aba==='primeiras_consultas') return _relRenderPrimeirasConsultas(wrap,de,ate);
   if(aba==='pacientes_alta')      return _relRenderPacientesAlta(wrap,de,ate);
   if(aba==='agendamentos_sem_baixa') return _relRenderAgendamentosSemBaixa(wrap,de,ate);
   if(aba==='orcamentos'){
@@ -27087,7 +27071,7 @@ function _relRenderEmissaoFiscal(wrap, de, ate){
 
   const catAtiva=_relFiltros.emissao_fiscal.categoria;
   const fmt=v=>v.toLocaleString('pt-BR',{minimumFractionDigits:2});
-  const cardOn=cat=>catAtiva===cat?'box-shadow:0 0 0 2px var(--ac) inset':'';
+  const cardOn=cat=>catAtiva===cat?'box-shadow:0 0 0 2px var(--gold) inset;background:var(--gold-soft)':'';
 
   const filtrados = base.filter(t=> !catAtiva || _relEfCategoria(t)===catAtiva)
     .sort((a,b)=>_relEfDataLiq(b).localeCompare(_relEfDataLiq(a)));
@@ -27325,7 +27309,7 @@ function _relMiniChartCard(titulo, ranking, activeVal, clickFnName){
       const valEsc=String(label).replace(/'/g,"\\'");
       return `<div class="og-rank-row og-rank-row-clickable${on?' on':''}" onclick="${clickFnName}('${valEsc}')">
         <div class="og-rank-nome" style="flex:0 0 96px">${esc(label)}</div>
-        <div class="og-rank-bar-wrap"><div class="og-rank-bar-fill" style="width:${(count/max*100).toFixed(0)}%;background:var(--ac)"></div></div>
+        <div class="og-rank-bar-wrap"><div class="og-rank-bar-fill" style="width:${(count/max*100).toFixed(0)}%;background:${on?'var(--gold)':'var(--ac)'}"></div></div>
         <div class="og-rank-pct">${count}</div>
       </div>`;
     }).join('')}
@@ -27351,7 +27335,7 @@ function _relRenderAgendamentos(wrap, de, ate){
   const origemCard=_relFiltros.agendamentos.origemCard;
   const profCard=_relFiltros.agendamentos.profCard;
   const procCard=_relFiltros.agendamentos.procCard;
-  const onStyle='box-shadow:0 0 0 2px var(--ac) inset';
+  const onStyle='box-shadow:0 0 0 2px var(--gold) inset;background:var(--gold-soft)';
   const cardsHtml=`<div class="fin-cards-row" style="margin-bottom:14px;flex-wrap:wrap">
     <div class="fin-card fin-card-blue fin-card-clickable" style="${!statusCard?onStyle:''}" onclick="_relAgClicarStatus(null)">
       <div class="fin-card-label">Todos</div>
@@ -27470,7 +27454,7 @@ function _relRenderProcRealizados(wrap, de, ate){
   const cardsProf=Object.values(porProf).map(c=>({...c, ticket:c.count?c.total/c.count:0})).sort((a,b)=>b.total-a.total);
 
   const cardSel=_relFiltros.proc_realizados.cardSelecionado||'total';
-  const onStyle='box-shadow:0 0 0 2px var(--ac) inset';
+  const onStyle='box-shadow:0 0 0 2px var(--gold) inset;background:var(--gold-soft)';
   const cardsHtml=`<div class="fin-cards-row" style="margin-bottom:14px;flex-wrap:wrap">
     <div class="fin-card fin-card-blue fin-card-clickable" style="${cardSel==='total'?onStyle:''}" onclick="_relProcRealizadosClicarCard('total')">
       <div class="fin-card-label">Total</div>
@@ -27577,12 +27561,12 @@ function _relRenderProcARealizar(wrap, de, ate){
   const itens = profCard ? semAgendaItens.filter(i=>(i.profissional||'Sem profissional definido')===profCard) : todosItens;
 
   const cardsHtml=`<div class="fin-cards-row" style="margin-bottom:14px;flex-wrap:wrap">
-    <div class="fin-card fin-card-blue fin-card-clickable" style="${!profCard?'box-shadow:0 0 0 2px var(--ac) inset':''}" onclick="${profCard?"_relProcARealizarClicarProf(null)":''}">
+    <div class="fin-card fin-card-blue fin-card-clickable" style="${!profCard?'box-shadow:0 0 0 2px var(--gold) inset;background:var(--gold-soft)':''}" onclick="${profCard?"_relProcARealizarClicarProf(null)":''}">
       <div class="fin-card-label">Total a realizar</div>
       <div class="fin-card-value">${_finFmt(totalGeral)}</div>
       <div class="fin-card-sub">${todosItens.length} procedimento(s)</div>
     </div>
-    ${cardsProf.map(c=>`<div class="fin-card fin-card-clickable" style="${profCard===c.nome?'box-shadow:0 0 0 2px var(--ac) inset':''}" onclick="_relProcARealizarClicarProf('${esc(c.nome).replace(/'/g,"\\'")}')">
+    ${cardsProf.map(c=>`<div class="fin-card fin-card-clickable" style="${profCard===c.nome?'box-shadow:0 0 0 2px var(--gold) inset;background:var(--gold-soft)':''}" onclick="_relProcARealizarClicarProf('${esc(c.nome).replace(/'/g,"\\'")}')">
       <div class="fin-card-label">${esc(c.nome)}</div>
       <div class="fin-card-value">${_finFmt(c.total)}</div>
       <div class="fin-card-sub">${c.count} procedimento(s) sem agenda · clique para filtrar</div>
@@ -27607,107 +27591,6 @@ function _relRenderProcARealizar(wrap, de, ate){
   wrap.innerHTML=cardsHtml+`
     <div class="fin-table-wrap"><table class="fin-table">
       <thead><tr><th>Aprovado em</th><th>Paciente</th><th>Orçamento</th><th>Procedimento</th><th>Profissional</th><th>Agendamento</th><th style="text-align:right">Valor</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table></div>`;
-}
-
-// As 6 origens configuráveis no agendamento (ver select #agm-origem).
-const REL_ORIGENS_CONSULTA = ['Instagram','Facebook','Google','Radio','Indicação','Outro'];
-
-function _relPcClicarOrigem(origem){
-  const atual=_relFiltros.primeiras_consultas.origemCard;
-  _relFiltros.primeiras_consultas.origemCard = (atual===origem) ? null : origem;
-  relRenderConteudo();
-}
-
-// Gráfico de barras horizontais: usa o campo "Procedimento" preenchido no próprio
-// modal de agendamento (a.procedimento — texto livre, geralmente uma categoria
-// ampla, ex.: "Clínico Geral"), e NÃO o procedimento aprovado/executado no
-// orçamento do paciente.
-function _relPcProcedimentoAgendado(a){
-  return (a.procedimento||'').trim();
-}
-
-// Primeiras consultas: agendamentos com o checkpoint "Primeira consulta? Sim",
-// exclui cancelados — mesma fonte usada no Painel Geral (Planejamento).
-function _relRenderPrimeirasConsultas(wrap, de, ate){
-  const pacFiltro=_relFiltros.primeiras_consultas.paciente;
-  const listaTodas=(typeof agendamentos!=='undefined'?agendamentos:[]).filter(a=>{
-    if(a.status==='cancelado') return false;
-    if(a.primeiraConsulta!=='sim') return false;
-    if(a.data<de || a.data>ate) return false;
-    if(pacFiltro && String(a.pacienteId)!==String(pacFiltro.id)) return false;
-    return true;
-  }).sort((a,b)=> (b.data||'').localeCompare(a.data||''));
-
-  if(!listaTodas.length) return _relTabelaVazia(wrap, 'Nenhuma primeira consulta nesse período/filtro.');
-
-  // Cards por origem — só aparecem as origens que realmente têm ao menos 1
-  // agendamento no período (nada de card mostrando "0").
-  const contagemOrigem={};
-  listaTodas.forEach(a=>{
-    const o=a.origemPaciente||'';
-    if(!o) return;
-    contagemOrigem[o]=(contagemOrigem[o]||0)+1;
-  });
-
-  const origemCard=_relFiltros.primeiras_consultas.origemCard;
-  const onStyle='box-shadow:0 0 0 2px var(--ac) inset';
-  const cardsHtml=`<div class="fin-cards-row" style="margin-bottom:14px;flex-wrap:wrap">
-    <div class="fin-card fin-card-blue fin-card-clickable" style="${!origemCard?onStyle:''}" onclick="_relPcClicarOrigem(null)">
-      <div class="fin-card-label">Todas</div>
-      <div class="fin-card-value">${listaTodas.length}</div>
-      <div class="fin-card-sub">1ª consulta(s) no período</div>
-    </div>
-    ${REL_ORIGENS_CONSULTA.filter(o=>contagemOrigem[o]).map(o=>`<div class="fin-card fin-card-clickable" style="${origemCard===o?onStyle:''}" onclick="_relPcClicarOrigem('${o}')">
-      <div class="fin-card-label">${esc(o)}</div>
-      <div class="fin-card-value">${contagemOrigem[o]}</div>
-      <div class="fin-card-sub">1ª consulta(s) · clique para filtrar</div>
-    </div>`).join('')}
-  </div>`;
-
-  const lista = origemCard ? listaTodas.filter(a=>a.origemPaciente===origemCard) : listaTodas;
-
-  // Gráfico de barras horizontais: procedimento (campo do modal de agendamento,
-  // ex. "Clínico Geral") mais buscado a partir de primeiras consultas.
-  const contagemProc={};
-  listaTodas.forEach(a=>{
-    const proc=_relPcProcedimentoAgendado(a) || 'Não informado';
-    contagemProc[proc]=(contagemProc[proc]||0)+1;
-  });
-  const rankingProc=Object.entries(contagemProc).sort((a,b)=>b[1]-a[1]);
-  const maxProc=rankingProc.length?rankingProc[0][1]:1;
-  const chartHtml = rankingProc.length ? `<div class="card" style="margin-bottom:14px">
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.05em;margin-bottom:10px">Procedimentos mais buscados (a partir de 1ª consulta)</div>
-    ${rankingProc.map(([proc,count])=>`<div class="og-rank-row">
-      <div class="og-rank-nome" style="flex:0 0 240px">${esc(proc)}</div>
-      <div class="og-rank-bar-wrap"><div class="og-rank-bar-fill" style="width:${(count/maxProc*100).toFixed(0)}%;background:var(--ac)"></div></div>
-      <div class="og-rank-pct">${count}</div>
-    </div>`).join('')}
-  </div>` : '';
-
-  if(!lista.length){
-    wrap.innerHTML=cardsHtml+chartHtml+`<div class="card" style="padding:0"><div class="fin-empty">Nenhuma primeira consulta com essa origem nesse período.</div></div>`;
-    return;
-  }
-
-  const rows=lista.map(a=>{
-    const prof=(typeof usuarios!=='undefined'?usuarios:[]).find(u=>u.id===a.usuarioId);
-    const sala=(typeof salas!=='undefined'?salas:[]).find(s=>s.id===a.salaId);
-    return `<tr style="cursor:pointer" onclick="abrirModalAgendamento('${a.id}')">
-      <td>${_finFmtData(a.data)}</td>
-      <td>${a.pacienteId?`<a href="javascript:void(0)" onclick="event.stopPropagation();relAbrirPaciente('${a.pacienteId}')" style="color:var(--ac);text-decoration:none;font-weight:600">${esc(a.pacienteNome)}</a>`:esc(a.pacienteNome)||'—'}</td>
-      <td>${esc(prof?prof.nome:'—')}</td>
-      <td>${esc(sala?sala.nome:'—')}</td>
-      <td>${esc(a.origemPaciente)||'—'}</td>
-      <td>${esc(a.procedimento)||'—'}</td>
-      <td>${esc(a.status)||'—'}</td>
-    </tr>`;
-  }).join('');
-
-  wrap.innerHTML=cardsHtml+chartHtml+`
-    <div class="fin-table-wrap"><table class="fin-table">
-      <thead><tr><th>Data</th><th>Paciente</th><th>Profissional</th><th>Sala</th><th>Origem</th><th>Procedimento agendado</th><th>Status</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`;
 }
