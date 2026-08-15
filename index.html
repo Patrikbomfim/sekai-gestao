@@ -11714,7 +11714,7 @@ function gerarPdfOrcamento(){
   const linhasProc=_orcItens.map(it=>{
     const detalhes=[];
     if(it.dentista) detalhes.push(it.dentista);
-    if(it.dentes&&it.dentes.length) detalhes.push('Dente(s) '+_dentesTxt(it.dentes));
+    if(it.dentes&&it.dentes.length) detalhes.push('Dente '+_dentesTxt(it.dentes)+(it.faces&&it.faces.length?' ('+it.faces.join('')+')':''));
     const detalheHtml=detalhes.length?`<div class="p-det">${detalhes.join(' · ')}</div>`:'';
     return `<tr>
       <td class="t-nome">${it.proc||'—'}${detalheHtml}</td>
@@ -11859,28 +11859,44 @@ function _renderOrcItens(){
     wrap.innerHTML='<div style="text-align:center;padding:20px;font-size:12px;color:var(--tx3);background:var(--s2);border-radius:var(--r8)">Nenhum procedimento adicionado.<br>Clique em &ldquo;+ Adicionar procedimento&rdquo; para incluir.</div>';
     return;
   }
+  const dentistas=_dentistasDisponiveis();
   wrap.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px">
     <thead>
       <tr style="border-bottom:2px solid var(--border);text-align:left">
         <th style="padding:7px 8px;font-size:11px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Procedimento</th>
-        <th style="padding:7px 8px;font-size:11px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Dente(s)</th>
+        <th style="padding:7px 8px;font-size:11px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Dente</th>
+        <th style="padding:7px 8px;font-size:11px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Dentista</th>
         <th style="padding:7px 8px;font-size:11px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.04em;text-align:right">Valor</th>
         <th style="width:32px"></th>
       </tr>
     </thead>
     <tbody>
-      ${_orcItens.map((it,idx)=>`<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:9px 8px;font-weight:500">${it.proc||'—'}</td>
-        <td style="padding:9px 8px;color:var(--tx2)">${it.dentes&&it.dentes.length?_dentesTxt(it.dentes):'Geral'}</td>
+      ${_orcItens.map((it,idx)=>{
+        const dentesTxt=it.dentes&&it.dentes.length?_dentesTxt(it.dentes):'Geral';
+        const facesTxt=it.faces&&it.faces.length?` <span style="color:var(--tx3)">(${it.faces.join('')})</span>`:'';
+        return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:9px 8px;font-weight:500">${esc(it.proc||'—')}</td>
+        <td style="padding:9px 8px;color:var(--tx2)">${dentesTxt}${facesTxt}</td>
+        <td style="padding:9px 8px">
+          <select onchange="_orcAtualizarDentistaItem(${idx},this.value)" style="font-size:12px;padding:4px 6px">
+            <option value="">—</option>
+            ${dentistas.map(d=>`<option value="${esc(d.nome)}" ${it.dentista===d.nome?'selected':''}>${esc(d.nome)}</option>`).join('')}
+          </select>
+        </td>
         <td style="padding:9px 8px;text-align:right;font-weight:600">
           <input type="text" inputmode="decimal" value="${_fmtMoeda(it.valor||0)}" oninput="_orcMascaraValor(this,${idx})" style="width:100px;text-align:right;padding:4px 7px;font-size:12px">
         </td>
         <td style="padding:9px 4px;text-align:center">
           <button onclick="_orcRemoverItem(${idx})" style="background:none;border:none;cursor:pointer;color:var(--tx3);font-size:16px;padding:2px 5px;border-radius:var(--r4)" title="Remover">&#215;</button>
         </td>
-      </tr>`).join('')}
+      </tr>`;
+      }).join('')}
     </tbody>
   </table>`;
+}
+
+function _orcAtualizarDentistaItem(idx,val){
+  if(_orcItens[idx]) _orcItens[idx].dentista=val;
 }
 
 function _orcUpdateValor(idx,val){
@@ -12160,9 +12176,13 @@ function confirmarFormaPagamento(){
 
 
 let _orcDentesSel=[];
+let _orcDentesValores={};
+let _orcDentesFaces={};
 
 function abrirModalProcOrc(){
   _orcDentesSel=[];
+  _orcDentesValores={};
+  _orcDentesFaces={};
   _orcProcSelecionado=null;
 
   // Monta opções de tabelas
@@ -12189,10 +12209,17 @@ function abrirModalProcOrc(){
         </div>
       </div>
     </div>
-    <div class="fg" style="margin-bottom:16px">
+    <div class="fg" style="margin-bottom:16px;gap:10px">
       <div class="fl" style="flex:1">
         <label>Valor (R$)</label>
         <input type="text" inputmode="decimal" id="proc-orc-valor" placeholder="0,00" oninput="_orcMascaraValorInput(this)">
+      </div>
+      <div class="fl" style="flex:1">
+        <label>Dentista</label>
+        <select id="proc-orc-dentista" style="font-size:12px">
+          <option value="">— Selecionar —</option>
+          ${_dentistasDisponiveis().map(d=>`<option value="${esc(d.nome)}">${esc(d.label)}</option>`).join('')}
+        </select>
       </div>
     </div>
     <div>
@@ -12206,6 +12233,7 @@ function abrirModalProcOrc(){
       </div>
       <div id="orc-dentes-selecionados" style="font-size:11px;color:var(--tx3);margin-bottom:8px;min-height:20px">Nenhum dente selecionado (procedimento geral)</div>
       ${_buildOdontograma()}
+      <div id="orc-dentes-cards" style="margin-top:10px;display:flex;flex-direction:column;gap:8px"></div>
     </div>
   `;
   modal.classList.add('open');
@@ -12318,32 +12346,99 @@ function _buildOdontograma(){
   </style>`;
 }
 
+// Dentes com posição 1-3 (incisivos e canino, tanto na numeração permanente
+// 11-18/21-28/etc quanto na decídua 51-55/etc) usam face Incisal; os demais
+// (pré-molares e molares, posição 4-8) usam face Oclusal.
+function _orcFaceOclusalOuIncisal(n){
+  const pos = n % 10;
+  return (pos>=1 && pos<=3) ? 'I' : 'O';
+}
+
 function _orcToggleDente(n){
   const el=document.querySelector('.orc-tooth[data-dente="'+n+'"]');
   const idx=_orcDentesSel.indexOf(n);
-  if(idx>=0){ _orcDentesSel.splice(idx,1); el&&el.classList.remove('sel'); }
-  else{ _orcDentesSel.push(n); el&&el.classList.add('sel'); }
+  if(idx>=0){
+    _orcDentesSel.splice(idx,1);
+    delete _orcDentesValores[n];
+    delete _orcDentesFaces[n];
+    el&&el.classList.remove('sel');
+  } else {
+    _orcDentesSel.push(n);
+    const valorBase=_parseMoeda((document.getElementById('proc-orc-valor')||{}).value);
+    _orcDentesValores[n]=valorBase||0;
+    _orcDentesFaces[n]=[];
+    el&&el.classList.add('sel');
+  }
   _orcDentesSel.sort((a,b)=>a-b);
   _atualizarDentesSelecionados();
+  _orcRenderDentesCards();
 }
 
 function _orcSelTodos(lado){
   const dentes=lado==='sup'?[18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28]:[48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+  const valorBase=_parseMoeda((document.getElementById('proc-orc-valor')||{}).value);
   dentes.forEach(n=>{
     if(!_orcDentesSel.includes(n)){
       _orcDentesSel.push(n);
+      _orcDentesValores[n]=valorBase||0;
+      _orcDentesFaces[n]=[];
       const el=document.querySelector('.orc-tooth[data-dente="'+n+'"]');
       el&&el.classList.add('sel');
     }
   });
   _orcDentesSel.sort((a,b)=>a-b);
   _atualizarDentesSelecionados();
+  _orcRenderDentesCards();
 }
 
 function _orcLimparDentes(){
   _orcDentesSel=[];
+  _orcDentesValores={};
+  _orcDentesFaces={};
   document.querySelectorAll('.orc-tooth.sel').forEach(el=>el.classList.remove('sel'));
   _atualizarDentesSelecionados();
+  _orcRenderDentesCards();
+}
+
+// Monta, para cada dente selecionado, um cartão com as faces (V, D, M, P e
+// I ou O, dependendo do dente) e um campo de valor individual — pré-preenchido
+// com o valor do campo "Valor" no momento em que o dente foi marcado, mas
+// editável separadamente por dente.
+function _orcRenderDentesCards(){
+  const wrap=document.getElementById('orc-dentes-cards');
+  if(!wrap) return;
+  if(!_orcDentesSel.length){ wrap.innerHTML=''; return; }
+  wrap.innerHTML=_orcDentesSel.map(n=>{
+    const faceExtra=_orcFaceOclusalOuIncisal(n);
+    const faces=['V','D','M','P',faceExtra];
+    const selecionadas=_orcDentesFaces[n]||[];
+    const valor=_orcDentesValores[n]||0;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r6);flex-wrap:wrap">
+      <div style="font-size:13px;font-weight:700;color:var(--ac);min-width:22px">${n}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        ${faces.map(f=>`<button type="button" onclick="_orcToggleFace(${n},'${f}')" style="width:26px;height:26px;font-size:11px;font-weight:700;border-radius:var(--r6);cursor:pointer;border:1px solid ${selecionadas.includes(f)?'var(--ac)':'var(--border)'};background:${selecionadas.includes(f)?'var(--ac)':'var(--surface)'};color:${selecionadas.includes(f)?'#fff':'var(--tx2)'}">${f}</button>`).join('')}
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+        <span style="font-size:11px;color:var(--tx3)">Valor</span>
+        <input type="text" inputmode="decimal" value="${_fmtMoeda(valor)}" oninput="_orcAtualizarValorDente(${n},this)" style="width:100px;text-align:right;padding:4px 7px;font-size:12px">
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _orcToggleFace(n,face){
+  if(!_orcDentesFaces[n]) _orcDentesFaces[n]=[];
+  const idx=_orcDentesFaces[n].indexOf(face);
+  if(idx>=0) _orcDentesFaces[n].splice(idx,1);
+  else _orcDentesFaces[n].push(face);
+  _orcRenderDentesCards();
+}
+
+function _orcAtualizarValorDente(n,el){
+  const raw=el.value.replace(/\D/g,'');
+  const num=parseInt(raw||'0',10)/100;
+  el.value=_fmtMoeda(num);
+  _orcDentesValores[n]=num;
 }
 
 function _atualizarDentesSelecionados(){
@@ -12368,24 +12463,40 @@ function confirmarProcOrc(){
   const busca=document.getElementById('proc-orc-busca');
   const nome=_orcProcSelecionado?_orcProcSelecionado.nome:(busca?busca.value:'');
   if(!nome||!nome.trim()){ alert('Selecione ou informe o nome do procedimento.'); return; }
-  // Profissional não é definido aqui — ainda não se sabe quem vai executar no momento
-  // de orçar. Ele é definido apenas na aprovação do orçamento (ver _aprovRenderItensProf).
-  const dentista='';
-  const valor=_parseMoeda((document.getElementById('proc-orc-valor')||{}).value);
+  const dentista=(document.getElementById('proc-orc-dentista')||{}).value||'';
   const tabelaSelEl=document.getElementById('proc-orc-tabela');
   const tabelaIdSel=tabelaSelEl?tabelaSelEl.value:(_tbTabelas()[0]||{}).id;
-  _orcItens.push({
-    id:'item_'+Date.now(),
+  const base={
     proc:nome.trim(),
     procId:_orcProcSelecionado?_orcProcSelecionado.id:null,
     tabelaId:tabelaIdSel||null,
     especialidade:_orcProcSelecionado?_orcProcSelecionado.especialidade:'',
     comissaoFixo:_orcProcSelecionado?(parseFloat(_orcProcSelecionado.comissaoFixo)||0):0,
     comissaoPct:_orcProcSelecionado?(parseFloat(_orcProcSelecionado.comissaoPct)||0):0,
-    dentista,
-    dentes:[..._orcDentesSel],
-    valor
-  });
+  };
+  if(_orcDentesSel.length){
+    // Um procedimento por dente selecionado, cada um com seu próprio valor e faces.
+    _orcDentesSel.forEach((n,i)=>{
+      _orcItens.push({
+        ...base,
+        id:'item_'+Date.now()+'_'+i,
+        dentista,
+        dentes:[n],
+        faces:[...(_orcDentesFaces[n]||[])],
+        valor:_orcDentesValores[n]||0
+      });
+    });
+  } else {
+    // Procedimento geral, sem dente — continua como um único item.
+    const valor=_parseMoeda((document.getElementById('proc-orc-valor')||{}).value);
+    _orcItens.push({
+      ...base,
+      id:'item_'+Date.now(),
+      dentista,
+      dentes:[],
+      valor
+    });
+  }
   document.getElementById('modal-proc-orc').classList.remove('open');
   _renderOrcItens();
   _renderOrcTotal();
@@ -13319,9 +13430,9 @@ function _aprovRenderItensProf(){
     wrap.innerHTML='<div style="font-size:12px;color:var(--tx3)">Nenhum procedimento neste orçamento.</div>';
     return;
   }
-  // Zera qualquer profissional planejado anteriormente: este campo nunca deve vir
-  // pré-preenchido na tela de aprovação, mesmo que o item já tivesse "dentista" gravado.
-  _orcItens.forEach(it=>{ it.dentista=''; });
+  // O profissional escolhido já na criação do orçamento (por dente) é mantido aqui
+  // como sugestão pré-preenchida, mas continua editável — só é obrigatório que,
+  // na hora de confirmar a aprovação, todo item tenha algum profissional definido.
   wrap.innerHTML=`<div style="display:flex;flex-direction:column;gap:6px">
     ${_orcItens.map((it,idx)=>{
       const dentesTxt = it.dentes&&it.dentes.length?' ('+_dentesTxt(it.dentes)+')':'';
@@ -13334,7 +13445,7 @@ function _aprovRenderItensProf(){
         <select onchange="_aprovChangeItemDentista(${idx},this.value)" required
           style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r6);background:var(--surface);color:var(--tx);font-family:var(--font);flex:1 1 170px;min-width:170px;max-width:100%">
           <option value="">— Profissional * —</option>
-          ${dentistas.map(d=>`<option value="${esc(d.nome)}">${esc(d.label)}</option>`).join('')}
+          ${dentistas.map(d=>`<option value="${esc(d.nome)}" ${it.dentista===d.nome?'selected':''}>${esc(d.label)}</option>`).join('')}
         </select>
       </div>`;
     }).join('')}
