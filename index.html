@@ -890,8 +890,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .ag-mob-card-tit{font-size:9.5px;font-weight:700;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ag-mob-card-sub{font-size:8.5px;opacity:.92;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ag-mob-card-status{display:inline-block;font-size:7.5px;font-weight:700;padding:1px 5px;border-radius:20px;background:rgba(255,255,255,.28);margin-top:1px}
-.ag-mob-block{position:absolute;left:2px;right:2px;border-radius:6px;background:repeating-linear-gradient(45deg,#94a3b840,#94a3b840 6px,#94a3b822 6px,#94a3b822 12px);border:1px solid #94a3b8;color:var(--tx2);padding:2px 4px;pointer-events:all;cursor:pointer;overflow:hidden}
-.ag-mob-ausencia{position:absolute;left:0;right:0;background:repeating-linear-gradient(45deg,rgba(220,38,38,.10),rgba(220,38,38,.10) 8px,rgba(220,38,38,.16) 8px,rgba(220,38,38,.16) 16px);pointer-events:none;display:flex;align-items:center;justify-content:center;font-size:9px;color:#B91C1C;font-weight:700;text-align:center;padding:2px;line-height:1.2}
+.ag-mob-block{position:absolute;left:2px;right:2px;border-radius:6px;background:repeating-linear-gradient(45deg,rgba(220,38,38,.14),rgba(220,38,38,.14) 6px,rgba(220,38,38,.24) 6px,rgba(220,38,38,.24) 12px);border:1px solid #DC2626;color:#991B1B;padding:2px 4px;pointer-events:all;cursor:pointer;overflow:hidden}
+.ag-mob-ausencia{position:absolute;left:0;right:0;background:repeating-linear-gradient(45deg,#94a3b833,#94a3b833 8px,#94a3b81a 8px,#94a3b81a 16px);pointer-events:none;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--tx2);font-weight:700;text-align:center;padding:2px;line-height:1.2}
 
 /* ── AVISO "SEM MÓDULO LIBERADO NO CELULAR" ─────────────────────────
    Cobre a tela toda (fica por cima do resto do layout) — só é exibido via JS,
@@ -25246,10 +25246,17 @@ function renderAgendaMobile(d){
       html += `<div class="ag-mob-card" style="top:${topPx}px;height:${heightPx}px;background:${cor}" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,null)" title="${pacNome} · ${a.horaInicio}–${a.horaFim}">${corpo}</div>`;
     });
 
-    // Bloqueios da sala (ou "ambos") — mesmo critério do computador: aparecem
-    // pra todo mundo, independente da aba (o bloqueio é da SALA, não de uma
-    // profissional específica).
-    const blqsDaCol = bloqueios.filter(b=> (b.tipo==='sala'||b.tipo==='ambos') && b.salaId===c.id && bloqueioCobre(b,dataIso,ini,fim));
+    // Bloqueios de sala/ambos aparecem sempre (o bloqueio é da SALA); bloqueios
+    // do tipo "profissional" puro (sem sala vinculada, ex: um compromisso da
+    // pessoa em qualquer lugar) só aparecem na Minha Agenda, e só os da própria
+    // pessoa — na Agenda Geral esses viram a marca d'água mais abaixo, não um
+    // bloco (senão apareceria duplicado: bloco E marca d'água ao mesmo tempo).
+    const blqsDaCol = bloqueios.filter(b=>{
+      if(!bloqueioCobre(b,dataIso,ini,fim)) return false;
+      if((b.tipo==='sala'||b.tipo==='ambos') && b.salaId===c.id) return true;
+      if(usuarioAlvo && b.tipo==='profissional' && b.usuarioId===usuarioAlvo) return true;
+      return false;
+    });
     blqsDaCol.forEach(b=>{
       const blqIdx = bloqueios.indexOf(b);
       const blqIniReal = b.diaTodo ? ini : horaParaMin(b.horaInicio||'00:00');
