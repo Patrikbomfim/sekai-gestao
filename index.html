@@ -330,6 +330,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:13px
 .hdr-sub{font-size:12px;color:var(--dk-tx2);margin-left:2px}
 .hdr-alert{font-size:12px;background:var(--wal);color:var(--wa);padding:3px 10px;border-radius:var(--r6);font-weight:500;cursor:pointer;display:none;border:1px solid #FDE68A}
 .hdr-date{font-size:12px;color:var(--dk-tx2)}
+.hdr-date-mobile{display:none;font-size:12px;color:var(--dk-tx2);white-space:nowrap}
 
 /* LAYOUT */
 .layout{display:grid;grid-template-columns:200px 1fr;min-height:calc(100vh - 50px);transition:grid-template-columns .16s ease}
@@ -848,22 +849,24 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   #sec-agenda>.ag-sidebar,#sec-agenda>.ag-main{display:none !important}
   .ag-mobile{display:flex;flex-direction:column;min-height:calc(100vh - 90px);position:relative;background:var(--bg)}
 
-  /* Cabeçalho limpo no celular — fica só hamburguer (menu), Início e Sair;
-     o resto (logo/título, busca de paciente, sino de aviso, "Ver como",
-     nome de quem logou, data) some pra caber numa tela estreita. O
-     !important é necessário porque alguns desses elementos também têm
-     seu display controlado via JS (ex: hdr-impersonar-wrap). */
+  /* Cabeçalho limpo no celular — fica só hamburguer (menu), Início, a data
+     (num formato mais compacto) e Sair; o resto (logo/título, busca de
+     paciente, sino de aviso, "Ver como", nome de quem logou) some pra caber
+     numa tela estreita. O !important é necessário porque alguns desses
+     elementos também têm seu display controlado via JS (ex: hdr-impersonar-wrap). */
   #hdr-brand, .hdr-search-wrap, #hdr-alert, #hdr-impersonar-wrap,
   #hdr-usuario-logado, .hdr-date{
     display:none !important;
   }
+  .hdr-date-mobile{ display:inline !important; }
 }
-.ag-mobile-topbar{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:5}
+.ag-mobile-header-fix{position:sticky;top:0;z-index:5;background:var(--surface);box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.ag-mobile-topbar{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
 .ag-mobile-nav-btn{width:32px;height:32px;flex-shrink:0;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--tx2);font-size:16px;cursor:pointer}
 .ag-mobile-topbar-mid{flex:1;text-align:center;min-width:0}
 .ag-mobile-titulo{font-size:14px;font-weight:700;color:var(--tx);text-transform:capitalize}
 .ag-mobile-sub{font-size:11.5px;color:var(--tx3);margin-top:1px}
-.ag-mobile-toggle{display:flex;gap:6px;padding:10px 14px 0}
+.ag-mobile-toggle{display:flex;gap:6px;padding:10px 14px}
 .ag-mobile-toggle-btn{flex:1;padding:9px;font-size:12.5px;font-weight:600;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--tx2);cursor:pointer;font-family:var(--font)}
 .ag-mobile-toggle-btn.on{background:var(--ag-acc);border-color:var(--ag-acc);color:#fff}
 .ag-mobile-dia-grupo{margin-top:16px}
@@ -1038,6 +1041,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <span id="hdr-usuario-logado" style="font-size:12px;color:var(--dk-tx2)"></span>
     <button onclick="fazerLogout()" style="font-size:12px;padding:5px 10px;border-radius:var(--r6);border:1px solid var(--dk-border);background:var(--dk-bg2);color:var(--dk-tx2);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--dk-bg3)'" onmouseout="this.style.background='var(--dk-bg2)'">Sair</button>
     <span class="hdr-date" id="hdr-date"></span>
+    <span class="hdr-date-mobile" id="hdr-date-mobile"></span>
   </div>
 </header>
 
@@ -1277,17 +1281,19 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <!-- VERSÃO CELULAR DA AGENDA — só aparece em telas estreitas (ver CSS), mostra
        sempre a semana, uma profissional por vez (a própria, por padrão). -->
   <div class="ag-mobile" id="ag-mobile">
-    <div class="ag-mobile-topbar">
-      <button class="ag-mobile-nav-btn" onclick="agMobileNavAnterior()" title="Semana anterior">‹</button>
-      <div class="ag-mobile-topbar-mid">
-        <div class="ag-mobile-titulo" id="ag-mobile-titulo">—</div>
-        <div class="ag-mobile-sub" id="ag-mobile-sub"></div>
+    <div class="ag-mobile-header-fix">
+      <div class="ag-mobile-topbar">
+        <button class="ag-mobile-nav-btn" onclick="agMobileNavAnterior()" title="Semana anterior">‹</button>
+        <div class="ag-mobile-topbar-mid">
+          <div class="ag-mobile-titulo" id="ag-mobile-titulo">—</div>
+          <div class="ag-mobile-sub" id="ag-mobile-sub"></div>
+        </div>
+        <button class="ag-mobile-nav-btn" onclick="agMobileNavProximo()" title="Próxima semana">›</button>
       </div>
-      <button class="ag-mobile-nav-btn" onclick="agMobileNavProximo()" title="Próxima semana">›</button>
-    </div>
-    <div class="ag-mobile-toggle" id="ag-mobile-toggle" style="display:none">
-      <button class="ag-mobile-toggle-btn on" id="ag-mobile-tab-minha" onclick="agMobileSetAba('minha')">Minha agenda</button>
-      <button class="ag-mobile-toggle-btn" id="ag-mobile-tab-geral" onclick="agMobileSetAba('geral')">Agenda geral</button>
+      <div class="ag-mobile-toggle" id="ag-mobile-toggle" style="display:none">
+        <button class="ag-mobile-toggle-btn on" id="ag-mobile-tab-minha" onclick="agMobileSetAba('minha')">Minha agenda</button>
+        <button class="ag-mobile-toggle-btn" id="ag-mobile-tab-geral" onclick="agMobileSetAba('geral')">Agenda geral</button>
+      </div>
     </div>
     <div id="ag-mobile-lista"></div>
     <button class="ag-mobile-fab" onclick="agMobileNovoAgendamento()" data-perm="agenda_gerenciar" title="Novo agendamento">＋</button>
@@ -5570,6 +5576,7 @@ function atualizarIdadeCampo(sourceId,targetId){
 }
 
 document.getElementById('hdr-date').textContent = `${DIAS[hoje.getDay()]}, ${hoje.getDate()} de ${MESES[hoje.getMonth()]}`;
+document.getElementById('hdr-date-mobile').textContent = `${DIAS[hoje.getDay()]}, ${p2(hoje.getDate())}/${p2(hoje.getMonth()+1)}/${hoje.getFullYear()}`;
 document.getElementById('hoje-desc').textContent = `${DIAS[hoje.getDay()]}, ${hoje.getDate()} de ${MESES[hoje.getMonth()]} — suas ações do dia`;
 
 // ── USUÁRIO ATUAL (simula login) ────────────────────────────────────────
