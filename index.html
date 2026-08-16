@@ -847,7 +847,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 @media (max-width:760px){
   #sec-agenda.on{display:block;height:auto;overflow:visible;margin:-16px -16px}
   #sec-agenda>.ag-sidebar,#sec-agenda>.ag-main{display:none !important}
-  .ag-mobile{display:flex;flex-direction:column;min-height:calc(100vh - 90px);position:relative;background:var(--bg)}
+  .ag-mobile{display:flex;flex-direction:column;height:calc(100vh - 50px);overflow:hidden;position:relative;background:var(--bg)}
 
   /* Cabeçalho limpo no celular — fica só hamburguer (menu), Início, a data
      (num formato mais compacto) e Sair; o resto (logo/título, busca de
@@ -860,7 +860,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   }
   .hdr-date-mobile{ display:inline !important; }
 }
-.ag-mobile-header-fix{position:sticky;top:0;z-index:5;background:var(--surface);box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.ag-mobile-header-fix{background:var(--surface);box-shadow:0 1px 3px rgba(15,23,42,.06);flex-shrink:0}
 .ag-mobile-topbar{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
 .ag-mobile-nav-btn{width:32px;height:32px;flex-shrink:0;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--tx2);font-size:16px;cursor:pointer}
 .ag-mobile-topbar-mid{flex:1;text-align:center;min-width:0}
@@ -869,29 +869,29 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .ag-mobile-toggle{display:flex;gap:6px;padding:10px 14px}
 .ag-mobile-toggle-btn{flex:1;padding:9px;font-size:12.5px;font-weight:600;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--tx2);cursor:pointer;font-family:var(--font)}
 .ag-mobile-toggle-btn.on{background:var(--ag-acc);border-color:var(--ag-acc);color:#fff}
-/* Linha com os nomes das salas — mora dentro do mesmo bloco sticky do topbar/
-   toggle (não dentro da grade que rola), assim nunca fica "cortada" pelo que
-   tá fixo em cima dela durante o scroll. As larguras das colunas são
-   definidas via JS a cada render, sempre iguais às da grade logo abaixo. */
-#ag-mobile-salas-row{display:grid;border-top:1px solid var(--border)}
-.ag-mob-salas-cel{text-align:center;font-size:11px;font-weight:700;color:var(--tx2);padding:7px 2px;border-bottom:2px solid;border-left:1px solid var(--border)}
 .ag-mobile-vazio{margin:0 14px 8px;padding:14px;text-align:center;font-size:12.5px;color:var(--tx3);border:1px dashed var(--border);border-radius:12px}
 .ag-mobile-fab{position:fixed;right:18px;bottom:24px;width:54px;height:54px;border-radius:50%;background:var(--ag-acc);color:#fff;border:none;font-size:26px;box-shadow:var(--shadow-md);cursor:pointer;z-index:30;line-height:1}
 
 /* ── GRADE POR SALA (Sala 01 / Sala 04) ──────────────────────────────
    Mesma ideia da grade do computador (colunas = sala, linhas = horário),
    só que compacta pra caber sem rolar pros lados, com toque no lugar de
-   arrastar/hover, e navegação de dia por gesto de arrastar (swipe). */
-.ag-mobile-grade-scroll{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;position:relative;-webkit-overflow-scrolling:touch}
+   arrastar/hover, e navegação de dia por gesto de arrastar (swipe). O
+   cabeçalho com o nome das salas mora DENTRO dessa mesma grade (não em
+   outro bloco à parte) — assim as colunas nunca podem desalinhar entre
+   duas grades diferentes, é sempre uma coisa só. */
+.ag-mobile-grade-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;position:relative;-webkit-overflow-scrolling:touch}
 #ag-mobile-grade{position:relative}
 .ag-mob-grade{display:grid}
+.ag-mob-ghead{position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid var(--border);text-align:center;font-size:11px;font-weight:700;color:var(--tx2);padding:7px 2px;display:flex;align-items:center;justify-content:center}
 .ag-mob-gtime{font-size:9.5px;color:var(--tx3);text-align:right;padding:0 5px 0 0;border-top:1px solid var(--border);transform:translateY(-6px)}
-.ag-mob-gcell{border-top:1px solid var(--border);border-left:1px solid var(--border)}
+.ag-mob-gcell{border-top:1px solid var(--border);border-left:1px solid var(--border);cursor:pointer}
 .ag-mob-goverlay{display:grid;position:relative;pointer-events:none}
 .ag-mob-card{position:absolute;left:2px;right:2px;border-radius:6px;color:#fff;overflow:hidden;pointer-events:all;cursor:pointer;box-shadow:0 1px 3px rgba(15,23,42,.25);padding:2px 4px}
 .ag-mob-card-tit{font-size:9.5px;font-weight:700;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ag-mob-card-sub{font-size:8.5px;opacity:.92;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ag-mob-card-status{display:inline-block;font-size:7.5px;font-weight:700;padding:1px 5px;border-radius:20px;background:rgba(255,255,255,.28);margin-top:1px}
+.ag-mob-block{position:absolute;left:2px;right:2px;border-radius:6px;background:repeating-linear-gradient(45deg,#94a3b840,#94a3b840 6px,#94a3b822 6px,#94a3b822 12px);border:1px solid #94a3b8;color:var(--tx2);padding:2px 4px;pointer-events:all;cursor:pointer;overflow:hidden}
+.ag-mob-ausencia{position:absolute;left:0;right:0;background:repeating-linear-gradient(45deg,rgba(220,38,38,.10),rgba(220,38,38,.10) 8px,rgba(220,38,38,.16) 8px,rgba(220,38,38,.16) 16px);pointer-events:none;display:flex;align-items:center;justify-content:center;font-size:9px;color:#B91C1C;font-weight:700;text-align:center;padding:2px;line-height:1.2}
 
 /* ── AVISO "SEM MÓDULO LIBERADO NO CELULAR" ─────────────────────────
    Cobre a tela toda (fica por cima do resto do layout) — só é exibido via JS,
@@ -1306,7 +1306,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <button class="ag-mobile-toggle-btn on" id="ag-mobile-tab-minha" onclick="agMobileSetAba('minha')">Minha agenda</button>
         <button class="ag-mobile-toggle-btn" id="ag-mobile-tab-geral" onclick="agMobileSetAba('geral')">Agenda geral</button>
       </div>
-      <div id="ag-mobile-salas-row"></div>
     </div>
     <div id="ag-mobile-grade-msg"></div>
     <div class="ag-mobile-grade-scroll" id="ag-mobile-grade-scroll">
@@ -25126,7 +25125,6 @@ function renderAgendaMobile(d){
   const scrollWrap = document.getElementById('ag-mobile-grade-scroll');
   const grade = document.getElementById('ag-mobile-grade');
   const msgEl = document.getElementById('ag-mobile-grade-msg');
-  const salasRowEl = document.getElementById('ag-mobile-salas-row');
   if(!grade) return; // segurança — se o HTML dessa versão não existir por algum motivo, não quebra o resto
 
   const minhaProf = _agMobileMinhaProfissional();
@@ -25159,7 +25157,6 @@ function renderAgendaMobile(d){
   if(!podeMinha && !podeGeral){
     if(msgEl) msgEl.innerHTML = `<div class="ag-mobile-vazio">Nenhuma agenda liberada pra você no celular. Peça pro administrador liberar em Configurações → Cargos → aba Mobile.</div>`;
     if(scrollWrap) scrollWrap.style.display='none';
-    if(salasRowEl) salasRowEl.innerHTML='';
     return;
   }
   if(msgEl) msgEl.innerHTML = '';
@@ -25180,36 +25177,38 @@ function renderAgendaMobile(d){
   const totalH = nLinhas * SLOT_H;
   const gridCols = `${timeW}px repeat(${cols.length},${colW}px)`;
 
-  // Nomes das salas — ficam FORA da grade que rola (dentro do bloco fixo do
-  // topo), pra nunca serem cobertos por ela durante o scroll. As larguras das
-  // colunas aqui precisam bater exatamente com as da grade logo abaixo.
-  if(salasRowEl){
-    salasRowEl.style.gridTemplateColumns = gridCols;
-    salasRowEl.innerHTML = `<div></div>` + cols.map(c=>`<div class="ag-mob-salas-cel" style="border-bottom-color:${c.cor}">${esc(c.nome)}</div>`).join('');
-  }
-
   // Carregado uma única vez por render (não por card) — usado pra mostrar idade
   // e situação financeira dentro dos cards, igual já acontece no computador.
   const _todosTitulos = _titulos();
 
-  // Fundo: só as linhas de horário agora (o cabeçalho de sala saiu daqui — ver
-  // comentário acima). O grid-auto-rows é essencial: sem ele, cada linha
-  // encolhe pro tamanho do próprio conteúdo (ficando bem mais baixa que o
-  // esperado) e desalinha o cálculo de posição dos cards do overlay.
+  // Fundo: cabeçalho (nome da sala) + linhas de horário — tudo numa grade só,
+  // de propósito: assim as colunas do cabeçalho NUNCA podem desalinhar das
+  // colunas de baixo (era exatamente isso que causava o desalinhamento lateral
+  // do print). O grid-auto-rows é essencial: sem ele, cada linha encolhe pro
+  // tamanho do próprio conteúdo e desalinha o cálculo de posição dos cards.
   let html = `<div class="ag-mob-grade" style="grid-template-columns:${gridCols};grid-auto-rows:${SLOT_H}px">`;
+  html += `<div class="ag-mob-ghead"></div>`;
+  cols.forEach(c=>{ html += `<div class="ag-mob-ghead" style="border-bottom-color:${c.cor}">${esc(c.nome)}</div>`; });
   for(let r=0;r<nLinhas;r++){
     const slotIni = ini + r*passo;
     const showLabel = slotIni % 60 === 0;
-    html += `<div class="ag-mob-gtime">${showLabel?minParaHora(slotIni):''}</div>`;
-    cols.forEach(()=>{ html += `<div class="ag-mob-gcell"></div>`; });
+    const horaCel = minParaHora(slotIni);
+    html += `<div class="ag-mob-gtime">${showLabel?horaCel:''}</div>`;
+    // Clicar numa célula vazia já abre a ficha de novo agendamento com dia,
+    // hora e sala pré-preenchidos — mesma tela que o botão "+" abre, só que
+    // com menos coisa pra digitar depois.
+    cols.forEach(c=>{ html += `<div class="ag-mob-gcell" onclick="agMobileCelulaVazia('${dataIso}','${horaCel}','${c.id}')"></div>`; });
   }
   html += `</div>`;
 
-  // Overlay: cards de agendamento posicionados por minuto, por cima do fundo
+  // Overlay: cards de agendamento, bloqueios e marca d'água de ausência,
+  // todos posicionados por minuto, por cima do fundo.
   html += `<div class="ag-mob-goverlay" style="margin-top:-${totalH}px;height:${totalH}px;grid-template-columns:${gridCols}">`;
   html += `<div></div>`;
   cols.forEach(c=>{
     html += `<div style="position:relative;height:${totalH}px">`;
+
+    // Agendamentos
     const ags = agendamentos
       .filter(a=> a.data===dataIso && a.salaId===c.id && (!usuarioAlvo || a.usuarioId===usuarioAlvo))
       .sort((a,b)=> (a.horaInicio||'').localeCompare(b.horaInicio||''));
@@ -25244,14 +25243,56 @@ function renderAgendaMobile(d){
       if(heightPx>=50 && idadeSitTxt) corpo += `<div class="ag-mob-card-sub">${idadeSitTxt}</div>`;
       if(heightPx>=34 && statusInfo) corpo += `<div class="ag-mob-card-status">${statusInfo.label}</div>`;
 
-      html += `<div class="ag-mob-card" style="top:${topPx}px;height:${heightPx}px;background:${cor}" onclick="abrirModalAgendamento('${a.id}',null,null,null,null,null)" title="${pacNome} · ${a.horaInicio}–${a.horaFim}">${corpo}</div>`;
+      html += `<div class="ag-mob-card" style="top:${topPx}px;height:${heightPx}px;background:${cor}" onclick="event.stopPropagation();abrirModalAgendamento('${a.id}',null,null,null,null,null)" title="${pacNome} · ${a.horaInicio}–${a.horaFim}">${corpo}</div>`;
     });
+
+    // Bloqueios da sala (ou "ambos") — mesmo critério do computador: aparecem
+    // pra todo mundo, independente da aba (o bloqueio é da SALA, não de uma
+    // profissional específica).
+    const blqsDaCol = bloqueios.filter(b=> (b.tipo==='sala'||b.tipo==='ambos') && b.salaId===c.id && bloqueioCobre(b,dataIso,ini,fim));
+    blqsDaCol.forEach(b=>{
+      const blqIdx = bloqueios.indexOf(b);
+      const blqIniReal = b.diaTodo ? ini : horaParaMin(b.horaInicio||'00:00');
+      const blqFimReal = b.diaTodo ? fim : horaParaMin(b.horaFim||'23:59');
+      const blqIni = Math.max(blqIniReal, ini), blqFim = Math.min(blqFimReal, fim);
+      if(blqFim<=blqIni) return;
+      const topPx = Math.round((blqIni-ini)/passo*SLOT_H);
+      const heightPx = Math.max(18, Math.round((blqFim-blqIni)/passo*SLOT_H)-1);
+      const motivoTxt = esc(b.motivo || 'Bloqueado');
+      const horarioTxt = b.diaTodo ? 'Dia todo' : `${b.horaInicio||''}–${b.horaFim||''}`;
+      html += `<div class="ag-mob-block" style="top:${topPx}px;height:${heightPx}px" onclick="event.stopPropagation();blqAbrirPopoverSeNaoArrastando(${blqIdx},null)" title="${motivoTxt} · ${horarioTxt}">
+        <div class="ag-mob-card-tit">${motivoTxt}</div>
+        ${heightPx>=34?`<div class="ag-mob-card-sub">${horarioTxt}</div>`:''}
+      </div>`;
+    });
+
+    // Marca d'água de ausência de profissional — só na Agenda Geral (mesmo
+    // critério do computador: mostra em toda sala, já que qualquer profissional
+    // pode atender em qualquer uma; na Minha Agenda não faz sentido, porque lá
+    // a própria ausência da pessoa já seria óbvia por ela não ter nada marcado).
+    if(!usuarioAlvo){
+      const ausBlqs = bloqueios.filter(b=>(b.tipo==='profissional'||b.tipo==='ambos') && bloqueioCobre(b,dataIso,ini,fim));
+      agMesclarIntervalosAusencia(ausBlqs, ini, fim).forEach(iv=>{
+        const topPx = Math.round((iv.ini-ini)/passo*SLOT_H);
+        const heightPx = Math.max(18, Math.round((iv.fim-iv.ini)/passo*SLOT_H)-1);
+        const nomesTxt = esc(iv.nomes.join(', '));
+        html += `<div class="ag-mob-ausencia" style="top:${topPx}px;height:${heightPx}px" title="Ausente: ${nomesTxt}"><span>Ausente: ${nomesTxt}</span></div>`;
+      });
+    }
+
     html += `</div>`;
   });
   html += `</div>`;
 
   grade.innerHTML = html;
   _agMobileSwipeSetup();
+}
+
+// Clique numa célula vazia da grade — mesma tela do botão "+", só que já
+// chega com dia, hora e sala prontos.
+function agMobileCelulaVazia(dataIso, hora, salaId){
+  const minhaProf = _agMobileMinhaProfissional();
+  agAbrirEscolhaCelula(dataIso, hora, salaId, (agMobileAba==='minha' && minhaProf) ? usuarioAtualId : null);
 }
 
 // Gesto de arrastar pro lado, na área da grade, pra trocar de dia — sem
