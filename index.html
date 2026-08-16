@@ -847,6 +847,16 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   #sec-agenda.on{display:block;height:auto;overflow:visible;margin:-16px -16px}
   #sec-agenda>.ag-sidebar,#sec-agenda>.ag-main{display:none !important}
   .ag-mobile{display:flex;flex-direction:column;min-height:calc(100vh - 90px);position:relative;background:var(--bg)}
+
+  /* Cabeçalho limpo no celular — fica só hamburguer (menu), Início e Sair;
+     o resto (logo/título, busca de paciente, sino de aviso, "Ver como",
+     nome de quem logou, data) some pra caber numa tela estreita. O
+     !important é necessário porque alguns desses elementos também têm
+     seu display controlado via JS (ex: hdr-impersonar-wrap). */
+  #hdr-brand, .hdr-search-wrap, #hdr-alert, #hdr-impersonar-wrap,
+  #hdr-usuario-logado, .hdr-date{
+    display:none !important;
+  }
 }
 .ag-mobile-topbar{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:5}
 .ag-mobile-nav-btn{width:32px;height:32px;flex-shrink:0;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--tx2);font-size:16px;cursor:pointer}
@@ -856,7 +866,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .ag-mobile-toggle{display:flex;gap:6px;padding:10px 14px 0}
 .ag-mobile-toggle-btn{flex:1;padding:9px;font-size:12.5px;font-weight:600;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--tx2);cursor:pointer;font-family:var(--font)}
 .ag-mobile-toggle-btn.on{background:var(--ag-acc);border-color:var(--ag-acc);color:#fff}
-.ag-mobile-hoje{margin:10px 14px 0;align-self:flex-start;padding:6px 14px;font-size:12px;font-weight:700;border:1px solid var(--border);border-radius:20px;background:var(--surface);color:var(--tx2);cursor:pointer;font-family:var(--font)}
 .ag-mobile-dia-grupo{margin-top:16px}
 .ag-mobile-dia-lbl{padding:0 14px 6px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3)}
 .ag-mobile-dia-lbl.hoje{color:var(--ag-acc)}
@@ -1008,7 +1017,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="hdr-left">
     <button class="hdr-toggle" id="nav-toggle-btn" onclick="toggleNavSidebar()" title="Esconder menu" aria-label="Esconder menu">☰</button>
     <button onclick="goTo('hoje', document.getElementById('navbtn-hoje'))" style="height:30px;padding:0 14px;font-size:12.5px;font-weight:600;border:1px solid var(--dk-border);border-radius:var(--r8);background:var(--dk-bg2);color:var(--dk-tx2);cursor:pointer;white-space:nowrap;transition:background .12s,color .12s;font-family:var(--font)" onmouseover="this.style.background='var(--dk-bg3)';this.style.color='var(--dk-tx)'" onmouseout="this.style.background='var(--dk-bg2)';this.style.color='var(--dk-tx2)'">Início</button>
-    <div class="hdr-brand">
+    <div class="hdr-brand" id="hdr-brand">
       <button class="hdr-logo" onclick="goTo('config')" title="Configurações" aria-label="Configurações">⚙</button>
       <span class="hdr-title">Sistema Operacional Sekai</span>
     </div>
@@ -1280,7 +1289,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <button class="ag-mobile-toggle-btn on" id="ag-mobile-tab-minha" onclick="agMobileSetAba('minha')">Minha agenda</button>
       <button class="ag-mobile-toggle-btn" id="ag-mobile-tab-geral" onclick="agMobileSetAba('geral')">Agenda geral</button>
     </div>
-    <button class="ag-mobile-hoje" onclick="agendaIrHoje()">Hoje</button>
     <div id="ag-mobile-lista"></div>
     <button class="ag-mobile-fab" onclick="agMobileNovoAgendamento()" data-perm="agenda_gerenciar" title="Novo agendamento">＋</button>
   </div>
@@ -5898,6 +5906,26 @@ function _aplicarRestricaoMobilePorCargo(){
     if(btn.style.display==='none') return; // já bloqueado pela permissão normal — nada a somar aqui
     if(!_permitidoNoCelular(m[1])) btn.style.display='none';
   });
+
+  // Esconder também os rótulos de seção (Início/Pacientes/Administrativo/Sistema)
+  // quando NENHUM botão embaixo deles sobrou visível — senão fica um título "solto"
+  // no menu, dando a impressão de que aquele bloco ainda tem algo por trás.
+  // Cada rótulo (.slb-label) "vale" pra todos os .nav-btn seguintes até o próximo
+  // rótulo — é assim que o menu é montado no HTML, então percorremos na ordem.
+  if(ativo){
+    let rotuloAtual = null, algumBotaoNoBloco = false;
+    Array.from(document.querySelector('.sidebar').children).forEach(el=>{
+      if(el.classList.contains('slb-label')){
+        if(rotuloAtual) rotuloAtual.style.display = algumBotaoNoBloco ? '' : 'none';
+        rotuloAtual = el; algumBotaoNoBloco = false;
+      } else if(el.classList.contains('nav-btn') && el.style.display!=='none'){
+        algumBotaoNoBloco = true;
+      }
+    });
+    if(rotuloAtual) rotuloAtual.style.display = algumBotaoNoBloco ? '' : 'none';
+  } else {
+    document.querySelectorAll('.sidebar .slb-label').forEach(lbl=>{ lbl.style.display=''; });
+  }
 
   if(!ativo){ if(semAcessoEl) semAcessoEl.style.display='none'; return; }
 
