@@ -837,6 +837,38 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 /* ── LAYOUT AGENDA COM SIDEBAR ───────────────────────────────────── */
 #sec-agenda{flex-direction:row;height:calc(100vh - 50px);overflow:hidden;margin:-24px -28px}
+
+/* ── VERSÃO CELULAR DA AGENDA ────────────────────────────────────────
+   Em telas largas (computador), fica escondida e a grade normal aparece.
+   Em telas estreitas (celular), escondemos a barra lateral + grade e
+   mostramos essa lista vertical no lugar. */
+.ag-mobile{display:none}
+@media (max-width:760px){
+  #sec-agenda.on{display:block;height:auto;overflow:visible;margin:-16px -16px}
+  #sec-agenda>.ag-sidebar,#sec-agenda>.ag-main{display:none !important}
+  .ag-mobile{display:flex;flex-direction:column;min-height:calc(100vh - 90px);position:relative;background:var(--bg)}
+}
+.ag-mobile-topbar{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:5}
+.ag-mobile-nav-btn{width:32px;height:32px;flex-shrink:0;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--tx2);font-size:16px;cursor:pointer}
+.ag-mobile-topbar-mid{flex:1;text-align:center;min-width:0}
+.ag-mobile-titulo{font-size:14px;font-weight:700;color:var(--tx);text-transform:capitalize}
+.ag-mobile-sub{font-size:11.5px;color:var(--tx3);margin-top:1px}
+.ag-mobile-toggle{display:flex;gap:6px;padding:10px 14px 0}
+.ag-mobile-toggle-btn{flex:1;padding:9px;font-size:12.5px;font-weight:600;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--tx2);cursor:pointer;font-family:var(--font)}
+.ag-mobile-toggle-btn.on{background:var(--ag-acc);border-color:var(--ag-acc);color:#fff}
+.ag-mobile-hoje{margin:10px 14px 0;align-self:flex-start;padding:6px 14px;font-size:12px;font-weight:700;border:1px solid var(--border);border-radius:20px;background:var(--surface);color:var(--tx2);cursor:pointer;font-family:var(--font)}
+.ag-mobile-dia-grupo{margin-top:16px}
+.ag-mobile-dia-lbl{padding:0 14px 6px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3)}
+.ag-mobile-dia-lbl.hoje{color:var(--ag-acc)}
+.ag-mobile-card{display:flex;gap:10px;align-items:center;margin:0 14px 8px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow);cursor:pointer}
+.ag-mobile-card-barra{width:4px;align-self:stretch;border-radius:3px;flex-shrink:0}
+.ag-mobile-card-hora{font-size:12.5px;font-weight:700;color:var(--tx);white-space:nowrap;min-width:44px}
+.ag-mobile-card-corpo{flex:1;min-width:0}
+.ag-mobile-card-nome{font-size:13.5px;font-weight:600;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ag-mobile-card-sub{font-size:11.5px;color:var(--tx3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ag-mobile-card-status{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;flex-shrink:0}
+.ag-mobile-vazio{margin:0 14px 8px;padding:14px;text-align:center;font-size:12.5px;color:var(--tx3);border:1px dashed var(--border);border-radius:12px}
+.ag-mobile-fab{position:fixed;right:18px;bottom:24px;width:54px;height:54px;border-radius:50%;background:var(--ag-acc);color:#fff;border:none;font-size:26px;box-shadow:var(--shadow-md);cursor:pointer;z-index:30;line-height:1}
 .ag-sidebar{width:216px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px 12px;gap:12px;overflow-y:auto}
 .ag-sidebar-section{display:flex;flex-direction:column;gap:6px}
 .ag-sidebar-label{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
@@ -1216,6 +1248,26 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div id="agenda-semana-grid"></div>
       </div>
     </div>
+  </div>
+
+  <!-- VERSÃO CELULAR DA AGENDA — só aparece em telas estreitas (ver CSS), mostra
+       sempre a semana, uma profissional por vez (a própria, por padrão). -->
+  <div class="ag-mobile" id="ag-mobile">
+    <div class="ag-mobile-topbar">
+      <button class="ag-mobile-nav-btn" onclick="agMobileNavAnterior()" title="Semana anterior">‹</button>
+      <div class="ag-mobile-topbar-mid">
+        <div class="ag-mobile-titulo" id="ag-mobile-titulo">—</div>
+        <div class="ag-mobile-sub" id="ag-mobile-sub"></div>
+      </div>
+      <button class="ag-mobile-nav-btn" onclick="agMobileNavProximo()" title="Próxima semana">›</button>
+    </div>
+    <div class="ag-mobile-toggle" id="ag-mobile-toggle" style="display:none">
+      <button class="ag-mobile-toggle-btn on" id="ag-mobile-tab-minha" onclick="agMobileSetAba('minha')">Minha agenda</button>
+      <button class="ag-mobile-toggle-btn" id="ag-mobile-tab-geral" onclick="agMobileSetAba('geral')">Agenda geral</button>
+    </div>
+    <button class="ag-mobile-hoje" onclick="agendaIrHoje()">Hoje</button>
+    <div id="ag-mobile-lista"></div>
+    <button class="ag-mobile-fab" onclick="agMobileNovoAgendamento()" data-perm="agenda_gerenciar" title="Novo agendamento">＋</button>
   </div>
 
 </div>
@@ -7114,6 +7166,7 @@ const PERMISSOES_GRUPOS = [
     itens:[
       {id:'agenda_ver',label:'Visualizar'},
       {id:'agenda_gerenciar',label:'Gerenciar (criar/editar/excluir agendamentos)'},
+      {id:'agenda_geral_ver',label:'Ver Agenda Geral no celular (agenda de todas as profissionais, não só a própria)'},
     ]
   },
   {
@@ -24768,11 +24821,133 @@ function renderAgenda(){
     if(agendaView==='profissional') renderAgendaSemanaPorProfissional(d, agendaProfSemanaId);
     else renderAgendaSemana(d);
   }
+
+  // Versão celular — roda sempre (é leve); o CSS decide se ela aparece ou não
+  // dependendo do tamanho da tela, então isso não pesa no computador.
+  renderAgendaMobile(d);
 }
 
 function getWeekNumber(d){
   const jan1 = new Date(d.getFullYear(),0,1);
   return Math.ceil(((d-jan1)/86400000 + jan1.getDay()+1)/7);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// VERSÃO CELULAR DA AGENDA — lista vertical, sempre por semana, sempre
+// uma profissional por vez ("Minha agenda"). Quem tem a permissão
+// 'agenda_geral_ver' (ou é administrador real) também pode alternar pra
+// "Agenda geral", com os agendamentos de todas as profissionais juntos.
+// Reaproveita os mesmos dados (agendamentos, agendaProfissionais) e o
+// mesmo modal de edição (abrirModalAgendamento) que a versão de
+// computador já usa — só a "vitrine" é diferente.
+// ══════════════════════════════════════════════════════════════════
+
+// 'minha' ou 'geral' — null significa "ainda não decidido", e o primeiro
+// render escolhe um padrão sensato pra pessoa logada.
+let agMobileAba = null;
+
+function _agMobileMinhaProfissional(){
+  return agendaProfissionais.find(ap=>ap.usuarioId===usuarioAtualId) || null;
+}
+
+function agMobileSetAba(aba){
+  agMobileAba = aba;
+  renderAgendaMobile(parseIso(agendaData));
+}
+
+function agMobileNavAnterior(){
+  // Sempre anda 7 dias — a versão celular só existe em modo semana, mesmo que
+  // o computador esteja em modo Dia (são estados independentes).
+  agendaData = iso(addDays(parseIso(agendaData), -7));
+  renderAgenda();
+}
+function agMobileNavProximo(){
+  agendaData = iso(addDays(parseIso(agendaData), 7));
+  renderAgenda();
+}
+
+function agMobileNovoAgendamento(){
+  const minhaProf = _agMobileMinhaProfissional();
+  agAbrirEscolhaCelula(agendaData, null, null, (agMobileAba==='minha' && minhaProf) ? usuarioAtualId : null);
+}
+
+function renderAgendaMobile(d){
+  const lista = document.getElementById('ag-mobile-lista');
+  if(!lista) return; // segurança — se o HTML dessa versão não existir por algum motivo, não quebra o resto
+
+  const minhaProf = _agMobileMinhaProfissional();
+  const podeGeral = souAdministradorReal() || temPerm('agenda_geral_ver');
+
+  // Escolhe a aba ativa: se a pessoa tem agenda própria, começa nela; senão,
+  // se tem acesso à Agenda Geral, começa nela; se não tem nenhuma das duas,
+  // fica em 'minha' mesmo (vai cair no aviso de "sem agenda" mais abaixo).
+  if(agMobileAba===null) agMobileAba = minhaProf ? 'minha' : (podeGeral ? 'geral' : 'minha');
+  if(agMobileAba==='minha' && !minhaProf && podeGeral) agMobileAba = 'geral';
+  if(agMobileAba==='geral' && !podeGeral && minhaProf) agMobileAba = 'minha';
+
+  const toggleWrap = document.getElementById('ag-mobile-toggle');
+  if(toggleWrap) toggleWrap.style.display = (minhaProf && podeGeral) ? 'flex' : 'none';
+  const tabMinha = document.getElementById('ag-mobile-tab-minha');
+  const tabGeral = document.getElementById('ag-mobile-tab-geral');
+  if(tabMinha) tabMinha.classList.toggle('on', agMobileAba==='minha');
+  if(tabGeral) tabGeral.classList.toggle('on', agMobileAba==='geral');
+
+  const dias = semanaConfigDias(d);
+  const isoHoje = iso(hoje);
+
+  const tit = document.getElementById('ag-mobile-titulo');
+  const sub = document.getElementById('ag-mobile-sub');
+  if(tit && dias.length){
+    const ini=dias[0], fim=dias[dias.length-1];
+    tit.textContent = ini.getMonth()===fim.getMonth()
+      ? `${ini.getDate()} – ${fim.getDate()} de ${MESES[ini.getMonth()]}`
+      : `${ini.getDate()} ${MESES[ini.getMonth()].slice(0,3)} – ${fim.getDate()} ${MESES[fim.getMonth()].slice(0,3)}`;
+  }
+  if(sub) sub.textContent = (agMobileAba==='minha' && minhaProf) ? 'Minha agenda' : 'Agenda geral';
+
+  if(!minhaProf && !podeGeral){
+    lista.innerHTML = `<div class="ag-mobile-vazio">Você ainda não tem uma agenda própria configurada. Fale com o administrador do sistema.</div>`;
+    return;
+  }
+
+  // null = não filtra por profissional (Agenda Geral mostra todo mundo)
+  const usuarioAlvo = (agMobileAba==='minha' && minhaProf) ? usuarioAtualId : null;
+
+  let html = '';
+  dias.forEach(dia=>{
+    const dIso = iso(dia);
+    const ehHoje = dIso===isoHoje;
+    const ags = agendamentos
+      .filter(a=> a.data===dIso && (usuarioAlvo ? a.usuarioId===usuarioAlvo : true))
+      .sort((a,b)=> (a.horaInicio||'').localeCompare(b.horaInicio||''));
+
+    html += `<div class="ag-mobile-dia-grupo">
+      <div class="ag-mobile-dia-lbl${ehHoje?' hoje':''}">${DIAS[dia.getDay()]}, ${String(dia.getDate()).padStart(2,'0')}/${String(dia.getMonth()+1).padStart(2,'0')}${ehHoje?' · Hoje':''}</div>`;
+
+    if(!ags.length){
+      html += `<div class="ag-mobile-vazio">Nenhum agendamento</div>`;
+    } else {
+      ags.forEach(a=>{
+        const ap = agendaProfissionais.find(x=>x.usuarioId===a.usuarioId);
+        const cor = ap ? ap.cor : '#9CA3AF';
+        const statusInfo = STATUS_AGENDAMENTO.find(s=>s.id===a.status);
+        const pacNome = esc(a.pacienteNome || 'sem nome');
+        const profNome = usuarioAlvo ? '' : esc(nomeUsuario(a.usuarioId)||'');
+        html += `<div class="ag-mobile-card" onclick="abrirModalAgendamento('${a.id}',null,null,null,null,null)">
+          <div class="ag-mobile-card-barra" style="background:${cor}"></div>
+          <div class="ag-mobile-card-hora">${a.horaInicio}${a.horaFim?'–'+a.horaFim:''}</div>
+          <div class="ag-mobile-card-corpo">
+            <div class="ag-mobile-card-nome">${pacNome}</div>
+            <div class="ag-mobile-card-sub">${[profNome,esc(a.procedimento||'')].filter(Boolean).join(' · ')}</div>
+          </div>
+          ${statusInfo?`<span class="ag-mobile-card-status" style="background:${statusInfo.cor}22;color:${statusInfo.cor}">${statusInfo.label}</span>`:''}
+        </div>`;
+      });
+    }
+    html += `</div>`;
+  });
+
+  lista.innerHTML = html;
 }
 
 // Faixa de dias da semana no topo da Agenda (estilo do mockup aprovado) — mostra
