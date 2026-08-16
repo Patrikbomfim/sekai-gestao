@@ -861,11 +861,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   .hdr-date-mobile{ display:inline !important; }
 }
 .ag-mobile-header-fix{background:var(--surface);box-shadow:0 1px 3px rgba(15,23,42,.06);flex-shrink:0}
-.ag-mobile-topbar{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
-.ag-mobile-nav-btn{width:32px;height:32px;flex-shrink:0;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--tx2);font-size:16px;cursor:pointer}
+.ag-mobile-topbar{display:flex;align-items:center;gap:8px;padding:6px 14px;border-bottom:1px solid var(--border)}
+.ag-mobile-nav-btn{width:26px;height:26px;flex-shrink:0;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--tx2);font-size:14px;cursor:pointer}
 .ag-mobile-topbar-mid{flex:1;text-align:center;min-width:0}
-.ag-mobile-titulo{font-size:14px;font-weight:700;color:var(--tx);text-transform:capitalize}
-.ag-mobile-sub{font-size:11.5px;color:var(--tx3);margin-top:1px}
+.ag-mobile-titulo{font-size:13px;font-weight:700;color:var(--tx);text-transform:capitalize;line-height:1.2}
+.ag-mobile-sub{font-size:10.5px;color:var(--tx3);margin-top:0;line-height:1.2}
 .ag-mobile-toggle{display:flex;gap:6px;padding:10px 14px}
 .ag-mobile-toggle-btn{flex:1;padding:9px;font-size:12.5px;font-weight:600;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--tx2);cursor:pointer;font-family:var(--font)}
 .ag-mobile-toggle-btn.on{background:var(--ag-acc);border-color:var(--ag-acc);color:#fff}
@@ -879,10 +879,16 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
    cabeçalho com o nome das salas mora DENTRO dessa mesma grade (não em
    outro bloco à parte) — assim as colunas nunca podem desalinhar entre
    duas grades diferentes, é sempre uma coisa só. */
+/* Linha com os nomes das salas — agora mora no bloco fixo de cima (junto com
+   a data/setas), fora da área que rola. Usa o mesmo "molde" de colunas
+   (grid-template-columns) que a grade de horários lá embaixo, montado por
+   JS em renderAgendaMobile(), pra garantir que as colunas fiquem sempre
+   alinhadas entre as duas partes. */
+.ag-mob-salas-fix{display:grid}
+.ag-mob-ghead{background:var(--surface);border-bottom:2px solid var(--border);text-align:center;font-size:10px;font-weight:700;color:var(--tx2);padding:4px 2px;display:flex;align-items:center;justify-content:center;line-height:1.2}
 .ag-mobile-grade-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;position:relative;-webkit-overflow-scrolling:touch}
 #ag-mobile-grade{position:relative}
 .ag-mob-grade{display:grid}
-.ag-mob-ghead{position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:2px solid var(--border);text-align:center;font-size:11px;font-weight:700;color:var(--tx2);padding:7px 2px;display:flex;align-items:center;justify-content:center}
 .ag-mob-gtime{font-size:9.5px;color:var(--tx3);text-align:right;padding:0 5px 0 0;border-top:1px solid var(--border);transform:translateY(-6px)}
 .ag-mob-gcell{border-top:1px solid var(--border);border-left:1px solid var(--border);cursor:pointer}
 .ag-mob-goverlay{display:grid;position:relative;pointer-events:none}
@@ -1306,6 +1312,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <button class="ag-mobile-toggle-btn on" id="ag-mobile-tab-minha" onclick="agMobileSetAba('minha')">Minha agenda</button>
         <button class="ag-mobile-toggle-btn" id="ag-mobile-tab-geral" onclick="agMobileSetAba('geral')">Agenda geral</button>
       </div>
+      <!-- Nomes das salas — preenchido por JS (renderAgendaMobile), sempre com o
+           mesmo molde de colunas da grade de horários abaixo. -->
+      <div class="ag-mob-salas-fix" id="ag-mob-salas-fix"></div>
     </div>
     <div id="ag-mobile-grade-msg"></div>
     <div class="ag-mobile-grade-scroll" id="ag-mobile-grade-scroll">
@@ -22328,6 +22337,16 @@ renderHoje();
 atualizarBadgeLembretes();
 atualizarBadgePendencias();
 atualizarBadgeDesmarcados();
+// No celular, a tela inicial já entra direto na Agenda (em vez de "Início"),
+// desde que esse módulo esteja liberado pra pessoa logada — se não estiver,
+// mantém o comportamento normal (aplicarPermissoesNav já cuidou de mandar
+// pra um módulo permitido, ou mostrar o aviso de "sem acesso").
+if(typeof _telaEstreitaMobile==='function' && _telaEstreitaMobile()){
+  const btnAgendaMobile = document.getElementById('navbtn-agenda');
+  if(btnAgendaMobile && btnAgendaMobile.style.display!=='none'){
+    goTo('agenda', btnAgendaMobile);
+  }
+}
 renderUsuarios();
 bindFoneMask('nn-fone');
 
@@ -25181,14 +25200,22 @@ function renderAgendaMobile(d){
   // e situação financeira dentro dos cards, igual já acontece no computador.
   const _todosTitulos = _titulos();
 
-  // Fundo: cabeçalho (nome da sala) + linhas de horário — tudo numa grade só,
-  // de propósito: assim as colunas do cabeçalho NUNCA podem desalinhar das
-  // colunas de baixo (era exatamente isso que causava o desalinhamento lateral
-  // do print). O grid-auto-rows é essencial: sem ele, cada linha encolhe pro
+  // Nomes das salas — fica no bloco fixo de cima (fora da área que rola), mas
+  // usa o MESMO molde de colunas (gridCols) da grade de horários abaixo, pra
+  // garantir que nunca desalinhe (era esse o cuidado que a linha ficar dentro
+  // da grade resolvia antes; agora o próprio molde repetido resolve).
+  const salasFixEl = document.getElementById('ag-mob-salas-fix');
+  if(salasFixEl){
+    salasFixEl.style.gridTemplateColumns = gridCols;
+    let salasHtml = `<div class="ag-mob-ghead"></div>`;
+    cols.forEach(c=>{ salasHtml += `<div class="ag-mob-ghead" style="border-bottom-color:${c.cor}">${esc(c.nome)}</div>`; });
+    salasFixEl.innerHTML = salasHtml;
+  }
+
+  // Fundo: só as linhas de horário agora (o cabeçalho de salas saiu pro bloco
+  // fixo acima). O grid-auto-rows é essencial: sem ele, cada linha encolhe pro
   // tamanho do próprio conteúdo e desalinha o cálculo de posição dos cards.
   let html = `<div class="ag-mob-grade" style="grid-template-columns:${gridCols};grid-auto-rows:${SLOT_H}px">`;
-  html += `<div class="ag-mob-ghead"></div>`;
-  cols.forEach(c=>{ html += `<div class="ag-mob-ghead" style="border-bottom-color:${c.cor}">${esc(c.nome)}</div>`; });
   for(let r=0;r<nLinhas;r++){
     const slotIni = ini + r*passo;
     const showLabel = slotIni % 60 === 0;
@@ -28385,12 +28412,15 @@ function _atualizarBotaoToggleMenu(collapsed){
 }
 (function(){
   try{
-    if(localStorage.getItem('sk-nav-collapsed') === '1'){
-      const layout = document.querySelector('.layout');
-      if(layout){
-        layout.classList.add('nav-collapsed');
-        _atualizarBotaoToggleMenu(true);
-      }
+    const layout = document.querySelector('.layout');
+    if(!layout) return;
+    // No celular o menu sempre começa escondido, mesmo que a última lembrança
+    // salva (geralmente do computador) tenha sido "menu aberto" — assim sobra
+    // mais espaço de tela logo na entrada, sem precisar tocar no hamburguer.
+    const celular = window.matchMedia('(max-width:760px)').matches;
+    if(celular || localStorage.getItem('sk-nav-collapsed') === '1'){
+      layout.classList.add('nav-collapsed');
+      _atualizarBotaoToggleMenu(true);
     }
   }catch(e){}
 })();
