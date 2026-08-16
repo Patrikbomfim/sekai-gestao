@@ -22337,16 +22337,6 @@ renderHoje();
 atualizarBadgeLembretes();
 atualizarBadgePendencias();
 atualizarBadgeDesmarcados();
-// No celular, a tela inicial já entra direto na Agenda (em vez de "Início"),
-// desde que esse módulo esteja liberado pra pessoa logada — se não estiver,
-// mantém o comportamento normal (aplicarPermissoesNav já cuidou de mandar
-// pra um módulo permitido, ou mostrar o aviso de "sem acesso").
-if(typeof _telaEstreitaMobile==='function' && _telaEstreitaMobile()){
-  const btnAgendaMobile = document.getElementById('navbtn-agenda');
-  if(btnAgendaMobile && btnAgendaMobile.style.display!=='none'){
-    goTo('agenda', btnAgendaMobile);
-  }
-}
 renderUsuarios();
 bindFoneMask('nn-fone');
 
@@ -28423,6 +28413,23 @@ function _atualizarBotaoToggleMenu(collapsed){
       _atualizarBotaoToggleMenu(true);
     }
   }catch(e){}
+})();
+
+// No celular, a tela inicial já entra direto na Agenda (em vez de "Início"),
+// desde que esse módulo esteja liberado pra pessoa logada — se não estiver,
+// mantém o comportamento normal. Isso precisa rodar aqui (só depois que as
+// duas partes do sistema já foram totalmente carregadas), porque ir direto
+// pra Agenda também recolhe o menu — e a função que recolhe o menu só existe
+// a partir deste ponto. Rodar mais cedo deixava a tela em branco.
+(function(){
+  try{
+    if(typeof _telaEstreitaMobile==='function' && _telaEstreitaMobile()){
+      const btnAgendaMobile = document.getElementById('navbtn-agenda');
+      if(btnAgendaMobile && btnAgendaMobile.style.display!=='none'){
+        goTo('agenda', btnAgendaMobile);
+      }
+    }
+  }catch(e){ console.error('Erro ao abrir a Agenda direto no celular:', e); }
 })();
 
 </script>
