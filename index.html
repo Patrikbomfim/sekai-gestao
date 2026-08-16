@@ -25164,15 +25164,18 @@ function renderAgendaMobile(d){
   const cols = AG_MOBILE_SALAS_IDS.map(id=>salas.find(s=>s.id===id)).filter(Boolean);
   const {ini,fim} = janelaGlobalDoDia(diaSemana);
   const passo = 30;
-  const SLOT_H = 40;
-  const timeW = 40;
-  const colW = 140;
+  const SLOT_H = 58;
+  const timeW = 42;
+  const colW = 155;
   const nLinhas = Math.max(1, Math.ceil((fim-ini)/passo));
   const totalH = nLinhas * SLOT_H;
   const gridCols = `${timeW}px repeat(${cols.length},${colW}px)`;
 
-  // Fundo: cabeçalho (nome da sala) + linhas de horário
-  let html = `<div class="ag-mob-grade" style="grid-template-columns:${gridCols}">`;
+  // Fundo: cabeçalho (nome da sala) + linhas de horário. O grid-auto-rows é
+  // essencial aqui — sem ele, cada linha some/encolhe pro tamanho do próprio
+  // conteúdo (ficando bem mais baixa que o esperado) e o cálculo de posição
+  // dos cards do overlay logo abaixo desalinha tudo (foi o bug do print).
+  let html = `<div class="ag-mob-grade" style="grid-template-columns:${gridCols};grid-auto-rows:${SLOT_H}px">`;
   html += `<div class="ag-mob-ghead"></div>`;
   cols.forEach(c=>{ html += `<div class="ag-mob-ghead" style="border-bottom-color:${c.cor}">${esc(c.nome)}</div>`; });
   for(let r=0;r<nLinhas;r++){
