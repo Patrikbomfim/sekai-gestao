@@ -869,6 +869,14 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .ag-mobile-card-status{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;flex-shrink:0}
 .ag-mobile-vazio{margin:0 14px 8px;padding:14px;text-align:center;font-size:12.5px;color:var(--tx3);border:1px dashed var(--border);border-radius:12px}
 .ag-mobile-fab{position:fixed;right:18px;bottom:24px;width:54px;height:54px;border-radius:50%;background:var(--ag-acc);color:#fff;border:none;font-size:26px;box-shadow:var(--shadow-md);cursor:pointer;z-index:30;line-height:1}
+
+/* ── AVISO "SEM MÓDULO LIBERADO NO CELULAR" ─────────────────────────
+   Cobre a tela toda (fica por cima do resto do layout) — só é exibido via JS,
+   quando _aplicarRestricaoMobilePorCargo() não encontra nenhum módulo liberado. */
+#mobile-sem-acesso{display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;position:fixed;inset:0;z-index:400;background:var(--bg);padding:32px;text-align:center}
+.mobile-sem-acesso-ic{font-size:40px;line-height:1}
+.mobile-sem-acesso-tit{font-size:15px;font-weight:700;color:var(--tx)}
+.mobile-sem-acesso-desc{font-size:13px;color:var(--tx3);line-height:1.5}
 .ag-sidebar{width:216px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px 12px;gap:12px;overflow-y:auto}
 .ag-sidebar-section{display:flex;flex-direction:column;gap:6px}
 .ag-sidebar-label{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
@@ -1027,6 +1035,13 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <div id="perm-aviso" style="display:none;position:fixed;top:58px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--dal);color:var(--da);border:1px solid var(--da);border-radius:var(--r8);padding:9px 18px;font-size:13px;font-weight:500;box-shadow:var(--shadow-md);pointer-events:none"></div>
 <div id="save-toast">✓ Salvo</div>
 <button id="floating-save-btn" onclick="commitPendingSaves()">Salvar</button>
+<!-- Aparece só pelo celular, quando o cargo da pessoa não tem NENHUM módulo liberado
+     na aba Mobile — cobre a tela toda pra não deixar nada "escondido por trás". -->
+<div id="mobile-sem-acesso" style="display:none">
+  <div class="mobile-sem-acesso-ic">📱</div>
+  <div class="mobile-sem-acesso-tit">Nenhum módulo liberado pelo celular</div>
+  <div class="mobile-sem-acesso-desc">Peça pro administrador liberar o que você precisa em<br>Configurações → Cargos → aba Mobile.</div>
+</div>
 <div class="layout">
 <nav class="sidebar">
   <div class="slb-label">Início</div>
@@ -5838,7 +5853,89 @@ function aplicarPermissoesNav(){
     const perm = el.getAttribute('data-perm');
     el.style.display = perms.has(perm) ? '' : 'none';
   });
+
+  // Restrição extra, só pelo celular: pra cada módulo, além da permissão normal
+  // (que já libera ou não no computador, acima), pelo celular também precisa do
+  // toggle correspondente na aba "Mobile" do cargo. Roda por último, depois de
+  // tudo acima, pra "vencer" qualquer exibição que já tenha sido decidida.
+  _aplicarRestricaoMobilePorCargo();
 }
+
+function _telaEstreitaMobile(){
+  return window.matchMedia('(max-width:760px)').matches;
+}
+
+// Seção (id usado em goTo) → permissão da aba Mobile que libera ela pelo celular.
+// A Agenda é tratada à parte (tem 2 toggles — pessoal/geral — em vez de 1).
+const MOBILE_MODULO_PERM = {
+  hoje:'mobile_hoje_ver', proximos:'mobile_proximos_ver', empresa:'mobile_empresa_ver',
+  pacientes:'mobile_pacientes_ver', acoes:'mobile_acoes_ver', lembretes:'mobile_lembretes_ver',
+  pendencias:'mobile_pendencias_ver', financeiro:'mobile_financeiro_ver', relatorios:'mobile_relatorios_ver',
+  planejamento:'mobile_planejamento_ver', reuniao:'mobile_reuniao_ver', melhorias:'mobile_melhorias_ver',
+  rituais:'mobile_rituais_ver', config:'mobile_config_ver',
+};
+
+// Verdadeiro se ESSA seção pode ser vista pelo celular. No computador essa trava
+// nem existe (sempre true) — só entra em jogo quando a tela é estreita. Não
+// substitui a permissão normal do módulo, só soma a ela: quem chama isso já
+// filtrou antes se a pessoa tem a permissão normal (ver aplicarPermissoesNav /
+// goTo, que já rodam esse outro check separadamente).
+function _permitidoNoCelular(id){
+  if(!_telaEstreitaMobile()) return true;
+  if(id==='agenda') return temPerm('mobile_agenda_pessoal_ver') || temPerm('mobile_agenda_geral_ver');
+  const perm = MOBILE_MODULO_PERM[id];
+  return perm ? temPerm(perm) : true; // seções sem entrada aqui (páginas internas) não são bloqueadas por esta trava
+}
+
+function _aplicarRestricaoMobilePorCargo(){
+  const ativo = _telaEstreitaMobile();
+  const semAcessoEl = document.getElementById('mobile-sem-acesso');
+
+  document.querySelectorAll('.sidebar .nav-btn[onclick]').forEach(btn=>{
+    if(!ativo) return; // no computador a permissão normal (já aplicada acima) é suficiente
+    const m = btn.getAttribute('onclick').match(/goTo\('([^']+)'/);
+    if(!m) return;
+    if(btn.style.display==='none') return; // já bloqueado pela permissão normal — nada a somar aqui
+    if(!_permitidoNoCelular(m[1])) btn.style.display='none';
+  });
+
+  if(!ativo){ if(semAcessoEl) semAcessoEl.style.display='none'; return; }
+
+  // Engrenagem de Configurações no cabeçalho — mesma trava do botão de nav, já
+  // que ela também navega pra 'config' (goTo('config')).
+  const gearBtn = document.querySelector('.hdr-logo');
+  if(gearBtn && gearBtn.style.display!=='none' && !_permitidoNoCelular('config')) gearBtn.style.display='none';
+
+  const botoesVisiveis = [...document.querySelectorAll('.sidebar .nav-btn[onclick]')].filter(b=>b.style.display!=='none');
+
+  // Nenhum módulo liberado pra esse cargo no celular — mostra um aviso amigável
+  // em vez de deixar a tela em branco ou travada numa seção escondida.
+  if(!botoesVisiveis.length){
+    document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+    if(semAcessoEl) semAcessoEl.style.display='flex';
+    return;
+  }
+  if(semAcessoEl) semAcessoEl.style.display='none';
+
+  // Se a seção aberta no momento deixou de ser permitida pelo celular (ex: a
+  // pessoa estava em "Meu dia" e diminuímos a janela, ou o cargo dela mudou),
+  // manda ela pro primeiro módulo que ainda está liberado.
+  const secAtiva = document.querySelector('.sec.on');
+  if(secAtiva && !_permitidoNoCelular(secAtiva.id.replace('sec-',''))){
+    botoesVisiveis[0].click();
+  }
+}
+
+// Reaplica a restrição quando o tamanho da tela muda (girar o celular, redimensionar
+// a janela do navegador) — sem isso, alguém que abrisse pelo computador e depois
+// encolhesse a janela só veria a restrição na próxima troca de tela/usuário.
+let _mobileRestricaoResizeT = null;
+window.addEventListener('resize', ()=>{
+  clearTimeout(_mobileRestricaoResizeT);
+  _mobileRestricaoResizeT = setTimeout(()=>{
+    if(typeof aplicarPermissoesNav==='function') aplicarPermissoesNav();
+  }, 200);
+});
 
 // ── STORAGE ──────────────────────────────────────────────────────────────
 let _pendingSaves = {}; // key → value, queued for manual save
@@ -7166,7 +7263,6 @@ const PERMISSOES_GRUPOS = [
     itens:[
       {id:'agenda_ver',label:'Visualizar'},
       {id:'agenda_gerenciar',label:'Gerenciar (criar/editar/excluir agendamentos)'},
-      {id:'agenda_geral_ver',label:'Ver Agenda Geral no celular (agenda de todas as profissionais, não só a própria)'},
     ]
   },
   {
@@ -7485,6 +7581,75 @@ const PERMISSOES_GRUPOS = [
       {id:'planejamento_painel_patrik_ver',label:'Visualizar'},
     ]
   },
+  // ══ MOBILE — acesso pelo celular ══════════════════════════════════════
+  // Trava adicional, só usada quando a tela é estreita (celular). Pra um módulo
+  // aparecer no celular, o cargo precisa ter, ao mesmo tempo: a permissão normal
+  // dele (a mesma que já libera no computador, acima) E o toggle correspondente
+  // aqui embaixo. Uma sem a outra não libera nada — nenhum desses toggles dá
+  // acesso a algo que a permissão normal já não desse no computador.
+  {
+    grupo:'Mobile — Meu dia',
+    itens:[{id:'mobile_hoje_ver',label:'Ver pelo celular'}]
+  },
+  {
+    grupo:'Mobile — Próximos 7 dias',
+    itens:[{id:'mobile_proximos_ver',label:'Ver pelo celular'}]
+  },
+  {
+    grupo:'Mobile — Agenda',
+    itens:[
+      {id:'mobile_agenda_pessoal_ver',label:'Agenda pessoal (a própria agenda, semana a semana)'},
+      {id:'mobile_agenda_geral_ver',label:'Agenda geral (agenda de todas as profissionais)'},
+    ]
+  },
+  {
+    grupo:'Mobile — Pacientes',
+    itens:[{id:'mobile_pacientes_ver',label:'Ver pelo celular'}]
+  },
+  {
+    grupo:'Mobile — Ações',
+    itens:[{id:'mobile_acoes_ver',label:'Ver pelo celular'}]
+  },
+  {
+    grupo:'Mobile — Rituais',
+    itens:[{id:'mobile_rituais_ver',label:'Ver pelo celular'}]
+  },
+  {
+    grupo:'Mobile — Reuniões',
+    itens:[{id:'mobile_reuniao_ver',label:'Ver pelo celular'}]
+  },
+  {
+    grupo:'Mobile — Pendências',
+    itens:[{id:'mobile_pendencias_ver',label:'Ver pelo celular'}]
+  },
+  {
+    grupo:'Mobile — Lembretes',
+    itens:[{id:'mobile_lembretes_ver',label:'Ver pelo celular'}]
+  },
+  {
+    grupo:'Mobile — Melhorias para o sistema',
+    itens:[{id:'mobile_melhorias_ver',label:'Ver pelo celular'}]
+  },
+  {
+    grupo:'Mobile — Financeiro',
+    itens:[{id:'mobile_financeiro_ver',label:'Ver pelo celular'}]
+  },
+  {
+    grupo:'Mobile — Relatórios',
+    itens:[{id:'mobile_relatorios_ver',label:'Ver pelo celular'}]
+  },
+  {
+    grupo:'Mobile — Empresa',
+    itens:[{id:'mobile_empresa_ver',label:'Ver pelo celular'}]
+  },
+  {
+    grupo:'Mobile — Planejamento',
+    itens:[{id:'mobile_planejamento_ver',label:'Ver pelo celular'}]
+  },
+  {
+    grupo:'Mobile — Configurações',
+    itens:[{id:'mobile_config_ver',label:'Ver pelo celular'}]
+  },
 ];
 
 // Lista achatada (todas as permissões existentes), derivada dos grupos acima
@@ -7499,6 +7664,7 @@ const CARGO_TABS = [
   {id:'pacientes', label:'Pacientes'},
   {id:'administrativo', label:'Administrativo'},
   {id:'sistema', label:'Sistema'},
+  {id:'mobile', label:'Mobile'},
 ];
 
 const GRUPO_TAB_MAP = {
@@ -7557,6 +7723,22 @@ const GRUPO_TAB_MAP = {
   'Configurações — Encaminhamentos (modelos)':'sistema',
   'Configurações — Tabelas de precificação':'sistema',
   'Configurações — Dashboard':'sistema',
+  // Mobile
+  'Mobile — Meu dia':'mobile',
+  'Mobile — Próximos 7 dias':'mobile',
+  'Mobile — Agenda':'mobile',
+  'Mobile — Pacientes':'mobile',
+  'Mobile — Ações':'mobile',
+  'Mobile — Rituais':'mobile',
+  'Mobile — Reuniões':'mobile',
+  'Mobile — Pendências':'mobile',
+  'Mobile — Lembretes':'mobile',
+  'Mobile — Melhorias para o sistema':'mobile',
+  'Mobile — Financeiro':'mobile',
+  'Mobile — Relatórios':'mobile',
+  'Mobile — Empresa':'mobile',
+  'Mobile — Planejamento':'mobile',
+  'Mobile — Configurações':'mobile',
 };
 // Confere, ao carregar, se todo grupo de PERMISSOES_GRUPOS tem aba mapeada — evita
 // que um grupo "suma" silenciosamente do modal de Cargo caso alguém crie um grupo
@@ -8390,6 +8572,21 @@ function goTo(id, btn){
       }
       return;
     }
+  }
+
+  // Trava extra, só pelo celular: além da permissão normal (checada acima), a
+  // seção também precisa do toggle correspondente na aba "Mobile" do cargo.
+  // Roda pra TODAS as seções, inclusive 'hoje' e 'proximos' (que a checagem
+  // normal, acima, sempre libera, mas que também podem ser restringidas aqui).
+  if(!_permitidoNoCelular(id)){
+    const aviso = document.getElementById('perm-aviso');
+    if(aviso){
+      aviso.textContent = 'Este módulo não está liberado para acesso pelo celular. Peça para o administrador liberar em Configurações → Cargos → aba Mobile.';
+      aviso.style.display='block';
+      clearTimeout(aviso._t);
+      aviso._t = setTimeout(()=>aviso.style.display='none', 3500);
+    }
+    return;
   }
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('on'));
@@ -24876,17 +25073,22 @@ function renderAgendaMobile(d){
   if(!lista) return; // segurança — se o HTML dessa versão não existir por algum motivo, não quebra o resto
 
   const minhaProf = _agMobileMinhaProfissional();
-  const podeGeral = souAdministradorReal() || temPerm('agenda_geral_ver');
+  // Cada toggle da aba Mobile do cargo é independente — "Minha agenda" só aparece
+  // pra quem tem, ao mesmo tempo, uma agenda própria configurada E o toggle
+  // "Agenda pessoal" marcado; "Agenda geral" só aparece com o toggle "Agenda
+  // geral" marcado (não existe bypass de administrador aqui — o próprio cargo
+  // Administrador também precisa ter os toggles marcados, como qualquer outro).
+  const podeMinha = !!minhaProf && temPerm('mobile_agenda_pessoal_ver');
+  const podeGeral = temPerm('mobile_agenda_geral_ver');
 
-  // Escolhe a aba ativa: se a pessoa tem agenda própria, começa nela; senão,
-  // se tem acesso à Agenda Geral, começa nela; se não tem nenhuma das duas,
-  // fica em 'minha' mesmo (vai cair no aviso de "sem agenda" mais abaixo).
-  if(agMobileAba===null) agMobileAba = minhaProf ? 'minha' : (podeGeral ? 'geral' : 'minha');
-  if(agMobileAba==='minha' && !minhaProf && podeGeral) agMobileAba = 'geral';
-  if(agMobileAba==='geral' && !podeGeral && minhaProf) agMobileAba = 'minha';
+  // Escolhe a aba ativa: prioriza "minha agenda" se disponível, senão "geral";
+  // se nenhuma das duas estiver liberada, cai no aviso de "sem acesso" mais abaixo.
+  if(agMobileAba===null) agMobileAba = podeMinha ? 'minha' : (podeGeral ? 'geral' : 'minha');
+  if(agMobileAba==='minha' && !podeMinha && podeGeral) agMobileAba = 'geral';
+  if(agMobileAba==='geral' && !podeGeral && podeMinha) agMobileAba = 'minha';
 
   const toggleWrap = document.getElementById('ag-mobile-toggle');
-  if(toggleWrap) toggleWrap.style.display = (minhaProf && podeGeral) ? 'flex' : 'none';
+  if(toggleWrap) toggleWrap.style.display = (podeMinha && podeGeral) ? 'flex' : 'none';
   const tabMinha = document.getElementById('ag-mobile-tab-minha');
   const tabGeral = document.getElementById('ag-mobile-tab-geral');
   if(tabMinha) tabMinha.classList.toggle('on', agMobileAba==='minha');
@@ -24903,15 +25105,15 @@ function renderAgendaMobile(d){
       ? `${ini.getDate()} – ${fim.getDate()} de ${MESES[ini.getMonth()]}`
       : `${ini.getDate()} ${MESES[ini.getMonth()].slice(0,3)} – ${fim.getDate()} ${MESES[fim.getMonth()].slice(0,3)}`;
   }
-  if(sub) sub.textContent = (agMobileAba==='minha' && minhaProf) ? 'Minha agenda' : 'Agenda geral';
+  if(sub) sub.textContent = (agMobileAba==='minha' && podeMinha) ? 'Minha agenda' : 'Agenda geral';
 
-  if(!minhaProf && !podeGeral){
-    lista.innerHTML = `<div class="ag-mobile-vazio">Você ainda não tem uma agenda própria configurada. Fale com o administrador do sistema.</div>`;
+  if(!podeMinha && !podeGeral){
+    lista.innerHTML = `<div class="ag-mobile-vazio">Nenhuma agenda liberada pra você no celular. Peça pro administrador liberar em Configurações → Cargos → aba Mobile.</div>`;
     return;
   }
 
   // null = não filtra por profissional (Agenda Geral mostra todo mundo)
-  const usuarioAlvo = (agMobileAba==='minha' && minhaProf) ? usuarioAtualId : null;
+  const usuarioAlvo = (agMobileAba==='minha' && podeMinha) ? usuarioAtualId : null;
 
   let html = '';
   dias.forEach(dia=>{
