@@ -14565,23 +14565,28 @@ function _prontDesfazerItem(orcId,idx){
     alert('Só quem executou este procedimento (ou um administrador, gestor ou secretária) pode desfazer a execução.');
     return;
   }
-  let bloqueado=false;
+  // ATENÇÃO (correção pontual solicitada em 18/08/2026): a trava que impedia
+  // desfazer a execução de procedimentos já medidos/pagos foi removida por
+  // pedido do administrador, para corrigir procedimentos que vieram da
+  // migração do Clinicorp já marcados como medidos/pagos, mas que na
+  // verdade ainda precisam ser medidos e pagos de verdade agora. Isso NÃO
+  // mexe em nenhum título ou medição já lançados no módulo Financeiro — só
+  // reseta o item do plano de tratamento para poder ser reexecutado e cair
+  // de novo na fila de medição. Assim que a correção pontual terminar, essa
+  // trava deve ser recolocada (pedido explícito do administrador).
   _comSalvarImediato(()=>{
     const list=_orcamentos();
     const orc=list.find(o=>o.id===orcId);
     if(!orc||!orc.itens||!orc.itens[idx]) return;
     const it=orc.itens[idx];
-    if(it.comissaoMedida){ bloqueado=true; return; }
     it.executado=false;
     it.realizadoPor=null;
     it.realizadoEm=null;
     it.valorComissao=0;
+    it.comissaoMedida=false;
+    it.medidoEm=null;
     _salvarOrcamentos(list);
   });
-  if(bloqueado){
-    alert('Este procedimento já teve a comissão medida e paga no financeiro. Não é possível desfazer a execução.\n\nSe necessário, ajuste diretamente no módulo Financeiro › Comissão Dentistas.');
-    return;
-  }
   // Remove a linha da ficha clínica que tinha sido gerada automaticamente pela
   // execução deste procedimento (se existir).
   _comSalvarImediato(()=>{
