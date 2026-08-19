@@ -12064,9 +12064,11 @@ function gerarPdfOrcamento(){
         linha2Html='';
       }
       const descTxt=desconto>0?`${desconto}% de desconto`:'Valor sem desconto';
+      const obsHtml=pg.obs?`<div class="pag-obs">${esc(pg.obs)}</div>`:'';
       return `
         <div class="pag-card${destaque?' destaque':''}">
           <div class="pag-tit">${tipoLabel2[pg.tipo]||pg.tipo}</div>
+          ${obsHtml}
           <div class="pag-l1">${linha1}</div>
           ${linha2Html}
           <div class="pag-desc">${descTxt}</div>
@@ -12115,6 +12117,8 @@ table{width:100%;border-collapse:collapse;margin-bottom:3mm}
 .pag-card.destaque .pag-l2{color:#E9E1CC}
 .pag-card.destaque .pag-desc{color:#C9A560}
 .pag-tit{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#9C7D3F;font-weight:700;margin-bottom:3mm}
+.pag-obs{font-size:11px;color:#726A5A;margin-bottom:2mm;font-style:italic}
+.pag-card.destaque .pag-obs{color:#E9E1CC}
 .pag-l1{font-size:18px;font-weight:700;color:#0A0A0B;margin-bottom:1.5mm}
 .pag-l2{font-size:12.5px;color:#726A5A;margin-bottom:1.5mm}
 .pag-desc{font-size:12.5px;color:#9C7D3F;font-weight:600}
