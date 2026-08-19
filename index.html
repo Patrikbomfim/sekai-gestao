@@ -12081,13 +12081,15 @@ function gerarPdfOrcamento(){
 <title>Proposta de Tratamento — ${pacNome}</title>
 <style>
 @page{ size:A4; margin:0; }
+@page{ margin-top:20mm; }
+@page :first{ margin-top:0; }
 *{margin:0;padding:0;box-sizing:border-box}
 @import url('https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
 body{background:#FFFFFF;font-family:'Poppins',sans-serif;color:#211E1A;width:210mm;min-height:297mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .faixa{background:#0A0A0B;padding:15mm 20mm 12mm;text-align:center}
 .faixa .nome{font-family:'Lora',serif;color:#C9A560;font-size:26px;letter-spacing:4px;text-transform:uppercase;font-weight:600}
 .faixa .sub{color:#8A8680;font-size:9.5px;letter-spacing:2px;text-transform:uppercase;margin-top:6px}
-.corpo{padding:14mm 20mm 18mm}
+.corpo{padding:14mm 20mm 26mm}
 .titulo{font-family:'Lora',serif;font-size:27px;font-weight:600;color:#0A0A0B;text-align:center;margin-top:2mm}
 .regua{width:70px;height:2px;background:#C9A560;margin:5mm auto 8mm}
 .meta{display:flex;justify-content:space-between;margin-bottom:9mm}
@@ -12117,7 +12119,9 @@ table{width:100%;border-collapse:collapse;margin-bottom:3mm}
 .pag-l1{font-size:18px;font-weight:700;color:#0A0A0B;margin-bottom:1.5mm}
 .pag-l2{font-size:12.5px;color:#A39C8C;margin-bottom:1.5mm}
 .pag-desc{font-size:12.5px;color:#9C7D3F;font-weight:600}
-.footer{border-top:1px solid #ECE7DC;padding-top:5mm;display:flex;justify-content:space-between;font-size:12px;color:#A39C8C}
+.pag-grupo{break-inside:avoid;page-break-inside:avoid}
+.pag-card{break-inside:avoid;page-break-inside:avoid}
+.footer{position:fixed;left:20mm;right:20mm;bottom:10mm;border-top:1px solid #ECE7DC;padding-top:5mm;display:flex;justify-content:space-between;font-size:12px;color:#A39C8C;background:#FFFFFF}
 .footer b{color:#726A5A}
 </style>
 </head>
@@ -12140,17 +12144,19 @@ table{width:100%;border-collapse:collapse;margin-bottom:3mm}
     </div>
     <div class="sec-lbl">Procedimentos incluídos</div>
     <table>${linhasProc}</table>
-    <div class="total-bar">
-      <div class="total-lbl">Valor total do tratamento</div>
-      <div class="total-val">R$ ${fmtMoedaPdf(total)}</div>
+    <div class="pag-grupo">
+      <div class="total-bar">
+        <div class="total-lbl">Valor total do tratamento</div>
+        <div class="total-val">R$ ${fmtMoedaPdf(total)}</div>
+      </div>
+      ${pagCardsHtml?`
+      <div class="sec-lbl">${secaoPagTitulo}</div>
+      <div class="pagamentos">${pagCardsHtml}</div>`:''}
     </div>
-    ${pagCardsHtml?`
-    <div class="sec-lbl">${secaoPagTitulo}</div>
-    <div class="pagamentos">${pagCardsHtml}</div>`:''}
-    <div class="footer">
-      <div><b>${dentistaResp?'Responsável técnica '+dentistaResp.nome:''}</b>${dentistaResp&&dentistaResp.cro?' CRO: '+dentistaResp.cro:''}</div>
-      <div>${clinicaTel?clinicaTel+' · ':''}${clinicaCnpj?'CNPJ '+clinicaCnpj:''}</div>
-    </div>
+  </div>
+  <div class="footer">
+    <div><b>${dentistaResp?'Responsável técnica '+dentistaResp.nome:''}</b>${dentistaResp&&dentistaResp.cro?' CRO: '+dentistaResp.cro:''}</div>
+    <div>${clinicaTel?clinicaTel+' · ':''}${clinicaCnpj?'CNPJ '+clinicaCnpj:''}</div>
   </div>
   <script>window.onload=()=>window.print();<\/script>
 </body>
