@@ -5139,6 +5139,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
         <div id="agm-campos-extras" style="display:contents"></div>
       </div>
+      <!-- Registro discreto de quem criou/editou o agendamento (só aparece quando existir informação) -->
+      <div id="agm-autoria-wrap" style="display:none;margin-top:14px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--tx3)"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-danger btn-sm" id="agm-excluir" style="display:none" onclick="excluirAgendamento()">Excluir</button>
@@ -5526,6 +5528,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="agpop-lbl">Observação</div>
       <textarea id="agpop-obs" rows="2" placeholder="Adicionar observação..." oninput="agPopMarcarSujo()" style="width:100%;font-size:12px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r6);resize:vertical;font-family:var(--font);background:var(--surface);color:var(--tx);line-height:1.4"></textarea>
     </div>
+    <!-- Registro discreto de quem criou/editou o agendamento -->
+    <div id="agpop-autoria" style="display:none;font-size:10.5px;color:var(--tx3);padding-top:2px"></div>
   </div>
   <div class="agpop-footer">
     <button class="btn btn-ghost" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="agPopAbrirModal()" title="Abrir agendamento"><svg viewBox="0 0 24 24" width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Abrir agendamento</button>
@@ -22422,6 +22426,36 @@ function nomeUsuario(id){
   return u?u.nome:'(usuário removido)';
 }
 
+// Formata a linha discreta "Criado por X em ... · Última edição por Y em ..." exibida no
+// modal completo e no minimodal (balão) de agendamento. Retorna '' quando o agendamento
+// não tem nenhum desses dados registrados (ex.: agendamentos antigos, de antes dessa
+// funcionalidade existir) — nesse caso o chamador deve simplesmente esconder a linha.
+function _agendamentoAutoriaTexto(a){
+  if(!a) return '';
+  const fmt=iso=>{
+    if(!iso) return '';
+    const d=new Date(iso);
+    if(isNaN(d)) return '';
+    const dataStr=d.toLocaleDateString('pt-BR');
+    const horaStr=d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    return `${dataStr} às ${horaStr}`;
+  };
+  const partes=[];
+  if(a.criadoPor){
+    const t=fmt(a.criadoEm);
+    partes.push(`Criado por ${nomeUsuario(a.criadoPor)}${t?' em '+t:''}`);
+  }
+  if(a.editadoPor && a.editadoPor!==a.criadoPor){
+    const t=fmt(a.editadoEm);
+    partes.push(`Última edição por ${nomeUsuario(a.editadoPor)}${t?' em '+t:''}`);
+  } else if(a.editadoPor && a.editadoEm && a.editadoEm!==a.criadoEm){
+    // mesma pessoa editou depois de criar — ainda vale mostrar quando foi a última edição
+    const t=fmt(a.editadoEm);
+    partes.push(`Última edição em ${t}`);
+  }
+  return partes.join(' · ');
+}
+
 function usuariosNaAgenda(){
   // retorna lista de agendaProfissionais ativos, com dados do usuário
   return agendaProfissionais.filter(ap=>ap.ativo!==false).map(ap=>({
@@ -24507,6 +24541,14 @@ function abrirAgPopover(a, targetEl){
   // Obs
   document.getElementById('agpop-obs').value = a.obs || '';
 
+  // Registro discreto de quem criou/editou
+  const autoriaEl=document.getElementById('agpop-autoria');
+  if(autoriaEl){
+    const txtAutoria=_agendamentoAutoriaTexto(a);
+    autoriaEl.textContent=txtAutoria;
+    autoriaEl.style.display=txtAutoria?'':'none';
+  }
+
   // Tags
   agPopRenderTags();
 
@@ -24872,6 +24914,9 @@ function agPopCommitDraft(){
   agendamentos[idx].tags = _agPopDraftTags.slice();
   if(novoUsuarioId) agendamentos[idx].usuarioId = novoUsuarioId;
   if(situacaoPaciente) agendamentos[idx].situacaoRegistrada = situacaoPaciente;
+  // Registro discreto de quem fez a última edição
+  agendamentos[idx].editadoPor = (typeof usuarioAtualId!=='undefined')?usuarioAtualId:null;
+  agendamentos[idx].editadoEm = new Date().toISOString();
   _salvarAgendamentoDb(agendamentos[idx]);
 
   // Atualiza o cadastro do paciente (mesma lógica de antes) quando a situação muda
@@ -24909,6 +24954,8 @@ function agPopSalvar(){
     agendamentos[idx].tags = _agPopDraftTags.slice();
     const profSelEl = document.getElementById('agpop-prof');
     if(profSelEl && profSelEl.value) agendamentos[idx].usuarioId = profSelEl.value;
+    agendamentos[idx].editadoPor = (typeof usuarioAtualId!=='undefined')?usuarioAtualId:null;
+    agendamentos[idx].editadoEm = new Date().toISOString();
     _salvarAgendamentoDb(agendamentos[idx]);
     const id=_agPopoverId;
     _agPopDirty = false;
@@ -25058,6 +25105,13 @@ function _abrirModalAgendamentoReal(agendamentoId){
   agmToggleCancelamento();
   agmRenderCamposExtras(a || null);
   agmToggleSituacao();
+  // Registro discreto de quem criou/editou (só aparece quando existir informação)
+  const autoriaWrap1=document.getElementById('agm-autoria-wrap');
+  if(autoriaWrap1){
+    const txt1=_agendamentoAutoriaTexto(a);
+    autoriaWrap1.textContent=txt1;
+    autoriaWrap1.style.display=txt1?'':'none';
+  }
   document.getElementById('modal-agendamento').classList.add('open');
   const podeGerenciarAgenda = temPerm('agenda_gerenciar');
   const salvarBtn = document.getElementById('agm-salvar');
@@ -26164,6 +26218,14 @@ function abrirModalAgendamento(agendamentoId, dataPre, horaPre, salaPre, usuario
   agmRenderCamposExtras(a || null);
   agmToggleSituacao();
 
+  // Registro discreto de quem criou/editou (só aparece quando existir informação)
+  const autoriaWrap2=document.getElementById('agm-autoria-wrap');
+  if(autoriaWrap2){
+    const txt2=_agendamentoAutoriaTexto(a);
+    autoriaWrap2.textContent=txt2;
+    autoriaWrap2.style.display=txt2?'':'none';
+  }
+
   document.getElementById('modal-agendamento').classList.add('open');
 
   // Permissões no modal de agendamento
@@ -26819,9 +26881,14 @@ function _salvarAgendamentoInterno(){
 
   const fluxo = null; // definido apenas em agendamentos via encaminhamento
   const existenteParaTags = editId ? agendamentos.find(a=>a.id===editId) : null;
+  // Registro de autoria: "criado por" é gravado só na criação (fica congelado depois);
+  // "última edição por" é atualizado toda vez que o agendamento é salvo por aqui.
+  const _uAtualAutoria=(typeof usuarioAtualId!=='undefined')?usuarioAtualId:null;
+  const _agoraAutoria=new Date().toISOString();
   const item={pacienteId,pacienteNome,pacienteFone:pacienteId?'':pacienteFone,usuarioId,salaId,data,horaInicio,horaFim,status,origem:'interno',procedimento,fluxo,obs,situacaoRegistrada:situacaoPaciente,
     motivoCancelamento,motivoCancelamentoOutro,jaReagendado,recontatoStatus,recontatoResponsavel,recontatoObs,recontatoCriadoEm,recontatoResolvidoEm,primeiraConsulta,origemPaciente,origemPacienteTexto,indicacao,camposExtras,
     orcamentoId:orcVinculoId, orcItemIdx,
+    editadoPor:_uAtualAutoria, editadoEm:_agoraAutoria,
     tags: existenteParaTags ? (existenteParaTags.tags||[]) : []};
 
   let agSalvoRef;
@@ -26830,7 +26897,7 @@ function _salvarAgendamentoInterno(){
     agendamentos[idx]={...agendamentos[idx],...item};
     agSalvoRef=agendamentos[idx];
   } else {
-    agSalvoRef={id:uid('ag'),...item};
+    agSalvoRef={id:uid('ag'), criadoPor:_uAtualAutoria, criadoEm:_agoraAutoria, ...item};
     agendamentos.push(agSalvoRef);
   }
   _salvarAgendamentoDb(agSalvoRef);
