@@ -14679,14 +14679,14 @@ function _renderProntFicha(p){
     <div style="border:1px solid var(--border);border-radius:var(--r8);margin-bottom:10px;overflow:hidden">
 
       <!-- Cabeçalho: (seleção, se ativa) + data + vínculo (orçamento/avulso) + responsável -->
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--border)">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--border);gap:12px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;min-width:0;flex:1">
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
             ${_prontSelecaoAtiva?`<input type="checkbox" ${_prontSelecionados.has(f.id)?'checked':''} onchange="_prontToggleSelecionado('${f.id}',this.checked)" title="Selecionar este atendimento para exportar" style="cursor:pointer;flex-shrink:0">`:''}
-            <span style="font-size:13px;font-weight:700;color:var(--tx);white-space:nowrap">${fmtData(f.data)}</span>
+            <span style="font-size:13px;font-weight:700;color:var(--tx);white-space:nowrap;flex-shrink:0">${fmtData(f.data)}</span>
           </div>
-          ${_prontVinculoTexto(f)?`<span style="font-size:12px;color:var(--tx3)">·</span><span style="font-size:13px;font-weight:600;color:var(--ac)">${_prontVinculoTexto(f)}</span>`:''}
-          ${f.profissional?`<span style="font-size:12px;color:var(--tx3)">·</span><span style="font-size:13px;color:var(--tx2)">${f.profissional}</span>`:''}
+          ${_prontVinculoTexto(f)?`<span style="font-size:12px;color:var(--tx3);flex-shrink:0">·</span><span style="font-size:13px;font-weight:600;color:var(--ac);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">${_prontVinculoTexto(f)}</span>`:''}
+          ${f.profissional?`<span style="font-size:12px;color:var(--tx3);flex-shrink:0">·</span><span style="font-size:13px;color:var(--tx2);white-space:nowrap;flex-shrink:0">${f.profissional}</span>`:''}
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
           <!-- Botão exportar PDF individual -->
