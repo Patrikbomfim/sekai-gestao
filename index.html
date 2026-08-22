@@ -14681,7 +14681,7 @@ function _renderProntFicha(p){
       <!-- Cabeçalho: (seleção, se ativa) + data + vínculo (orçamento/avulso) + responsável -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--border);gap:12px">
         <div style="min-width:0;line-height:1.6">
-          ${_prontSelecaoAtiva?`<input type="checkbox" ${_prontSelecionados.has(f.id)?'checked':''} onchange="_prontToggleSelecionado('${f.id}',this.checked)" title="Selecionar este atendimento para exportar" style="cursor:pointer;vertical-align:middle;margin-right:8px">`:''}
+          ${_prontSelecaoAtiva?`<input type="checkbox" ${_prontSelecionados.has(f.id)?'checked':''} onchange="_prontToggleSelecionado('${f.id}',this.checked)" title="Selecionar este atendimento para exportar" style="width:auto;cursor:pointer;vertical-align:middle;margin-right:8px">`:''}
           <span style="font-size:13px;font-weight:700;color:var(--tx)">${fmtData(f.data)}</span>
           ${_prontVinculoTexto(f)?` <span style="font-size:12px;color:var(--tx3)">·</span> <span style="font-size:13px;font-weight:600;color:var(--ac)">${_prontVinculoTexto(f)}</span>`:''}
           ${f.profissional?` <span style="font-size:12px;color:var(--tx3)">·</span> <span style="font-size:13px;color:var(--tx2)">${f.profissional}</span>`:''}
