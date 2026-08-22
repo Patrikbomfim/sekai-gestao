@@ -1516,6 +1516,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
               <button class="btn btn-ghost btn-sm" onclick="_prontExportarFichaCompleta()" style="display:flex;align-items:center;gap:5px">
                 <span style="font-size:13px"><svg viewBox="0 0 24 24" width="1em" height="1em" style="display:inline-block;vertical-align:-0.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span> Exportar ficha completa em PDF
               </button>
+              <button class="btn btn-ghost btn-sm" id="pront-btn-selecionar" onclick="_prontToggleSelecaoModo()">Selecionar atendimentos</button>
               <button class="btn btn-primary btn-sm" id="pront-btn-novo-atendimento" onclick="abrirModalAtendimento()">+ Adicionar atendimento</button>
             </div>
           </div>
@@ -14278,6 +14279,11 @@ function _salvarProntuarios(list){
 }
 
 let _prontPacId=null; // paciente atual no módulo prontuário
+// Controle do modo "selecionar atendimentos" da ficha clínica, usado para
+// escolher quais atendimentos específicos exportar em PDF (em vez de só
+// "ficha completa" ou "um atendimento isolado").
+let _prontSelecaoAtiva=false;
+let _prontSelecionados=new Set();
 
 function switchProntTab(tab){
   // 'ficha' foi unificada dentro da aba 'plano' (Plano e ficha clínica) — mantém
@@ -14523,7 +14529,7 @@ function _calcComissaoItem(it, descontoPorc){
 function _prontFichaAutoId(orcId,idx){ return 'ficha_auto_'+orcId+'_'+idx; }
 
 function _prontAprovarItem(orcId,idx){
-  let orcPacienteId=null, procNome='', dataExec='', profExec='';
+  let orcPacienteId=null, procNome='', dataExec='', profExec='', dentesExec=[], facesExec=[];
   _comSalvarImediato(()=>{
     const list=_orcamentos();
     const orc=list.find(o=>o.id===orcId);
@@ -14546,17 +14552,20 @@ function _prontAprovarItem(orcId,idx){
     procNome=it.proc||'';
     dataExec=it.execData;
     profExec=it.execProfissional;
+    dentesExec=Array.isArray(it.dentes)?it.dentes.slice():[];
+    facesExec=Array.isArray(it.faces)?it.faces.slice():[];
   });
   // Cria automaticamente a linha correspondente na ficha clínica (histórico do
   // paciente), sem texto nenhum — só registra que o procedimento foi executado
   // nessa data. Fica marcada com origemAuto pra ser identificada e removida caso
-  // a execução seja desfeita depois.
+  // a execução seja desfeita depois. Guarda também o(s) dente(s)/face(s) do item
+  // do orçamento, para exibir junto do nome do procedimento na ficha e no PDF.
   if(orcPacienteId){
     _comSalvarImediato(()=>{
       const fl=_prontuarios();
       const autoId=_prontFichaAutoId(orcId,idx);
       if(!fl.some(f=>f.id===autoId)){
-        fl.push({id:autoId,pacienteId:orcPacienteId,data:dataExec,profissional:profExec,procedimento:procNome,planTratamentoId:orcId,descricao:'',orientacoes:'',proximaConsulta:'',origemAuto:true});
+        fl.push({id:autoId,pacienteId:orcPacienteId,data:dataExec,profissional:profExec,procedimento:procNome,dentes:dentesExec,faces:facesExec,planTratamentoId:orcId,descricao:'',orientacoes:'',proximaConsulta:'',origemAuto:true});
         _salvarProntuarios(fl);
       }
     });
@@ -14615,9 +14624,14 @@ function _prontDesfazerItem(orcId,idx){
 // - Atendimento antigo (registrado antes da coluna Título ser removida do formulário,
 //   sem vínculo nem avulso corretamente marcado): mostra o título salvo na época, como exceção
 function _prontVinculoTexto(f){
-  if(f.origemAuto) return f.procedimento||'Procedimento executado';
+  // Se a linha tiver dente(s) guardado(s) (vindos do item do orçamento que a
+  // gerou), monta "Dente 45, 46" — e acrescenta a face entre parênteses, se houver.
+  const dentesTxt=(f.dentes&&f.dentes.length)
+    ?'Dente '+_dentesTxt(f.dentes)+(f.faces&&f.faces.length?' ('+f.faces.join('')+')':'')
+    :'';
+  if(f.origemAuto) return (f.procedimento||'Procedimento executado')+(dentesTxt?' · '+dentesTxt:'');
   if(f.avulso) return 'Atendimento avulso';
-  if(f.planTratamento) return f.planTratamento+(f.procedimento?' · '+f.procedimento:'');
+  if(f.planTratamento) return f.planTratamento+(f.procedimento?' · '+f.procedimento:'')+(dentesTxt?' · '+dentesTxt:'');
   if(f.titulo) return f.titulo; // compatibilidade com atendimentos antigos
   return '';
 }
@@ -14650,10 +14664,27 @@ function _renderProntFicha(p){
     <div style="font-size:13px;color:${val?'var(--tx)':'var(--tx3)'};white-space:pre-line;line-height:1.55">${val||'—'}</div>
   </div>`;
 
-  wrap.innerHTML=fichas.map(f=>{
+  // Barra do modo de seleção: só aparece quando o usuário ativou "Selecionar
+  // atendimentos". Mostra quantos já estão marcados e o botão pra exportar
+  // só esses em PDF (em vez da ficha completa ou de um atendimento isolado).
+  const barraSelecao=_prontSelecaoAtiva?`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;margin-bottom:10px;background:var(--s2);border:1px solid var(--border);border-radius:var(--r8)">
+      <span style="font-size:12px;color:var(--tx2)">${_prontSelecionados.size} atendimento(s) selecionado(s)</span>
+      <button class="btn btn-primary btn-sm" onclick="_prontExportarSelecionados()" ${_prontSelecionados.size?'':'disabled'}>Exportar selecionados em PDF</button>
+    </div>`:'';
+
+  wrap.innerHTML=barraSelecao+fichas.map(f=>{
     const temAnexo=!!(f.anexoNome);
     return `
     <div style="border:1px solid var(--border);border-radius:var(--r8);margin-bottom:10px;overflow:hidden">
+
+      ${_prontSelecaoAtiva?`
+      <div style="padding:8px 14px;background:var(--surface);border-bottom:1px solid var(--border)">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--tx2);cursor:pointer">
+          <input type="checkbox" ${_prontSelecionados.has(f.id)?'checked':''} onchange="_prontToggleSelecionado('${f.id}',this.checked)">
+          Selecionar este atendimento para exportar
+        </label>
+      </div>`:''}
 
       <!-- Cabeçalho: data + vínculo (orçamento/avulso) + responsável -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--border)">
@@ -16722,6 +16753,41 @@ function _prontExportarFichaCompleta(){
   if(!p) return;
   const fichas=_prontuarios().filter(f=>String(f.pacienteId)===String(p.id)).sort((a,b)=>b.data.localeCompare(a.data));
   if(!fichas.length){ alert('Nenhum atendimento registrado para exportar.'); return; }
+  const emp=getEmpresaAtual()||{};
+  const clinicaNome=(emp.dados&&emp.dados.nome)||'Clínica Sekai';
+  const fmtData=d=>{ if(!d) return '—'; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
+  _prontAbrirPdfFichas(fichas, p.nome, clinicaNome, fmtData);
+}
+
+// Liga/desliga o modo de seleção da ficha clínica. Ao desligar, limpa qualquer
+// seleção feita, pra não ficar "lembrado" na próxima vez que o usuário ativar.
+function _prontToggleSelecaoModo(){
+  _prontSelecaoAtiva=!_prontSelecaoAtiva;
+  if(!_prontSelecaoAtiva) _prontSelecionados.clear();
+  const btn=document.getElementById('pront-btn-selecionar');
+  if(btn) btn.textContent=_prontSelecaoAtiva?'Cancelar seleção':'Selecionar atendimentos';
+  const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
+  if(p) _renderProntFicha(p);
+}
+
+// Marca/desmarca um atendimento específico dentro do modo de seleção.
+function _prontToggleSelecionado(fichaId, marcado){
+  if(marcado) _prontSelecionados.add(fichaId); else _prontSelecionados.delete(fichaId);
+  const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
+  if(p) _renderProntFicha(p);
+}
+
+// Exporta em PDF só os atendimentos marcados no modo de seleção (pode ser
+// 1, 2, 3 ou qualquer quantidade), mantendo a mesma ordem (mais recente primeiro)
+// e o mesmo layout já usado na ficha completa e no atendimento isolado.
+function _prontExportarSelecionados(){
+  if(!_prontSelecionados.size){ alert('Selecione ao menos um atendimento para exportar.'); return; }
+  const p=pacientes.find(x=>String(x.id)===String(_prontPacId));
+  if(!p) return;
+  const fichas=_prontuarios()
+    .filter(f=>String(f.pacienteId)===String(p.id)&&_prontSelecionados.has(f.id))
+    .sort((a,b)=>b.data.localeCompare(a.data));
+  if(!fichas.length){ alert('Nenhum atendimento selecionado foi encontrado.'); return; }
   const emp=getEmpresaAtual()||{};
   const clinicaNome=(emp.dados&&emp.dados.nome)||'Clínica Sekai';
   const fmtData=d=>{ if(!d) return '—'; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; };
